@@ -75,6 +75,12 @@
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.11" />
     <PackageVersion Include="Microsoft.FeatureManagement.AspNetCore" Version="4.7.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.17.2" />
+    <!--
+      Emits the OpenAPI document to disk during the build so a contract test can diff it
+      against the committed copy; a breaking change to the public surface then shows up in a
+      pull request rather than in an integrator's logs. docs/zadanie.md section B.7.3.
+    -->
+    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.11" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
   </ItemGroup>
 

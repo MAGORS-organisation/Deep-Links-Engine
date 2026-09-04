@@ -18,6 +18,27 @@
     <OutputType>Exe</OutputType>
     <UserSecretsId>dle-control-3b81d47e-6c25-4f19-8a30-5d7c9e2b4f16</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+
+    <!--
+      The OpenAPI document is written to openapi/dle-control.json, which is the copy the
+      contract tests diff against so that a breaking change to the public surface shows up in a
+      pull request rather than in an integrator's logs.
+
+      It is opt-in rather than automatic because the generator starts the application host in
+      order to enumerate the endpoints: it therefore needs a configuration the host will accept,
+      including Dle:Crypto:MasterSecret, and an ordinary developer build must not be made to
+      depend on secrets. Regenerate with:
+
+        dotnet build src/Dle.Control -p:DleGenerateOpenApi=true
+
+      with ASPNETCORE_ENVIRONMENT=Development, or with the deployment's own configuration. The
+      same document is always available from a running instance at /openapi/v1.json, which is
+      what an integration-test-based contract check reads.
+    -->
+    <OpenApiGenerateDocuments>$([System.String]::Equals('$(DleGenerateOpenApi)', 'true'))</OpenApiGenerateDocuments>
+    <OpenApiGenerateDocumentsOnBuild>$(OpenApiGenerateDocuments)</OpenApiGenerateDocumentsOnBuild>
+    <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/openapi</OpenApiDocumentsDirectory>
+    <OpenApiGenerateDocumentsOptions>--file-name dle-control</OpenApiGenerateDocumentsOptions>
   </PropertyGroup>
 
   <ItemGroup>
@@ -32,6 +53,10 @@
   <ItemGroup Label="API surface">
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Scalar.AspNetCore" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="QRCoder" />
   </ItemGroup>
