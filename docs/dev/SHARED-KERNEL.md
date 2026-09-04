@@ -902,7 +902,7 @@ public interface ILinkCacheInvalidator
     ValueTask InvalidateTenantAsync(Guid tenantId, CancellationToken ct);
 }
 
-public interface IWebhookQueue
+public interface IWebhookOutbox
 {
     Task EnqueueAsync(Guid tenantId, string eventType, string payloadJson, CancellationToken ct);
 }

@@ -13,6 +13,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <IsAspireHost>true</IsAspireHost>
+    <!-- The CLI bundle only adds `aspire run` conveniences; CI and docker compose do not use it. -->
+    <AspireUseCliBundle>true</AspireUseCliBundle>
     <IsPackable>false</IsPackable>
     <UserSecretsId>dle-apphost-7c4e2a89-1d63-4b57-90fe-8a5c3b0d6e42</UserSecretsId>
 
