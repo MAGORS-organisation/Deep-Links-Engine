@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Control plane. ASP.NET Core minimal API in vertical slices: link and domain
+    management, attribution, analytics reporting, abuse handling, webhooks and
+    the background workers. docs/zadanie.md §B.7.3, §C.1.
+
+    Program.cs must call exactly (SHARED-KERNEL §15):
+      AddDleControlCore, AddDleTelemetry, AddDlePersistence, AddDleCrypto,
+      AddDleAnalytics, AddDleAttribution, AddDleAbuse, AddDleWebhooks,
+      AddDleIdentity, AddDleWorkers, AddDleControlRateLimiting
+      -> MapLinks, MapDomains, MapApps, MapTenants, MapApiKeys, MapAnalytics,
+         MapAttribution, MapAbuse, MapWebhooks, MapJwks, MapHealth
+  -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+    <UserSecretsId>dle-control-3b81d47e-6c25-4f19-8a30-5d7c9e2b4f16</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dle.Domain\Dle.Domain.csproj" />
+    <ProjectReference Include="..\Dle.Crypto\Dle.Crypto.csproj" />
+    <ProjectReference Include="..\Dle.Persistence\Dle.Persistence.csproj" />
+    <ProjectReference Include="..\Dle.Persistence.Fast\Dle.Persistence.Fast.csproj" />
+    <ProjectReference Include="..\Dle.Analytics.Postgres\Dle.Analytics.Postgres.csproj" />
+    <ProjectReference Include="..\Dle.Analytics.ClickHouse\Dle.Analytics.ClickHouse.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="API surface">
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Scalar.AspNetCore" />
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="QRCoder" />
+  </ItemGroup>
+
+  <ItemGroup Label="Identity">
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+  </ItemGroup>
+
+  <ItemGroup Label="Hosting">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup Label="Observability">
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dle.UnitTests" />
+    <InternalsVisibleTo Include="Dle.IntegrationTests" />
+    <InternalsVisibleTo Include="Dle.ContractTests" />
+    <InternalsVisibleTo Include="Dle.SecurityTests" />
+  </ItemGroup>
+
+</Project>

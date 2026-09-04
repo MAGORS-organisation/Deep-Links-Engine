@@ -1,0 +1,96 @@
+<Project>
+
+  <!--
+    Deep Link Engine (DLE) — properties shared by every project in the solution.
+    Normative source: docs/dev/SHARED-KERNEL.md §0 and docs/zadanie.md §C.1/§C.2.
+    Nothing here may be relaxed in an individual project without a written reason.
+  -->
+
+  <PropertyGroup Label="Identity">
+    <Product>Deep Link Engine</Product>
+    <Authors>MAGORS organisation</Authors>
+    <Company>MAGORS organisation</Company>
+    <Copyright>Copyright (c) MAGORS organisation</Copyright>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Language">
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Quality gates">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-Recommended</AnalysisLevel>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <ReportAnalyzer>false</ReportAnalyzer>
+
+    <!--
+      Only genuinely noisy rules are muted globally. Severities for everything
+      else live in .editorconfig so they can be reasoned about in one place.
+
+        CA1848  LoggerMessage delegates — required on the hot path only (§C.6),
+                mandating it everywhere would drown ordinary control-plane code.
+        CA2007  ConfigureAwait(false) — this is application code with no
+                SynchronizationContext; ASP.NET Core does not need it.
+        CA1812  Uninstantiated internal classes — false positive for every type
+                that only the DI container constructs.
+        CA1515  "Make types internal" — public surface in app assemblies is
+                intentional (minimal API handlers, integration test fixtures).
+
+      Deliberately NOT listed: CA1031 (SHARED-KERNEL §17.9 forbids a global
+      suppression of catch-all handlers) and CS1591 (missing XML doc comments
+      on public members must stay a build error).
+    -->
+    <NoWarn>$(NoWarn);CA1848;CA2007;CA1812;CA1515</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Runtime behaviour">
+    <!-- SHARED-KERNEL §0: every ToString/Parse uses CultureInfo.InvariantCulture. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>false</UseSystemResourceKeys>
+    <TieredPGO>true</TieredPGO>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Reproducible builds">
+    <Deterministic>true</Deterministic>
+    <DebugType>portable</DebugType>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true' Or '$(TF_BUILD)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Packages">
+    <!-- Central Package Management: no Version attribute may appear on a PackageReference. -->
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true' And Exists('$(MSBuildProjectDirectory)/packages.lock.json')">true</RestoreLockedMode>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet package metadata">
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/MAGORS-organisation/Deep-Links-Engine</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MAGORS-organisation/Deep-Links-Engine</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>deeplink;deep-linking;attribution;universal-links;app-links;deferred-deep-linking;aspnetcore</PackageTags>
+    <PackageReadmeFile Condition="Exists('$(MSBuildThisFileDirectory)README.md')">README.md</PackageReadmeFile>
+    <EnablePackageValidation>false</EnablePackageValidation>
+  </PropertyGroup>
+
+  <!--
+    The README is packed with every library. IsPackable is set by the individual
+    project files, which MSBuild evaluates after this file, so the condition here
+    is only Exists(): projects with IsPackable=false simply never run `pack`.
+  -->
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)README.md')">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+</Project>

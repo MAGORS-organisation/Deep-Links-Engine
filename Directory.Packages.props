@@ -1,0 +1,134 @@
+<Project>
+
+  <!--
+    Deep Link Engine (DLE) — Central Package Management.
+
+    RULE: a PackageReference in a .csproj MUST NOT carry a Version attribute.
+          Every version lives here and nowhere else.
+
+    RULE: every version below was verified to exist on nuget.org via
+          https://api.nuget.org/v3-flatcontainer/<lowercase-id>/index.json
+          before it was written. Never guess a version.
+
+    Stack reference: docs/zadanie.md §C.2.
+  -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <!-- ====================================================================
+       Data access — EF Core for the control plane, Dapper/Npgsql hot path
+       ADR-004
+       ==================================================================== -->
+  <ItemGroup Label="Persistence">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.11" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageVersion Include="Npgsql" Version="10.0.3" />
+    <PackageVersion Include="Dapper" Version="2.1.79" />
+  </ItemGroup>
+
+  <!-- ====================================================================
+       Caching — HybridCache (L1) over Valkey (L2). ADR-005
+       ==================================================================== -->
+  <ItemGroup Label="Caching">
+    <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="10.9.0" />
+    <PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.11" />
+  </ItemGroup>
+
+  <!-- ====================================================================
+       Microsoft.Extensions building blocks
+       ==================================================================== -->
+  <ItemGroup Label="Extensions">
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.9.0" />
+    <!--
+      Part of the Microsoft.AspNetCore.App shared framework on net10.0. Pinned
+      for any project that needs it outside a web host; referencing it from a
+      web project raises NU1510 (package cannot be pruned).
+    -->
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.9.0" />
+  </ItemGroup>
+
+  <!-- ====================================================================
+       ASP.NET Core — minimal APIs, OpenAPI 3.1, authentication
+       ==================================================================== -->
+  <ItemGroup Label="AspNetCore">
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.FeatureManagement.AspNetCore" Version="4.7.0" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.17.2" />
+    <PackageVersion Include="FluentValidation" Version="12.1.1" />
+  </ItemGroup>
+
+  <!-- ====================================================================
+       Client classification, QR codes, GeoIP
+       ==================================================================== -->
+  <ItemGroup Label="Edge runtime">
+    <PackageVersion Include="QRCoder" Version="1.8.0" />
+    <PackageVersion Include="UAParser" Version="3.1.47" />
+    <PackageVersion Include="MaxMind.GeoIP2" Version="6.1.0" />
+  </ItemGroup>
+
+  <!-- ====================================================================
+       Cryptography — BCL first, BouncyCastle as PQC fallback. ADR-013, §E.5
+       ==================================================================== -->
+  <ItemGroup Label="Cryptography">
+    <PackageVersion Include="BouncyCastle.Cryptography" Version="2.7.0" />
+    <PackageVersion Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
+  </ItemGroup>
+
+  <!-- ====================================================================
+       Analytics — Postgres partitions by default, ClickHouse opt-in. ADR-006
+       ==================================================================== -->
+  <ItemGroup Label="Analytics">
+    <PackageVersion Include="ClickHouse.Client" Version="7.14.0" />
+  </ItemGroup>
+
+  <!-- ====================================================================
+       Observability — ILogger + Serilog sink, OpenTelemetry OTLP. §C.6
+       ==================================================================== -->
+  <ItemGroup Label="Observability">
+    <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.18.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.18.0" />
+  </ItemGroup>
+
+  <!-- ====================================================================
+       Testing — xunit.v3 on Microsoft.Testing.Platform (no VSTest runner).
+
+       Microsoft.NET.Test.Sdk is pinned for tooling that asks for it, but it is
+       deliberately NOT referenced by any test project: MTP mode
+       (TestingPlatformDotnetTestSupport=true) and the VSTest bridge must not be
+       enabled at the same time.
+       ==================================================================== -->
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="xunit.v3" Version="4.0.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.14.0" />
+    <PackageVersion Include="Testcontainers.Redis" Version="4.14.0" />
+    <PackageVersion Include="NSubstitute" Version="6.2.0" />
+    <PackageVersion Include="CsCheck" Version="4.8.0" />
+  </ItemGroup>
+
+  <!-- ====================================================================
+       Local development orchestration — .NET Aspire 13.5
+       The Aspire.AppHost.Sdk MSBuild SDK version is pinned in global.json.
+       ==================================================================== -->
+  <ItemGroup Label="Aspire">
+    <PackageVersion Include="Aspire.Hosting.AppHost" Version="13.5.3" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.5.3" />
+    <PackageVersion Include="Aspire.Hosting.Redis" Version="13.5.3" />
+  </ItemGroup>
+
+</Project>

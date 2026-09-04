@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Control-plane persistence: EF Core DbContext, entity configurations and
+    migrations against PostgreSQL 18. ADR-003 / ADR-004, docs/zadanie.md §B.5.2.
+  -->
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>Dle.Persistence</PackageId>
+    <Description>Deep Link Engine control-plane persistence: EF Core 10 DbContext, entity configurations and PostgreSQL migrations.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dle.Domain\Dle.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Design-time only: `dotnet ef migrations add`. Never flows to consumers. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

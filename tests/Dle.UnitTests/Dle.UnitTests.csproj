@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fast, in-process tests: routing engine determinism (FR-127, TC-105),
+    consent gate matrix (TC-145/TC-146), slug policy (TC-109), base62 and
+    Feistel round-trips, well-known builders, URL policy (TC-161..164).
+    docs/zadanie.md §D.1.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dle.Domain\Dle.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Dle.Crypto\Dle.Crypto.csproj" />
+    <ProjectReference Include="..\..\src\Dle.Edge\Dle.Edge.csproj" />
+    <ProjectReference Include="..\..\src\Dle.Control\Dle.Control.csproj" />
+    <ProjectReference Include="..\..\src\Dle.Persistence\Dle.Persistence.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Property-based testing for the bijective slug permutation and parsers. -->
+    <PackageReference Include="CsCheck" />
+  </ItemGroup>
+
+</Project>

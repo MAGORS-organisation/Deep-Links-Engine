@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Hot-path persistence: hand-written Dapper queries for the resolve path and
+    NpgsqlBinaryImporter (COPY) for batched click/SDK event writes.
+    ADR-004, docs/zadanie.md §C.3.1 and §C.3.2.
+
+    Blocking I/O other than one cache hit and one DB query is forbidden here
+    (SHARED-KERNEL §17.8).
+  -->
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>Dle.Persistence.Fast</PackageId>
+    <Description>Deep Link Engine hot-path data access: Dapper link lookups, HybridCache-backed link store and NpgsqlBinaryImporter batch event writers.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dle.Domain\Dle.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+</Project>

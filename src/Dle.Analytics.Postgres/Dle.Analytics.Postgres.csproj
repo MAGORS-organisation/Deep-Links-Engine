@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Default IClickAnalyticsStore implementation over partitioned PostgreSQL
+    tables (pg_partman, BRIN). ADR-006, docs/zadanie.md §B.5.3.
+  -->
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>Dle.Analytics.Postgres</PackageId>
+    <Description>Deep Link Engine analytics store backed by partitioned PostgreSQL tables. The default provider (Dle:Analytics:Provider = postgres).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dle.Domain\Dle.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+</Project>

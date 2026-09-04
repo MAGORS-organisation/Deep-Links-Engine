@@ -1,0 +1,118 @@
+# ---------------------------------------------------------------------------
+# Deep Link Engine (DLE) — line ending and diff normalisation
+# ---------------------------------------------------------------------------
+
+# Default: let Git decide what is text, and store text with LF in the repository.
+* text=auto eol=lf
+
+# ---------------------------------------------------------------------------
+# Windows-only tooling files that genuinely want CRLF on disk
+# ---------------------------------------------------------------------------
+*.sln           text eol=crlf
+*.slnx          text eol=crlf
+*.slnf          text eol=crlf
+*.csproj        text eol=crlf
+*.fsproj        text eol=crlf
+*.vbproj        text eol=crlf
+*.vcxproj       text eol=crlf
+*.props         text eol=crlf
+*.targets       text eol=crlf
+*.ruleset       text eol=crlf
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+*.ps1           text eol=crlf
+*.psm1          text eol=crlf
+
+# ---------------------------------------------------------------------------
+# Explicit text with LF
+# ---------------------------------------------------------------------------
+*.cs            text eol=lf diff=csharp
+*.razor         text eol=lf diff=html
+*.cshtml        text eol=lf diff=html
+*.md            text eol=lf diff=markdown
+*.json          text eol=lf
+*.jsonc         text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.xml           text eol=lf
+*.config        text eol=lf
+*.editorconfig  text eol=lf
+*.sql           text eol=lf
+*.sh            text eol=lf
+*.ts            text eol=lf
+*.tsx           text eol=lf
+*.js            text eol=lf
+*.jsx           text eol=lf
+*.css           text eol=lf
+*.scss          text eol=lf
+*.html          text eol=lf diff=html
+*.svg           text eol=lf
+*.kt            text eol=lf diff=java
+*.kts           text eol=lf diff=java
+*.swift         text eol=lf diff=swift
+*.gradle        text eol=lf
+Dockerfile      text eol=lf
+*.dockerfile    text eol=lf
+.gitattributes  text eol=lf
+.gitignore      text eol=lf
+LICENSE         text eol=lf
+
+# ---------------------------------------------------------------------------
+# Binary — never normalise, never diff as text
+# ---------------------------------------------------------------------------
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.webp          binary
+*.avif          binary
+*.ico           binary
+*.icns          binary
+*.bmp           binary
+*.tif           binary
+*.tiff          binary
+*.pdf           binary
+*.woff          binary
+*.woff2         binary
+*.ttf           binary
+*.otf           binary
+*.eot           binary
+*.zip           binary
+*.gz            binary
+*.tgz           binary
+*.tar           binary
+*.7z            binary
+*.bz2           binary
+*.xz            binary
+*.dll           binary
+*.exe           binary
+*.so            binary
+*.dylib         binary
+*.pdb           binary
+*.snk           binary
+*.pfx           binary
+*.p12           binary
+*.nupkg         binary
+*.snupkg        binary
+*.jar           binary
+*.keystore      binary
+*.jks           binary
+*.mp4           binary
+*.webm          binary
+
+# MaxMind / DB-IP GeoIP databases
+*.mmdb          binary
+
+# ---------------------------------------------------------------------------
+# Linguist / GitHub statistics
+# ---------------------------------------------------------------------------
+docs/**         linguist-documentation
+*.md            linguist-documentation
+
+# ---------------------------------------------------------------------------
+# Keep generated lock files out of pull request diffs
+# ---------------------------------------------------------------------------
+package-lock.json   -diff linguist-generated
+pnpm-lock.yaml      -diff linguist-generated
+yarn.lock           -diff linguist-generated
+packages.lock.json  -diff linguist-generated

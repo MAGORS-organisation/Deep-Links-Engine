@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    End-to-end tests against real infrastructure started with Testcontainers:
+    PostgreSQL 18 and Valkey. Covers the resolve path, partitioned event writes,
+    cache invalidation and the attribution pipeline. docs/zadanie.md §D.1.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dle.Edge\Dle.Edge.csproj" />
+    <ProjectReference Include="..\..\src\Dle.Control\Dle.Control.csproj" />
+    <ProjectReference Include="..\..\src\Dle.Persistence\Dle.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\Dle.Persistence.Fast\Dle.Persistence.Fast.csproj" />
+    <ProjectReference Include="..\..\src\Dle.Analytics.Postgres\Dle.Analytics.Postgres.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Testcontainers.Redis" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
+  </ItemGroup>
+
+</Project>

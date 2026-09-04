@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Wire-format guards: the generated OpenAPI 3.1 document, the snake_case DTO
+    contract in SHARED-KERNEL §14, the RFC 9457 problem codes and the webhook
+    payload schema (docs/zadanie.md §B.7.4). A breaking change to a published
+    contract must fail here before it reaches an SDK.
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dle.Edge\Dle.Edge.csproj" />
+    <ProjectReference Include="..\..\src\Dle.Control\Dle.Control.csproj" />
+    <ProjectReference Include="..\..\src\Dle.Domain\Dle.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+</Project>
