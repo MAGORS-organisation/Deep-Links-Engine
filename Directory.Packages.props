@@ -44,7 +44,19 @@
        ==================================================================== -->
   <ItemGroup Label="Extensions">
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.9.0" />
+    <!--
+      Needed by the framework-independent class libraries (Dle.Crypto and the
+      persistence/analytics providers) so that each module can expose its own
+      Add<Module>(IServiceCollection, IConfiguration) extension without taking a
+      dependency on the ASP.NET Core shared framework. SHARED-KERNEL section 15.
+    -->
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.11" />
     <!--
       Part of the Microsoft.AspNetCore.App shared framework on net10.0. Pinned
       for any project that needs it outside a web host; referencing it from a
@@ -88,6 +100,8 @@
        ==================================================================== -->
   <ItemGroup Label="Analytics">
     <PackageVersion Include="ClickHouse.Client" Version="7.14.0" />
+    <!-- FR-203 report export. Apache-2.0, pure managed, no native dependency. -->
+    <PackageVersion Include="Parquet.Net" Version="6.1.0" />
   </ItemGroup>
 
   <!-- ====================================================================

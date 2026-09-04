@@ -3,6 +3,11 @@
   <!--
     Opt-in IClickAnalyticsStore implementation over ClickHouse, selected with
     Dle:Analytics:Provider = clickhouse. ADR-006.
+
+    Nothing in this assembly runs unless AddDleAnalytics selects the ClickHouse
+    provider: there is no hosted service, no module initializer and no eagerly
+    constructed connection, so an installation on the default PostgreSQL
+    provider never pays for it.
   -->
 
   <PropertyGroup>
@@ -18,6 +23,18 @@
   <ItemGroup>
     <PackageReference Include="ClickHouse.Client" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+  </ItemGroup>
+
+  <ItemGroup Label="Embedded DDL">
+    <EmbeddedResource Include="Sql\*.sql">
+      <LogicalName>Dle.Analytics.ClickHouse.Sql.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dle.UnitTests" />
+    <InternalsVisibleTo Include="Dle.IntegrationTests" />
   </ItemGroup>
 
 </Project>

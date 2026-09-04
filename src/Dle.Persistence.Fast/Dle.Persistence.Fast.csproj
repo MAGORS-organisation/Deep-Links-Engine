@@ -7,6 +7,13 @@
 
     Blocking I/O other than one cache hit and one DB query is forbidden here
     (SHARED-KERNEL §17.8).
+
+    This assembly is kept ahead-of-time friendly on purpose (ADR-012): the edge
+    resolver is the component where AOT pays off, and one reflective dependency in
+    its data access would close that door. Consequences visible below and in the
+    code: no reflective configuration binder, no reflective JSON, and every row
+    mapped by hand from an NpgsqlDataReader rather than by Dapper's IL-emitting
+    materializer, which is not AOT-safe.
   -->
 
   <PropertyGroup>
@@ -20,10 +27,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!--
+      Dapper is the ADR-004 hot-path stack alongside raw Npgsql and stays referenced
+      for the shaped aggregate queries that belong here. Its object materializer is
+      deliberately not used: it emits IL at run time, so it would forfeit the AOT
+      profile above. Reads therefore go through NpgsqlCommand and are mapped by
+      ordinal in Links/, WellKnown/ and Attribution/.
+    -->
     <PackageReference Include="Dapper" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 

@@ -3,6 +3,15 @@
   <!--
     Default IClickAnalyticsStore implementation over partitioned PostgreSQL
     tables (pg_partman, BRIN). ADR-006, docs/zadanie.md §B.5.3.
+
+    Why this project references Dle.Analytics.ClickHouse:
+    SHARED-KERNEL §15 fixes the composition surface: Dle.Control/Program.cs calls
+    AddDleAnalytics and nothing else, so the single extension has to be able to
+    hand back either provider named by Dle:Analytics:Provider. Selecting the
+    opt-in provider without a compile-time reference would mean reflection over
+    an assembly name, which is neither verifiable at build time nor trimmable.
+    The reference costs a NuGet dependency; it costs no runtime work, because no
+    ClickHouse type is touched unless the provider is actually selected.
   -->
 
   <PropertyGroup>
@@ -13,12 +22,28 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Dle.Domain\Dle.Domain.csproj" />
+    <ProjectReference Include="..\Dle.Analytics.ClickHouse\Dle.Analytics.ClickHouse.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" />
     <PackageReference Include="Npgsql" />
+    <PackageReference Include="Parquet.Net" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+  </ItemGroup>
+
+  <ItemGroup Label="Embedded DDL and rollup maintenance statements">
+    <EmbeddedResource Include="Sql\*.sql">
+      <LogicalName>Dle.Analytics.Postgres.Sql.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dle.UnitTests" />
+    <InternalsVisibleTo Include="Dle.IntegrationTests" />
   </ItemGroup>
 
 </Project>
