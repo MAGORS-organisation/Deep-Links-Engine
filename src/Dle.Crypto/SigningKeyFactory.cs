@@ -184,8 +184,11 @@ public static class SigningKeyFactory
     /// <param name="options">The configured key.</param>
     /// <returns>The parsed material.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
-    /// <exception cref="InvalidOperationException">A key field is not valid base64, or the
-    /// algorithm is not implemented here.</exception>
+    /// <exception cref="InvalidOperationException">A key field is not valid base64, or the key
+    /// material does not match the algorithm.</exception>
+    /// <exception cref="NotSupportedException">The algorithm is not implemented here. Consistent
+    /// with <see cref="Generate"/> and <see cref="CreateSigner"/>, which answer the same condition
+    /// the same way.</exception>
     public static SigningKeyMaterial FromOptions(SigningKeyOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Dle.Domain.Contracts;
 
 /// <summary>
@@ -58,4 +60,33 @@ public static class ProblemCodes
 
     /// <summary>A dependency the request needs is unavailable; the caller may retry.</summary>
     public const string DependencyUnavailable = Base + "dependency-unavailable";
+
+    /// <summary>
+    /// Every identifier declared above, in declaration order.
+    /// </summary>
+    /// <remarks>
+    /// The set exists so that the published OpenAPI document can enumerate the codes an integrator
+    /// may have to branch on (§B.7.3). Without it the identifiers would be discoverable only by
+    /// reading this file or by provoking each failure against a running server. A new code is added
+    /// here in the same change that declares it; nothing else in the product is allowed to keep a
+    /// second copy of the list.
+    /// </remarks>
+    public static readonly ImmutableArray<string> All =
+    [
+        ValidationFailed,
+        SlugTaken,
+        SlugInvalid,
+        UnsafeTarget,
+        RateLimited,
+        MissingDefaultRule,
+        InvalidRoutingRules,
+        DomainNotVerified,
+        DomainTaken,
+        IdempotencyConflict,
+        Unauthorized,
+        Forbidden,
+        ClaimCodeInvalid,
+        LinkQuarantined,
+        DependencyUnavailable,
+    ];
 }

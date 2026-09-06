@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DLE webhook payload: attribution.created",
+  "description": "An install was attributed to a click (FR-204). Envelope per docs/zadanie.md B.7.4.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event",
+    "id",
+    "occurred_at",
+    "data"
+  ],
+  "properties": {
+    "event": {
+      "const": "attribution.created",
+      "description": "Event type. Fixed for this schema."
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Delivery identifier the receiver uses for replay protection."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the underlying event happened, ISO 8601 with an offset."
+    },
+    "data": {
+      "type": "object",
+      "description": "Event payload. Every member is a string: the envelope is a flat string map on purpose, so a receiver never has to guess at a type it was not told about.",
+      "required": [
+        "install_id",
+        "app_id",
+        "match_type",
+        "confidence"
+      ],
+      "properties": {
+        "install_id": {
+          "type": "string",
+          "description": "The SDK-generated identifier of the installation."
+        },
+        "app_id": {
+          "type": "string",
+          "description": "Identifier of the application the install belongs to.",
+          "format": "uuid"
+        },
+        "match_type": {
+          "type": "string",
+          "description": "Strategy that produced the match.",
+          "enum": [
+            "install_referrer",
+            "login",
+            "claim_code",
+            "probabilistic",
+            "direct_open",
+            "none"
+          ]
+        },
+        "confidence": {
+          "type": "string",
+          "description": "Confidence, two decimal places. Exactly 1.00 for a deterministic strategy.",
+          "pattern": "^[01]\\.[0-9]{2}$"
+        },
+        "click_id": {
+          "type": "string",
+          "description": "Identifier of the matched click; absent when nothing matched."
+        },
+        "link_id": {
+          "type": "string",
+          "description": "Identifier of the matched link, as a decimal string because it is a 64 bit Snowflake.",
+          "pattern": "^-?[0-9]+$"
+        }
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}

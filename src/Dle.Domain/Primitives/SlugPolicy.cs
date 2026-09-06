@@ -15,12 +15,12 @@ namespace Dle.Domain.Primitives;
 /// tenant's link on the same domain.
 /// </para>
 /// <para>
-/// Compatibility normalisation (NFKC) still runs first, so where the runtime performs it, full width
-/// and ligature spellings of characters that <em>are</em> allowed collapse to their canonical ASCII
-/// form before validation. The product builds with <c>InvariantGlobalization</c> enabled, where
-/// <see cref="string.Normalize(System.Text.NormalizationForm)"/> is a no-op for non ASCII input; such
-/// spellings are then rejected rather than folded, which is the safe direction and keeps the outcome
-/// identical under both configurations for every character this policy accepts.
+/// Compatibility normalisation (NFKC) runs first, so full width and ligature spellings of characters
+/// that <em>are</em> allowed collapse to their canonical ASCII form before validation. The product
+/// builds with <c>InvariantGlobalization</c> enabled, where
+/// <see cref="string.Normalize(System.Text.NormalizationForm)"/> is a silent no-op, so the fold is
+/// carried out by <see cref="CompatibilityFold"/> rather than by the runtime. The outcome is
+/// therefore identical with and without ICU.
 /// </para>
 /// </remarks>
 public static class SlugPolicy
@@ -82,6 +82,11 @@ public static class SlugPolicy
             // Unpaired surrogate or otherwise invalid UTF-16.
             return false;
         }
+
+        // Under InvariantGlobalization the call above returned `raw` untouched. Fold the
+        // compatibility characters that matter to this allowlist ourselves so the NFKC step
+        // SHARED-KERNEL §1 requires happens whether or not the runtime carries ICU.
+        normalized = CompatibilityFold.Apply(normalized);
 
         normalized = normalized.Trim().ToLowerInvariant();
 

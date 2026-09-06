@@ -31,9 +31,14 @@ public sealed class KeyRing : IKeyRing, IDisposable
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<KeyRing> _logger;
     private readonly CryptoOptions _options;
-    private readonly List<SigningKeyMaterial> _configuredKeys;
     private readonly SigningKeyMaterial _fallbackSigningKey;
     private readonly SemaphoreSlim _rotationLock = new(1, 1);
+
+    /// <summary>
+    /// The keys that came from configuration, including the derived bootstrap key. Swapped as a
+    /// whole rather than mutated, because <see cref="RefreshAsync"/> enumerates it without a lock.
+    /// </summary>
+    private SigningKeyMaterial[] _configuredKeys;
 
     private KeyRingSnapshot _snapshot;
 
@@ -64,17 +69,17 @@ public sealed class KeyRing : IKeyRing, IDisposable
         _logger = logger;
 
         DateTimeOffset now = timeProvider.GetUtcNow();
-        _configuredKeys = [];
+        List<SigningKeyMaterial> configured = [];
 
         foreach (SigningKeyOptions key in _options.Keys)
         {
             if (string.Equals(key.Purpose, SigningKeyPurposes.Token, StringComparison.Ordinal))
             {
-                _configuredKeys.Add(SigningKeyFactory.FromOptions(key));
+                configured.Add(SigningKeyFactory.FromOptions(key));
             }
         }
 
-        SigningKeyMaterial? configuredSigner = _configuredKeys.Find(k =>
+        SigningKeyMaterial? configuredSigner = configured.Find(k =>
             string.Equals(k.AlgorithmId, _options.SigningAlgorithm, StringComparison.Ordinal) &&
             k.PrivateKey.Length > 0 &&
             k.IsValidAt(now));
@@ -85,9 +90,10 @@ public sealed class KeyRing : IKeyRing, IDisposable
 
         if (configuredSigner is null)
         {
-            _configuredKeys.Add(_fallbackSigningKey);
+            configured.Add(_fallbackSigningKey);
         }
 
+        _configuredKeys = [.. configured];
         _snapshot = Build(_configuredKeys, now);
     }
 
@@ -126,7 +132,7 @@ public sealed class KeyRing : IKeyRing, IDisposable
         // taken over. Dropping them would invalidate every token they signed while the store was
         // still empty, and would silently disable a key an operator put in configuration on
         // purpose. The store wins on a shared identifier, because it is the durable source.
-        foreach (SigningKeyMaterial configured in _configuredKeys)
+        foreach (SigningKeyMaterial configured in Volatile.Read(ref _configuredKeys))
         {
             if (!merged.Exists(k => string.Equals(k.Kid, configured.Kid, StringComparison.Ordinal)))
             {
@@ -163,6 +169,14 @@ public sealed class KeyRing : IKeyRing, IDisposable
                 // The outgoing key keeps verifying for the whole overlap. Closing its window now
                 // would invalidate signatures made seconds ago, which is exactly what S-12 forbids.
                 await _store.RetireAsync(outgoingKid, outgoingNotAfter, ct);
+
+                // The outgoing key may never have reached the store: the derived bootstrap key and
+                // anything under Dle:Crypto:Keys live in configuration only, so the call above
+                // matched no row. Those copies also have to be retired here, otherwise RefreshAsync
+                // merges the original — unbounded — window straight back in and the key stays
+                // acceptable for ever, which would make rotating away from a leaked bootstrap key
+                // impossible (S-12).
+                RetireConfiguredKey(outgoingKid, outgoingNotAfter);
             }
 
             await RefreshAsync(ct);
@@ -184,6 +198,32 @@ public sealed class KeyRing : IKeyRing, IDisposable
         {
             _rotationLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Closes the acceptance window of a configuration supplied key, if the rotated key was one.
+    /// </summary>
+    /// <param name="kid">Identifier of the outgoing key.</param>
+    /// <param name="notAfter">Instant the key stops being accepted, always in the future.</param>
+    /// <remarks>
+    /// Called under the rotation lock, and it replaces the array rather than editing it in place so
+    /// that a <see cref="RefreshAsync"/> running on another thread keeps enumerating a stable
+    /// snapshot.
+    /// </remarks>
+    private void RetireConfiguredKey(string kid, DateTimeOffset notAfter)
+    {
+        SigningKeyMaterial[] current = Volatile.Read(ref _configuredKeys);
+        int index = Array.FindIndex(current, k => string.Equals(k.Kid, kid, StringComparison.Ordinal));
+
+        if (index < 0)
+        {
+            return;
+        }
+
+        SigningKeyMaterial[] replacement = [.. current];
+        replacement[index] = current[index].Retire(notAfter);
+
+        Volatile.Write(ref _configuredKeys, replacement);
     }
 
     /// <summary>

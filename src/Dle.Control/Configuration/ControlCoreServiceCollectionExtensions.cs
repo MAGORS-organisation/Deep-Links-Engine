@@ -228,7 +228,63 @@ public static class ControlCoreServiceCollectionExtensions
             });
 
             options.AddDocumentTransformer<DleSecuritySchemeTransformer>();
+            options.AddDocumentTransformer<DleProblemCodeTransformer>();
         });
+}
+
+/// <summary>
+/// Publishes the stable RFC 9457 problem type identifiers on the document (§B.7.3).
+/// </summary>
+/// <remarks>
+/// <para>
+/// <see cref="ProblemCodes"/> calls these strings part of the public API surface, and an integrator
+/// branches on them at least as often as on a status code. Naming only the base URI in the document
+/// description left the codes themselves discoverable in two ways only: reading the server's source,
+/// or provoking each failure against a running system. This transformer writes the list into the
+/// <c>type</c> member of the published <c>ProblemDetails</c> schema, which is where a reader looks
+/// for it.
+/// </para>
+/// <para>
+/// They are published as <c>examples</c> and prose rather than as an <c>enum</c> on purpose. The
+/// contract permits a new code to be added, and an enumeration would turn every such addition into a
+/// breaking change for strict client validators.
+/// </para>
+/// </remarks>
+internal sealed class DleProblemCodeTransformer : Microsoft.AspNetCore.OpenApi.IOpenApiDocumentTransformer
+{
+    /// <summary>Name the framework gives the problem document schema.</summary>
+    private const string SchemaName = "ProblemDetails";
+
+    /// <inheritdoc />
+    public Task TransformAsync(
+        Microsoft.OpenApi.OpenApiDocument document,
+        Microsoft.AspNetCore.OpenApi.OpenApiDocumentTransformerContext context,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+
+        string catalogue = string.Join(", ", ProblemCodes.All);
+
+        if (document.Components?.Schemas?.TryGetValue(SchemaName, out Microsoft.OpenApi.IOpenApiSchema? schema) == true
+            && schema is Microsoft.OpenApi.OpenApiSchema problem
+            && problem.Properties?.TryGetValue("type", out Microsoft.OpenApi.IOpenApiSchema? member) == true
+            && member is Microsoft.OpenApi.OpenApiSchema typeMember)
+        {
+            typeMember.Description =
+                "A stable identifier for the kind of failure, and the member to branch on. One of: "
+                + catalogue
+                + ". A code may be added in a minor version; an existing one never changes meaning.";
+
+            typeMember.Examples = [.. ProblemCodes.All.Select(code => (System.Text.Json.Nodes.JsonNode)code)];
+        }
+
+        // Also in the description, so the catalogue survives a change to how the framework names or
+        // shapes the problem schema.
+        document.Info ??= new Microsoft.OpenApi.OpenApiInfo();
+        document.Info.Description += " The problem type identifiers are: " + catalogue + ".";
+
+        return Task.CompletedTask;
+    }
 }
 
 /// <summary>

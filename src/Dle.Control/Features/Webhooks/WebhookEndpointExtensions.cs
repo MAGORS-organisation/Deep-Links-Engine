@@ -60,7 +60,9 @@ public static class WebhookEndpointExtensions
             .WithName("ListWebhooks")
             .WithSummary("Lists the tenant's webhook subscriptions.")
             .WithDescription("The shared secret is never returned; it is shown once, at creation.")
-            .Produces<List<WebhookResponse>>(StatusCodes.Status200OK, "application/json");
+            .Produces<List<WebhookResponse>>(StatusCodes.Status200OK, "application/json")
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
 
         group.MapPost("", CreateAsync)
             .RequireAuthorization(DlePolicies.KeysWrite)
@@ -73,6 +75,8 @@ public static class WebhookEndpointExtensions
             .Accepts<CreateWebhookRequest>("application/json")
             .Produces<WebhookCreatedResponse>(StatusCodes.Status201Created, "application/json")
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
         group.MapDelete("/{id:guid}", static (
@@ -89,6 +93,8 @@ public static class WebhookEndpointExtensions
                 "Deactivation rather than deletion: the delivery history stays, because it is the "
                 + "only answer to a later question about what was and was not sent.")
             .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapPost("/{id:guid}/test", static (
@@ -107,6 +113,8 @@ public static class WebhookEndpointExtensions
                 + "worker uses. Synchronous, so the integrator learns immediately whether the "
                 + "endpoint answered and what it answered.")
             .Produces<TestWebhookResponse>(StatusCodes.Status200OK, "application/json")
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapGet("/deliveries", static (
@@ -129,7 +137,9 @@ public static class WebhookEndpointExtensions
             .WithDescription(
                 "The integrator's debugger: status, attempt count, response code and error for the "
                 + "recent deliveries, optionally with the exact body that was signed and sent.")
-            .Produces<List<WebhookDeliveryResponse>>(StatusCodes.Status200OK, "application/json");
+            .Produces<List<WebhookDeliveryResponse>>(StatusCodes.Status200OK, "application/json")
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
 
         return app;
     }

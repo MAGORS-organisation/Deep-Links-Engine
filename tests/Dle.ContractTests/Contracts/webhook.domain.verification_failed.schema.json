@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DLE webhook payload: domain.verification_failed",
+  "description": "A domain's association files stopped verifying (FR-143, T-04). Envelope per docs/zadanie.md B.7.4.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event",
+    "id",
+    "occurred_at",
+    "data"
+  ],
+  "properties": {
+    "event": {
+      "const": "domain.verification_failed",
+      "description": "Event type. Fixed for this schema."
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Delivery identifier the receiver uses for replay protection."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the underlying event happened, ISO 8601 with an offset."
+    },
+    "data": {
+      "type": "object",
+      "description": "Event payload. Every member is a string: the envelope is a flat string map on purpose, so a receiver never has to guess at a type it was not told about.",
+      "required": [
+        "domain_id",
+        "host",
+        "takeover_risk"
+      ],
+      "properties": {
+        "domain_id": {
+          "type": "string",
+          "description": "Identifier of the domain.",
+          "format": "uuid"
+        },
+        "host": {
+          "type": "string",
+          "description": "The host whose association files failed."
+        },
+        "takeover_risk": {
+          "type": "string",
+          "description": "Whether the failure looks like a dangling CNAME (T-04).",
+          "enum": [
+            "true",
+            "false"
+          ]
+        },
+        "dns": {
+          "type": "string",
+          "description": "Status of the DNS check."
+        },
+        "tls": {
+          "type": "string",
+          "description": "Status of the TLS check."
+        },
+        "aasa": {
+          "type": "string",
+          "description": "Status of the Apple App Site Association check."
+        },
+        "assetlinks": {
+          "type": "string",
+          "description": "Status of the Digital Asset Links check."
+        }
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}
