@@ -1,0 +1,119 @@
+.figure {
+  margin: 0;
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.grid {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+}
+
+.tick {
+  fill: var(--fg-faint);
+  font-size: 11px;
+  font-family: var(--font-sans);
+}
+
+.legend {
+  display: flex;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  font-size: var(--fs-xs);
+  color: var(--fg-muted);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+
+.bars {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.bars td,
+.bars th {
+  padding: 3px 0;
+  vertical-align: middle;
+}
+
+.barLabel {
+  text-align: left;
+  font-weight: 500;
+  width: 34%;
+  padding-right: var(--sp-3) !important;
+  max-width: 0;
+}
+
+.barCell {
+  width: 46%;
+}
+
+.barTrack {
+  display: block;
+  height: 10px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  background: var(--chart-1);
+  border-radius: 3px;
+  min-width: 2px;
+}
+
+.barValue {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  padding-left: var(--sp-3) !important;
+  white-space: nowrap;
+}
+
+.barSecondary {
+  color: var(--fg-faint);
+  font-size: var(--fs-xs);
+}
+
+.split {
+  display: grid;
+  gap: var(--sp-3);
+}
+
+.splitSvg {
+  width: 100%;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: block;
+}
+
+.splitLegend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  font-size: var(--fs-sm);
+}

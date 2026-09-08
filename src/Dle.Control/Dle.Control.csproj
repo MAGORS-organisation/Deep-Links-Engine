@@ -91,4 +91,29 @@
     <InternalsVisibleTo Include="Dle.SecurityTests" />
   </ItemGroup>
 
+  <!--
+    The Admin SPA (src/Dle.Admin.Web, React + Vite) builds to its own dist/ folder and is copied
+    into wwwroot/admin/ here, where the host serves it with SPA fallback under /admin/.
+
+    The copy is conditional on the SPA having been built, so a .NET-only build — CI without Node,
+    a contributor without npm, the Docker build stage that runs before the SPA stage — still
+    succeeds and still serves the committed wwwroot/index.html fallback console. wwwroot/admin/
+    is build output and is git-ignored; the committed index.html is never touched by this target.
+  -->
+  <PropertyGroup>
+    <AdminSpaDist>$(MSBuildProjectDirectory)\..\Dle.Admin.Web\dist\</AdminSpaDist>
+    <AdminSpaTarget>$(MSBuildProjectDirectory)\wwwroot\admin\</AdminSpaTarget>
+  </PropertyGroup>
+
+  <Target Name="CopyAdminSpa" AfterTargets="Build" Condition="Exists('$(AdminSpaDist)index.html')">
+    <ItemGroup>
+      <AdminSpaFiles Include="$(AdminSpaDist)**\*" />
+    </ItemGroup>
+    <RemoveDir Directories="$(AdminSpaTarget)" />
+    <Copy SourceFiles="@(AdminSpaFiles)"
+          DestinationFiles="@(AdminSpaFiles->'$(AdminSpaTarget)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="CopyAdminSpa: copied @(AdminSpaFiles->Count()) file(s) to wwwroot/admin/" />
+  </Target>
+
 </Project>

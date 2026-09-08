@@ -270,3 +270,6 @@ $RECYCLE.BIN/
 .directory
 .Trash-*
 .nfs*
+
+# Admin SPA build output copied by the CopyAdminSpa MSBuild target (src/Dle.Admin.Web/dist -> here)
+src/Dle.Control/wwwroot/admin/
