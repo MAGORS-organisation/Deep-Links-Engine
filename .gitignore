@@ -273,3 +273,13 @@ $RECYCLE.BIN/
 
 # Admin SPA build output copied by the CopyAdminSpa MSBuild target (src/Dle.Admin.Web/dist -> here)
 src/Dle.Control/wwwroot/admin/
+
+# Mobile SDK build output (nothing here compiles in CI without the platform toolchains)
+sdk/android/.gradle/
+sdk/android/**/build/
+sdk/android/local.properties
+sdk/android/.kotlin/
+sdk/ios/.build/
+sdk/ios/.swiftpm/
+sdk/ios/**/xcuserdata/
+sdk/ios/**/*.xcuserstate
