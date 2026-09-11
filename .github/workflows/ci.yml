@@ -1,0 +1,162 @@
+# =============================================================================
+# CI — build, analyzers, format, the four test suites, coverage gate (docs/zadanie.md §C.8 "PR").
+#
+#   restore (locked)  →  build -warnaserror  →  dotnet format --verify-no-changes
+#   →  Dle.UnitTests  →  Dle.ContractTests  →  Dle.SecurityTests  →  Dle.IntegrationTests
+#   →  TRX summaries  →  merged Cobertura  →  coverage gate  →  TestResults artefact
+#
+# Test hosts: xunit.v3 v4 in-process runner (NOT VSTest, NOT `dotnet test`). Each suite is an
+# executable run with `dotnet run --project … -- <runner options>`; the runner's TRX switch is
+# `-result-trx <file>` (verified against `--help`: `--report-trx` is rejected as unknown).
+#
+# Integration tests use Testcontainers (postgres:18, valkey:8). Without Docker they SKIP, which
+# would silently turn 97 tests into 0 — DLE_TESTS_REQUIRE_DOCKER=1 makes that a loud failure.
+#
+# Coverage: dotnet-coverage (dynamic instrumentation, Linux x64) wraps each suite — the child
+# command is passed as ONE quoted string, the form the tool's documentation uses — the four
+# Cobertura files are merged and .github/scripts/coverage-gate.py enforces
+#   domain tier (Dle.Domain, Dle.Crypto) >= 90 %   HARD
+#   overall (all Dle.* product assemblies) >= 70 %  WARNING — see the step for why.
+#
+# Also callable as a reusable workflow (release.yml runs it before building images).
+# =============================================================================
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [develop, master]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  DOTNET_GENERATE_ASPNET_CERTIFICATE: "false"
+  NUGET_XMLDOC_MODE: skip
+  # Directory.Build.props: CI=true (or GITHUB_ACTIONS) turns on ContinuousIntegrationBuild and
+  # RestoreLockedMode for every project that has packages.lock.json — all of them.
+  CI: "true"
+
+jobs:
+  build-test:
+    name: Build, analyze, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      RESULTS_DIR: ${{ github.workspace }}/TestResults
+      DLE_TESTS_REQUIRE_DOCKER: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          # global.json pins 10.0.400 with rollForward=latestFeature; any 10.0.x >= 400 satisfies it.
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Restore (locked mode, solution level)
+        # Locked restore is only verified green at SOLUTION level; per-project restores are not.
+        run: dotnet restore Dle.sln --locked-mode
+
+      - name: Build (warnings are errors)
+        id: build
+        run: dotnet build Dle.sln --configuration Release --no-restore -warnaserror
+
+      - name: Format check
+        # §C.7 DoD 2: `dotnet format` + analyzers. Analyzers already ran in the build above.
+        run: dotnet format Dle.sln --verify-no-changes --no-restore
+
+      - name: Install dotnet-coverage
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: dotnet tool install --global dotnet-coverage --version 18.11.2
+
+      - name: Pre-pull Testcontainers images
+        # Pulled here, not inside the first test that needs them, so the pull time is not charged
+        # to a test's timeout and the log shows a pull failure for what it is.
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          docker pull postgres:18
+          docker pull valkey/valkey:8
+
+      # ---- test suites -------------------------------------------------------------------------
+      # Each suite runs even when an earlier one failed (the job still fails at the end), so one
+      # red suite does not hide the state of the other three. Coverage is collected per suite and
+      # merged afterwards.
+
+      - name: Dle.UnitTests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          mkdir -p "$RESULTS_DIR/coverage"
+          dotnet-coverage collect --output-format cobertura --output "$RESULTS_DIR/coverage/Dle.UnitTests.cobertura.xml" \
+            "dotnet run --project tests/Dle.UnitTests --configuration Release --no-build -- -result-trx $RESULTS_DIR/Dle.UnitTests.trx"
+
+      - name: Dle.ContractTests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          dotnet-coverage collect --output-format cobertura --output "$RESULTS_DIR/coverage/Dle.ContractTests.cobertura.xml" \
+            "dotnet run --project tests/Dle.ContractTests --configuration Release --no-build -- -result-trx $RESULTS_DIR/Dle.ContractTests.trx"
+
+      - name: Dle.SecurityTests
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          dotnet-coverage collect --output-format cobertura --output "$RESULTS_DIR/coverage/Dle.SecurityTests.cobertura.xml" \
+            "dotnet run --project tests/Dle.SecurityTests --configuration Release --no-build -- -result-trx $RESULTS_DIR/Dle.SecurityTests.trx"
+
+      - name: Dle.IntegrationTests (Testcontainers, Docker required)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          dotnet-coverage collect --output-format cobertura --output "$RESULTS_DIR/coverage/Dle.IntegrationTests.cobertura.xml" \
+            "dotnet run --project tests/Dle.IntegrationTests --configuration Release --no-build -- -result-trx $RESULTS_DIR/Dle.IntegrationTests.trx"
+
+      # ---- reporting ---------------------------------------------------------------------------
+
+      - name: Test summaries
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          for suite in Dle.UnitTests Dle.ContractTests Dle.SecurityTests Dle.IntegrationTests; do
+            python3 .github/scripts/trx-summary.py "$RESULTS_DIR/$suite.trx" --name "$suite" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Merge coverage
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          dotnet-coverage merge --output-format cobertura --output "$RESULTS_DIR/coverage/merged.cobertura.xml" \
+            "$RESULTS_DIR"/coverage/Dle.*.cobertura.xml
+
+      - name: Coverage gate
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        # Domain tier (Dle.Domain, Dle.Crypto) >= 90 % is a HARD gate.
+        # Overall is a WARNING, not a failure: the product is at ~47 % against the 70 % target
+        # (§D.1). Hosts (Dle.Edge, Dle.Control) and the persistence layer are covered mostly by the
+        # integration suite, which is small so far. Flip --overall-mode to `fail` once the number
+        # is above 70 % on develop — a gate that fails every PR from day one gets bypassed, not
+        # honoured.
+        run: |
+          python3 .github/scripts/coverage-gate.py "$RESULTS_DIR/coverage/merged.cobertura.xml" \
+            --domain-threshold 90 --overall-threshold 70 \
+            --domain-assemblies Dle.Domain,Dle.Crypto \
+            --overall-mode warn \
+            --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload TestResults
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: TestResults-${{ github.run_id }}
+          path: TestResults/
+          if-no-files-found: warn
+          retention-days: 14

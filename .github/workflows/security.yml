@@ -1,0 +1,375 @@
+# =============================================================================
+# Security — SCA, licence policy, image and filesystem scanning, ZAP baseline.
+# docs/zadanie.md §C.8 (SCA, licenčná kontrola, ZAP baseline), §E.8 S-04 / S-05, NFR-13, NFR-18, T-14.
+#
+#   nuget-vulnerabilities  `dotnet list package --vulnerable` via .github/scripts — HARD gate (>= High)
+#   npm-audit              sdk/web and src/Dle.Admin.Web — HARD gate (>= high)
+#   licences               nuget-license (NuGet) + license-checker (npm) against an allow-list — HARD
+#   trivy-fs               lock files + secrets (HARD, CRITICAL/HIGH, fixed only) + misconfig (report)
+#   trivy-image            both Dockerfiles built (load: true) and scanned — HARD, CRITICAL/HIGH, fixed only
+#   zap-baseline           compose stack up (edge :8080 through the dev override) → OWASP ZAP baseline
+#
+# Reusable: nightly.yml calls it with sca-only=true (dependency feeds only, no image builds, no ZAP).
+# =============================================================================
+name: Security
+
+on:
+  pull_request:
+  push:
+    branches: [develop, master]
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      sca-only:
+        description: Run only the dependency (SCA) and licence gates; skip image builds and ZAP.
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  NUGET_XMLDOC_MODE: skip
+  CI: "true"
+
+jobs:
+  # ---------------------------------------------------------------------------------------------
+  nuget-vulnerabilities:
+    name: NuGet vulnerabilities (S-05, hard gate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Restore (locked mode)
+        run: dotnet restore Dle.sln --locked-mode
+
+      - name: Known-vulnerable packages, direct and transitive
+        # Fails on High or Critical; anything lower is a warning in the step summary.
+        run: python3 .github/scripts/nuget-vulnerabilities.py Dle.sln --fail-on High --summary "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------------------------
+  npm-audit:
+    name: npm audit (${{ matrix.package }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [sdk/web, src/Dle.Admin.Web]
+    defaults:
+      run:
+        working-directory: ${{ matrix.package }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 22
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: ${{ matrix.package }}/package-lock.json
+
+      - name: Install (lock file, no lifecycle scripts)
+        run: npm ci --ignore-scripts
+
+      - name: npm audit (high or worse fails)
+        run: npm audit --audit-level=high
+
+  # ---------------------------------------------------------------------------------------------
+  licences:
+    name: Licence policy (NFR-18)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # The project is MIT. Allowed: permissive licences compatible with redistributing under MIT.
+      # Semicolon-separated because both tools below accept exactly that shape.
+      ALLOWED_LICENCES: "MIT;MIT-0;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;MS-PL;PostgreSQL;Unlicense;CC0-1.0;Zlib;BSL-1.0;BlueOak-1.0.0;Python-2.0;CC-BY-4.0;W3C"
+      # Copyleft / source-available / unknown: never acceptable, at any depth, dev tooling included.
+      FORBIDDEN_LICENCES: "GPL-1.0;GPL-2.0;GPL-3.0;GPL-2.0-only;GPL-3.0-only;GPL-2.0-or-later;GPL-3.0-or-later;AGPL-1.0;AGPL-3.0;AGPL-3.0-only;AGPL-3.0-or-later;LGPL-2.0;LGPL-2.1;LGPL-3.0;LGPL-2.1-only;LGPL-3.0-only;LGPL-2.1-or-later;LGPL-3.0-or-later;SSPL-1.0;EUPL-1.1;EUPL-1.2;BUSL-1.1;Elastic-2.0;CC-BY-NC-4.0;CC-BY-SA-4.0;UNLICENSED;UNKNOWN"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Restore (locked mode)
+        # nuget-license reads project.assets.json; it does not restore on its own.
+        run: dotnet restore Dle.sln --locked-mode
+
+      - name: Install nuget-license
+        # Successor of dotnet-project-licenses (same author, that tool is deprecated).
+        run: dotnet tool install --global nuget-license --version 4.0.17
+
+      - name: NuGet licences (direct + transitive) against the allow-list
+        run: |
+          rc=0
+          nuget-license --input Dle.sln --include-transitive \
+            --allowed-license-types "$ALLOWED_LICENCES" \
+            --output Markdown --file-output licences-nuget.md || rc=$?
+          { echo "### NuGet licences (exit $rc)"; echo; cat licences-nuget.md 2>/dev/null || echo "_no report written_"; echo; } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
+
+      - name: Set up Node 22
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: npm licences (sdk/web, src/Dle.Admin.Web)
+        # license-checker-rseidelsohn is the maintained fork of davglass/license-checker with the
+        # same CLI (--onlyAllow / --failOn take a semicolon-separated list).
+        #   production tree  → must be IN the allow-list (these bytes ship to customers / operators)
+        #   whole tree       → must not contain anything on the forbidden list (dev tooling included)
+        run: |
+          set -euo pipefail
+          for dir in sdk/web src/Dle.Admin.Web; do
+            echo "::group::$dir"
+            ( cd "$dir"
+              npm ci --ignore-scripts
+              npx --yes license-checker-rseidelsohn@5.0.1 --production --excludePrivatePackages --onlyAllow "$ALLOWED_LICENCES" --summary
+              npx --yes license-checker-rseidelsohn@5.0.1 --excludePrivatePackages --failOn "$FORBIDDEN_LICENCES" --summary
+            )
+            echo "::endgroup::"
+          done
+
+  # ---------------------------------------------------------------------------------------------
+  trivy-fs:
+    name: Trivy filesystem (lock files, secrets, misconfig)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Vulnerabilities and secrets (hard gate)
+        # packages.lock.json (NuGet), package-lock.json (npm); Swift/Gradle have no lock files yet.
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+          skip-dirs: "**/node_modules,**/bin,**/obj,**/dist"
+
+      - name: Vulnerabilities and secrets (SARIF for the Security tab)
+        if: ${{ always() }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,secret
+          severity: CRITICAL,HIGH,MEDIUM
+          ignore-unfixed: true
+          exit-code: "0"
+          format: sarif
+          output: trivy-fs.sarif
+          skip-dirs: "**/node_modules,**/bin,**/obj,**/dist"
+          skip-setup-trivy: true
+
+      - name: Upload SARIF
+        if: ${{ always() }}
+        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-fs
+
+      - name: Misconfiguration (Dockerfiles, compose, Helm) — report only
+        # Reported, not gated: the chiseled stages intentionally have no HEALTHCHECK and the
+        # compose file intentionally publishes 80/443, both of which Trivy flags.
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: deploy
+          severity: CRITICAL,HIGH
+          exit-code: "0"
+          format: table
+          skip-setup-trivy: true
+
+  # ---------------------------------------------------------------------------------------------
+  trivy-image:
+    name: Trivy image (dle-${{ matrix.image }})
+    if: ${{ !inputs.sca-only }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [edge, control]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Build dle-${{ matrix.image }} (host arch, loaded into the daemon)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.${{ matrix.image }}
+          load: true
+          push: false
+          tags: dle-${{ matrix.image }}:scan
+          build-args: |
+            VERSION=0.0.0-${{ github.sha }}
+            VCS_REF=${{ github.sha }}
+          cache-from: type=gha,scope=dle-${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=dle-${{ matrix.image }}
+
+      - name: Scan image (hard gate)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: dle-${{ matrix.image }}:scan
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Scan image (SARIF)
+        if: ${{ always() }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: dle-${{ matrix.image }}:scan
+          vuln-type: os,library
+          severity: CRITICAL,HIGH,MEDIUM
+          ignore-unfixed: true
+          exit-code: "0"
+          format: sarif
+          output: trivy-image-${{ matrix.image }}.sarif
+          skip-setup-trivy: true
+
+      - name: Upload SARIF
+        if: ${{ always() }}
+        uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        with:
+          sarif_file: trivy-image-${{ matrix.image }}.sarif
+          category: trivy-image-${{ matrix.image }}
+
+  # ---------------------------------------------------------------------------------------------
+  zap-baseline:
+    name: OWASP ZAP baseline (edge, compose stack)
+    if: ${{ !inputs.sca-only }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      # deploy/docker-compose.yml alone publishes only Caddy (80/443). The dev override publishes
+      # edge on 127.0.0.1:8080 and control on 127.0.0.1:8081 over plain HTTP, which is what a
+      # baseline scan of the edge needs. Caddy moves to 8088/8443 so nothing on the runner collides.
+      COMPOSE_FILES: -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml
+      DLE_DOMAIN: localhost
+      DLE_TLS: internal
+      DLE_HTTP_PORT: "8088"
+      DLE_HTTPS_PORT: "8443"
+      DLE_EDGE_IMAGE: dle-edge:ci
+      DLE_CONTROL_IMAGE: dle-control:ci
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Build dle-edge
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.edge
+          load: true
+          push: false
+          tags: dle-edge:ci
+          cache-from: type=gha,scope=dle-edge
+          cache-to: type=gha,mode=max,scope=dle-edge
+
+      - name: Build dle-control
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.control
+          load: true
+          push: false
+          tags: dle-control:ci
+          cache-from: type=gha,scope=dle-control
+          cache-to: type=gha,mode=max,scope=dle-control
+
+      - name: Throw-away secrets for this stack
+        # Both are required by the compose file (:? interpolation). Random, masked, never reused.
+        run: |
+          pg="$(openssl rand -hex 24)"; ms="$(openssl rand -base64 48 | tr -d '\n')"
+          echo "::add-mask::$pg"; echo "::add-mask::$ms"
+          echo "POSTGRES_PASSWORD=$pg" >> "$GITHUB_ENV"
+          echo "DLE_MASTER_SECRET=$ms" >> "$GITHUB_ENV"
+
+      - name: Start the stack (postgres, valkey, migrate, control, edge, caddy)
+        run: |
+          docker compose $COMPOSE_FILES up -d --no-build --wait --wait-timeout 300
+          curl -fsS http://127.0.0.1:8080/healthz && echo " edge healthy"
+          curl -fsS http://127.0.0.1:8081/healthz && echo " control healthy"
+          curl -fsS http://127.0.0.1:8081/readyz  && echo " control ready (DB reachable)"
+
+      - name: ZAP baseline scan of the edge
+        # Report-only on pull requests (a first run needs its findings reviewed and the rules file
+        # tuned, and a red baseline on every PR gets bypassed rather than fixed); a hard gate on
+        # pushes to develop/master and on dispatch. release.yml runs the same scan as a hard gate.
+        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
+        with:
+          target: http://localhost:8080
+          rules_file_name: .github/zap/edge-baseline.conf
+          allow_issue_writing: false
+          fail_action: ${{ github.event_name != 'pull_request' }}
+          artifact_name: zap-baseline-edge
+
+      - name: Stack logs (on failure)
+        if: ${{ failure() }}
+        run: docker compose $COMPOSE_FILES logs --no-color --tail 300
+
+      - name: Tear down
+        if: ${{ always() }}
+        run: docker compose $COMPOSE_FILES down --volumes --remove-orphans

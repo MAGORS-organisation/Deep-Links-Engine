@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/MAGORS-organisation/Deep-Links-Engine/security/advisories/new
+    about: Do NOT open a public issue for a vulnerability. Use private vulnerability reporting — see SECURITY.md for scope, the 90-day disclosure window and safe harbour.
+  - name: Abuse report (a link pointing to harmful or illegal content)
+    url: https://github.com/MAGORS-organisation/Deep-Links-Engine/blob/develop/SECURITY.md#abuse-reports
+    about: Links are served by whoever runs the instance, not by this project. SECURITY.md explains who to contact and what DLE gives operators to act on a notice (DSA Art. 16).
+  - name: Questions and discussion
+    url: https://github.com/MAGORS-organisation/Deep-Links-Engine/discussions
+    about: How-to questions, deployment advice and design discussion belong in Discussions, not in the issue tracker.
