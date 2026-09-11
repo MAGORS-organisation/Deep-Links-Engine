@@ -71,6 +71,9 @@
   <PropertyGroup Label="Packages">
     <!-- Central Package Management: no Version attribute may appear on a PackageReference. -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- packages.lock.json per project: CI restores in locked mode so a resolved dependency
+         graph cannot drift between a review and a release (T-14, OWASP A03:2025 supply chain). -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true' And Exists('$(MSBuildProjectDirectory)/packages.lock.json')">true</RestoreLockedMode>
   </PropertyGroup>
 
