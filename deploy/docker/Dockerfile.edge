@@ -1,0 +1,117 @@
+# syntax=docker/dockerfile:1.7
+# =============================================================================
+# Deep Link Engine (DLE) — dle-edge image (data plane: resolve, interstitial, /.well-known, QR).
+#
+# Build from the REPOSITORY ROOT (the Dockerfile lives in deploy/docker/ but needs src/):
+#   docker build -f deploy/docker/Dockerfile.edge -t dle-edge:dev .
+#   docker buildx build --platform linux/amd64,linux/arm64 -f deploy/docker/Dockerfile.edge .
+#
+# Stages
+#   build            .NET 10 SDK on the BUILD platform, cross-publishes for TARGETARCH
+#   runtime-chiseled aspnet:10.0-noble-chiseled — no shell, no package manager, no curl; non-root
+#                    by default. Use it (--target runtime-chiseled) where the orchestrator probes
+#                    over HTTP itself (Kubernetes httpGet, deploy/helm); the HEALTHCHECK below is
+#                    absent there because nothing in the image could run it.
+#   runtime (final)  aspnet:10.0-noble + curl for the container HEALTHCHECK that docker compose
+#                    relies on. Non-root, read-only rootfs capable (compose sets read_only: true).
+#
+# Notes
+#   - InvariantGlobalization=true is already set in Directory.Build.props, so no ICU package is
+#     needed in any runtime image (the chiseled image ships none).
+#   - TieredPGO, ServerGC=false: also from Directory.Build.props; nothing to set here.
+#   - The build does not set CI=true on purpose: Directory.Build.props turns on
+#     RestoreLockedMode when CI=true and a packages.lock.json exists, and the lock files were
+#     generated without a runtime identifier while this restore is RID-specific (-a TARGETARCH).
+#     CI runs the locked restore on the SDK directly; the image build must not fail on it.
+# =============================================================================
+
+ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0
+ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble
+ARG CHISELED_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled
+
+# ---- build ---------------------------------------------------------------------------------------
+FROM --platform=$BUILDPLATFORM ${SDK_IMAGE} AS build
+ARG TARGETARCH
+ARG BUILD_CONFIGURATION=Release
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1 \
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+    NUGET_XMLDOC_MODE=skip
+WORKDIR /src
+
+# Restore first, from the project graph only, so that source edits do not invalidate the
+# package layer. global.json pins the SDK band; .editorconfig carries the analyzer severities
+# that the -warnaserror build depends on.
+COPY global.json Directory.Build.props Directory.Packages.props NuGet.config .editorconfig ./
+COPY src/Dle.Domain/Dle.Domain.csproj src/Dle.Domain/packages.lock.json src/Dle.Domain/
+COPY src/Dle.Crypto/Dle.Crypto.csproj src/Dle.Crypto/packages.lock.json src/Dle.Crypto/
+COPY src/Dle.Persistence.Fast/Dle.Persistence.Fast.csproj src/Dle.Persistence.Fast/packages.lock.json src/Dle.Persistence.Fast/
+COPY src/Dle.Edge/Dle.Edge.csproj src/Dle.Edge/packages.lock.json src/Dle.Edge/
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+    dotnet restore src/Dle.Edge/Dle.Edge.csproj -a "$TARGETARCH"
+
+COPY src/ src/
+RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
+    dotnet publish src/Dle.Edge/Dle.Edge.csproj \
+      -c "$BUILD_CONFIGURATION" -a "$TARGETARCH" --no-restore --self-contained false \
+      -o /app/publish
+
+# ---- runtime-chiseled (opt-in: --target runtime-chiseled) ----------------------------------------
+FROM ${CHISELED_IMAGE} AS runtime-chiseled
+ARG VERSION=0.1.0
+ARG VCS_REF=unknown
+ARG BUILD_DATE=unknown
+LABEL org.opencontainers.image.title="dle-edge" \
+      org.opencontainers.image.description="Deep Link Engine — edge (data plane)" \
+      org.opencontainers.image.source="https://github.com/MAGORS-organisation/Deep-Links-Engine" \
+      org.opencontainers.image.url="https://github.com/MAGORS-organisation/Deep-Links-Engine" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.vendor="MAGORS organisation" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled"
+WORKDIR /app
+COPY --from=build --chown=$APP_UID:$APP_UID /app/publish ./
+ENV ASPNETCORE_HTTP_PORTS=8080 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    DOTNET_EnableDiagnostics=0
+USER $APP_UID
+EXPOSE 8080
+ENTRYPOINT ["dotnet", "Dle.Edge.dll"]
+
+# ---- runtime (default) ---------------------------------------------------------------------------
+FROM ${RUNTIME_IMAGE} AS runtime
+ARG VERSION=0.1.0
+ARG VCS_REF=unknown
+ARG BUILD_DATE=unknown
+LABEL org.opencontainers.image.title="dle-edge" \
+      org.opencontainers.image.description="Deep Link Engine — edge (data plane)" \
+      org.opencontainers.image.source="https://github.com/MAGORS-organisation/Deep-Links-Engine" \
+      org.opencontainers.image.url="https://github.com/MAGORS-organisation/Deep-Links-Engine" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.vendor="MAGORS organisation" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:10.0-noble"
+
+# curl only, for HEALTHCHECK. ca-certificates is already in the base image.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+# APP_UID (1654, user `app`) is defined by the aspnet base image.
+COPY --from=build --chown=$APP_UID:$APP_UID /app/publish ./
+
+ENV ASPNETCORE_HTTP_PORTS=8080 \
+    ASPNETCORE_ENVIRONMENT=Production
+# Configuration is environment-only: ConnectionStrings__Postgres, ConnectionStrings__Valkey,
+# Dle__Crypto__MasterSecret (required), Dle__Edge__* … — see src/Dle.Edge/appsettings.json.
+
+USER $APP_UID
+EXPOSE 8080
+HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:8080/healthz || exit 1
+ENTRYPOINT ["dotnet", "Dle.Edge.dll"]

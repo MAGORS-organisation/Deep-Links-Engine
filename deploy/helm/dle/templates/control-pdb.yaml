@@ -1,0 +1,21 @@
+{{- if .Values.control.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "dle.control.fullname" . }}
+  labels:
+    {{- include "dle.control.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.control.pdb.maxUnavailable }}
+  maxUnavailable: {{ .Values.control.pdb.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ .Values.control.pdb.minAvailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "dle.control.selectorLabels" . | nindent 6 }}
+{{- end }}

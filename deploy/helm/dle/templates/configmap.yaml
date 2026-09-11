@@ -1,0 +1,76 @@
+{{- /*
+Non-secret configuration, one ConfigMap per service, consumed through `envFrom`. Every entry is an
+ASP.NET Core environment variable (Dle__Section__Key → Dle:Section:Key); the mapping from the
+chart's camelCase values is explicit here so that `helm template` shows exactly what a pod sees.
+Empty values are not rendered — the image's appsettings.json default then applies (see dle.env
+in _helpers.tpl). The deployments carry a checksum of this file, so a change rolls the pods.
+*/ -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dle.edge.fullname" . }}
+  labels:
+    {{- include "dle.edge.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+data:
+  # ---- shared (Dle:Privacy, Dle:Telemetry, config.extra) ----
+  {{- include "dle.sharedEnv" . }}
+  # ---- Dle:Edge:Network — trust X-Forwarded-* only from the ingress controller ----
+  {{- include "dle.env" (dict "key" "Dle:Edge:Network:UseForwardedHeaders" "value" .Values.edge.config.network.useForwardedHeaders) }}
+  {{- include "dle.env" (dict "key" "Dle:Edge:Network:ForwardLimit" "value" .Values.edge.config.network.forwardLimit) }}
+  {{- range $i, $cidr := .Values.edge.config.network.knownNetworks }}
+  {{- include "dle.env" (dict "key" (printf "Dle:Edge:Network:KnownNetworks:%d" $i) "value" $cidr) }}
+  {{- end }}
+  {{- range $i, $ip := .Values.edge.config.network.knownProxies }}
+  {{- include "dle.env" (dict "key" (printf "Dle:Edge:Network:KnownProxies:%d" $i) "value" $ip) }}
+  {{- end }}
+  # ---- Dle:Edge:GeoIp — a local mmdb, never downloaded (NFR-14) ----
+  {{- include "dle.env" (dict "key" "Dle:Edge:GeoIp:Path" "value" .Values.edge.config.geoIp.path) }}
+  # ---- Dle:Edge:BotDetection ----
+  {{- include "dle.env" (dict "key" "Dle:Edge:BotDetection:ReverseDnsVerify" "value" .Values.edge.config.botDetection.reverseDnsVerify) }}
+  # ---- Dle:Edge:Interstitial ----
+  {{- include "dle.env" (dict "key" "Dle:Edge:Interstitial:ProductName" "value" .Values.edge.config.interstitial.productName) }}
+  {{- include "dle.env" (dict "key" "Dle:Edge:Interstitial:SupportUrl" "value" .Values.edge.config.interstitial.supportUrl) }}
+  {{- include "dle.env" (dict "key" "Dle:Edge:Interstitial:PrivacyUrl" "value" .Values.edge.config.interstitial.privacyUrl) }}
+  # ---- Dle:Edge:Cache (HybridCache L1 / L2 / negative) ----
+  {{- include "dle.env" (dict "key" "Dle:Edge:Cache:L1Seconds" "value" .Values.edge.config.cache.l1Seconds) }}
+  {{- include "dle.env" (dict "key" "Dle:Edge:Cache:L2Minutes" "value" .Values.edge.config.cache.l2Minutes) }}
+  {{- include "dle.env" (dict "key" "Dle:Edge:Cache:NegativeSeconds" "value" .Values.edge.config.cache.negativeSeconds) }}
+  # ---- Dle:Persistence:Fast — Npgsql pool per pod ----
+  {{- include "dle.env" (dict "key" "Dle:Persistence:Fast:MaxPoolSize" "value" .Values.edge.config.dbPool.maxPoolSize) }}
+  {{- include "dle.env" (dict "key" "Dle:Persistence:Fast:MinPoolSize" "value" .Values.edge.config.dbPool.minPoolSize) }}
+  # ---- edge.config.extra ----
+  {{- include "dle.envMap" (dict "map" .Values.edge.config.extra) }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "dle.control.fullname" . }}
+  labels:
+    {{- include "dle.control.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+data:
+  # ---- shared (Dle:Privacy, Dle:Telemetry, config.extra) ----
+  {{- include "dle.sharedEnv" . }}
+  # ---- Dle:Control ----
+  {{- include "dle.env" (dict "key" "Dle:Control:PublicScheme" "value" .Values.control.config.publicScheme) }}
+  {{- include "dle.env" (dict "key" "Dle:Control:InstanceTenantId" "value" .Values.control.config.instanceTenantId) }}
+  {{- include "dle.env" (dict "key" "Dle:Control:AllowTenantSelfService" "value" .Values.control.config.allowTenantSelfService) }}
+  # The image ships the admin SPA under wwwroot/admin/ (Dockerfile.control); client-side routes
+  # under /admin/ need the SPA fallback to serve that index.
+  {{- include "dle.env" (dict "key" "Dle:Control:SpaIndexFile" "value" "admin/index.html") }}
+  # ---- Dle:Identity:Oidc (empty authority = API keys only) ----
+  {{- include "dle.env" (dict "key" "Dle:Identity:Oidc:Authority" "value" .Values.control.config.oidc.authority) }}
+  {{- include "dle.env" (dict "key" "Dle:Identity:Oidc:ClientId" "value" .Values.control.config.oidc.clientId) }}
+  {{- include "dle.env" (dict "key" "Dle:Identity:Oidc:Audience" "value" .Values.control.config.oidc.audience) }}
+  {{- include "dle.env" (dict "key" "Dle:Identity:Oidc:RequireHttpsMetadata" "value" .Values.control.config.oidc.requireHttpsMetadata) }}
+  # ---- Dle:Analytics ----
+  {{- include "dle.env" (dict "key" "Dle:Analytics:Provider" "value" .Values.control.config.analytics.provider) }}
+  # ---- control.config.extra ----
+  {{- include "dle.envMap" (dict "map" .Values.control.config.extra) }}

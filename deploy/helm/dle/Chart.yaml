@@ -1,0 +1,50 @@
+apiVersion: v2
+name: dle
+description: |
+  Deep Link Engine (DLE) — self-hosted, EU-first deep linking and attribution engine.
+  Profile B of docs/zadanie.md §B.8: an autoscaled edge (data plane) behind an Ingress, a
+  two-replica control plane, PostgreSQL primary + read replicas and a Valkey cluster.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+kubeVersion: ">=1.29.0-0"
+home: https://github.com/MAGORS-organisation/Deep-Links-Engine
+sources:
+  - https://github.com/MAGORS-organisation/Deep-Links-Engine
+keywords:
+  - deep-links
+  - universal-links
+  - app-links
+  - attribution
+  - aspnetcore
+maintainers:
+  - name: MAGORS organisation
+    url: https://github.com/MAGORS-organisation
+annotations:
+  artifacthub.io/license: MIT
+  artifacthub.io/prerelease: "true"
+
+# Optional bundled data stores — EVALUATION CONVENIENCE ONLY, both off by default.
+#
+# Production Profile B wants a PostgreSQL primary with two read replicas and a Valkey cluster
+# (§B.8). Run those with an operator (CloudNativePG, a managed service) or the platform's own
+# charts and hand this chart the connection strings (externalPostgres.*, externalValkey.*).
+#
+# Helm refuses to install a chart whose declared dependencies are not in charts/, even when their
+# condition is false. Therefore either run `helm dependency build deploy/helm/dle` once, or pass
+# `--dependency-update` to helm install/upgrade. The version ranges below were NOT resolved by
+# the machine that authored this chart (no Helm available there): if `helm dependency build`
+# cannot satisfy them, pin the versions the OCI registry actually serves.
+dependencies:
+  - name: postgresql
+    version: ">=16.0.0 <20.0.0"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: postgresql.enabled
+    tags:
+      - bundled
+  - name: valkey
+    version: ">=2.0.0 <5.0.0"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: valkey.enabled
+    tags:
+      - bundled

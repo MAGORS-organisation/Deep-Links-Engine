@@ -1,0 +1,90 @@
+Deep Link Engine {{ .Chart.AppVersion }} — release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}"
+
+  edge     {{ include "dle.edge.fullname" . }}  ({{ if .Values.edge.autoscaling.enabled }}HPA {{ .Values.edge.autoscaling.minReplicas }}–{{ .Values.edge.autoscaling.maxReplicas }} pods{{ else }}{{ .Values.edge.replicaCount }} replicas{{ end }}, port 8080)
+  control  {{ include "dle.control.fullname" . }}  ({{ .Values.control.replicaCount }} replicas, port 8081)
+  images   {{ include "dle.image.edge" . }}
+           {{ include "dle.image.control" . }}
+{{- if .Values.ingress.enabled }}
+
+Links host: {{ if .Values.ingress.tls.enabled }}https{{ else }}http{{ end }}://{{ .Values.ingress.host }}/
+{{- if .Values.ingress.exposeControlOnHost }}
+  admin console   {{ if .Values.ingress.tls.enabled }}https{{ else }}http{{ end }}://{{ .Values.ingress.host }}/admin/
+  API reference   {{ if .Values.ingress.tls.enabled }}https{{ else }}http{{ end }}://{{ .Values.ingress.host }}/scalar
+{{- end }}
+{{- with .Values.ingress.controlHost }}
+  control plane   https://{{ . }}/  (admin console /admin/, API /api, reference /scalar)
+{{- end }}
+
+1. Apple and Google refuse a REDIRECTED association file (§A.2.1). Verify both lines print 200:
+
+     curl -sI http://{{ .Values.ingress.host }}/.well-known/apple-app-site-association  | head -1
+     curl -sI https://{{ .Values.ingress.host }}/.well-known/apple-app-site-association | head -1
+
+   The chart renders a separate Ingress "{{ include "dle.fullname" . }}-well-known" for those
+   paths with the {{ .Values.ingress.controller }} redirect exemption. Never add a rewrite,
+   trailing-slash or redirect annotation to it.
+{{- else }}
+
+Ingress is disabled: expose the Services yourself and keep /.well-known/* free of ANY redirect
+(HTTP→HTTPS included) — Apple and Google refuse a redirected association file (§A.2.1).
+  edge     {{ include "dle.edge.fullname" . }}:{{ .Values.edge.service.port }}
+  control  {{ include "dle.control.fullname" . }}:{{ .Values.control.service.port }}
+{{- end }}
+
+2. Watch the rollout:
+
+     kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "dle.edge.fullname" . }}
+     kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "dle.control.fullname" . }}
+{{- if .Values.migrate.enabled }}
+     kubectl -n {{ .Release.Namespace }} logs job/{{ include "dle.migrate.fullname" . }}    # EF Core migration ({{ include "dle.migrate.hooks" . }} hook)
+{{- end }}
+
+3. First credential: there is no seeded API key. See "First credential" in deploy/README.md.
+{{- if and (not .Values.control.config.instanceTenantId) (not .Values.control.config.allowTenantSelfService) }}
+
+   NOTE: neither control.config.instanceTenantId nor control.config.allowTenantSelfService is
+   set, so the tenant routes deny every caller (deliberate). Set one of them.
+{{- end }}
+{{- $postgresPeers := include "dle.networkPolicy.postgresPeers" . | trim }}
+{{- $valkeyPeers := include "dle.networkPolicy.valkeyPeers" . | trim }}
+{{- if .Values.networkPolicy.enabled }}
+{{- if or (not $postgresPeers) (not $valkeyPeers) }}
+
+WARNING — network policy fallback: no peer is configured for
+{{- if not $postgresPeers }} PostgreSQL (networkPolicy.postgres.cidrs / selectors){{ end }}
+{{- if and (not $postgresPeers) (not $valkeyPeers) }} and{{ end }}
+{{- if not $valkeyPeers }} Valkey (networkPolicy.valkey.cidrs / selectors){{ end }}, so the edge
+may reach ANY destination on that port. Name the instance to keep NFR-14 enforceable.
+{{- end }}
+{{- else }}
+
+WARNING — networkPolicy.enabled=false: nothing stops the edge from calling out (NFR-14).
+{{- end }}
+{{- if not .Values.secrets.existingSecret }}
+
+NOTE — inline secrets: the master secret and connection strings are stored in Helm's release
+history (Secret "{{ include "dle.fullname" . }}"). Prefer secrets.existingSecret.
+{{- if .Values.migrate.enabled }}
+The migration hook's copy "{{ include "dle.migrate.fullname" . }}" is a hook resource: `helm
+uninstall` leaves it behind — delete it by hand afterwards:
+     kubectl -n {{ .Release.Namespace }} delete secret {{ include "dle.migrate.fullname" . }}
+{{- end }}
+{{- end }}
+{{- if or .Values.postgresql.enabled .Values.valkey.enabled }}
+
+NOTE — bundled {{ if .Values.postgresql.enabled }}PostgreSQL{{ end }}{{ if and .Values.postgresql.enabled .Values.valkey.enabled }} and {{ end }}{{ if .Values.valkey.enabled }}Valkey{{ end }} subchart(s) are for evaluation only. Production (§B.8) wants
+a PostgreSQL primary with read replicas and a Valkey cluster run by an operator or a managed
+service, handed to this chart as externalPostgres.* / externalValkey.*.
+{{- if .Values.postgresql.enabled }}
+The Bitnami image has no pg_partman: click_events partition maintenance runs through the
+plain-SQL fallback dle_click_events_maintain(), which must be called daily (see deploy/README.md).
+{{- end }}
+{{- end }}
+{{- if not .Values.edge.config.geoIp.path }}
+
+NOTE — no GeoIP database (edge.config.geoIp.path is empty): country stays null and geo rules
+fall through to their default rule.
+{{- end }}
+
+Back up Dle:Crypto:MasterSecret together with the database: changing it changes the slug
+permutation and every derived key.
