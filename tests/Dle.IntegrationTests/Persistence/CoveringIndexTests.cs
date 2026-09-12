@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Dle.IntegrationTests.Persistence;
 
 /// <summary>
@@ -192,8 +194,10 @@ public sealed class CoveringIndexTests(DleInfrastructureFixture infrastructure)
 
         // VACUUM sets the all-visible bits an index-only scan needs; ANALYZE gives the planner the
         // statistics to prefer the index at all. Autovacuum would get there eventually, and
-        // "eventually" is not a thing a test can wait for.
-        _ = await Sql.ExecuteAsync(Database.DataSource, "VACUUM (ANALYZE) links", cancellationToken: Ct);
+        // "eventually" is not a thing a test can wait for. A page only becomes all-visible once no
+        // transaction that predates its rows is still running, so the vacuum is repeated until the
+        // planner's own view of the table says every page qualifies.
+        await EnsureLinksAreAllVisibleAsync();
         _ = await Sql.ExecuteAsync(Database.DataSource, "ANALYZE domains, tenants, apps, app_domains", cancellationToken: Ct);
 
         Assert.Equal(
@@ -205,6 +209,52 @@ public sealed class CoveringIndexTests(DleInfrastructureFixture infrastructure)
                 Ct));
 
         return new Seeded(tenantId, domainId, host);
+    }
+
+    private async Task EnsureLinksAreAllVisibleAsync()
+    {
+        const int attempts = 10;
+        string pages = "?";
+
+        for (int attempt = 1; attempt <= attempts; attempt++)
+        {
+            _ = await Sql.ExecuteAsync(Database.DataSource, "VACUUM (ANALYZE) links", cancellationToken: Ct);
+
+            pages = await Sql.ScalarAsync<string>(
+                Database.DataSource,
+                "SELECT relallvisible || ' of ' || relpages FROM pg_class WHERE oid = 'links'::regclass",
+                cancellationToken: Ct) ?? "?";
+
+            bool allVisible = await Sql.ScalarAsync<bool>(
+                Database.DataSource,
+                "SELECT relpages > 0 AND relallvisible >= relpages FROM pg_class WHERE oid = 'links'::regclass",
+                cancellationToken: Ct);
+
+            if (allVisible)
+            {
+                return;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(200), Ct);
+        }
+
+        IReadOnlyList<string> activity = await Sql.StringsAsync(
+            Database.DataSource,
+            """
+            SELECT pid || ' ' || coalesce(state, '-')
+                   || ' xmin=' || coalesce(backend_xmin::text, '-')
+                   || ' xid=' || coalesce(backend_xid::text, '-')
+                   || ' ' || left(coalesce(query, ''), 80)
+            FROM pg_stat_activity
+            WHERE datname = current_database() AND pid <> pg_backend_pid()
+            """,
+            cancellationToken: Ct);
+
+        Assert.Fail(string.Create(
+            CultureInfo.InvariantCulture,
+            $"VACUUM could not mark every page of links all-visible after {attempts} attempts "
+            + $"({pages} pages all-visible), so no index-only scan can be expected. Something in this "
+            + $"database holds a snapshot older than the seed rows: {string.Join(" | ", activity)}"));
     }
 
     /// <summary>What the seed produced.</summary>

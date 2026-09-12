@@ -237,11 +237,25 @@ public sealed class LinkRepository
         link.Slug = normalized;
         link.Version++;
 
-        _db.Links.Update(link);
-        _db.LinkVersions.Add(CreateRevision(link, changedBy, changeNote));
+        // Reads are untracked, so the instance handed in is usually a stranger to the change
+        // tracker and Update attaches it. When the same unit of work also created or loaded this
+        // link, a second instance with the same key cannot be attached; the values are copied onto
+        // the tracked one instead, and it is the tracked instance the revision is taken from.
+        Link tracked = _db.Links.Local.FirstOrDefault(candidate => candidate.Id == link.Id) ?? link;
+
+        if (ReferenceEquals(tracked, link))
+        {
+            _db.Links.Update(link);
+        }
+        else
+        {
+            _db.Entry(tracked).CurrentValues.SetValues(link);
+        }
+
+        _db.LinkVersions.Add(CreateRevision(tracked, changedBy, changeNote));
 
         await _db.SaveChangesAsync(cancellationToken);
-        return link.Version;
+        return tracked.Version;
     }
 
     /// <summary>Deletes a link of the tenant in scope, with its revisions.</summary>

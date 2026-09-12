@@ -81,7 +81,7 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
             .GetProperty("details");
 
         Assert.Equal(JsonValueKind.Array, details.ValueKind);
-        Assert.Equal("TEAM123456.sk.example.app", details[0].GetProperty("appID").GetString());
+        Assert.Equal("TEAM123456.sk.example.app", details[0].GetProperty("appIDs")[0].GetString());
         Assert.Equal(JsonValueKind.Array, details[0].GetProperty("components").ValueKind);
     }
 

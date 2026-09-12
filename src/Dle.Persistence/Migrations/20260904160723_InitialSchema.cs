@@ -714,12 +714,14 @@ namespace Dle.Persistence.Migrations
                 table: "webhook_subscriptions",
                 column: "tenant_id");
 
-            // The click stream of §B.5.3: a partitioned table with no EF Core equivalent, its BRIN
-            // and btree indexes, and the partition maintenance. The fallback maintenance function
-            // is created before the pg_partman handover, because the handover calls it when
-            // pg_partman turns out not to be installed.
+            // The click stream of §B.5.3 and the SDK event stream beside it: partitioned tables
+            // with no EF Core equivalent, their BRIN and btree indexes, and the partition
+            // maintenance. The fallback maintenance functions are created before the pg_partman
+            // handover, because the handover calls them when pg_partman turns out not to be
+            // installed.
             migrationBuilder.Sql(DlePostgresScripts.CreateFallbackMaintenanceFunction);
             migrationBuilder.Sql(DlePostgresScripts.CreateClickEvents);
+            migrationBuilder.Sql(DlePostgresScripts.CreateSdkEvents);
             migrationBuilder.Sql(DlePostgresScripts.ConfigurePartitioning);
 
             // Keeps the visibility map fresh enough for ix_links_resolve to be answered from the
@@ -734,6 +736,7 @@ namespace Dle.Persistence.Migrations
             // reverse order of Up: the partition configuration before the table it points at, and
             // the table before the functions it depends on.
             migrationBuilder.Sql(DlePostgresScripts.RemovePartitioning);
+            migrationBuilder.Sql(DlePostgresScripts.DropSdkEvents);
             migrationBuilder.Sql(DlePostgresScripts.DropClickEvents);
             migrationBuilder.Sql(DlePostgresScripts.DropFallbackMaintenanceFunction);
             migrationBuilder.Sql(DlePostgresScripts.ResetLinksAutovacuum);

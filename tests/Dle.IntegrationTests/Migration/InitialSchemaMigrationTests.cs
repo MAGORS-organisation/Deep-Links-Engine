@@ -225,6 +225,59 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
 
     [RequiresDockerFact]
     [Trait("Spec", "B.5.3")]
+    public async Task Migration_SdkEvents_IsPartitionedLikeTheClickStreamAndAcceptsAnInsert()
+    {
+        // The SDK event stream is not spelled out in §B.5.3, but the batch writer copies into it and
+        // the funnel queries join it, so it has to exist with the writer's column list, be range
+        // partitioned the same way and — the part that bites — actually have partitions.
+        string? key = await Sql.ScalarAsync<string>(
+            Database.DataSource,
+            "SELECT pg_get_partkeydef('sdk_events'::regclass)",
+            cancellationToken: Ct);
+
+        Assert.Equal("RANGE (occurred_at)", key);
+
+        long partitions = await Sql.ScalarAsync<long>(
+            Database.DataSource,
+            """
+            SELECT count(*)
+            FROM pg_inherits
+            JOIN pg_class parent ON parent.oid = pg_inherits.inhparent
+            WHERE parent.relname = 'sdk_events'
+            """,
+            cancellationToken: Ct);
+
+        Assert.True(
+            partitions > 0,
+            "sdk_events has no partitions, so every SDK event insert would fail. The migration's "
+            + "pg_partman handover is supposed to fall back to dle_sdk_events_maintain(7, 180).");
+
+        Guid tenantId = await TestSeed.TenantAsync(Database, "sdk-partition-probe", cancellationToken: Ct);
+
+        // The writer's column list, verbatim (SdkEventBatchWriter): a rename on either side has to
+        // fail here rather than as a 500 on POST /v1/events.
+        _ = await Sql.ExecuteAsync(
+            Database.DataSource,
+            """
+            INSERT INTO sdk_events (occurred_at, tenant_id, app_id, install_id, event_type, event_name,
+                                    url, event_value, currency, link_id, click_id, properties)
+            VALUES (now(), $1, $2, 'install-probe', 'conversion', 'purchase',
+                    NULL, 12.5000, 'EUR', NULL, NULL, '{}'::jsonb)
+            """,
+            [tenantId, Guid.CreateVersion7()],
+            Ct);
+
+        Assert.Equal(
+            1L,
+            await Sql.ScalarAsync<long>(
+                Database.DataSource,
+                "SELECT count(*) FROM sdk_events WHERE tenant_id = $1 AND event_type = 'conversion'",
+                [tenantId],
+                Ct));
+    }
+
+    [RequiresDockerFact]
+    [Trait("Spec", "B.5.3")]
     public async Task Migration_ClickEvents_HasTheBrinAndBtreeIndexesOfB53()
     {
         IReadOnlyList<string> definitions = await Sql.StringsAsync(
@@ -315,12 +368,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
 
         foreach (string table in RequiredTables)
         {
-            if (string.Equals(table, "sdk_events", StringComparison.Ordinal))
-            {
-                // Nothing creates it, so nothing can drop it. Covered by the completeness test above.
-                continue;
-            }
-
             Assert.False(
                 await Sql.RelationExistsAsync(Database.DataSource, table, Ct),
                 string.Create(CultureInfo.InvariantCulture, $"Table {table} survived the rollback."));

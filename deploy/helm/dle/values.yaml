@@ -101,9 +101,9 @@ secrets:
 # Npgsql connection strings, exactly as docker-compose.yml builds them:
 #   Host=<primary>;Port=5432;Database=dle;Username=dle;Password=<pw>;SSL Mode=Require
 # PostgreSQL 16 is the minimum, 18 is recommended; extensions citext and — for the daily
-# click_events partitions with 180-day retention (§B.5.2) — pg_partman. Without pg_partman the
-# InitialSchema migration installs a plain-SQL fallback, dle_click_events_maintain(), that has
-# to be called daily (pg_cron or a CronJob). deploy/docker/Dockerfile.postgres shows the package.
+# click_events and sdk_events partitions with 180-day retention (§B.5.2) — pg_partman. Without
+# pg_partman the InitialSchema migration installs plain-SQL fallbacks, dle_click_events_maintain()
+# and dle_sdk_events_maintain(), that have to be called daily (pg_cron or a CronJob). deploy/docker/Dockerfile.postgres shows the package.
 # Ignored when secrets.existingSecret is set (the Secret carries the strings) or when
 # postgresql.enabled is true (the subchart's service is used).
 

@@ -29,6 +29,12 @@ public sealed class FastPersistenceMetrics : IDisposable
     private readonly Counter<long> _sdkEventsWritten;
     private readonly Counter<long> _batchWriteFailures;
 
+    /// <summary>
+    /// Last probe result for the shared cache: <c>-1</c> until the first probe (or forever, when no
+    /// L2 is configured), then <c>1</c> for answering and <c>0</c> for unreachable.
+    /// </summary>
+    private long _distributedCacheUp = -1;
+
     /// <summary>Creates the instruments.</summary>
     /// <param name="meterFactory">
     /// Meter factory supplied by the host, so a test can observe the instruments through
@@ -58,6 +64,12 @@ public sealed class FastPersistenceMetrics : IDisposable
             "dle.event_batch.failures",
             unit: "{batch}",
             description: "Batches that could not be written and were discarded.");
+
+        _ = _meter.CreateObservableGauge(
+            "dle.cache.l2.up",
+            ObserveDistributedCacheUp,
+            unit: "1",
+            description: "1 while the shared (L2) cache answers, 0 while it is unreachable and resolves fall through to L1 and PostgreSQL (§D.6, cache_l2_down). Not reported when no L2 is configured.");
     }
 
     /// <summary>Counts one click event dropped by the bounded channel.</summary>
@@ -71,10 +83,25 @@ public sealed class FastPersistenceMetrics : IDisposable
     /// <param name="count">Number of rows in the batch.</param>
     public void SdkEventsWritten(int count) => _sdkEventsWritten.Add(count);
 
+    /// <summary>Records the latest answer of the shared cache probe.</summary>
+    /// <param name="reachable">Whether the shared cache answered the probe.</param>
+    public void DistributedCacheProbed(bool reachable) =>
+        Interlocked.Exchange(ref _distributedCacheUp, reachable ? 1 : 0);
+
     /// <summary>Counts one batch that failed to write.</summary>
     /// <param name="kind">Which stream failed: <c>click</c> or <c>sdk</c>.</param>
     public void BatchWriteFailed(string kind) => _batchWriteFailures.Add(1, new KeyValuePair<string, object?>("stream", kind));
 
     /// <inheritdoc />
     public void Dispose() => _meter.Dispose();
+
+    private IEnumerable<Measurement<long>> ObserveDistributedCacheUp()
+    {
+        long state = Interlocked.Read(ref _distributedCacheUp);
+
+        if (state >= 0)
+        {
+            yield return new Measurement<long>(state);
+        }
+    }
 }

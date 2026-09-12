@@ -396,6 +396,15 @@ public sealed class DleDbContext : DbContext
                 continue;
             }
 
+            // A composite key can contain the tenant column (idempotency_records is keyed by
+            // tenant, endpoint and key). That column is an owner reference, never an identity:
+            // minting a fresh identifier for it would silently file the row under a tenant that
+            // does not exist and then trip the cross-tenant guard on the very next line.
+            if (string.Equals(keyProperty.Name, TenantIdPropertyName, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
             PropertyEntry property = entry.Property(keyProperty.Name);
             if (property.CurrentValue is Guid current && current == Guid.Empty)
             {

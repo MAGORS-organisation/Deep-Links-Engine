@@ -76,8 +76,9 @@ NOTE — bundled {{ if .Values.postgresql.enabled }}PostgreSQL{{ end }}{{ if and
 a PostgreSQL primary with read replicas and a Valkey cluster run by an operator or a managed
 service, handed to this chart as externalPostgres.* / externalValkey.*.
 {{- if .Values.postgresql.enabled }}
-The Bitnami image has no pg_partman: click_events partition maintenance runs through the
-plain-SQL fallback dle_click_events_maintain(), which must be called daily (see deploy/README.md).
+The Bitnami image has no pg_partman: click_events and sdk_events partition maintenance runs
+through the plain-SQL fallbacks dle_click_events_maintain() and dle_sdk_events_maintain(), which
+must be called daily (see deploy/README.md).
 {{- end }}
 {{- end }}
 {{- if not .Values.edge.config.geoIp.path }}

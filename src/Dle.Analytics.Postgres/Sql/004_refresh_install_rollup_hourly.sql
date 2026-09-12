@@ -28,14 +28,14 @@ conversion_agg AS (
            coalesce(s.link_id, 0)                                  AS link_id,
            lower(coalesce(nullif(ins.platform, ''), 'unknown'))    AS platform,
            count(*)::bigint                                        AS conversions,
-           sum(s.value)::numeric(18, 4)                            AS conversion_value
+           sum(s.event_value)::numeric(18, 4)                            AS conversion_value
     FROM sdk_events AS s
     LEFT JOIN installs AS ins
            ON ins.app_id = s.app_id
           AND ins.install_id = s.install_id
     WHERE s.occurred_at >= @from
       AND s.occurred_at <  @to
-      AND s.type = 'conversion'
+      AND s.event_type = 'conversion'
     GROUP BY 1, 2, 3, 4
 ),
 merged AS (

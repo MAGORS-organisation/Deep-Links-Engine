@@ -142,19 +142,78 @@ internal static class DlePostgresScripts
         """;
 
     /// <summary>
-    /// Creates <c>dle_click_events_maintain()</c>, the partition maintenance used when pg_partman
-    /// is unavailable.
+    /// Creates <c>sdk_events</c>, the stream of events the mobile and web SDKs report through
+    /// <c>POST /v1/events</c>: opens, sessions, conversions and custom events.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// §B.5.3 spells out <c>click_events</c> only. This table is the other half of the funnel the
+    /// analytics queries of §C join it to, and its column list is the contract the batch writer in
+    /// <c>Dle.Persistence.Fast</c> copies into: <c>event_type</c>, <c>event_name</c> and
+    /// <c>event_value</c> rather than <c>type</c>, <c>name</c> and <c>value</c>, which read
+    /// ambiguously in an aggregate query.
+    /// </para>
+    /// <para>
+    /// Partitioned and maintained exactly like the click stream, because it grows the same way and
+    /// is pruned by the same retention job.
+    /// </para>
+    /// </remarks>
+    internal const string CreateSdkEvents = """
+        CREATE TABLE IF NOT EXISTS sdk_events (
+            id           uuid           NOT NULL DEFAULT dle_uuidv7(),
+            occurred_at  timestamptz    NOT NULL,
+            tenant_id    uuid           NOT NULL,
+            app_id       uuid           NOT NULL,
+            install_id   text           NOT NULL,
+            event_type   text           NOT NULL,
+            event_name   text,
+            url          text,
+            event_value  numeric(18, 4),
+            currency     char(3),
+            link_id      bigint,
+            click_id     text,
+            properties   jsonb          NOT NULL DEFAULT '{}',
+            PRIMARY KEY (occurred_at, id)
+        ) PARTITION BY RANGE (occurred_at);
+
+        COMMENT ON TABLE sdk_events IS
+            'Append only stream of SDK reported events (link_open, first_open, session, conversion,
+             custom), partitioned daily by occurred_at and written in batches with COPY. Joined to
+             click_events through click_id for the conversion and funnel reports.';
+
+        CREATE INDEX IF NOT EXISTS ix_sdk_events_brin
+            ON sdk_events USING brin (occurred_at);
+
+        CREATE INDEX IF NOT EXISTS ix_sdk_events_tenant_type
+            ON sdk_events (tenant_id, event_type, occurred_at DESC);
+
+        CREATE INDEX IF NOT EXISTS ix_sdk_events_click
+            ON sdk_events (click_id)
+            WHERE click_id IS NOT NULL;
+        """;
+
+    /// <summary>Drops the SDK event stream table and everything attached to it.</summary>
+    internal const string DropSdkEvents = """
+        DROP TABLE IF EXISTS sdk_events CASCADE;
+        """;
+
+    /// <summary>
+    /// Creates the partition maintenance used when pg_partman is unavailable:
+    /// <c>dle_partitions_maintain()</c>, which does the work for either event stream, and the two
+    /// per-table entry points <c>dle_click_events_maintain()</c> and
+    /// <c>dle_sdk_events_maintain()</c> that a cron entry or the maintenance worker calls.
     /// </summary>
     /// <remarks>
     /// pg_partman is optional: it is not in a stock PostgreSQL image and a managed instance may
     /// refuse to install it. A partitioned table with no partitions rejects every insert, so
-    /// "degrade gracefully" cannot mean "do nothing" — it has to mean the click stream still
-    /// works. This function pre-creates the days ahead and drops the days past retention, which is
+    /// "degrade gracefully" cannot mean "do nothing" — it has to mean both event streams still
+    /// work. These functions pre-create the days ahead and drop the days past retention, which is
     /// the whole of what pg_partman is asked to do here, and a cron entry or a hosted worker can
-    /// call it on the same daily schedule.
+    /// call them on the same daily schedule.
     /// </remarks>
     internal const string CreateFallbackMaintenanceFunction = """
-        CREATE OR REPLACE FUNCTION dle_click_events_maintain(
+        CREATE OR REPLACE FUNCTION dle_partitions_maintain(
+            p_parent         text,
             p_days_ahead     int DEFAULT 7,
             p_retention_days int DEFAULT 180)
         RETURNS int
@@ -167,8 +226,15 @@ internal static class DlePostgresScripts
             created        int := 0;
             victim         record;
         BEGIN
-            IF to_regclass('public.click_events_default') IS NULL THEN
-                CREATE TABLE public.click_events_default PARTITION OF public.click_events DEFAULT;
+            IF p_parent NOT IN ('click_events', 'sdk_events') THEN
+                RAISE EXCEPTION 'dle_partitions_maintain: % is not one of the DLE event streams', p_parent;
+            END IF;
+
+            IF to_regclass('public.' || quote_ident(p_parent || '_default')) IS NULL THEN
+                EXECUTE format(
+                    'CREATE TABLE public.%I PARTITION OF public.%I DEFAULT',
+                    p_parent || '_default',
+                    p_parent);
             END IF;
 
             FOR partition_day IN
@@ -177,13 +243,14 @@ internal static class DlePostgresScripts
                            today_utc + p_days_ahead,
                            interval '1 day')::date
             LOOP
-                part_name := 'click_events_p' || to_char(partition_day, 'YYYYMMDD');
+                part_name := p_parent || '_p' || to_char(partition_day, 'YYYYMMDD');
 
                 IF to_regclass('public.' || quote_ident(part_name)) IS NULL THEN
                     EXECUTE format(
-                        'CREATE TABLE public.%I PARTITION OF public.click_events '
+                        'CREATE TABLE public.%I PARTITION OF public.%I '
                         'FOR VALUES FROM (%L) TO (%L)',
                         part_name,
+                        p_parent,
                         (partition_day::timestamp AT TIME ZONE 'UTC'),
                         ((partition_day + 1)::timestamp AT TIME ZONE 'UTC'));
                     created := created + 1;
@@ -195,8 +262,8 @@ internal static class DlePostgresScripts
                   FROM pg_inherits
                   JOIN pg_class child  ON child.oid  = pg_inherits.inhrelid
                   JOIN pg_class parent ON parent.oid = pg_inherits.inhparent
-                 WHERE parent.relname = 'click_events'
-                   AND child.relname ~ '^click_events_p[0-9]{8}$'
+                 WHERE parent.relname = p_parent
+                   AND child.relname ~ ('^' || p_parent || '_p[0-9]{8}$')
                    AND to_date(right(child.relname, 8), 'YYYYMMDD')
                        < today_utc - p_retention_days
             LOOP
@@ -207,14 +274,41 @@ internal static class DlePostgresScripts
         END;
         $dle_fn$;
 
+        COMMENT ON FUNCTION dle_partitions_maintain(text, int, int) IS
+            'Fallback daily partition maintenance for click_events and sdk_events when pg_partman is
+             absent. Creates partitions p_days_ahead days ahead and drops those older than
+             p_retention_days.';
+
+        CREATE OR REPLACE FUNCTION dle_click_events_maintain(
+            p_days_ahead     int DEFAULT 7,
+            p_retention_days int DEFAULT 180)
+        RETURNS int
+        LANGUAGE sql
+        AS $dle_fn$
+            SELECT dle_partitions_maintain('click_events', p_days_ahead, p_retention_days);
+        $dle_fn$;
+
         COMMENT ON FUNCTION dle_click_events_maintain(int, int) IS
-            'Fallback daily partition maintenance for click_events when pg_partman is absent.
-             Creates partitions p_days_ahead days ahead and drops those older than p_retention_days.';
+            'Fallback daily partition maintenance for click_events when pg_partman is absent.';
+
+        CREATE OR REPLACE FUNCTION dle_sdk_events_maintain(
+            p_days_ahead     int DEFAULT 7,
+            p_retention_days int DEFAULT 180)
+        RETURNS int
+        LANGUAGE sql
+        AS $dle_fn$
+            SELECT dle_partitions_maintain('sdk_events', p_days_ahead, p_retention_days);
+        $dle_fn$;
+
+        COMMENT ON FUNCTION dle_sdk_events_maintain(int, int) IS
+            'Fallback daily partition maintenance for sdk_events when pg_partman is absent.';
         """;
 
-    /// <summary>Drops the fallback maintenance function.</summary>
+    /// <summary>Drops the fallback maintenance functions.</summary>
     internal const string DropFallbackMaintenanceFunction = """
         DROP FUNCTION IF EXISTS dle_click_events_maintain(int, int);
+        DROP FUNCTION IF EXISTS dle_sdk_events_maintain(int, int);
+        DROP FUNCTION IF EXISTS dle_partitions_maintain(text, int, int);
         """;
 
     /// <summary>
@@ -241,7 +335,8 @@ internal static class DlePostgresScripts
         DO $dle_partman$
         DECLARE
             partman_schema text;
-            handed_over    boolean := true;
+            stream         text;
+            handed_over    boolean;
         BEGIN
             SELECT nsp.nspname
               INTO partman_schema
@@ -266,66 +361,72 @@ internal static class DlePostgresScripts
 
             IF partman_schema IS NULL THEN
                 RAISE WARNING
-                    'pg_partman is not installed, so click_events partitions will be maintained by '
-                    'dle_click_events_maintain(7, 180) instead. Schedule it daily (cron, '
-                    'pg_cron or the DLE maintenance worker), or install pg_partman and re-run this '
-                    'migration to hand the table over to it.';
+                    'pg_partman is not installed, so click_events and sdk_events partitions will be '
+                    'maintained by dle_click_events_maintain(7, 180) and dle_sdk_events_maintain(7, 180) '
+                    'instead. Schedule both daily (cron, pg_cron or the DLE maintenance worker), or '
+                    'install pg_partman and re-run this migration to hand the tables over to it.';
                 PERFORM dle_click_events_maintain(7, 180);
+                PERFORM dle_sdk_events_maintain(7, 180);
                 RETURN;
             END IF;
 
-            BEGIN
-                -- pg_partman 5.x: native partitioning only, no p_type argument.
-                EXECUTE format(
-                    'SELECT %I.create_parent('
-                    '  p_parent_table := %L,'
-                    '  p_control      := %L,'
-                    '  p_interval     := %L,'
-                    '  p_premake      := 7)',
-                    partman_schema, 'public.click_events', 'occurred_at', '1 day');
-            EXCEPTION
-                WHEN undefined_function OR invalid_parameter_value THEN
-                    -- pg_partman 4.x: p_type is required and the interval is named.
+            FOREACH stream IN ARRAY ARRAY['click_events', 'sdk_events']
+            LOOP
+                handed_over := true;
+
+                BEGIN
+                    -- pg_partman 5.x: native partitioning only, no p_type argument.
                     EXECUTE format(
                         'SELECT %I.create_parent('
                         '  p_parent_table := %L,'
                         '  p_control      := %L,'
-                        '  p_type         := %L,'
                         '  p_interval     := %L,'
                         '  p_premake      := 7)',
-                        partman_schema, 'public.click_events', 'occurred_at', 'native', 'daily');
-                WHEN unique_violation OR duplicate_table THEN
-                    -- Already handed over by an earlier run of this migration.
-                    NULL;
-                WHEN OTHERS THEN
-                    -- Anything else: say exactly what pg_partman refused and why this matters, then
-                    -- fall back rather than abort the migration. Silence here would leave a
-                    -- partitioned table with no partitions, which rejects every insert.
-                    handed_over := false;
-                    RAISE WARNING
-                        'pg_partman refused to take over click_events (%: %). Partitions will be '
-                        'maintained by dle_click_events_maintain(7, 180) instead; schedule it '
-                        'daily. Fix the cause and re-run this migration to hand the table over.',
-                        SQLSTATE, SQLERRM;
-            END;
+                        partman_schema, 'public.' || stream, 'occurred_at', '1 day');
+                EXCEPTION
+                    WHEN undefined_function OR invalid_parameter_value THEN
+                        -- pg_partman 4.x: p_type is required and the interval is named.
+                        EXECUTE format(
+                            'SELECT %I.create_parent('
+                            '  p_parent_table := %L,'
+                            '  p_control      := %L,'
+                            '  p_type         := %L,'
+                            '  p_interval     := %L,'
+                            '  p_premake      := 7)',
+                            partman_schema, 'public.' || stream, 'occurred_at', 'native', 'daily');
+                    WHEN unique_violation OR duplicate_table THEN
+                        -- Already handed over by an earlier run of this migration.
+                        NULL;
+                    WHEN OTHERS THEN
+                        -- Anything else: say exactly what pg_partman refused and why this matters,
+                        -- then fall back rather than abort the migration. Silence here would leave
+                        -- a partitioned table with no partitions, which rejects every insert.
+                        handed_over := false;
+                        RAISE WARNING
+                            'pg_partman refused to take over % (%: %). Partitions will be '
+                            'maintained by dle_partitions_maintain(%L, 7, 180) instead; schedule it '
+                            'daily. Fix the cause and re-run this migration to hand the table over.',
+                            stream, SQLSTATE, SQLERRM, stream;
+                END;
 
-            IF NOT handed_over THEN
-                PERFORM dle_click_events_maintain(7, 180);
-                RETURN;
-            END IF;
+                IF NOT handed_over THEN
+                    PERFORM dle_partitions_maintain(stream, 7, 180);
+                    CONTINUE;
+                END IF;
 
-            EXECUTE format(
-                'UPDATE %I.part_config'
-                '   SET retention = %L,'
-                '       retention_keep_table = false,'
-                '       premake = 7'
-                ' WHERE parent_table = %L',
-                partman_schema, '180 days', 'public.click_events');
+                EXECUTE format(
+                    'UPDATE %I.part_config'
+                    '   SET retention = %L,'
+                    '       retention_keep_table = false,'
+                    '       premake = 7'
+                    ' WHERE parent_table = %L',
+                    partman_schema, '180 days', 'public.' || stream);
+            END LOOP;
         END;
         $dle_partman$;
         """;
 
-    /// <summary>Removes the pg_partman configuration for the click stream, if there is one.</summary>
+    /// <summary>Removes the pg_partman configuration for both event streams, if there is one.</summary>
     internal const string RemovePartitioning = """
         DO $dle_partman$
         DECLARE
@@ -342,8 +443,8 @@ internal static class DlePostgresScripts
             END IF;
 
             EXECUTE format(
-                'DELETE FROM %I.part_config WHERE parent_table = %L',
-                partman_schema, 'public.click_events');
+                'DELETE FROM %I.part_config WHERE parent_table IN (%L, %L)',
+                partman_schema, 'public.click_events', 'public.sdk_events');
         END;
         $dle_partman$;
         """;

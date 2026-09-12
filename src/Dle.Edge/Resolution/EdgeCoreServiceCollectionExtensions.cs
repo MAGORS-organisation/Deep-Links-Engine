@@ -68,6 +68,10 @@ public static class EdgeCoreServiceCollectionExtensions
             .AddCheck<ResolvePipelineHealthCheck>(
                 ResolvePipelineHealthCheck.CheckName,
                 failureStatus: HealthStatus.Degraded,
+                tags: [ResolvePipelineHealthCheck.ReadyTag])
+            .AddCheck<DatabaseReachabilityHealthCheck>(
+                DatabaseReachabilityHealthCheck.CheckName,
+                failureStatus: HealthStatus.Degraded,
                 tags: [ResolvePipelineHealthCheck.ReadyTag]);
 
         ConfigureForwardedHeaders(services, configuration);

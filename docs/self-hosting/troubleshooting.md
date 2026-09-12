@@ -111,7 +111,7 @@ Work through the deterministic paths in the order the engine evaluates them ([§
 **Prove it.**
 
 ```bash
-curl -sI https://go.example.com/readyz                        # 503 while the DB is down; /healthz stays 200 (the process is alive)
+curl -s  https://go.example.com/readyz                        # stays 200 but the body says "database: Degraded" while the DB is down (cached links keep resolving, so the edge stays in rotation); the control plane's /readyz answers 503
 curl -sI https://go.example.com/aB3xK9pQ                       # 302 if cached, 503 if not
 docker compose -f docker-compose.yml ps postgres               # or kubectl get pods -n dle
 ```

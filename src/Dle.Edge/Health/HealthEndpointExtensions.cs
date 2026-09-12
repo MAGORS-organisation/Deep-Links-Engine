@@ -72,9 +72,10 @@ public static class HealthEndpointExtensions
             .WithTags("health")
             .WithSummary("Readiness probe")
             .WithDescription(
-                "200 while this instance can serve resolves, including when the geographic database is missing " +
-                "or click events are being dropped — both report as degraded rather than removing the instance " +
-                "from rotation (§D.6).")
+                "200 while this instance can serve resolves, including when the geographic database is missing, " +
+                "click events are being dropped or PostgreSQL is unreachable — all three report as degraded in " +
+                "the body rather than removing the instance from rotation, because cached links keep resolving " +
+                "through a database outage (§D.6, NFR-06).")
             .AllowAnonymous()
             .DisableRateLimiting();
 

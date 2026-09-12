@@ -19,8 +19,9 @@ CREATE EXTENSION IF NOT EXISTS citext;
 --     service that offers it (RDS, Aurora, Azure Flexible Server, Cloud SQL);
 --   * nothing — the InitialSchema migration (DlePostgresScripts.ConfigurePartitioning) detects
 --     the absence at migration time, raises a WARNING, and installs dle_click_events_maintain()
---     — a plain-SQL function that pre-creates 7 days of partitions and drops those older than the
---     retention — to be called daily (pg_cron, a cron job, or the DLE maintenance worker).
+--     and dle_sdk_events_maintain() — plain-SQL functions that pre-create 7 days of partitions and
+--     drop those older than the retention — to be called daily (pg_cron, a cron job, or the DLE
+--     maintenance worker).
 --
 -- Schema `partman` is what the migration looks for (it reads pg_extension for the installed
 -- schema, so any schema works, but `partman` is the convention it creates itself).
@@ -32,9 +33,10 @@ BEGIN
         EXECUTE 'CREATE EXTENSION IF NOT EXISTS pg_partman WITH SCHEMA partman';
         RAISE NOTICE 'dle: pg_partman installed into schema partman';
     ELSE
-        RAISE WARNING 'dle: pg_partman is not available in this PostgreSQL image; click_events '
-                      'partitions will be maintained by the fallback function the migration '
-                      'installs (dle_click_events_maintain). See deploy/postgres/init/01-extensions.sql.';
+        RAISE WARNING 'dle: pg_partman is not available in this PostgreSQL image; click_events and '
+                      'sdk_events partitions will be maintained by the fallback functions the '
+                      'migration installs (dle_click_events_maintain, dle_sdk_events_maintain). '
+                      'See deploy/postgres/init/01-extensions.sql.';
     END IF;
 END
 $dle_init$;

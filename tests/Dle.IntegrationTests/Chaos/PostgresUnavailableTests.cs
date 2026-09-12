@@ -180,7 +180,7 @@ public sealed class PostgresUnavailableTests(DleInfrastructureFixture infrastruc
 
     [RequiresDockerFact]
     [Trait("Spec", "D.6")]
-    public async Task PostgresDown_TheEdgeReadinessProbeReportsNotReady()
+    public async Task PostgresDown_TheEdgeStaysInRotationAndItsReadinessProbeReportsTheDatabaseAsDegraded()
     {
         DleTestHost<EdgeOptions> edge = StartEdgeAgainstChaosPostgres();
         using HttpClient client = edge.CreateDirectClient();
@@ -188,17 +188,23 @@ public sealed class PostgresUnavailableTests(DleInfrastructureFixture infrastruc
         using (HttpResponseMessage ready = await client.GetAsync(new Uri("http://localhost/readyz"), Ct))
         {
             Assert.Equal(HttpStatusCode.OK, ready.StatusCode);
+            Assert.Contains("database: Healthy", await ready.Content.ReadAsStringAsync(Ct), StringComparison.Ordinal);
         }
 
         await _postgres!.StopAsync(Ct);
 
         try
         {
-            using HttpResponseMessage notReady = await client.GetAsync(new Uri("http://localhost/readyz"), Ct);
+            using HttpResponseMessage degraded = await client.GetAsync(new Uri("http://localhost/readyz"), Ct);
+            string body = await degraded.Content.ReadAsStringAsync(Ct);
 
-            // A readiness probe that keeps saying "ready" while the database is gone is how an
-            // orchestrator keeps routing traffic into an instance that cannot serve it.
-            Assert.Equal(HttpStatusCode.ServiceUnavailable, notReady.StatusCode);
+            // NFR-06 and §D.6: cached links keep resolving through a PostgreSQL outage, and every
+            // edge instance is in the same state, so the probe must not pull the instance out of
+            // rotation — that would turn a degraded service into no service. It still has to say
+            // what is wrong, in the body an operator and a scraper both read.
+            Assert.Equal(HttpStatusCode.OK, degraded.StatusCode);
+            Assert.Contains("database: Degraded", body, StringComparison.Ordinal);
+            AssertNoInternals(body);
         }
         finally
         {

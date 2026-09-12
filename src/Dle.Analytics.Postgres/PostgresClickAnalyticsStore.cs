@@ -250,13 +250,13 @@ public sealed partial class PostgresClickAnalyticsStore : IClickAnalyticsStore
                        0::bigint        AS clicks,
                        0::bigint        AS installs,
                        count(*)::bigint AS conversions,
-                       coalesce(sum(s.value), 0)::numeric(18, 4) AS conversion_value
+                       coalesce(sum(s.event_value), 0)::numeric(18, 4) AS conversion_value
                 FROM sdk_events AS s
                 JOIN click_events AS ce ON ce.click_id = s.click_id
                 {RawClickJoin(query, "ce", resolved.NeedsLinkJoin)}
                 WHERE {RawClickFilter(query, "ce", parameters)}
                   AND s.tenant_id = @tenantId
-                  AND s.type = 'conversion'
+                  AND s.event_type = 'conversion'
                   AND s.click_id IS NOT NULL
                 GROUP BY 1
             )
@@ -616,7 +616,7 @@ public sealed partial class PostgresClickAnalyticsStore : IClickAnalyticsStore
             $"{alias}.tenant_id = @tenantId",
             $"{alias}.occurred_at >= @from",
             $"{alias}.occurred_at < @to",
-            $"{alias}.type = 'conversion'",
+            $"{alias}.event_type = 'conversion'",
         ];
 
         if (query.LinkId is { } linkId)

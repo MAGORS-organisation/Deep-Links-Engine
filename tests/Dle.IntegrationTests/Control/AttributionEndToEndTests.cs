@@ -36,6 +36,15 @@ namespace Dle.IntegrationTests.Control;
 public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastructure)
     : DleIntegrationTest(infrastructure)
 {
+    /// <summary>
+    /// The consent object an SDK sends once the host application has recorded attribution consent.
+    /// The tenants below run in <c>full</c> mode, and under §E.6.2 that mode only unlocks click-id
+    /// linking — the deterministic strategies included — when the request carries this; without it
+    /// the gate answers <c>match_type=none</c> with reason <c>consent_missing</c> (TC-146).
+    /// </summary>
+    private const string ConsentGranted =
+        "\"consent\": { \"analytics\": true, \"attribution\": true, \"ts\": \"2026-09-01T10:00:00Z\" }";
+
     [RequiresDockerFact]
     [Trait("TestCase", "TC-141")]
     public async Task Resolve_WithAnInstallReferrerCarryingTheClickId_MatchesDeterministically()
@@ -56,6 +65,7 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
                     "install_id": "install-1",
                     "platform": "android",
                     "app_version": "1.0.0",
+                    {{ConsentGranted}},
                     "referrer": "utm_source=google-play&utm_medium=organic&dl_cid={{clickId}}"
                   }
                   """),
@@ -132,7 +142,7 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
 
         string body = string.Create(
             CultureInfo.InvariantCulture,
-            $$"""{"install_id":"install-1","platform":"android","referrer":"dl_cid={{clickId}}"}""");
+            $$"""{"install_id":"install-1","platform":"android",{{ConsentGranted}},"referrer":"dl_cid={{clickId}}"}""");
 
         using (HttpResponseMessage first = await fixture.SdkKey.PostRawAsync(client, "/v1/resolve", body, Ct))
         {
@@ -172,7 +182,7 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
         using (HttpResponseMessage first = await fixture.SdkKey.PostRawAsync(
             client,
             "/v1/resolve",
-            string.Create(CultureInfo.InvariantCulture, $$"""{"install_id":"install-1","platform":"android","referrer":"dl_cid={{clickId}}"}"""),
+            string.Create(CultureInfo.InvariantCulture, $$"""{"install_id":"install-1","platform":"android",{{ConsentGranted}},"referrer":"dl_cid={{clickId}}"}"""),
             Ct))
         {
             Assert.Equal(HttpStatusCode.OK, first.StatusCode);
@@ -181,7 +191,7 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
         using HttpResponseMessage second = await fixture.SdkKey.PostRawAsync(
             client,
             "/v1/resolve",
-            string.Create(CultureInfo.InvariantCulture, $$"""{"install_id":"install-2","platform":"android","referrer":"dl_cid={{clickId}}"}"""),
+            string.Create(CultureInfo.InvariantCulture, $$"""{"install_id":"install-2","platform":"android",{{ConsentGranted}},"referrer":"dl_cid={{clickId}}"}"""),
             Ct);
 
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);

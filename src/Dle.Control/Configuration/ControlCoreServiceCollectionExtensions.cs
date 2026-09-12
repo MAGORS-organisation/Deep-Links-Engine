@@ -103,6 +103,10 @@ public static class ControlCoreServiceCollectionExtensions
             json.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower));
         });
 
+        // A lost PostgreSQL is a 503 with Retry-After, never a 500 (§D.6). Registered ahead of the
+        // problem-details fallback, which handles everything this one declines.
+        services.AddExceptionHandler<DependencyUnavailableExceptionHandler>();
+
         services.AddProblemDetails(options => options.CustomizeProblemDetails = static context =>
         {
             // The trace identifier is what turns "it returned 500" into a log query. Nothing else is

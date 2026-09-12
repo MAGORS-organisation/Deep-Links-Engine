@@ -163,6 +163,10 @@ public static class FastPersistenceServiceCollectionExtensions
                 redis.Configuration = cacheConnectionString;
                 redis.InstanceName = "dle:";
             });
+
+            // HybridCache hides a dead L2 from the request path on purpose, so the only thing that
+            // can report the shared cache as down is a probe on a clock (§D.6, cache_l2_down).
+            services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, DistributedCacheProbe>());
         }
 
         services.TryAddSingleton<ILinkCacheInvalidator, LinkCacheInvalidator>();

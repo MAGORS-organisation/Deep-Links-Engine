@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
 
 using Dle.Domain.Routing;
 using Dle.Edge.Configuration;
@@ -22,9 +23,19 @@ namespace Dle.IntegrationTests.Edge;
 /// process, so a shared host would let one test's cached miss decide another test's outcome.
 /// </para>
 /// </remarks>
-public sealed class ResolveEndpointTests(DleInfrastructureFixture infrastructure)
+public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infrastructure)
     : DleIntegrationTest(infrastructure)
 {
+    /// <summary>
+    /// Every HTML page carries a fresh 128-bit CSP nonce, so two otherwise identical 404 pages differ
+    /// in exactly that attribute. "Indistinguishable" is a claim about content, and the nonce is
+    /// fixed width, so it is blanked before two bodies are compared.
+    /// </summary>
+    [GeneratedRegex("nonce=\"[A-Za-z0-9_-]+\"")]
+    private static partial Regex NonceAttribute();
+
+    private static string WithoutNonce(string html) => NonceAttribute().Replace(html, "nonce=\"\"");
+
     [RequiresDockerFact]
     [Trait("TestCase", "TC-101")]
     public async Task Resolve_ActiveLinkOnIosWithoutTheApp_ServesTheInterstitialThatOffersTheStore()
@@ -129,8 +140,8 @@ public sealed class ResolveEndpointTests(DleInfrastructureFixture infrastructure
             unknownSlug.Content.Headers.ContentType?.ToString());
 
         Assert.Equal(
-            await foreignSlug.Content.ReadAsStringAsync(Ct),
-            await unknownSlug.Content.ReadAsStringAsync(Ct));
+            WithoutNonce(await foreignSlug.Content.ReadAsStringAsync(Ct)),
+            WithoutNonce(await unknownSlug.Content.ReadAsStringAsync(Ct)));
     }
 
     [RequiresDockerFact]
@@ -213,8 +224,8 @@ public sealed class ResolveEndpointTests(DleInfrastructureFixture infrastructure
 
         Assert.Equal(HttpStatusCode.NotFound, expired.StatusCode);
         Assert.Equal(
-            await missing.Content.ReadAsStringAsync(Ct),
-            await expired.Content.ReadAsStringAsync(Ct));
+            WithoutNonce(await missing.Content.ReadAsStringAsync(Ct)),
+            WithoutNonce(await expired.Content.ReadAsStringAsync(Ct)));
     }
 
     [RequiresDockerFact]
