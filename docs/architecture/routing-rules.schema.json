@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MAGORS-organisation/Deep-Links-Engine/docs/architecture/routing-rules.schema.json",
+  "title": "Deep Link Engine routing rules",
+  "description": "Shape of links.routing_rules (docs/zadanie.md §B.5.4, src/Dle.Domain/Routing). The schema checks structure; RoutingRuleValidator additionally enforces that the single default rule (the one without \"when\") is last, that rule ids are unique, that the A/B percentages of one rule sum to at most 100, that time windows are ordered, and that the document is at most 64 KiB.",
+  "type": "array",
+  "minItems": 1,
+  "maxItems": 50,
+  "items": { "$ref": "#/$defs/rule" },
+  "contains": { "$ref": "#/$defs/defaultRule" },
+  "minContains": 1,
+  "maxContains": 1,
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "required": ["id", "then"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "when": { "oneOf": [ { "$ref": "#/$defs/condition" }, { "type": "null" } ] },
+        "then": { "$ref": "#/$defs/action" }
+      }
+    },
+    "defaultRule": {
+      "description": "The default rule: no \"when\" (or when: null). Exactly one per link, and it must be last.",
+      "type": "object",
+      "properties": { "when": { "type": "null" } }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "platform": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["ios", "android", "desktop", "other", "unknown"] }
+        },
+        "os_version": { "$ref": "#/$defs/versionPredicate" },
+        "app_version": { "$ref": "#/$defs/versionPredicate" },
+        "country": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[A-Z]{2}$" }
+        },
+        "region": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "language": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z]{2,3}$" }
+        },
+        "channel": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "unknown", "browser", "crawler", "app",
+              "in_app_fb", "in_app_ig", "in_app_tiktok", "in_app_linkedin", "in_app_snapchat",
+              "in_app_x", "in_app_whatsapp", "in_app_telegram", "in_app_pinterest", "in_app_other"
+            ]
+          }
+        },
+        "time_window": { "$ref": "#/$defs/timeWindow" },
+        "ab": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/abVariant" }
+        }
+      }
+    },
+    "versionPredicate": {
+      "description": "All bounds present must hold. Missing components count as zero; a pre-release suffix is ignored.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "eq":  { "$ref": "#/$defs/version" },
+        "gt":  { "$ref": "#/$defs/version" },
+        "gte": { "$ref": "#/$defs/version" },
+        "lt":  { "$ref": "#/$defs/version" },
+        "lte": { "$ref": "#/$defs/version" }
+      }
+    },
+    "version": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+){0,3}([-+][0-9A-Za-z.-]+)?$" },
+    "timeWindow": {
+      "description": "Evaluated in UTC on every node.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string", "format": "date-time" },
+        "to":   { "type": "string", "format": "date-time" },
+        "hours_utc": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 23 }
+        },
+        "days_of_week_utc": {
+          "description": "0 = Sunday … 6 = Saturday",
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 6 }
+        }
+      }
+    },
+    "abVariant": {
+      "type": "object",
+      "required": ["variant", "percent"],
+      "additionalProperties": false,
+      "properties": {
+        "variant": { "type": "string", "minLength": 1 },
+        "percent": { "type": "integer", "minimum": 1, "maximum": 100 }
+      }
+    },
+    "httpUrl": { "type": "string", "format": "uri", "pattern": "^https?://" },
+    "action": {
+      "type": "object",
+      "required": ["action"],
+      "additionalProperties": false,
+      "properties": {
+        "action": { "type": "string", "enum": ["web", "app_or_store", "store_only", "app_only", "block"] },
+        "url": { "$ref": "#/$defs/httpUrl" },
+        "deeplink_path": {
+          "description": "A path such as /product/123 — never an absolute or protocol-relative URL.",
+          "type": "string",
+          "pattern": "^/(?!/)[^\\s]*$"
+        },
+        "store_url": { "$ref": "#/$defs/httpUrl" },
+        "referrer_template": {
+          "description": "Android Play Install Referrer template. Placeholders: {click_id} {utm_source} {utm_medium} {utm_campaign} {utm_term} {utm_content} {link_id}.",
+          "type": "string",
+          "maxLength": 500
+        },
+        "interstitial": { "type": "string", "enum": ["auto", "always", "never"], "default": "auto" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "action": { "const": "web" } } },
+          "then": { "required": ["url"] }
+        },
+        {
+          "if": { "properties": { "action": { "enum": ["app_or_store", "store_only"] } } },
+          "then": { "required": ["store_url"] }
+        }
+      ]
+    }
+  }
+}
