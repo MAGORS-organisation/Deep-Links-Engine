@@ -766,7 +766,7 @@ namespace Dle.Persistence.Migrations
                     b.HasIndex(new[] { "DomainId", "Slug" }, "ix_links_resolve")
                         .HasDatabaseName("ix_links_resolve");
 
-                    NpgsqlIndexBuilderExtensions.IncludeProperties(b.HasIndex(new[] { "DomainId", "Slug" }, "ix_links_resolve"), new[] { "TargetUrl", "DeeplinkPath", "RoutingRules", "OgMeta", "IsActive", "StartsAt", "ExpiresAt", "QuarantinedAt", "TenantId" });
+                    NpgsqlIndexBuilderExtensions.IncludeProperties(b.HasIndex(new[] { "DomainId", "Slug" }, "ix_links_resolve"), new[] { "TargetUrl", "DeeplinkPath", "RoutingRules", "OgMeta", "IsActive", "StartsAt", "ExpiresAt", "QuarantinedAt", "TenantId", "Id", "Utm", "Title", "CampaignId", "ExpiredUrl" });
 
                     b.HasIndex(new[] { "DomainId", "Slug" }, "uq_links_domain_slug")
                         .IsUnique()

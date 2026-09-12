@@ -68,6 +68,12 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
         "expires_at",
         "quarantined_at",
         "tenant_id",
+        // Beyond §B.5.2's list: what DapperLinkStore's resolve statement additionally reads.
+        "id",
+        "utm",
+        "title",
+        "campaign_id",
+        "expired_url",
     ];
 
     [RequiresDockerFact]

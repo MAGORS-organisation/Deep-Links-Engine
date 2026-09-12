@@ -619,7 +619,7 @@ namespace Dle.Persistence.Migrations
                 name: "ix_links_resolve",
                 table: "links",
                 columns: new[] { "domain_id", "slug" })
-                .Annotation("Npgsql:IndexInclude", new[] { "target_url", "deeplink_path", "routing_rules", "og_meta", "is_active", "starts_at", "expires_at", "quarantined_at", "tenant_id" });
+                .Annotation("Npgsql:IndexInclude", new[] { "target_url", "deeplink_path", "routing_rules", "og_meta", "is_active", "starts_at", "expires_at", "quarantined_at", "tenant_id", "id", "utm", "title", "campaign_id", "expired_url" });
 
             migrationBuilder.CreateIndex(
                 name: "ix_links_tags",

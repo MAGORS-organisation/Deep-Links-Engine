@@ -32,14 +32,17 @@ namespace Dle.Persistence.Fast.Links;
 /// </remarks>
 public sealed class DapperLinkStore : ILinkStore
 {
-    // Why the projection is wider than the covering index of §B.5.2:
+    // Why the projection is wider than the covering index of §B.5.2, and why the index follows it:
     //
-    // ix_links_resolve is (domain_id, slug) INCLUDE (target_url, deeplink_path, routing_rules,
-    // og_meta, is_active, starts_at, expires_at, quarantined_at, tenant_id), and every column of
-    // `links` below is either a key or an included column of it except utm, title, campaign_id and
-    // expired_url. Those four are not optional: LinkSnapshot.Utm is required, and expired_url is what
-    // separates the 302-to-a-farewell-page of TC-104 from a bare 404. Widening the INCLUDE list in the
-    // migration is the cheap fix and the reason this comment names them.
+    // §B.5.2 defines ix_links_resolve as (domain_id, slug) INCLUDE (target_url, deeplink_path,
+    // routing_rules, og_meta, is_active, starts_at, expires_at, quarantined_at, tenant_id). The
+    // statement below also reads id, utm, title, campaign_id and expired_url, and none of the five is
+    // optional: id is the click event's link, LinkSnapshot.Utm is required, title feeds the
+    // interstitial and Open Graph, campaign_id feeds attribution, and expired_url is what separates
+    // the 302-to-a-farewell-page of TC-104 from a bare 404. A covering index that leaves one of them
+    // out is not covering — the planner falls back to uq_links_domain_slug plus a heap fetch — so the
+    // migration's INCLUDE list carries all five, and CoveringIndexTests checks the plan of this exact
+    // statement. A column added here has to be added there (ADR-004).
     //
     // The joins are the honest part of the cost. Both consent modes are required to build the snapshot
     // and neither lives on `links`: the tenant's mode is on `tenants` and the domain override on

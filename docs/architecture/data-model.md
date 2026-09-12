@@ -118,8 +118,12 @@ Notes on the columns that carry design decisions:
 CREATE INDEX ix_links_resolve
     ON links (domain_id, slug)
     INCLUDE (target_url, deeplink_path, routing_rules, og_meta,
-             is_active, starts_at, expires_at, quarantined_at, tenant_id);
+             is_active, starts_at, expires_at, quarantined_at, tenant_id,
+             -- beyond the specification's list: what the edge's resolve statement also reads
+             id, utm, title, campaign_id, expired_url);
 ```
+
+The five trailing columns are not in the specification's definition. The edge builds a `LinkSnapshot` from one statement, and that statement reads them (the click event's `link_id`, the UTM set appended to the target, the title for the interstitial and Open Graph, the campaign for attribution, the farewell page of TC-104); a covering index that leaves one of them out is not covering, and the planner falls back to `uq_links_domain_slug` plus a heap fetch. `CoveringIndexTests` in the integration suite checks the plan of the real statement.
 
 **Planner note.** `INCLUDE` makes the index covering, but an *Index Only Scan* works only while the visibility map is well maintained. Set
 

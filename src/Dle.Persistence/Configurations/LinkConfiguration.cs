@@ -141,6 +141,13 @@ public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
         //
         // Index-only scans additionally need a well maintained visibility map, which is why the
         // migration lowers autovacuum_vacuum_scale_factor on this table to 0.02.
+        //
+        // The list is §B.5.2's plus the five columns the resolve statement in DapperLinkStore also
+        // reads to build a LinkSnapshot: id (the click event's link), utm (appended to the target),
+        // title (interstitial and Open Graph), campaign_id (attribution) and expired_url (the
+        // 302-to-a-farewell-page of TC-104). Covering means every column the statement touches;
+        // one outside the list sends the whole lookup back to the heap, and the integration suite
+        // checks the plan of that exact statement rather than the spec's shorter one.
         builder.HasIndex(l => new { l.DomainId, l.Slug }, "ix_links_resolve")
             .HasDatabaseName("ix_links_resolve")
             .IncludeProperties(l => new
@@ -154,6 +161,11 @@ public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
                 l.ExpiresAt,
                 l.QuarantinedAt,
                 l.TenantId,
+                l.Id,
+                l.Utm,
+                l.Title,
+                l.CampaignId,
+                l.ExpiredUrl,
             });
 
         // Control-plane listing: newest first within a tenant.
