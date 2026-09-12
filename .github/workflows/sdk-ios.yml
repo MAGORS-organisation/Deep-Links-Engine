@@ -106,8 +106,8 @@ jobs:
             -derivedDataPath "$DERIVED_DATA" \
             -resultBundlePath TestResults.xcresult \
             -skipPackagePluginValidation \
-            | tee test.log | grep -E 'Test Case|error:|failed|passed|TEST (SUCCEEDED|FAILED)' || true
-          grep -q 'TEST SUCCEEDED' test.log
+            | tee test.log | grep -E 'Test Case|error:|failed|passed|TEST (EXECUTE )?(SUCCEEDED|FAILED)' || true
+          grep -qE 'TEST (EXECUTE )?SUCCEEDED' test.log
 
       - name: Upload logs and result bundle
         if: ${{ always() }}
