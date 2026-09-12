@@ -49,6 +49,6 @@ internal object ClaimCode {
      */
     private fun isDotNetWhiteSpace(c: Char): Boolean = when (c.category) {
         CharCategory.SPACE_SEPARATOR, CharCategory.LINE_SEPARATOR, CharCategory.PARAGRAPH_SEPARATOR -> true
-        else -> c in '	'..'' || c == ''
+        else -> c in '0009'..'000D' || c == '0085'
     }
 }

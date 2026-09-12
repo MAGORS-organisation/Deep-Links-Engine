@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(UIKit) && !os(watchOS)
+import UIKit
+#endif
+
 /// The Deep Link Engine SDK.
 ///
 /// ```swift
