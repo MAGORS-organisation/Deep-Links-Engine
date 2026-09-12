@@ -35,6 +35,10 @@ class EventQueueTest {
         }
     }
 
+    // The queue runs on the TestScope itself, not on backgroundScope: advanceUntilIdle() only drives
+    // foreground work, so a queue launched in the background would never drain under it. Every
+    // drain terminates on its own (success, non-retriable refusal, or the retry budget), so a
+    // foreground queue cannot keep a test alive.
     private fun kotlinx.coroutines.CoroutineScope.queue(
         sender: RecordingSender,
         maxSize: Int = 1000,
@@ -53,7 +57,7 @@ class EventQueueTest {
     @Test
     fun dropsTheOldestEventWhenFull() = runTest {
         val sender = RecordingSender()
-        val queue = backgroundScope.queue(sender, maxSize = 3)
+        val queue = queue(sender, maxSize = 3)
 
         for (i in 1..5) queue.enqueue(DleEvent.custom("e$i"))
 
@@ -64,7 +68,7 @@ class EventQueueTest {
     @Test
     fun deliversInBatchesOfAtMostOneHundred() = runTest {
         val sender = RecordingSender()
-        val queue = backgroundScope.queue(sender)
+        val queue = queue(sender)
         for (i in 1..250) queue.enqueue(DleEvent.custom("e$i"))
 
         queue.flush()
@@ -80,7 +84,7 @@ class EventQueueTest {
     @Test
     fun flushesAutomaticallyAfterTheConfiguredDelay() = runTest {
         val sender = RecordingSender()
-        val queue = backgroundScope.queue(sender, flushDelayMillis = 3_000L)
+        val queue = queue(sender, flushDelayMillis = 3_000L)
 
         queue.enqueue(DleEvent.firstOpen())
         advanceTimeBy(2_999L)
@@ -96,7 +100,7 @@ class EventQueueTest {
     @Test
     fun retriesWithBackoffAndKeepsTheEventsUntilDelivered() = runTest {
         val sender = RecordingSender(ArrayDeque<DleException>(listOf(DleException.Network("offline"), DleException.Timeout("slow"))))
-        val queue = backgroundScope.queue(sender)
+        val queue = queue(sender)
         queue.enqueue(DleEvent.session())
 
         queue.flush()
@@ -119,7 +123,7 @@ class EventQueueTest {
 
     @Test
     fun backoffGrowsExponentiallyWithJitterAndHonoursRetryAfter() = runTest {
-        val queue = backgroundScope.queue(RecordingSender())
+        val queue = queue(RecordingSender())
 
         for (attempt in 1..20) {
             val ceiling = minOf(EventQueue.BASE_BACKOFF_MILLIS shl minOf(attempt - 1, EventQueue.MAX_BACKOFF_EXPONENT), EventQueue.MAX_BACKOFF_MILLIS)
@@ -135,7 +139,7 @@ class EventQueueTest {
     @Test
     fun dropsABatchTheServerRefusesForGood() = runTest {
         val sender = RecordingSender(ArrayDeque<DleException>(listOf(DleException.Http(status = 400))))
-        val queue = backgroundScope.queue(sender)
+        val queue = queue(sender)
         queue.enqueue(DleEvent.custom("bad"))
 
         queue.flush()
@@ -150,7 +154,7 @@ class EventQueueTest {
     fun pausesAfterTheRetryBudgetAndResumesOnTheNextFlush() = runTest {
         val failures = ArrayDeque<DleException>(List(EventQueue.MAX_ATTEMPTS_PER_RUN + 1) { DleException.Network("offline") })
         val sender = RecordingSender(failures)
-        val queue = backgroundScope.queue(sender)
+        val queue = queue(sender)
         queue.enqueue(DleEvent.session())
 
         queue.flush()
@@ -166,11 +170,11 @@ class EventQueueTest {
 
     @Test
     fun survivesProcessDeath() = runTest {
-        val first = backgroundScope.queue(RecordingSender(), flushDelayMillis = 60_000L)
+        val first = queue(RecordingSender(), flushDelayMillis = 60_000L)
         first.enqueue(DleEvent.custom("one"))
         first.enqueue(DleEvent.conversion("purchase", 24.9, "eur"))
 
-        val second = backgroundScope.queue(RecordingSender(), flushDelayMillis = 60_000L)
+        val second = queue(RecordingSender(), flushDelayMillis = 60_000L)
 
         assertEquals(2, second.size)
         assertEquals(listOf("one", "purchase"), second.snapshot().map { it.name })
@@ -182,7 +186,7 @@ class EventQueueTest {
     fun aCorruptBufferFileStartsEmptyInsteadOfCrashing() = runTest {
         File(dir, EventQueue.FILE_NAME).writeText("{not json")
 
-        val queue = backgroundScope.queue(RecordingSender())
+        val queue = queue(RecordingSender())
 
         assertEquals(0, queue.size)
     }
@@ -194,7 +198,7 @@ class EventQueueTest {
             maxSize = 10,
             flushDelayMillis = 0L,
             sender = { throw IllegalStateException("bug in the sender") },
-            scope = backgroundScope,
+            scope = this,
             log = silentLog(),
             clock = clock,
         )

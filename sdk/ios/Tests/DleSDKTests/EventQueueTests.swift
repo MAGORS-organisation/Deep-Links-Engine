@@ -111,15 +111,18 @@ final class EventQueueTests: XCTestCase {
         let queue = makeQueue(spy: spy, clock: clock)
         queue.enqueue(.custom(name: "a"))
 
-        XCTAssertFalse(await queue.flush())
+        let deliveredOnFirstFlush = await queue.flush()
+        XCTAssertFalse(deliveredOnFirstFlush)
         XCTAssertEqual(spy.batches.current.count, 1)
 
         clock.advance(by: 59)
-        XCTAssertFalse(await queue.flush())
+        let deliveredBeforeRetryAfter = await queue.flush()
+        XCTAssertFalse(deliveredBeforeRetryAfter)
         XCTAssertEqual(spy.batches.current.count, 1, "Retry-After of 60 s means nothing at 59 s")
 
         clock.advance(by: 2)
-        XCTAssertTrue(await queue.flush())
+        let deliveredAfterRetryAfter = await queue.flush()
+        XCTAssertTrue(deliveredAfterRetryAfter)
         XCTAssertEqual(spy.batches.current.count, 2)
     }
 
@@ -174,7 +177,8 @@ final class EventQueueTests: XCTestCase {
         XCTAssertEqual(second.events.map(\.name), ["a", "purchase"])
         XCTAssertEqual(second.events[1].value, 24.9)
 
-        XCTAssertTrue(await second.flush())
+        let deliveredFromSecondQueue = await second.flush()
+        XCTAssertTrue(deliveredFromSecondQueue)
         XCTAssertEqual(spy.batches.current.count, 1)
         XCTAssertFalse(storage.exists(EventQueue.fileName), "an empty queue leaves no file behind")
     }
