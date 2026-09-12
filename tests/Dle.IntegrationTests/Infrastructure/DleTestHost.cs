@@ -56,11 +56,21 @@ public class DleTestHost<TEntryPoint> : WebApplicationFactory<TEntryPoint>
         // developer-facing behaviour that no test should be asserting against.
         builder.UseEnvironment(Environments.Staging);
 
-        // The test binary's own directory. There is no wwwroot and no appsettings.json beside it,
-        // which is the point: configuration comes from the dictionary below and from nowhere else.
+        // The test binary's own directory. Note that the shipped appsettings.json of the referenced
+        // hosts IS copied beside the test binary by the build, so it is loaded as a base layer; every
+        // key the tests care about is overridden below.
         builder.UseContentRoot(AppContext.BaseDirectory);
 
-        builder.ConfigureAppConfiguration((_, configuration) =>
-            configuration.AddInMemoryCollection(_settings));
+        // UseSetting, not ConfigureAppConfiguration + AddInMemoryCollection. For a host built with
+        // WebApplication.CreateBuilder the factory applies ConfigureAppConfiguration only when the
+        // host's Program calls Build(), which is after Program has already read the configuration
+        // it uses eagerly at composition time - the NpgsqlDataSource singleton takes its connection
+        // string then. Values bound lazily through IOptions saw the override; the connection string
+        // did not, and the host under test connected to localhost:5432 from appsettings.json. Host
+        // settings are applied before Program runs, so both paths see the same configuration.
+        foreach ((string key, string? value) in _settings)
+        {
+            builder.UseSetting(key, value);
+        }
     }
 }
