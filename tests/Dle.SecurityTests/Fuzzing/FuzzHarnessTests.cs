@@ -169,6 +169,11 @@ public sealed class FuzzHarnessTests
         // T-10 through the classifier: the header is attacker chosen, the parser is a set of compiled
         // regular expressions, and catastrophic backtracking on a hot path is a denial of service that
         // costs the attacker one request.
+        // The hang threshold is about steady-state parsing, not about the one-off cost of the parser
+        // compiling its regular-expression set on first use, which on a cold two-vCPU CI runner has
+        // been measured above the threshold. Pay that cost once, outside the timed loop.
+        FuzzTargets.UserAgent(Encoding.UTF8.GetBytes(UserAgentSeeds[0]));
+
         Gen.Select(Gen.Int[0, UserAgentSeeds.Length - 1], Gen.Int[0, 8191], Gen.Byte).Sample(
             mutation =>
             {

@@ -185,7 +185,7 @@ public static class RoutingRuleValidator
         {
             errors.Add(new RoutingValidationError(
                 path,
-                FormattableString.Invariant($"Scheme \"{uri.Scheme}\" is not allowed; only http and https may be used as a redirect target.")));
+                FormattableString.Invariant($"Scheme \"{uri.Scheme}\" is not allowed; the url must be an absolute http or https URL.")));
         }
     }
 

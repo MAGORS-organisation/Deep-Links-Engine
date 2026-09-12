@@ -41,6 +41,10 @@ def line_counts(package: ET.Element) -> tuple[int, int]:
     seen: dict[tuple[str, int], bool] = {}
     for cls in package.iter("class"):
         filename = cls.get("filename", "")
+        if filename.endswith((".g.cs", ".generated.cs", ".Designer.cs")):
+            # Source-generated code (System.Text.Json contexts, LoggerMessage) is not a coverage
+            # target; counting it halves Dle.Domain's figure without saying anything about the tests.
+            continue
         for line in cls.iter("line"):
             number = int(line.get("number", "0"))
             hit = int(line.get("hits", "0")) > 0

@@ -132,8 +132,12 @@ jobs:
       - name: NuGet licences (direct + transitive) against the allow-list
         run: |
           rc=0
+          # licence-overrides.json asserts the licence of packages whose NuGet metadata the tool cannot
+          # resolve on its own (a licence file it cannot classify, or a raw repository URL). Every entry
+          # was checked against the upstream LICENSE file and is MIT; the file is reviewed like code.
           nuget-license --input Dle.sln --include-transitive \
             --allowed-license-types "$ALLOWED_LICENCES" \
+            --override-package-information .github/licence-overrides.json \
             --output Markdown --file-output licences-nuget.md || rc=$?
           { echo "### NuGet licences (exit $rc)"; echo; cat licences-nuget.md 2>/dev/null || echo "_no report written_"; echo; } >> "$GITHUB_STEP_SUMMARY"
           exit $rc

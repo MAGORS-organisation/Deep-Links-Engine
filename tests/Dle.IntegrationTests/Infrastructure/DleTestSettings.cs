@@ -95,9 +95,9 @@ public static class DleTestSettings
         // the thing under test rather than an obstacle to it.
         settings["Dle:RateLimits:Edge:Enabled"] = "true";
         settings["Dle:RateLimits:Edge:Resolve:PermitsPerWindow"] = "1000000";
-        settings["Dle:RateLimits:Edge:NotFound:TokensPerPeriod"] = "1000000";
-        settings["Dle:RateLimits:Edge:NotFound:Burst"] = "1000000";
-        settings["Dle:RateLimits:Edge:Qr:PermitsPerWindow"] = "1000000";
+        settings["Dle:RateLimits:Edge:NotFound:TokensPerPeriod"] = "100000";
+        settings["Dle:RateLimits:Edge:NotFound:Burst"] = "100000";
+        settings["Dle:RateLimits:Edge:Qr:PermitsPerWindow"] = "100000";
 
         settings["Dle:Persistence:Fast:ApplicationName"] = "dle-edge-tests";
         settings["Dle:Persistence:Fast:MinPoolSize"] = "0";
@@ -138,10 +138,10 @@ public static class DleTestSettings
 
         settings["Dle:RateLimits:ReadPerMinute"] = "1000000";
         settings["Dle:RateLimits:WritePerMinute"] = "1000000";
-        settings["Dle:RateLimits:LinkCreatePerMinute"] = "1000000";
-        settings["Dle:RateLimits:NewTenantLinkCreatePerMinute"] = "1000000";
-        settings["Dle:RateLimits:AuthAttemptsPerMinute"] = "1000000";
-        settings["Dle:RateLimits:AuthAttemptBurst"] = "1000000";
+        settings["Dle:RateLimits:LinkCreatePerMinute"] = "100000";
+        settings["Dle:RateLimits:NewTenantLinkCreatePerMinute"] = "100000";
+        settings["Dle:RateLimits:AuthAttemptsPerMinute"] = "10000";
+        settings["Dle:RateLimits:AuthAttemptBurst"] = "10000";
 
         settings["Dle:Persistence:Fast:ApplicationName"] = "dle-control-tests";
         settings["Dle:Persistence:Fast:MinPoolSize"] = "0";

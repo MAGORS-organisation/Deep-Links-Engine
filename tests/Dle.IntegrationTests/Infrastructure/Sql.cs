@@ -57,7 +57,15 @@ public static class Sql
 
         object? value = await command.ExecuteScalarAsync(cancellationToken);
 
-        return value is null or DBNull ? default : (T)value;
+        // Npgsql 10 maps a PostgreSQL `date` to DateOnly. Tests read `::date` values as the midnight
+        // UTC instant of that day, which is what the partition bounds are expressed in.
+        return value switch
+        {
+            null or DBNull => default,
+            DateOnly date when typeof(T) == typeof(DateTime) || typeof(T) == typeof(DateTime?) =>
+                (T)(object)date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
+            _ => (T)value,
+        };
     }
 
     /// <summary>Reads the first column of every row as a string.</summary>
