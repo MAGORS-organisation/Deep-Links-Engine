@@ -33,10 +33,15 @@ ARG CHISELED_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled
 FROM --platform=$BUILDPLATFORM ${SDK_IMAGE} AS build
 ARG TARGETARCH
 ARG BUILD_CONFIGURATION=Release
+# Packages are restored INTO the image (NUGET_PACKAGES under /src), not into a BuildKit cache
+# mount. A cache mount is empty on every fresh runner while the restore layer may be a layer-cache
+# hit, and dotnet publish --no-restore then fails with NETSDK1064 on packages the assets file
+# lists but the mount no longer holds. Inside a layer the two cannot diverge.
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
     DOTNET_NOLOGO=1 \
     DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
     NUGET_XMLDOC_MODE=skip
+ENV NUGET_PACKAGES=/src/.nuget/packages
 WORKDIR /src
 
 # Restore first, from the project graph only, so that source edits do not invalidate the
@@ -47,12 +52,10 @@ COPY src/Dle.Domain/Dle.Domain.csproj src/Dle.Domain/packages.lock.json src/Dle.
 COPY src/Dle.Crypto/Dle.Crypto.csproj src/Dle.Crypto/packages.lock.json src/Dle.Crypto/
 COPY src/Dle.Persistence.Fast/Dle.Persistence.Fast.csproj src/Dle.Persistence.Fast/packages.lock.json src/Dle.Persistence.Fast/
 COPY src/Dle.Edge/Dle.Edge.csproj src/Dle.Edge/packages.lock.json src/Dle.Edge/
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
-    dotnet restore src/Dle.Edge/Dle.Edge.csproj -a "$TARGETARCH"
+RUN dotnet restore src/Dle.Edge/Dle.Edge.csproj -a "$TARGETARCH"
 
 COPY src/ src/
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
-    dotnet publish src/Dle.Edge/Dle.Edge.csproj \
+RUN dotnet publish src/Dle.Edge/Dle.Edge.csproj \
       -c "$BUILD_CONFIGURATION" -a "$TARGETARCH" --no-restore --self-contained false \
       -o /app/publish
 

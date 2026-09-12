@@ -298,7 +298,7 @@ public static class TestSeed
             INSERT INTO click_events (occurred_at, tenant_id, link_id, click_id, decision,
                                       consent_mode, is_bot, ip_prefix, os_family)
             VALUES (@occurred_at, @tenant_id, @link_id, @click_id, @decision,
-                    'full', @is_bot, @ip_prefix, @os_family)
+                    'full', @is_bot, @ip_prefix::inet, @os_family)
             """);
 
         command.Parameters.Add(new NpgsqlParameter<DateTime>("occurred_at", occurredAt.UtcDateTime)
@@ -310,7 +310,7 @@ public static class TestSeed
         command.Parameters.Add(new NpgsqlParameter<string>("click_id", clickId));
         command.Parameters.Add(new NpgsqlParameter<string>("decision", decision));
         command.Parameters.Add(new NpgsqlParameter<bool>("is_bot", isBot));
-        command.Parameters.Add(new NpgsqlParameter("ip_prefix", NpgsqlDbType.Inet)
+        command.Parameters.Add(new NpgsqlParameter("ip_prefix", NpgsqlDbType.Text)
         {
             Value = ipPrefix is null ? DBNull.Value : ipPrefix,
         });

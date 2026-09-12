@@ -312,6 +312,11 @@ jobs:
       DLE_HTTPS_PORT: "8443"
       DLE_EDGE_IMAGE: dle-edge:ci
       DLE_CONTROL_IMAGE: dle-control:ci
+      # Placeholders so that the "Stack logs" and "Tear down" steps can interpolate the compose file
+      # even when the job fails before the throw-away-secrets step has run. That step overrides both
+      # through GITHUB_ENV for the real stack; these values never reach a running container.
+      POSTGRES_PASSWORD: placeholder-overridden-before-the-stack-starts
+      DLE_MASTER_SECRET: placeholder-overridden-before-the-stack-starts-32chars
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

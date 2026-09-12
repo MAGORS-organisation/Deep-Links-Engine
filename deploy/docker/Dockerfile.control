@@ -55,10 +55,15 @@ RUN npm run build
 FROM --platform=$BUILDPLATFORM ${SDK_IMAGE} AS build
 ARG TARGETARCH
 ARG BUILD_CONFIGURATION=Release
+# Packages are restored INTO the image (NUGET_PACKAGES under /src), not into a BuildKit cache
+# mount. A cache mount is empty on every fresh runner while the restore layer may be a layer-cache
+# hit, and dotnet publish --no-restore then fails with NETSDK1064 on packages the assets file
+# lists but the mount no longer holds. Inside a layer the two cannot diverge.
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
     DOTNET_NOLOGO=1 \
     DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
     NUGET_XMLDOC_MODE=skip
+ENV NUGET_PACKAGES=/src/.nuget/packages
 WORKDIR /src
 
 COPY global.json Directory.Build.props Directory.Packages.props NuGet.config .editorconfig ./
@@ -70,21 +75,18 @@ COPY src/Dle.Persistence.Fast/Dle.Persistence.Fast.csproj src/Dle.Persistence.Fa
 COPY src/Dle.Analytics.ClickHouse/Dle.Analytics.ClickHouse.csproj src/Dle.Analytics.ClickHouse/packages.lock.json src/Dle.Analytics.ClickHouse/
 COPY src/Dle.Analytics.Postgres/Dle.Analytics.Postgres.csproj src/Dle.Analytics.Postgres/packages.lock.json src/Dle.Analytics.Postgres/
 COPY src/Dle.Control/Dle.Control.csproj src/Dle.Control/packages.lock.json src/Dle.Control/
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
-    dotnet restore src/Dle.Control/Dle.Control.csproj -a "$TARGETARCH" \
+RUN dotnet restore src/Dle.Control/Dle.Control.csproj -a "$TARGETARCH" \
  && dotnet tool restore
 
 COPY src/ src/
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
-    dotnet publish src/Dle.Control/Dle.Control.csproj \
+RUN dotnet publish src/Dle.Control/Dle.Control.csproj \
       -c "$BUILD_CONFIGURATION" -a "$TARGETARCH" --no-restore --self-contained false \
       -o /app/publish
 
 # Migration bundle for the target platform. The bundle command builds Dle.Persistence itself
 # (a RID-less build, distinct from the RID-specific publish above), which is why --no-build is
 # not passed. dotnet-ef comes from the tool manifest in .config/dotnet-tools.json.
-RUN --mount=type=cache,id=nuget,target=/root/.nuget/packages \
-    case "$TARGETARCH" in \
+RUN case "$TARGETARCH" in \
       arm64) RID=linux-arm64 ;; \
       arm)   RID=linux-arm ;; \
       *)     RID=linux-x64 ;; \
