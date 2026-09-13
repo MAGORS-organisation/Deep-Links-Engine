@@ -118,7 +118,7 @@ not been executed anywhere.
 
 ### Verified in CI on this pull request
 
-- 1 430 unit, 75 contract, 850 security and 98 integration tests pass; the integration suite runs
+- 1 430 unit, 75 contract, 850 security and 103 integration tests pass; the integration suite runs
   against PostgreSQL 18 and Valkey 8 in Testcontainers, applies and rolls back the migration, and
   covers the chaos scenarios of §D.6 (PostgreSQL stopped, Valkey unreachable).
 - The Android SDK compiles and passes its unit tests (JDK 17, Gradle 8.11); the iOS SDK builds and
@@ -127,9 +127,9 @@ not been executed anywhere.
   against the edge. CodeQL (C#, JavaScript/TypeScript), the SBOM/CBOM, the NuGet vulnerability
   gate, the licence policy (four packages carry a licence override to MIT, verified upstream) and
   the format gate are green.
-- Overall line coverage is 61.2 % against a 70 % target; the domain tier is at 95.5 %
+- Overall line coverage is 61.4 % against a 70 % target; the domain tier is at 95.5 %
   (`Dle.Domain`) and 94.7 % (`Dle.Crypto`) against a 90 % gate. The overall gate is a warning
-  until the number is reached; `Dle.Control` (38.9 %) and `Dle.Analytics.Postgres` (4.6 %) are
+  until the number is reached; `Dle.Control` (39.2 %) and `Dle.Analytics.Postgres` (4.6 %) are
   the gap.
 
 ### Not yet verified — read before relying on anything above

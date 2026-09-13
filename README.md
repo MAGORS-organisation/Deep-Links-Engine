@@ -93,14 +93,14 @@ Be precise about what "done" means here.
 |---|---|---|
 | `Dle.Domain`, `Dle.Crypto`, `Dle.Persistence*`, `Dle.Analytics.*` | ✅ | `dotnet build -warnaserror` 0/0; 1 430 unit tests pass; Feistel bijection proven exhaustively at narrow widths |
 | `Dle.Edge`, `Dle.Control` | ✅ | Both hosts start; 75 contract + 850 security tests pass; 404/410/302 paths verified through `WebApplicationFactory` |
-| Integration suite (98 tests, Testcontainers) | ✅ | **Green in CI** against PostgreSQL 18 and Valkey 8, including the chaos tests that stop PostgreSQL and point the edge at an unreachable Valkey. Its first run found seven defects; all are fixed and listed in the changelog |
+| Integration suite (103 tests, Testcontainers) | ✅ | **Green in CI** against PostgreSQL 18 and Valkey 8, including the chaos tests that stop PostgreSQL and point the edge at an unreachable Valkey. Its first run found seven defects and an adversarial review of the fixes found nine more; all are fixed and listed in the changelog |
 | EF Core migration | ✅ | Applied and rolled back on a live PostgreSQL 18 by the integration suite: every table the product writes to exists, both event streams are partitioned and accept inserts, `ix_links_resolve` is answered by an index-only scan |
 | Web SDK `@magors/dle-web` | ✅ | lint, typecheck, build, 145 tests, 8.85 kB gzip |
 | Admin console | ✅ | lint, typecheck, Vite build, copied into the control host |
 | Android SDK | ✅ | Compiled and unit-tested in CI (`sdk-android.yml`, JDK 17, Gradle 8.11) |
 | iOS SDK | ✅ | Built and tested in CI on the iOS Simulator (`sdk-ios.yml`, Xcode, Swift 6) |
 | Container images, compose stack, ZAP | ✅ | Both images build in CI, pass Trivy, and the compose stack starts for an OWASP ZAP baseline against the edge (`security.yml`) |
-| Coverage | ⚠️ | Domain tier 95.5 % / 94.7 % (gate ≥ 90 %); overall **61.2 % against a 70 % target** — `Dle.Control` (38.9 %) and `Dle.Analytics.Postgres` (4.6 %) are the gap; the overall gate warns until it is reached |
+| Coverage | ⚠️ | Domain tier 95.5 % / 94.7 % (gate ≥ 90 %); overall **61.4 % against a 70 % target** — `Dle.Control` (39.2 %) and `Dle.Analytics.Postgres` (4.6 %) are the gap; the overall gate warns until it is reached |
 | Load profile (k6, §D.5) | ✅ written | **Never run** — needs a deployed, seeded instance |
 | 8-device manual matrix (§D.2) | — | Not automatable by design; pending |
 
