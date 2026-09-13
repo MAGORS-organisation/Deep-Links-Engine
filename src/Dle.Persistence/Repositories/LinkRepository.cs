@@ -2,6 +2,7 @@ using Dle.Domain.Contracts;
 using Dle.Domain.Links;
 using Dle.Domain.Primitives;
 using Dle.Persistence.Internal;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Dle.Persistence.Repositories;
@@ -243,28 +244,50 @@ public sealed class LinkRepository
         // the tracked one instead, and it is the tracked instance the revision is taken from.
         Link tracked = _db.Links.Local.FirstOrDefault(candidate => candidate.Id == link.Id) ?? link;
 
-        if (ReferenceEquals(tracked, link))
-        {
-            _db.Links.Update(link);
-
-            // Version is the concurrency token. An attached instance has no history, so the
-            // version it was read at is restored as the original value: the UPDATE then carries
-            // "WHERE version = @read" and a write that landed in between - another edit, a
-            // quarantine - surfaces as DbUpdateConcurrencyException instead of being overwritten.
-            _db.Entry(link).Property(l => l.Version).OriginalValue = readVersion;
-        }
-        else
+        if (!ReferenceEquals(tracked, link))
         {
             _db.Entry(tracked).CurrentValues.SetValues(link);
         }
 
         LinkVersion revision = LinkRevisions.Create(tracked, changedBy, changeNote, _timeProvider.GetUtcNow());
 
-        // The row first, the history row second, in one transaction. Saved together, EF Core
-        // batches the history INSERT ahead of the UPDATE, and a stale write then trips the unique
-        // index on (link_id, version) before the version check ever runs - the right refusal for
-        // the wrong reason. Saved in this order, a stale write is a DbUpdateConcurrencyException
-        // and nothing else; a crash between the two rolls both back.
+        await WriteVersionedAsync(tracked, readVersion, revision, cancellationToken);
+
+        return tracked.Version;
+    }
+
+    /// <summary>
+    /// Writes a changed link and its history row: the row first, guarded by the version it was
+    /// read at, then the history row, in one transaction.
+    /// </summary>
+    /// <param name="link">The link, carrying the new values and the new version.</param>
+    /// <param name="readVersion">The version the caller read; the UPDATE is conditional on it.</param>
+    /// <param name="revision">The history row for the new version.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <exception cref="DbUpdateConcurrencyException">
+    /// The row no longer carries <paramref name="readVersion"/>: another edit or a quarantine
+    /// landed in between, and this write would have reversed it.
+    /// </exception>
+    /// <remarks>
+    /// <para>
+    /// Two saves rather than one. Staged together, EF Core batches the history INSERT ahead of the
+    /// UPDATE, and a stale write then trips the unique index on (link_id, version) before the
+    /// version check ever runs - the right refusal for the wrong reason. Saved in this order a
+    /// stale write is a <see cref="DbUpdateConcurrencyException"/> and nothing else.
+    /// </para>
+    /// <para>
+    /// The transaction runs through the retrying execution strategy, which may replay the whole
+    /// delegate after a transient failure. Every attempt therefore re-marks the row as a full
+    /// update guarded by <paramref name="readVersion"/> and the history row as a pending insert,
+    /// whatever an earlier attempt left in the change tracker.
+    /// </para>
+    /// </remarks>
+    internal async Task WriteVersionedAsync(
+        Link link,
+        int readVersion,
+        LinkVersion revision,
+        CancellationToken cancellationToken)
+    {
         IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
 
         await strategy.ExecuteAsync(
@@ -272,23 +295,17 @@ public sealed class LinkRepository
             {
                 await using IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync(token);
 
-                await _db.SaveChangesAsync(acceptAllChangesOnSuccess: false, token);
+                EntityEntry<Link> row = _db.Entry(link);
+                row.State = EntityState.Modified;
+                row.Property(l => l.Version).OriginalValue = readVersion;
+                await _db.SaveChangesAsync(token);
 
-                if (_db.Entry(revision).State == EntityState.Detached)
-                {
-                    _db.LinkVersions.Add(revision);
-                }
+                _db.Entry(revision).State = EntityState.Added;
+                await _db.SaveChangesAsync(token);
 
-                await _db.SaveChangesAsync(acceptAllChangesOnSuccess: false, token);
                 await transaction.CommitAsync(token);
             },
             cancellationToken);
-
-        // Only a committed transaction moves the tracked state on; a replay of the delegate above
-        // after a transient failure needs the entries still marked as they were.
-        _db.ChangeTracker.AcceptAllChanges();
-
-        return tracked.Version;
     }
 
     /// <summary>Deletes a link of the tenant in scope, with its revisions.</summary>

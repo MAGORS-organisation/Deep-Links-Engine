@@ -1,5 +1,4 @@
 using Dle.Persistence.Internal;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Dle.Persistence.Repositories;
 
@@ -17,6 +16,7 @@ public sealed class AbuseRepository
 {
     private readonly DleDbContext _db;
     private readonly TimeProvider _timeProvider;
+    private readonly LinkRepository _links;
 
     /// <summary>Creates the repository.</summary>
     /// <param name="db">The control-plane context.</param>
@@ -28,6 +28,10 @@ public sealed class AbuseRepository
 
         _db = db;
         _timeProvider = timeProvider;
+
+        // Quarantine and release are versioned edits of the link, written the same way and with
+        // the same guarantees as an operator's edit; the link repository owns that write path.
+        _links = new LinkRepository(db, timeProvider);
     }
 
     /// <summary>
@@ -230,35 +234,14 @@ public sealed class AbuseRepository
                 return false;
             }
 
+            int readVersion = link.Version;
             change(link);
-            link.Version++;
+            link.Version = readVersion + 1;
             LinkVersion revision = LinkRevisions.Create(link, changedBy: null, changeNote, _timeProvider.GetUtcNow());
 
             try
             {
-                // The row first, the history row second, in one transaction: saved together the
-                // history INSERT is batched ahead of the UPDATE and a lost race shows up as a
-                // unique violation instead of the concurrency exception handled below.
-                IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
-
-                await strategy.ExecuteAsync(
-                    async token =>
-                    {
-                        await using IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync(token);
-
-                        await _db.SaveChangesAsync(acceptAllChangesOnSuccess: false, token);
-
-                        if (_db.Entry(revision).State == EntityState.Detached)
-                        {
-                            _db.LinkVersions.Add(revision);
-                        }
-
-                        await _db.SaveChangesAsync(acceptAllChangesOnSuccess: false, token);
-                        await transaction.CommitAsync(token);
-                    },
-                    cancellationToken);
-
-                _db.ChangeTracker.AcceptAllChanges();
+                await _links.WriteVersionedAsync(link, readVersion, revision, cancellationToken);
                 return true;
             }
             catch (DbUpdateConcurrencyException) when (attempt < attempts)
