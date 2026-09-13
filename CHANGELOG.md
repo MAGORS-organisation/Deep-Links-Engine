@@ -66,33 +66,52 @@ not been executed anywhere.
 
 - Four defects found by the test suites while they were being written (see commit
   `8f99c56`): recorded here so the first release notes do not present them as never having existed.
+- Seven defects found by the first CI run of the integration suite against a live PostgreSQL 18
+  and Valkey 8, all fixed in the same pull request:
+  - `sdk_events` did not exist. The SDK event batch writer copied into it and the funnel queries
+    joined it, so every `POST /v1/events` was a 500. The `InitialSchema` migration now creates it,
+    partitioned like `click_events`, and the plain-SQL partition fallback maintains both streams
+    (`dle_click_events_maintain()`, `dle_sdk_events_maintain()`).
+  - Every `Idempotency-Key` reservation was filed under a freshly minted, non-existent tenant and
+    rejected by the cross-tenant guard: the identity stamp treated the `tenant_id` half of the
+    composite key as an identifier to generate.
+  - Updating a link that the same unit of work had already loaded failed on a duplicate tracked
+    instance.
+  - The control plane answered 500, not 503, while PostgreSQL was unreachable (§D.6).
+  - The edge's readiness probe did not mention PostgreSQL at all; it now reports the database as
+    degraded (still 200, so cached links keep serving) while it is unreachable.
+  - Nothing reported the shared cache as down while Valkey was unreachable (§D.6,
+    `cache_l2_down`); a probe now feeds the `dle.cache.l2.up` gauge.
+  - `ix_links_resolve` did not cover five columns the edge's resolve statement reads, so the
+    resolve was never an index-only scan (§B.5.2).
+
+### Verified in CI on this pull request
+
+- 1 430 unit, 75 contract, 850 security and 98 integration tests pass; the integration suite runs
+  against PostgreSQL 18 and Valkey 8 in Testcontainers, applies and rolls back the migration, and
+  covers the chaos scenarios of §D.6 (PostgreSQL stopped, Valkey unreachable).
+- The Android SDK compiles and passes its unit tests (JDK 17, Gradle 8.11); the iOS SDK builds and
+  passes its tests on the iOS Simulator (Swift 6).
+- Both container images build, pass Trivy, and the compose stack starts for an OWASP ZAP baseline
+  against the edge. CodeQL (C#, JavaScript/TypeScript), the SBOM/CBOM, the NuGet vulnerability
+  gate, the licence policy (four packages carry a licence override to MIT, verified upstream) and
+  the format gate are green.
+- Overall line coverage is 61.2 % against a 70 % target; the domain tier is at 95.5 %
+  (`Dle.Domain`) and 94.7 % (`Dle.Crypto`) against a 90 % gate. The overall gate is a warning
+  until the number is reached; `Dle.Control` (38.9 %) and `Dle.Analytics.Postgres` (4.6 %) are
+  the gap.
 
 ### Not yet verified — read before relying on anything above
 
-- **Android SDK and iOS SDK have never been compiled.** They were written without a JDK/Android
-  SDK and without Xcode. The `sdk-android.yml` and `sdk-ios.yml` workflows are their first build;
-  a red first run is expected and is not a CI defect.
-- **Container images and the compose stack have never been built or started** on the authoring
-  machine (no Docker there). `security.yml` (image scan, ZAP) and `release.yml` are their first
-  build and first start.
 - **The Helm chart has never been rendered, linted or installed** (no Helm on the authoring
   machine). Its bitnami sub-chart version ranges are unresolved; `release.yml` runs
   `helm dependency update` and will fail loudly if they do not resolve.
-- **`Dle.IntegrationTests` has not run in CI.** Locally it runs only with Docker present; CI sets
-  `DLE_TESTS_REQUIRE_DOCKER=1` so a missing Docker fails instead of skipping.
 - **The k6 load profile (`tests/load`) has never been run.** It needs a deployed, seeded instance
   and a control-plane API key; the release workflow runs it only when a staging target is
   configured and otherwise marks the release as pre-release.
-- **OWASP ZAP baseline has never been run** against the edge; `.github/zap/edge-baseline.conf`
-  silences four informational rules and nothing header- or CSP-related, so the first run will
-  probably need review.
 - **SharpFuzz is not wired up.** The fuzz targets exist and are driven by a property-based test;
   coverage-guided fuzzing needs a driver project and instrumentation that do not exist yet.
-- **The `dotnet format --verify-no-changes` gate, the coverage gate and the licence policy** run
-  for the first time in CI; the licence allow-list may need additions for packages whose metadata
-  carries a licence URL rather than an SPDX expression.
-- **Overall line coverage is ~47 % against a 70 % target**; the domain tier (`Dle.Domain`,
-  `Dle.Crypto`) is above 90 %. The overall gate is a warning until the number is reached.
+- **The eight-device manual matrix (§D.2)** has not been run.
 - **No external penetration test (S-10) and no staging key-rotation exercise (S-12)** have taken
   place; both are release-blocking for 1.0.
 
