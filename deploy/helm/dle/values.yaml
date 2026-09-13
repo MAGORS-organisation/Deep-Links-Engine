@@ -126,8 +126,10 @@ postgresql:
   auth:
     username: dle
     database: dle
-    # REQUIRED when enabled (or use secrets.existingSecret with a matching connection string).
-    password: ""
+    # REQUIRED when enabled: set postgresql.auth.password on the command line or in your own
+    # values file (or use secrets.existingSecret with a matching connection string). Deliberately
+    # absent here so that no default of this chart ever ships an empty password; the templates
+    # refuse to render without it.
   primary:
     persistence:
       size: 20Gi
@@ -169,8 +171,8 @@ valkey:
   auth:
     # Cache only, reachable only from this namespace's pods with the network policy on; an
     # unauthenticated in-cluster cache keeps the connection string free of a second password.
+    # When enabling auth, set valkey.auth.password alongside it; there is no default on purpose.
     enabled: false
-    password: ""
   primary:
     persistence:
       enabled: false

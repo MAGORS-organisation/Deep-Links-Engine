@@ -5,6 +5,15 @@ import { problemKeyOf, type ProblemKey } from './problems';
  * Where the console talks to and with what. Kept in session storage by default so a credential
  * does not outlive the tab; "remember on this device" moves it to local storage, which is the
  * operator's explicit choice (§E.4.1 K5: keys are replaceable, never recoverable).
+ *
+ * This is a recorded decision, not an oversight. CodeQL reports the write below as clear-text
+ * storage of sensitive data (js/clear-text-storage-of-sensitive-data), and it is: the browser has
+ * no storage a script on the same origin cannot read, and the same script could read the key from
+ * memory or hook `fetch`. What the storage adds is that the key survives a reload within the tab,
+ * which is what makes the console usable as a console rather than a form to be refilled. The
+ * mitigations are elsewhere: the control host serves the console under a CSP without
+ * `unsafe-inline` (T-11), the key is a tenant-scoped credential the operator can revoke, and the
+ * default scope is the tab. The alert is dismissed on the repository with this reasoning.
  */
 export interface Connection {
   baseUrl: string;
@@ -13,6 +22,13 @@ export interface Connection {
 }
 
 const STORAGE_KEY = 'dle.admin.connection';
+
+/** Trailing slashes off a base URL; a loop rather than a backtracking `/\/+$/` on operator input. */
+function stripTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47 /* '/' */) end--;
+  return value.slice(0, end);
+}
 
 const listeners = new Set<() => void>();
 
@@ -53,14 +69,14 @@ export function setConnection(next: Connection | null): void {
       const target = next.remember ? localStorage : sessionStorage;
       target.setItem(
         STORAGE_KEY,
-        JSON.stringify({ baseUrl: next.baseUrl.replace(/\/+$/, ''), apiKey: next.apiKey.trim() }),
+        JSON.stringify({ baseUrl: stripTrailingSlashes(next.baseUrl), apiKey: next.apiKey.trim() }),
       );
     }
   } catch {
     // Storage may be unavailable (private mode, blocked). The in-memory copy still works for the tab.
   }
   cached = next
-    ? { ...next, baseUrl: next.baseUrl.replace(/\/+$/, ''), apiKey: next.apiKey.trim() }
+    ? { ...next, baseUrl: stripTrailingSlashes(next.baseUrl), apiKey: next.apiKey.trim() }
     : null;
   listeners.forEach((l) => l());
 }

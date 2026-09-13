@@ -365,8 +365,19 @@ export function parseRetryAfter(header: string | null, now: number = Date.now())
   return Number.isNaN(at) ? undefined : Math.max(0, at - now);
 }
 
+/**
+ * Drop trailing slashes from a URL the host application supplied. A loop rather than `/\/+$/`:
+ * that expression backtracks quadratically on a long run of slashes that is not at the end of
+ * the string, and the endpoint is host-application input (CodeQL js/polynomial-redos).
+ */
+export function stripTrailingSlashes(value: string): string {
+  let end = value.length;
+  while (end > 0 && value.charCodeAt(end - 1) === 47 /* '/' */) end--;
+  return value.slice(0, end);
+}
+
 export function createApiClient(options: ApiClientOptions): ApiClient {
-  const base = options.endpoint.replace(/\/+$/, '');
+  const base = stripTrailingSlashes(options.endpoint);
   const fetchImpl = options.fetchImpl ?? (globalThis as { fetch?: typeof fetch }).fetch;
 
   async function post(path: string, body: unknown, keepalive: boolean): Promise<unknown> {
