@@ -223,12 +223,16 @@ public sealed partial class ResolveInstall
             return new ResolveOutcome(await RespondAsync(stored, cancellationToken), ClaimCodeError: null);
         }
 
+        // Without attribution consent nothing is linked, but the answer is not final: the host
+        // application may record consent later, and the deterministic evidence - the install
+        // referrer above all - stays valid for the referrer window. The window travels as
+        // expires_in, so an SDK re-asks once consent arrives instead of caching "none" forever.
         StrategyOutcome outcome = decision.AllowClickIdLinking
             ? await RunStrategiesAsync(request, caller, order, grant, install, now, remoteAddress, cancellationToken)
             : new StrategyOutcome(
                 AttributionResult.NoMatch(AttributionReasons.ConsentMissing),
                 MatchedClickId: null,
-                WindowSeconds: null,
+                WindowSeconds: ConsentRetryWindowSeconds(),
                 ClaimCode: null,
                 ClaimCodeError: null);
 
@@ -783,7 +787,7 @@ public sealed partial class ResolveInstall
 
         if (matchType == MatchType.None)
         {
-            return NoMatchResponse();
+            return NoMatchResponse(RemainingWindowSeconds(record, _timeProvider.GetUtcNow()));
         }
 
         AttributedLink? link = record.LinkId is { } linkId
@@ -815,13 +819,35 @@ public sealed partial class ResolveInstall
     }
 
     /// <summary>The answer for an install nothing matched: organic, and not an error (TC-142).</summary>
-    private static ResolveResponseDto NoMatchResponse() => new()
+    private static ResolveResponseDto NoMatchResponse(int expiresIn = 0) => new()
     {
         Matched = false,
         MatchType = MatchTypeNames.None,
         Confidence = 0m,
-        ExpiresIn = 0,
+        ExpiresIn = expiresIn,
     };
+
+    /// <summary>
+    /// How long a no-match answer given for want of consent may still change: the install
+    /// referrer window, after which the deterministic evidence is gone anyway.
+    /// </summary>
+    private int ConsentRetryWindowSeconds() =>
+        (int)Math.Min(int.MaxValue, TimeSpan.FromDays(_options.MaxReferrerAgeDays).TotalSeconds);
+
+    /// <summary>
+    /// What is left of a stored no-match answer's window, so a repeat call gets the same
+    /// deadline rather than a fresh one. Zero - final - when the record carries no window.
+    /// </summary>
+    private static int RemainingWindowSeconds(AttributionRecord record, DateTimeOffset now)
+    {
+        if (record.WindowSeconds is not int window || window <= 0)
+        {
+            return 0;
+        }
+
+        double elapsed = (now - record.MatchedAt).TotalSeconds;
+        return (int)Math.Clamp(window - elapsed, 0, int.MaxValue);
+    }
 
     /// <summary>Builds the row for a decision.</summary>
     private static AttributionRecord ToRecord(

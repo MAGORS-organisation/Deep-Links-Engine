@@ -414,8 +414,25 @@ public final class Dle: Sendable {
         if config.gateEventsOnAnalyticsConsent, previous.analytics, !consent.analytics {
             queue.removeAll { $0.type.isBehavioural }
         }
+        if consent.attribution, !previous.attribution {
+            forgetUnmatchedAnswer()
+        }
         DleLog.info("consent updated: analytics=\(consent.analytics) attribution=\(consent.attribution)")
         emitFirstOpenIfNeeded()
+    }
+
+    /// A resolve made before attribution consent was recorded answers `none` with a non-final
+    /// `expires_in`: the engine could not link the click, not because there was none. Once consent
+    /// arrives that answer is stale, so it is dropped and the next ``resolve(claimCode:loginKey:)``
+    /// - the next launch, in the documented integration - asks again (TC-141).
+    private func forgetUnmatchedAnswer() {
+        let persisted = stateStore.current
+        guard let existing = persisted.deferredLink, !existing.matched, !existing.isFinal else { return }
+        stateStore.update { s in
+            s.deferredLink = nil
+            s.resolvedAt = nil
+        }
+        DleLog.info("cached unmatched answer dropped: attribution consent was recorded after it")
     }
 
     /// Alias of ``updateConsent(_:)``.

@@ -97,6 +97,11 @@ public sealed partial class PostgresRetentionService : IRetentionService
                     connection, parent, rawCutoff, options, dropped, ct);
             }
 
+            if (!options.DryRun)
+            {
+                await EnsurePartitionsAsync(connection, ct);
+            }
+
             if (options.IpPrefixDays is { } prefixDays && !options.DryRun)
             {
                 anonymised = await ExecuteWithCutoffAsync(
@@ -386,4 +391,41 @@ public sealed partial class PostgresRetentionService : IRetentionService
         Level = LogLevel.Error,
         Message = "Retention could not write its own audit row.")]
     private partial void LogRetentionAuditFailed(Exception exception);
+
+    /// <summary>
+    /// Pre-creates the coming days' partitions of both event streams and adopts any day whose
+    /// rows landed in a default partition meanwhile, through the functions the migration
+    /// installs. This is the product-side caller those functions were waiting for: without one,
+    /// a deployment without pg_partman ran out of partitions <see cref="PartitionDaysAhead"/>
+    /// days after its migration and every event after that went to the default partition, where
+    /// retention never reaches it.
+    /// </summary>
+    /// <remarks>
+    /// The retention argument is <see langword="null"/> on purpose: this service drops expired
+    /// partitions itself, one at a time and with an audit row each, and the function must not
+    /// drop anything behind its back.
+    /// </remarks>
+    private async Task EnsurePartitionsAsync(NpgsqlConnection connection, CancellationToken ct)
+    {
+        int created = await connection.ExecuteScalarAsync<int>(
+            new CommandDefinition(
+                "SELECT dle_click_events_maintain(@daysAhead, NULL) + dle_sdk_events_maintain(@daysAhead, NULL)",
+                new { daysAhead = PartitionDaysAhead },
+                commandTimeout: _connections.CommandTimeoutSeconds,
+                cancellationToken: ct));
+
+        if (created > 0)
+        {
+            LogPartitionsCreated(created, PartitionDaysAhead);
+        }
+    }
+
+    /// <summary>How many days ahead partitions are kept ready; matches the migration's own default.</summary>
+    private const int PartitionDaysAhead = 7;
+
+    [LoggerMessage(
+        EventId = 6305,
+        Level = LogLevel.Information,
+        Message = "Retention created {PartitionCount} event partition(s), keeping {DaysAhead} days ready.")]
+    private partial void LogPartitionsCreated(int partitionCount, int daysAhead);
 }

@@ -75,9 +75,14 @@ public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
             .HasDefaultValueSql(PostgresConventions.EmptyTextArrayDefault)
             .IsRequired();
 
+        // HasDefaultValue on a bool makes EF Core treat the CLR default (false) as "not set" and
+        // omit the column, so a link created with is_active = false would be inserted active. With
+        // true as the sentinel, false is written and true - the only value the store default can
+        // produce anyway - is what gets omitted.
         builder.Property(l => l.IsActive)
             .HasColumnName("is_active")
             .HasDefaultValue(true)
+            .HasSentinel(true)
             .IsRequired();
 
         builder.Property(l => l.StartsAt)
@@ -105,9 +110,14 @@ public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
             .HasDefaultValueSql(PostgresConventions.NowDefault)
             .IsRequired();
 
+        // The version doubles as the optimistic-concurrency token: every write that changes the
+        // row bumps it and carries "WHERE version = <read>". A stale edit - one prepared from a
+        // read that predates a concurrent edit or an abuse quarantine - is rejected instead of
+        // silently reversing the newer write (T-09, TC-103).
         builder.Property(l => l.Version)
             .HasColumnName("version")
             .HasDefaultValue(1)
+            .IsConcurrencyToken()
             .IsRequired();
 
         builder.HasOne<Tenant>()

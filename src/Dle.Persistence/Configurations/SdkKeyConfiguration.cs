@@ -34,6 +34,7 @@ public sealed class SdkKeyConfiguration : IEntityTypeConfiguration<SdkKey>
         builder.Property(k => k.IsActive)
             .HasColumnName("is_active")
             .HasDefaultValue(true)
+            .HasSentinel(true)
             .IsRequired();
 
         builder.Property(k => k.CreatedAt)

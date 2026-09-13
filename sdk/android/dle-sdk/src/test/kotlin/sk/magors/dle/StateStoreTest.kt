@@ -35,6 +35,16 @@ class StateStoreTest {
     }
 
     @Test
+    fun clearResolve_forgetsTheAnswerButNotThatAResolveHappened() {
+        store.saveResolve(DeferredLink.none().copy(expiresIn = 3600), atMillis = CONTRACT_MOMENT_MILLIS)
+
+        store.clearResolve()
+
+        assertNull(store.cachedResolve())
+        assertTrue(store.isResolveDone)
+    }
+
+    @Test
     fun resolve_isRememberedWithItsTime() {
         store.saveResolve(attributed, atMillis = CONTRACT_MOMENT_MILLIS)
 

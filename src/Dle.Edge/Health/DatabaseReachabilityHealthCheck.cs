@@ -1,3 +1,4 @@
+using Dle.Persistence.Fast.Data;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Npgsql;
 
@@ -28,16 +29,20 @@ public sealed class DatabaseReachabilityHealthCheck : IHealthCheck
 
     private static readonly TimeSpan Budget = TimeSpan.FromSeconds(2);
 
-    private readonly NpgsqlDataSource _dataSource;
+    private readonly DleReadDataSource _readDataSource;
 
     /// <summary>Creates the check.</summary>
-    /// <param name="dataSource">The primary connection pool.</param>
-    /// <exception cref="ArgumentNullException"><paramref name="dataSource"/> is <see langword="null"/>.</exception>
-    public DatabaseReachabilityHealthCheck(NpgsqlDataSource dataSource)
+    /// <param name="readDataSource">
+    /// The pool the resolve statement reads from - the replica when one is configured (§B.8
+    /// profile B), otherwise the primary. Probing the primary while resolves read a replica would
+    /// describe the wrong dependency in both directions.
+    /// </param>
+    /// <exception cref="ArgumentNullException"><paramref name="readDataSource"/> is <see langword="null"/>.</exception>
+    public DatabaseReachabilityHealthCheck(DleReadDataSource readDataSource)
     {
-        ArgumentNullException.ThrowIfNull(dataSource);
+        ArgumentNullException.ThrowIfNull(readDataSource);
 
-        _dataSource = dataSource;
+        _readDataSource = readDataSource;
     }
 
     /// <inheritdoc />
@@ -52,12 +57,13 @@ public sealed class DatabaseReachabilityHealthCheck : IHealthCheck
 
         try
         {
-            await using NpgsqlConnection connection = await _dataSource.OpenConnectionAsync(budget.Token);
+            await using NpgsqlConnection connection = await _readDataSource.DataSource.OpenConnectionAsync(budget.Token);
             await using NpgsqlCommand probe = connection.CreateCommand();
             probe.CommandText = "SELECT 1";
             _ = await probe.ExecuteScalarAsync(budget.Token);
 
-            return HealthCheckResult.Healthy("PostgreSQL answers.");
+            return HealthCheckResult.Healthy(
+                _readDataSource.IsReplica ? "The PostgreSQL read replica answers." : "PostgreSQL answers.");
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {

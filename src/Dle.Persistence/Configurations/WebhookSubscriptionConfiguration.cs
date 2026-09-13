@@ -36,6 +36,7 @@ public sealed class WebhookSubscriptionConfiguration : IEntityTypeConfiguration<
         builder.Property(s => s.IsActive)
             .HasColumnName("is_active")
             .HasDefaultValue(true)
+            .HasSentinel(true)
             .IsRequired();
 
         builder.Property(s => s.CreatedAt)

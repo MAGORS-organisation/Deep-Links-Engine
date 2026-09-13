@@ -301,10 +301,25 @@ public class DleClient internal constructor(
      */
     public fun setConsent(consent: DleConsent) {
         val stamped = if (consent.timestampMillis == null) consent.copy(timestampMillis = clock.nowMillis()) else consent
+        val previous = this.consent
         state.saveConsent(stamped)
         this.consent = stamped
         log.info("consent recorded: analytics=${stamped.analytics} attribution=${stamped.attribution}")
+        if (stamped.attribution && !previous.attribution) forgetUnmatchedAnswer()
         if (stamped.analytics && state.isResolveDone) emitFirstOpenOnce()
+    }
+
+    /**
+     * A resolve made before attribution consent was recorded answers `none` with reason
+     * `consent_missing` and a non-final `expires_in`: the engine could not link the click, not
+     * because there was none. Once consent arrives that answer is stale, so it is dropped and the
+     * next [resolve] - the next launch, in the documented integration - asks again (TC-141).
+     */
+    private fun forgetUnmatchedAnswer() {
+        val cached = state.cachedResolve() ?: return
+        if (cached.link.matched || cached.link.isFinal) return
+        state.clearResolve()
+        log.info("cached unmatched answer dropped: attribution consent was recorded after it")
     }
 
     /** Sends every buffered event now instead of waiting for the flush delay. Never throws. */

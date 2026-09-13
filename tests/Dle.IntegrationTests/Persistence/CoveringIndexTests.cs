@@ -139,10 +139,10 @@ public sealed class CoveringIndexTests(DleInfrastructureFixture infrastructure)
             Ct);
 
         Assert.True(
-            plan.Contains("Index Only Scan", StringComparison.Ordinal)
-            && plan.Contains("ix_links_resolve", StringComparison.Ordinal),
-            "The resolve query was not answered by an index-only scan on ix_links_resolve. §B.5.2 "
-            + "says the latency budget of §B.6.1 does not hold without one. The plan was:\n" + plan);
+            plan.Contains("Index Only Scan using ix_links_resolve on links", StringComparison.Ordinal)
+            && plan.Contains("Heap Fetches: 0", StringComparison.Ordinal),
+            "The resolve query was not answered by an index-only scan on ix_links_resolve with no heap "
+            + "fetch. §B.5.2 says the latency budget of §B.6.1 does not hold without one. The plan was:\n" + plan);
     }
 
     [RequiresDockerFact]

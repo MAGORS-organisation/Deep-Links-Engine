@@ -284,6 +284,61 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
 
     [RequiresDockerFact]
     [Trait("Spec", "B.5.3")]
+    public async Task PartitionMaintenance_AdoptsADayWhoseRowsLandedInTheDefaultPartition()
+    {
+        // A day that arrives before its partition exists goes to the default partition, and
+        // PostgreSQL then refuses to create that day's partition while the rows sit there. The
+        // maintenance function has to move them, or it wedges on that day forever and every
+        // later day joins it in the default partition, out of reach of retention.
+        Guid tenantId = await TestSeed.TenantAsync(Database, "partition-adopt", cancellationToken: Ct);
+
+        string stranded = (await Sql.ScalarAsync<string>(
+            Database.DataSource,
+            "SELECT to_char((now() AT TIME ZONE 'UTC')::date + 30, 'YYYYMMDD')",
+            cancellationToken: Ct))!;
+
+        _ = await Sql.ExecuteAsync(
+            Database.DataSource,
+            """
+            INSERT INTO sdk_events (occurred_at, tenant_id, app_id, install_id, event_type, properties)
+            VALUES ((to_date($2, 'YYYYMMDD')::timestamp AT TIME ZONE 'UTC') + interval '12 hours',
+                    $1, $3, 'install-adopt', 'session', '{}'::jsonb)
+            """,
+            [tenantId, stranded, Guid.CreateVersion7()],
+            Ct);
+
+        Assert.Equal(
+            1L,
+            await Sql.ScalarAsync<long>(Database.DataSource, "SELECT count(*) FROM sdk_events_default", cancellationToken: Ct));
+
+        int created = await Sql.ScalarAsync<int>(
+            Database.DataSource,
+            "SELECT dle_sdk_events_maintain(40, NULL)",
+            cancellationToken: Ct);
+
+        Assert.True(created > 0, "the maintenance function created no partition");
+        Assert.True(
+            await Sql.RelationExistsAsync(Database.DataSource, "sdk_events_p" + stranded, Ct),
+            "the stranded day's partition was not created");
+        Assert.Equal(
+            0L,
+            await Sql.ScalarAsync<long>(Database.DataSource, "SELECT count(*) FROM sdk_events_default", cancellationToken: Ct));
+        Assert.Equal(
+            1L,
+            await Sql.ScalarAsync<long>(
+                Database.DataSource,
+                "SELECT count(*) FROM sdk_events WHERE tenant_id = $1 AND install_id = 'install-adopt'",
+                [tenantId],
+                Ct));
+
+        // Idempotent: a second run has nothing to do and nothing to complain about.
+        Assert.Equal(
+            0,
+            await Sql.ScalarAsync<int>(Database.DataSource, "SELECT dle_sdk_events_maintain(40, NULL)", cancellationToken: Ct));
+    }
+
+    [RequiresDockerFact]
+    [Trait("Spec", "B.5.3")]
     public async Task Migration_ClickEvents_HasTheBrinAndBtreeIndexesOfB53()
     {
         IReadOnlyList<string> definitions = await Sql.StringsAsync(

@@ -1,3 +1,5 @@
+using Dle.Persistence.Internal;
+
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
@@ -189,19 +191,62 @@ public sealed class AbuseRepository
         using CrossTenantScope scope = _db.BeginCrossTenantScope(
             "abuse enforcement acts on a link regardless of which tenant owns it");
 
-        Link? link = await _db.Links
-            .AcrossTenants()
-            .IncludeSoftDeleted()
-            .FirstOrDefaultAsync(l => l.Id == linkId, cancellationToken);
+        return await ChangeLinkStateAsync(
+            linkId,
+            static link => link.QuarantinedAt is null,
+            link => link.QuarantinedAt = _timeProvider.GetUtcNow(),
+            "Quarantined by abuse enforcement.",
+            cancellationToken);
+    }
 
-        if (link is null || link.QuarantinedAt is not null)
+    /// <summary>
+    /// Applies a state change to a link as a versioned edit, so that the change shows up in the
+    /// link's history and so that an edit prepared before it cannot silently reverse it.
+    /// </summary>
+    /// <remarks>
+    /// The version is the link's concurrency token. Enforcement must win against a concurrent
+    /// edit rather than lose to it, so a version conflict here is retried on a fresh read; three
+    /// attempts is far beyond what two racing writes need.
+    /// </remarks>
+    private async Task<bool> ChangeLinkStateAsync(
+        long linkId,
+        Func<Link, bool> applies,
+        Action<Link> change,
+        string changeNote,
+        CancellationToken cancellationToken)
+    {
+        const int attempts = 3;
+
+        for (int attempt = 1; ; attempt++)
         {
-            return false;
-        }
+            Link? link = await _db.Links
+                .AcrossTenants()
+                .IncludeSoftDeleted()
+                .FirstOrDefaultAsync(l => l.Id == linkId, cancellationToken);
 
-        link.QuarantinedAt = _timeProvider.GetUtcNow();
-        await _db.SaveChangesAsync(cancellationToken);
-        return true;
+            if (link is null || !applies(link))
+            {
+                return false;
+            }
+
+            change(link);
+            link.Version++;
+            LinkVersion revision = LinkRevisions.Create(link, changedBy: null, changeNote, _timeProvider.GetUtcNow());
+            _db.LinkVersions.Add(revision);
+
+            try
+            {
+                await _db.SaveChangesAsync(cancellationToken);
+                return true;
+            }
+            catch (DbUpdateConcurrencyException) when (attempt < attempts)
+            {
+                // Somebody else wrote the row between the read and the write. Forget what this
+                // attempt staged and decide again from what is now in the database.
+                _db.Entry(revision).State = EntityState.Detached;
+                _db.Entry(link).State = EntityState.Detached;
+            }
+        }
     }
 
     /// <summary>Returns a quarantined link to service after a successful appeal.</summary>
@@ -215,18 +260,11 @@ public sealed class AbuseRepository
 
         // Dropping the soft delete filter by name is the only way to reach a quarantined row; the
         // tenant filter is dropped separately and for its own stated reason.
-        Link? link = await _db.Links
-            .AcrossTenants()
-            .IncludeSoftDeleted()
-            .FirstOrDefaultAsync(l => l.Id == linkId, cancellationToken);
-
-        if (link is null || link.QuarantinedAt is null)
-        {
-            return false;
-        }
-
-        link.QuarantinedAt = null;
-        await _db.SaveChangesAsync(cancellationToken);
-        return true;
+        return await ChangeLinkStateAsync(
+            linkId,
+            static link => link.QuarantinedAt is not null,
+            static link => link.QuarantinedAt = null,
+            "Released from quarantine after review.",
+            cancellationToken);
     }
 }

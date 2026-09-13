@@ -85,6 +85,37 @@ not been executed anywhere.
   - `ix_links_resolve` did not cover five columns the edge's resolve statement reads, so the
     resolve was never an index-only scan (§B.5.2).
 
+- Nine further defects found by an adversarial review of those fixes (two reviewers per
+  finding), all fixed in the same pull request:
+  - A link's `version` is now its optimistic-concurrency token. A PATCH prepared from a read that
+    a concurrent edit or an abuse quarantine overtook was written in full and silently reversed
+    the newer write - a takedown could be undone by an unrelated edit. Such a write now answers
+    `409 write-conflict`; quarantine and release bump the version and appear in the link's
+    history, and enforcement retries on a conflict so it always wins.
+  - A link created with `is_active: false` was inserted active: EF Core treats the CLR default
+    as "not provided" for a column with a store default and omitted it. The four store-default
+    booleans now carry a sentinel of `true`.
+  - The plain-SQL partition fallback wedged permanently once a day's rows had landed in the
+    default partition, and nothing in the product called it. `dle_partitions_maintain()` now
+    adopts stranded days (detach the default, create the day, move the rows, attach again), and
+    the control plane's retention job calls it on every run, keeping seven days of partitions
+    ready for both event streams.
+  - A `none` answer given for want of attribution consent was final (`expires_in: 0`), so both
+    SDKs cached it for the life of the installation and a click could never be credited once
+    consent arrived. It now carries the install-referrer window as `expires_in`, and both SDKs
+    drop a cached unmatched answer when attribution consent is recorded.
+  - A link whose resolve-time fields exceed the btree index-row limit of `ix_links_resolve`
+    (about 2.7 kB after compression) answered 500; it now answers `422 link-too-large`.
+  - The edge readiness probe checked the primary pool while resolves read the replica pool
+    when one is configured; it now probes the pool the resolve statement uses.
+  - The shared-cache probe could outlive its five-second budget on a connect attempt the client
+    does not cancel; the budget is now the probe's own deadline.
+  - A `RAISE WARNING` in the migration used a `format()` directive `RAISE` does not understand
+    and printed a wrong remedy.
+  - Two integration assertions were loosened by the earlier fixes: the 404 indistinguishability
+    check now also compares lengths, and the covering-index check requires an index-only scan on
+    `ix_links_resolve` itself with zero heap fetches.
+
 ### Verified in CI on this pull request
 
 - 1 430 unit, 75 contract, 850 security and 98 integration tests pass; the integration suite runs

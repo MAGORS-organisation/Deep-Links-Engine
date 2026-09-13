@@ -746,6 +746,7 @@ namespace Dle.Persistence.Migrations
                         .HasDefaultValueSql("'{}'::jsonb");
 
                     b.Property<int>("Version")
+                        .IsConcurrencyToken()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(1)

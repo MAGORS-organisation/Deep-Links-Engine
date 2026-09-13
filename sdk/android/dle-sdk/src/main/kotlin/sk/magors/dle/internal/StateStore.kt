@@ -131,6 +131,18 @@ internal class StateStore(
             .commit()
     }
 
+    /**
+     * Forgets the cached answer but not the fact that a resolve happened, so the next resolve
+     * asks the engine again while `first_open` stays emitted once. Used when a non-final answer
+     * became stale for a reason other than time: attribution consent was recorded after it.
+     */
+    fun clearResolve() {
+        prefs.edit()
+            .remove(KEY_RESOLVE_LINK)
+            .remove(KEY_RESOLVE_AT)
+            .commit()
+    }
+
     // -------------------------------------------------------------------------------------------
     // Install Referrer
     // -------------------------------------------------------------------------------------------

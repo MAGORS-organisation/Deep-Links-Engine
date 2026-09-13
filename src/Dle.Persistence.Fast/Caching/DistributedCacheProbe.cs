@@ -109,7 +109,10 @@ public sealed partial class DistributedCacheProbe : BackgroundService
 
         try
         {
-            _ = await _cache.GetAsync(ProbeKey, budget.Token);
+            // The token reaches only part of the client: a connect attempt in progress ignores it
+            // and can run for the client's own connect timeout. WaitAsync makes the budget the
+            // probe's own deadline regardless; the attempt finishes on its own in the background.
+            _ = await _cache.GetAsync(ProbeKey, budget.Token).WaitAsync(budget.Token);
             return true;
         }
         catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)

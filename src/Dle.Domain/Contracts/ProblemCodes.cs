@@ -62,6 +62,19 @@ public static class ProblemCodes
     public const string DependencyUnavailable = Base + "dependency-unavailable";
 
     /// <summary>
+    /// The resource changed between the caller's read and its write (a concurrent edit, or an
+    /// abuse quarantine), so the write was refused rather than allowed to reverse the newer
+    /// change. Read again and retry with the current state.
+    /// </summary>
+    public const string WriteConflict = Base + "write-conflict";
+
+    /// <summary>
+    /// The link's resolve-time fields are together larger than the covering index can hold
+    /// (§B.5.2); shorten the target URL, the expired URL, the title, the UTM set or the rules.
+    /// </summary>
+    public const string LinkTooLarge = Base + "link-too-large";
+
+    /// <summary>
     /// Every identifier declared above, in declaration order.
     /// </summary>
     /// <remarks>
@@ -88,5 +101,7 @@ public static class ProblemCodes
         ClaimCodeInvalid,
         LinkQuarantined,
         DependencyUnavailable,
+        WriteConflict,
+        LinkTooLarge,
     ];
 }

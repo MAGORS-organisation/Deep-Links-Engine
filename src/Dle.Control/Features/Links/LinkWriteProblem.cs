@@ -26,6 +26,8 @@ internal static class LinkWriteProblem
         LinkWriteError.InvalidRoutingRules => ProblemCodes.InvalidRoutingRules,
         LinkWriteError.DomainNotFound => ProblemCodes.Base + "not-found",
         LinkWriteError.LinkNotFound => ProblemCodes.Base + "not-found",
+        LinkWriteError.Conflict => ProblemCodes.WriteConflict,
+        LinkWriteError.TooLarge => ProblemCodes.LinkTooLarge,
         LinkWriteError.Validation => ProblemCodes.ValidationFailed,
         LinkWriteError.None => ProblemCodes.ValidationFailed,
         _ => ProblemCodes.ValidationFailed,
@@ -49,6 +51,15 @@ internal static class LinkWriteProblem
             LinkWriteError.SlugTaken => DleProblem.Conflict(
                 ProblemCodes.SlugTaken,
                 "The slug is already in use.",
+                detail),
+            LinkWriteError.Conflict => DleProblem.Conflict(
+                ProblemCodes.WriteConflict,
+                "The link changed since it was read.",
+                detail),
+            LinkWriteError.TooLarge => DleProblem.Create(
+                StatusCodes.Status422UnprocessableEntity,
+                ProblemCodes.LinkTooLarge,
+                "The link is too large for the resolve index.",
                 detail),
 
             LinkWriteError.UnsafeTarget => DleProblem.Create(

@@ -235,6 +235,8 @@ Every error is `application/problem+json` with `type`, `title`, `status`, `detai
 | `claim-code-invalid` | 400 | Unknown, consumed or expired claim code (TC-148) | |
 | `link-quarantined` | 410 | Link is under an abuse quarantine (TC-103) | |
 | `dependency-unavailable` | 503 | PostgreSQL / cache unavailable; retry with backoff | `Retry-After` |
+| `write-conflict` | 409 | The link changed between your read and your write (another edit, or an abuse quarantine); read it again and retry | |
+| `link-too-large` | 422 | The link's resolve-time fields (target URL, expired URL, title, UTM set, rules, Open Graph) are together larger than the covering resolve index holds (about 2.7 kB after compression); shorten them | |
 
 ```json
 {

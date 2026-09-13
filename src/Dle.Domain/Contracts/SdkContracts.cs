@@ -35,8 +35,11 @@ public sealed record ResolveRequestDto
     /// attribution consent was given; otherwise the SDK omits the object entirely (TC-145, TC-146).</summary>
     public DeviceSignalsDto? Signals { get; init; }
 
-    /// <summary>Recorded consent. Absent or negative consent disables every non-deterministic
-    /// strategy and suppresses storage of the signals (ePrivacy art. 5(3), §E.6.2).</summary>
+    /// <summary>Recorded consent. Under a tenant in <c>full</c> mode, click-id linking of any kind -
+    /// the deterministic install referrer included - happens only when <c>attribution</c> is true;
+    /// absent or negative consent answers <c>match_type=none</c> with reason <c>consent_missing</c>
+    /// and a non-zero <c>expires_in</c>, so the SDK asks again once consent is recorded
+    /// (ePrivacy art. 5(3), §E.6.2). Device signals are stored only with it too.</summary>
     public ConsentDto? Consent { get; init; }
 }
 
@@ -97,7 +100,9 @@ public sealed record ResolveResponseDto
     /// <summary>Parameters handed to the application, typically the UTM set of the link plus custom data.</summary>
     public IReadOnlyDictionary<string, string> Params { get; init; } = ReadOnlyDictionary<string, string>.Empty;
 
-    /// <summary>Seconds this result stays valid. Zero means it is final and must not be re-requested.</summary>
+    /// <summary>Seconds this result stays valid. Zero means it is final and must not be re-requested;
+    /// a no-match answer given for want of consent carries the remaining install-referrer window
+    /// instead, and an SDK re-asks after it, or sooner once attribution consent is recorded.</summary>
     public int ExpiresIn { get; init; }
 }
 

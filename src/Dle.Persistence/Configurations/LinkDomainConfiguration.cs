@@ -74,6 +74,7 @@ public sealed class LinkDomainConfiguration : IEntityTypeConfiguration<LinkDomai
         builder.Property(d => d.IsActive)
             .HasColumnName("is_active")
             .HasDefaultValue(true)
+            .HasSentinel(true)
             .IsRequired();
 
         builder.Property(d => d.CreatedAt)

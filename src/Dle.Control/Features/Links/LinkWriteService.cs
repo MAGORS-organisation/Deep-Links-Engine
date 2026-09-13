@@ -43,6 +43,17 @@ public enum LinkWriteError
 
     /// <summary>The link does not exist, or belongs to another tenant.</summary>
     LinkNotFound = 8,
+
+    /// <summary>
+    /// The link changed between the caller's read and this write - another edit, or an abuse
+    /// quarantine - and the write was refused rather than allowed to reverse it.
+    /// </summary>
+    Conflict = 9,
+
+    /// <summary>
+    /// The resolve-time fields are together larger than the covering index can hold (§B.5.2).
+    /// </summary>
+    TooLarge = 10,
 }
 
 /// <summary>
@@ -287,6 +298,10 @@ public sealed class LinkWriteService
                 LinkWriteError.SlugTaken,
                 "That slug is already in use on this domain.");
         }
+        catch (DbUpdateException exception) when (IsIndexRowTooLarge(exception))
+        {
+            return LinkWriteOutcome.Failure(LinkWriteError.TooLarge, TooLargeDetail);
+        }
 
         return LinkWriteOutcome.Success(link, domain.Host);
     }
@@ -404,7 +419,29 @@ public sealed class LinkWriteService
         link.ExpiresAt = request.ExpiresAt ?? link.ExpiresAt;
         link.ExpiredUrl = request.ExpiredUrl is null ? link.ExpiredUrl : Trim(request.ExpiredUrl);
 
-        await _links.UpdateAsync(link, caller.ActorId, request.ChangeNote, cancellationToken);
+        try
+        {
+            await _links.UpdateAsync(link, caller.ActorId, request.ChangeNote, cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // The version read at the top of this method is no longer the row's version: another
+            // edit, or an abuse quarantine, landed in between. Overwriting it would silently undo
+            // that write, so the caller is told to read again (T-09, TC-103).
+            return LinkWriteOutcome.Failure(
+                LinkWriteError.Conflict,
+                "The link changed while this request was being prepared. Read it again and retry.");
+        }
+        catch (DbUpdateException exception) when (IsUniqueViolation(exception))
+        {
+            return LinkWriteOutcome.Failure(
+                LinkWriteError.SlugTaken,
+                "That slug is already in use on this domain.");
+        }
+        catch (DbUpdateException exception) when (IsIndexRowTooLarge(exception))
+        {
+            return LinkWriteOutcome.Failure(LinkWriteError.TooLarge, TooLargeDetail);
+        }
 
         return LinkWriteOutcome.Success(link, domain.Host);
     }
@@ -806,4 +843,21 @@ public sealed class LinkWriteService
     private static bool IsUniqueViolation(DbUpdateException exception) =>
         exception.InnerException is PostgresException postgres
         && string.Equals(postgres.SqlState, UniqueViolation, StringComparison.Ordinal);
+
+    /// <summary>
+    /// SQLSTATE 54000 (program_limit_exceeded) is what PostgreSQL answers when a row's entry in
+    /// the covering resolve index would exceed the btree maximum (§B.5.2). The fields that make
+    /// up that entry are all caller supplied, so this is the caller's problem to shorten, not an
+    /// outage and not a 500.
+    /// </summary>
+    private static bool IsIndexRowTooLarge(DbUpdateException exception) =>
+        exception.InnerException is PostgresException postgres
+        && string.Equals(postgres.SqlState, ProgramLimitExceeded, StringComparison.Ordinal);
+
+    private const string ProgramLimitExceeded = "54000";
+
+    private const string TooLargeDetail =
+        "The link's resolve-time fields (target URL, expired URL, title, UTM set, routing rules, "
+        + "Open Graph metadata) are together too large for the resolve index. Shorten them; the "
+        + "limit is roughly 2.7 kB after compression.";
 }

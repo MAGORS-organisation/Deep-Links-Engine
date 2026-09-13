@@ -8,6 +8,7 @@ using Dle.Domain.Privacy;
 using Dle.Domain.Routing;
 using Dle.Domain.Serialization;
 using Dle.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dle.IntegrationTests.Persistence;
 
@@ -417,6 +418,103 @@ public sealed class RepositoryRoundTripTests(DleInfrastructureFixture infrastruc
 
         Assert.Equal(values.Count, values.Distinct().Count());
         Assert.Equal(values.Order(), values);
+    }
+
+    [RequiresDockerFact]
+    [Trait("Threat", "T-09")]
+    public async Task LinkRepository_RefusesAnUpdatePreparedFromAReadThatAQuarantineOvertook()
+    {
+        // The dangerous race: an operator's PATCH is prepared from a read, abuse enforcement
+        // quarantines the link in between, and the PATCH - carrying quarantined_at = null from its
+        // read - would silently reverse the takedown. The version is the concurrency token, so
+        // the stale write is refused instead.
+        string host = TestSeed.UniqueHost("link-race");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "link-race", cancellationToken: Ct);
+        Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
+        long id = await TestSeed.LinkAsync(Database, tenantId, domainId, "contested", "https://example.test/contested", cancellationToken: Ct);
+
+        await using ControlPlaneScope editor = ControlPlaneScope.Open(Database, tenantId);
+        LinkRepository links = editor.Resolve<LinkRepository>();
+        Link? stale = await links.GetAsync(id, includeQuarantined: false, Ct);
+        Assert.NotNull(stale);
+
+        await using (ControlPlaneScope enforcement = ControlPlaneScope.Open(Database, tenantId))
+        {
+            Assert.True(await enforcement.Resolve<AbuseRepository>().QuarantineLinkAsync(id, Ct));
+        }
+
+        stale.Title = "edited from a read that predates the quarantine";
+
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(
+            () => links.UpdateAsync(stale, changedBy: null, "stale edit", Ct));
+
+        await using ControlPlaneScope reader = ControlPlaneScope.Open(Database, tenantId);
+        Link? current = await reader.Resolve<LinkRepository>().GetAsync(id, includeQuarantined: true, Ct);
+        Assert.NotNull(current);
+        Assert.NotNull(current.QuarantinedAt);
+        Assert.Null(current.Title);
+    }
+
+    [RequiresDockerFact]
+    [Trait("TestCase", "TC-103")]
+    public async Task AbuseRepository_QuarantineAndReleaseAreVersionedAndInTheHistory()
+    {
+        string host = TestSeed.UniqueHost("link-quarantine");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "link-quarantine", cancellationToken: Ct);
+        Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
+        long id = await TestSeed.LinkAsync(Database, tenantId, domainId, "withdrawn", "https://example.test/withdrawn", cancellationToken: Ct);
+
+        await using ControlPlaneScope scope = ControlPlaneScope.Open(Database, tenantId);
+        AbuseRepository abuse = scope.Resolve<AbuseRepository>();
+
+        Assert.True(await abuse.QuarantineLinkAsync(id, Ct));
+        Assert.False(await abuse.QuarantineLinkAsync(id, Ct));
+        Assert.True(await abuse.ReleaseLinkAsync(id, Ct));
+
+        await using ControlPlaneScope reader = ControlPlaneScope.Open(Database, tenantId);
+        LinkRepository links = reader.Resolve<LinkRepository>();
+        Link? link = await links.GetAsync(id, includeQuarantined: false, Ct);
+        Assert.NotNull(link);
+        Assert.Null(link.QuarantinedAt);
+
+        // One version per state change, each with its own revision row, so the history says
+        // when the link was withdrawn and when it came back.
+        IReadOnlyList<LinkVersion> revisions = await links.GetRevisionsAsync(id, 10, Ct);
+        Assert.Equal(link.Version, revisions[0].Version);
+        Assert.Contains(revisions, r => r.ChangeNote == "Quarantined by abuse enforcement.");
+        Assert.Contains(revisions, r => r.ChangeNote == "Released from quarantine after review.");
+    }
+
+    [RequiresDockerFact]
+    public async Task LinkRepository_AddAsync_StoresAnInactiveLinkAsInactive()
+    {
+        // is_active has a store default of true. Without a sentinel EF Core treats the CLR default
+        // (false) as "not provided", omits the column, and the database makes the link active.
+        string host = TestSeed.UniqueHost("link-inactive");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "link-inactive", cancellationToken: Ct);
+        Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
+
+        await using ControlPlaneScope scope = ControlPlaneScope.Open(Database, tenantId);
+        LinkRepository links = scope.Resolve<LinkRepository>();
+        long id = TestSeed.NextLinkId();
+
+        await links.AddAsync(
+            new Link
+            {
+                Id = id,
+                TenantId = tenantId,
+                DomainId = domainId,
+                Slug = "draft",
+                TargetUrl = "https://example.test/draft",
+                RoutingRules = TestRules.WebDefault(),
+                IsActive = false,
+            },
+            createdBy: null,
+            Ct);
+
+        Assert.False(
+            await Sql.ScalarAsync<bool>(Database.DataSource, "SELECT is_active FROM links WHERE id = $1", [id], Ct),
+            "a link created as inactive was stored as active");
     }
 
     [RequiresDockerFact]

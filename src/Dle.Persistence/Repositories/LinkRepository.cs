@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 using Dle.Domain.Contracts;
 using Dle.Domain.Links;
 using Dle.Domain.Primitives;
@@ -202,7 +200,7 @@ public sealed class LinkRepository
         link.Version = 1;
 
         _db.Links.Add(link);
-        _db.LinkVersions.Add(CreateRevision(link, createdBy, changeNote: null));
+        _db.LinkVersions.Add(LinkRevisions.Create(link, createdBy, changeNote: null, _timeProvider.GetUtcNow()));
 
         await _db.SaveChangesAsync(cancellationToken);
         return link;
@@ -235,6 +233,7 @@ public sealed class LinkRepository
         }
 
         link.Slug = normalized;
+        int readVersion = link.Version;
         link.Version++;
 
         // Reads are untracked, so the instance handed in is usually a stranger to the change
@@ -246,13 +245,19 @@ public sealed class LinkRepository
         if (ReferenceEquals(tracked, link))
         {
             _db.Links.Update(link);
+
+            // Version is the concurrency token. An attached instance has no history, so the
+            // version it was read at is restored as the original value: the UPDATE then carries
+            // "WHERE version = @read" and a write that landed in between - another edit, a
+            // quarantine - surfaces as DbUpdateConcurrencyException instead of being overwritten.
+            _db.Entry(link).Property(l => l.Version).OriginalValue = readVersion;
         }
         else
         {
             _db.Entry(tracked).CurrentValues.SetValues(link);
         }
 
-        _db.LinkVersions.Add(CreateRevision(tracked, changedBy, changeNote));
+        _db.LinkVersions.Add(LinkRevisions.Create(tracked, changedBy, changeNote, _timeProvider.GetUtcNow()));
 
         await _db.SaveChangesAsync(cancellationToken);
         return tracked.Version;
@@ -394,27 +399,4 @@ public sealed class LinkRepository
         };
     }
 
-    /// <summary>Builds the revision row that records the current state of a link.</summary>
-    /// <param name="link">The link as it now is.</param>
-    /// <param name="changedBy">Operator responsible for the change.</param>
-    /// <param name="changeNote">Why the change was made.</param>
-    /// <returns>The revision, ready to be added.</returns>
-    /// <remarks>
-    /// The whole link is stored rather than a field level diff. A link is small, and a snapshot
-    /// answers the question actually asked after an incident without replaying a chain of diffs.
-    /// The columns that already hold JSON are stored as the strings they are, so a revision round
-    /// trips byte for byte instead of being reformatted by a second pass through a serializer.
-    /// </remarks>
-    private LinkVersion CreateRevision(Link link, Guid? changedBy, string? changeNote)
-    {
-        return new LinkVersion
-        {
-            LinkId = link.Id,
-            Version = link.Version,
-            Snapshot = JsonSerializer.Serialize(link, DlePersistenceJsonContext.Default.Link),
-            ChangedBy = changedBy,
-            ChangedAt = _timeProvider.GetUtcNow(),
-            ChangeNote = changeNote,
-        };
-    }
 }

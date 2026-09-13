@@ -31,10 +31,25 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     /// in exactly that attribute. "Indistinguishable" is a claim about content, and the nonce is
     /// fixed width, so it is blanked before two bodies are compared.
     /// </summary>
-    [GeneratedRegex("nonce=\"[A-Za-z0-9_-]+\"")]
+    [GeneratedRegex("nonce=\"[A-Za-z0-9_-]{22}\"")]
     private static partial Regex NonceAttribute();
 
     private static string WithoutNonce(string html) => NonceAttribute().Replace(html, "nonce=\"\"");
+
+    /// <summary>
+    /// Two responses that must be indistinguishable: identical bodies once the fixed-width nonce
+    /// is blanked, and identical lengths on the wire, so that a nonce that stopped being fixed
+    /// width would fail here rather than become a size oracle (TC-102).
+    /// </summary>
+    private static async Task AssertIndistinguishableAsync(HttpResponseMessage first, HttpResponseMessage second)
+    {
+        string firstBody = await first.Content.ReadAsStringAsync(Ct);
+        string secondBody = await second.Content.ReadAsStringAsync(Ct);
+
+        Assert.Equal(WithoutNonce(firstBody), WithoutNonce(secondBody));
+        Assert.Equal(firstBody.Length, secondBody.Length);
+        Assert.Equal(first.Content.Headers.ContentLength, second.Content.Headers.ContentLength);
+    }
 
     [RequiresDockerFact]
     [Trait("TestCase", "TC-101")]
@@ -139,9 +154,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
             foreignSlug.Content.Headers.ContentType?.ToString(),
             unknownSlug.Content.Headers.ContentType?.ToString());
 
-        Assert.Equal(
-            WithoutNonce(await foreignSlug.Content.ReadAsStringAsync(Ct)),
-            WithoutNonce(await unknownSlug.Content.ReadAsStringAsync(Ct)));
+        await AssertIndistinguishableAsync(foreignSlug, unknownSlug);
     }
 
     [RequiresDockerFact]
@@ -223,9 +236,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
         using HttpResponseMessage missing = await GetAsync(client, host, "neverexisted", UserAgents.DesktopChrome);
 
         Assert.Equal(HttpStatusCode.NotFound, expired.StatusCode);
-        Assert.Equal(
-            WithoutNonce(await missing.Content.ReadAsStringAsync(Ct)),
-            WithoutNonce(await expired.Content.ReadAsStringAsync(Ct)));
+        await AssertIndistinguishableAsync(missing, expired);
     }
 
     [RequiresDockerFact]

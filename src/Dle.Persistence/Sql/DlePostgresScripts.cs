@@ -221,8 +221,12 @@ internal static class DlePostgresScripts
         AS $dle_fn$
         DECLARE
             today_utc      date := (now() AT TIME ZONE 'UTC')::date;
+            default_name   text;
             partition_day  date;
             part_name      text;
+            range_from     timestamptz;
+            range_to       timestamptz;
+            stranded       bigint;
             created        int := 0;
             victim         record;
         BEGIN
@@ -230,54 +234,91 @@ internal static class DlePostgresScripts
                 RAISE EXCEPTION 'dle_partitions_maintain: % is not one of the DLE event streams', p_parent;
             END IF;
 
-            IF to_regclass('public.' || quote_ident(p_parent || '_default')) IS NULL THEN
+            default_name := p_parent || '_default';
+
+            IF to_regclass('public.' || quote_ident(default_name)) IS NULL THEN
                 EXECUTE format(
                     'CREATE TABLE public.%I PARTITION OF public.%I DEFAULT',
-                    p_parent || '_default',
+                    default_name,
                     p_parent);
             END IF;
 
-            FOR partition_day IN
-                SELECT generate_series(
-                           today_utc - 1,
-                           today_utc + p_days_ahead,
-                           interval '1 day')::date
+            -- The days to cover: yesterday through p_days_ahead, plus every day that already has
+            -- rows in the default partition. Rows land there whenever a day arrives before its
+            -- partition exists (this function was not run for longer than p_days_ahead days), and
+            -- PostgreSQL then refuses to create that day's partition while the rows stay where they
+            -- are. Enumerating those days makes the function self-healing instead of wedging on
+            -- the first of them forever.
+            FOR partition_day IN EXECUTE format(
+                'SELECT d::date FROM generate_series(%L::date, %L::date, interval ''1 day'') AS g(d) '
+                'UNION SELECT DISTINCT (occurred_at AT TIME ZONE ''UTC'')::date FROM public.%I '
+                'ORDER BY 1',
+                today_utc - 1,
+                today_utc + p_days_ahead,
+                default_name)
             LOOP
                 part_name := p_parent || '_p' || to_char(partition_day, 'YYYYMMDD');
 
-                IF to_regclass('public.' || quote_ident(part_name)) IS NULL THEN
-                    EXECUTE format(
-                        'CREATE TABLE public.%I PARTITION OF public.%I '
-                        'FOR VALUES FROM (%L) TO (%L)',
-                        part_name,
-                        p_parent,
-                        (partition_day::timestamp AT TIME ZONE 'UTC'),
-                        ((partition_day + 1)::timestamp AT TIME ZONE 'UTC'));
-                    created := created + 1;
+                IF to_regclass('public.' || quote_ident(part_name)) IS NOT NULL THEN
+                    CONTINUE;
                 END IF;
+
+                range_from := partition_day::timestamp AT TIME ZONE 'UTC';
+                range_to   := (partition_day + 1)::timestamp AT TIME ZONE 'UTC';
+
+                EXECUTE format(
+                    'SELECT count(*) FROM public.%I WHERE occurred_at >= %L AND occurred_at < %L',
+                    default_name, range_from, range_to)
+                   INTO stranded;
+
+                IF stranded > 0 THEN
+                    -- Detach the default, create the day, move the day's rows over, attach again.
+                    -- All of it is one transaction: a concurrent COPY into the parent waits on the
+                    -- lock and finds both tables in place when it proceeds.
+                    EXECUTE format('ALTER TABLE public.%I DETACH PARTITION public.%I', p_parent, default_name);
+                    EXECUTE format(
+                        'CREATE TABLE public.%I PARTITION OF public.%I FOR VALUES FROM (%L) TO (%L)',
+                        part_name, p_parent, range_from, range_to);
+                    EXECUTE format(
+                        'WITH moved AS (DELETE FROM public.%I WHERE occurred_at >= %L AND occurred_at < %L RETURNING *) '
+                        'INSERT INTO public.%I SELECT * FROM moved',
+                        default_name, range_from, range_to, part_name);
+                    EXECUTE format('ALTER TABLE public.%I ATTACH PARTITION public.%I DEFAULT', p_parent, default_name);
+                ELSE
+                    EXECUTE format(
+                        'CREATE TABLE public.%I PARTITION OF public.%I FOR VALUES FROM (%L) TO (%L)',
+                        part_name, p_parent, range_from, range_to);
+                END IF;
+
+                created := created + 1;
             END LOOP;
 
-            FOR victim IN
-                SELECT child.relname AS name
-                  FROM pg_inherits
-                  JOIN pg_class child  ON child.oid  = pg_inherits.inhrelid
-                  JOIN pg_class parent ON parent.oid = pg_inherits.inhparent
-                 WHERE parent.relname = p_parent
-                   AND child.relname ~ ('^' || p_parent || '_p[0-9]{8}$')
-                   AND to_date(right(child.relname, 8), 'YYYYMMDD')
-                       < today_utc - p_retention_days
-            LOOP
-                EXECUTE format('DROP TABLE public.%I', victim.name);
-            END LOOP;
+            -- Retention is optional: the control plane's retention job passes NULL because it drops
+            -- expired partitions itself, one at a time, with an audit record for each.
+            IF p_retention_days IS NOT NULL THEN
+                FOR victim IN
+                    SELECT child.relname AS name
+                      FROM pg_inherits
+                      JOIN pg_class child  ON child.oid  = pg_inherits.inhrelid
+                      JOIN pg_class parent ON parent.oid = pg_inherits.inhparent
+                     WHERE parent.relname = p_parent
+                       AND child.relname ~ ('^' || p_parent || '_p[0-9]{8}$')
+                       AND to_date(right(child.relname, 8), 'YYYYMMDD')
+                           < today_utc - p_retention_days
+                LOOP
+                    EXECUTE format('DROP TABLE public.%I', victim.name);
+                END LOOP;
+            END IF;
 
             RETURN created;
         END;
         $dle_fn$;
 
         COMMENT ON FUNCTION dle_partitions_maintain(text, int, int) IS
-            'Fallback daily partition maintenance for click_events and sdk_events when pg_partman is
-             absent. Creates partitions p_days_ahead days ahead and drops those older than
-             p_retention_days.';
+            'Daily partition maintenance for click_events and sdk_events: creates partitions
+             p_days_ahead days ahead, adopts any day whose rows landed in the default partition,
+             and (unless p_retention_days is NULL) drops partitions older than p_retention_days.
+             Called by the control plane retention job; the fallback when pg_partman is absent.';
 
         CREATE OR REPLACE FUNCTION dle_click_events_maintain(
             p_days_ahead     int DEFAULT 7,
@@ -402,9 +443,11 @@ internal static class DlePostgresScripts
                         -- then fall back rather than abort the migration. Silence here would leave
                         -- a partitioned table with no partitions, which rejects every insert.
                         handed_over := false;
+                        -- RAISE understands only "%" placeholders, never format() directives such as
+                        -- %L, so the quotes around the table name are written out.
                         RAISE WARNING
                             'pg_partman refused to take over % (%: %). Partitions will be '
-                            'maintained by dle_partitions_maintain(%L, 7, 180) instead; schedule it '
+                            'maintained by dle_partitions_maintain(''%'', 7, 180) instead; schedule it '
                             'daily. Fix the cause and re-run this migration to hand the table over.',
                             stream, SQLSTATE, SQLERRM, stream;
                 END;

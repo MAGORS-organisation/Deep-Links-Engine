@@ -359,6 +359,43 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
     /// identifier claims. The attribution service bounds its lookup by that instant (§B.6.3), so a
     /// row written at "roughly now" instead would make the test depend on how long the seed took.
     /// </remarks>
+    [RequiresDockerFact]
+    [Trait("TestCase", "TC-141")]
+    public async Task Resolve_BeforeConsentThenAfterIt_IsNotFinalAndMatchesOnceConsentArrives()
+    {
+        // The order a real application often produces: the SDK resolves at first launch, the
+        // consent dialog is answered afterwards. The first answer must not be final, or the SDK
+        // caches "none" for the life of the installation and the click is never credited.
+        Fixture fixture = await SeedAsync();
+        (string clickId, _) = await MintClickAsync(fixture);
+        using HttpClient client = fixture.TestHost.CreateDirectClient();
+
+        using (HttpResponseMessage before = await fixture.SdkKey.PostRawAsync(
+            client,
+            "/v1/resolve",
+            string.Create(CultureInfo.InvariantCulture, $$"""{"install_id":"install-late","platform":"android","referrer":"dl_cid={{clickId}}"}"""),
+            Ct))
+        {
+            Assert.Equal(HttpStatusCode.OK, before.StatusCode);
+            using JsonDocument document = JsonDocument.Parse(await before.Content.ReadAsStringAsync(Ct));
+            Assert.False(document.RootElement.GetProperty("matched").GetBoolean());
+            Assert.Equal(MatchTypeNames.None, document.RootElement.GetProperty("match_type").GetString());
+            Assert.True(document.RootElement.GetProperty("expires_in").GetInt32() > 0, "a consent-missing answer must not be final");
+        }
+
+        using HttpResponseMessage after = await fixture.SdkKey.PostRawAsync(
+            client,
+            "/v1/resolve",
+            string.Create(CultureInfo.InvariantCulture, $$"""{"install_id":"install-late","platform":"android",{{ConsentGranted}},"referrer":"dl_cid={{clickId}}"}"""),
+            Ct);
+
+        Assert.Equal(HttpStatusCode.OK, after.StatusCode);
+        using JsonDocument matched = JsonDocument.Parse(await after.Content.ReadAsStringAsync(Ct));
+        Assert.True(matched.RootElement.GetProperty("matched").GetBoolean());
+        Assert.Equal(MatchTypeNames.InstallReferrer, matched.RootElement.GetProperty("match_type").GetString());
+        Assert.Equal(0, matched.RootElement.GetProperty("expires_in").GetInt32());
+    }
+
     private async Task<(string ClickId, DateTimeOffset OccurredAt)> MintClickAsync(Fixture fixture)
     {
         IClickIdCodec codec = fixture.TestHost.Services.GetRequiredService<IClickIdCodec>();

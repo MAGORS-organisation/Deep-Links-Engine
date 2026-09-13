@@ -341,6 +341,12 @@ public sealed class ResolveInstallTests : IDisposable
         Assert.False(outcome.Response!.Matched);
         Assert.Equal(MatchTypeNames.None, outcome.Response.MatchType);
 
+        // The answer is not final: the host application may record consent later and the install
+        // referrer stays valid for the referrer window, so the SDK is told when to ask again.
+        Assert.True(
+            outcome.Response.ExpiresIn > 0,
+            "a no-match given for want of consent must carry a non-zero expires_in");
+
         // Without consent no click is looked up at all — consent is an input to the decision, not a
         // filter applied to a finished answer (§E.6.2).
         Assert.Equal(0, _clicks.CandidateQueries);
