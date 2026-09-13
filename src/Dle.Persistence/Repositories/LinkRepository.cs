@@ -2,6 +2,7 @@ using Dle.Domain.Contracts;
 using Dle.Domain.Links;
 using Dle.Domain.Primitives;
 using Dle.Persistence.Internal;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Dle.Persistence.Repositories;
 
@@ -234,7 +235,7 @@ public sealed class LinkRepository
 
         link.Slug = normalized;
         int readVersion = link.Version;
-        link.Version++;
+        link.Version = readVersion + 1;
 
         // Reads are untracked, so the instance handed in is usually a stranger to the change
         // tracker and Update attaches it. When the same unit of work also created or loaded this
@@ -257,9 +258,36 @@ public sealed class LinkRepository
             _db.Entry(tracked).CurrentValues.SetValues(link);
         }
 
-        _db.LinkVersions.Add(LinkRevisions.Create(tracked, changedBy, changeNote, _timeProvider.GetUtcNow()));
+        LinkVersion revision = LinkRevisions.Create(tracked, changedBy, changeNote, _timeProvider.GetUtcNow());
 
-        await _db.SaveChangesAsync(cancellationToken);
+        // The row first, the history row second, in one transaction. Saved together, EF Core
+        // batches the history INSERT ahead of the UPDATE, and a stale write then trips the unique
+        // index on (link_id, version) before the version check ever runs - the right refusal for
+        // the wrong reason. Saved in this order, a stale write is a DbUpdateConcurrencyException
+        // and nothing else; a crash between the two rolls both back.
+        IExecutionStrategy strategy = _db.Database.CreateExecutionStrategy();
+
+        await strategy.ExecuteAsync(
+            async token =>
+            {
+                await using IDbContextTransaction transaction = await _db.Database.BeginTransactionAsync(token);
+
+                await _db.SaveChangesAsync(acceptAllChangesOnSuccess: false, token);
+
+                if (_db.Entry(revision).State == EntityState.Detached)
+                {
+                    _db.LinkVersions.Add(revision);
+                }
+
+                await _db.SaveChangesAsync(acceptAllChangesOnSuccess: false, token);
+                await transaction.CommitAsync(token);
+            },
+            cancellationToken);
+
+        // Only a committed transaction moves the tracked state on; a replay of the delegate above
+        // after a transient failure needs the entries still marked as they were.
+        _db.ChangeTracker.AcceptAllChanges();
+
         return tracked.Version;
     }
 
