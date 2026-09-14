@@ -340,21 +340,26 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
 
     [RequiresDockerFact]
     [Trait("Spec", "FR-108")]
-    public async Task ALinkCreatedFromATemplate_InheritsItsTarget_Tags_AndUtm()
+    public async Task ALinkCreatedFromATemplate_InheritsItsRules_DeeplinkPath_Tags_AndUtm()
     {
         Fixture fixture = await SeedAsync("templates-apply");
         using HttpClient client = fixture.Host.CreateDirectClient();
 
+        // FR-108: a template is a campaign's prefilled UTM parameters and routing rules. The
+        // target stays the caller's: every link still names where it goes.
         using HttpResponseMessage template = await fixture.Key.PostRawAsync(
             client,
             "/api/v1/links/templates",
             """
             {
               "name": "Autumn",
-              "target_url": "https://example.com/autumn",
               "deeplink_path": "/autumn",
               "tags": ["autumn"],
-              "utm": {"utm_source": "newsletter"}
+              "utm": {"utm_source": "newsletter"},
+              "routing_rules": [
+                {"id": "ios-store", "when": {"platform": ["ios"]}, "then": {"action": "store_only", "store_url": "https://example.com/store"}},
+                {"id": "default", "then": {"action": "web", "url": "https://example.com/autumn"}}
+              ]
             }
             """,
             Ct);
@@ -365,21 +370,24 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
             templateId = document.RootElement.GetProperty("id").GetGuid();
         }
 
-        // Only the domain and the template: everything else comes from the template, and what the
-        // request does say wins over it.
+        // The domain, the target and the template: the rules, the deep link path, the tags and
+        // the UTM parameters come from the template, and what the request does say is merged in.
         using HttpResponseMessage link = await fixture.Key.PostRawAsync(
             client,
             "/api/v1/links",
             string.Create(
                 CultureInfo.InvariantCulture,
-                $$$"""{"domain_id": "{{{fixture.DomainId}}}", "campaign_id": "{{{templateId}}}", "tags": ["october"], "utm": {"utm_medium": "email"}}"""),
+                $$$"""{"domain_id": "{{{fixture.DomainId}}}", "target_url": "https://example.com/autumn-landing", "campaign_id": "{{{templateId}}}", "tags": ["october"], "utm": {"utm_medium": "email"}}"""),
             Ct);
 
-        Assert.Equal(HttpStatusCode.Created, link.StatusCode);
-        using JsonDocument created = JsonDocument.Parse(await link.Content.ReadAsStringAsync(Ct));
+        string body = await link.Content.ReadAsStringAsync(Ct);
+        Assert.True(link.StatusCode == HttpStatusCode.Created, "expected 201, got " + ((int)link.StatusCode).ToString(CultureInfo.InvariantCulture) + ": " + body);
+        using JsonDocument created = JsonDocument.Parse(body);
         JsonElement root = created.RootElement;
-        Assert.Equal("https://example.com/autumn", root.GetProperty("target_url").GetString());
+        Assert.Equal("https://example.com/autumn-landing", root.GetProperty("target_url").GetString());
         Assert.Equal("/autumn", root.GetProperty("deeplink_path").GetString());
+        List<string> ruleIds = [.. root.GetProperty("routing_rules").EnumerateArray().Select(static rule => rule.GetProperty("id").GetString()!)];
+        Assert.Equal(["ios-store", "default"], ruleIds);
         Assert.Equal(templateId, root.GetProperty("campaign_id").GetGuid());
         Assert.Equal("newsletter", root.GetProperty("utm").GetProperty("utm_source").GetString());
         Assert.Equal("email", root.GetProperty("utm").GetProperty("utm_medium").GetString());
@@ -392,7 +400,7 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
             "/api/v1/links",
             string.Create(
                 CultureInfo.InvariantCulture,
-                $$"""{"domain_id": "{{fixture.DomainId}}", "campaign_id": "{{Guid.NewGuid()}}"}"""),
+                $$"""{"domain_id": "{{fixture.DomainId}}", "target_url": "{{SafeTarget}}", "campaign_id": "{{Guid.NewGuid()}}"}"""),
             Ct);
         Assert.Equal(HttpStatusCode.BadRequest, unknown.StatusCode);
         using JsonDocument problem = JsonDocument.Parse(await unknown.Content.ReadAsStringAsync(Ct));
