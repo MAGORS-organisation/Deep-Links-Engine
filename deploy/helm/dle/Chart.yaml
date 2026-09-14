@@ -32,18 +32,18 @@ annotations:
 #
 # Helm refuses to install a chart whose declared dependencies are not in charts/, even when their
 # condition is false. Therefore either run `helm dependency build deploy/helm/dle` once, or pass
-# `--dependency-update` to helm install/upgrade. The version ranges below were NOT resolved by
-# the machine that authored this chart (no Helm available there): if `helm dependency build`
-# cannot satisfy them, pin the versions the OCI registry actually serves.
+# `--dependency-update` to helm install/upgrade. The versions below are pinned to what
+# oci://registry-1.docker.io/bitnamicharts served when the Helm chart workflow first resolved
+# them; bump them deliberately, with that workflow as the check.
 dependencies:
   - name: postgresql
-    version: ">=16.0.0 <20.0.0"
+    version: "18.11.1"
     repository: oci://registry-1.docker.io/bitnamicharts
     condition: postgresql.enabled
     tags:
       - bundled
   - name: valkey
-    version: ">=2.0.0 <5.0.0"
+    version: "4.1.3"
     repository: oci://registry-1.docker.io/bitnamicharts
     condition: valkey.enabled
     tags:

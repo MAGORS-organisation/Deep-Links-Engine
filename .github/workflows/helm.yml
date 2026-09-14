@@ -125,7 +125,7 @@ jobs:
             > rendered/production.yaml
           for f in rendered/*.yaml; do
             printf '%s: %s documents, kinds: %s\n' "$f" "$(grep -c '^kind:' "$f")" \
-              "$(grep '^kind:' "$f" | sort | uniq -c | awk '{printf "%s×%s ", $2, $1}')"
+              "$(grep '^kind:' "$f" | sort | uniq -c | awk '{printf "%s×%s ", $3, $1}')"
           done
 
       - name: What the chart must render
