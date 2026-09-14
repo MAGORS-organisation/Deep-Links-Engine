@@ -64,6 +64,12 @@ not been executed anywhere.
 
 ### Fixed
 
+- **Analytics** — the rollup schema (`click_rollup_*`, `install_rollup_*`,
+  `attribution_quality_daily`, `analytics_rollup_state`, `analytics_retention_runs` and the
+  `dle_platform_of` function) shipped as an embedded script that nothing ever ran: on a fresh
+  database the rollup and retention workers failed on every run and a breakdown by platform
+  was a 500. The control plane now applies the idempotent script when it starts
+  (`PostgresAnalyticsSchema`); a failure is logged and leaves link management untouched.
 - **Control plane** — `POST /api/v1/webhooks` without `is_active` registered an inactive
   subscription that received nothing: the request is read through a source-generated JSON
   context, which materialises an init-only record through an object initializer and gives an
