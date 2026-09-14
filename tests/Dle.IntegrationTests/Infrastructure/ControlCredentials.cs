@@ -43,6 +43,20 @@ public sealed class ControlCredentials
     public Guid TenantId { get; }
 
     /// <summary>
+    /// Wraps a control-plane API key the test obtained from the API itself (the secret a
+    /// <c>POST /api/v1/api-keys</c> answered with), so it can be used like an issued one.
+    /// </summary>
+    /// <param name="token">The secret as the API returned it.</param>
+    /// <param name="tenantId">The tenant it belongs to.</param>
+    /// <returns>The credential.</returns>
+    public static ControlCredentials FromToken(string token, Guid tenantId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(token);
+
+        return new ControlCredentials(token, DleKeyAuthenticationOptions.ApiKeyHeader, tenantId);
+    }
+
+    /// <summary>
     /// Issues a control-plane API key for a tenant and stores its hash.
     /// </summary>
     /// <param name="host">The control plane host, which supplies the hasher.</param>
