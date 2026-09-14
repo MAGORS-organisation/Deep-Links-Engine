@@ -1,0 +1,531 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/MAGORS-organisation/Deep-Links-Engine/deploy/helm/dle/values.schema.json",
+  "title": "Deep Link Engine Helm chart values",
+  "description": "Validated by `helm install/upgrade/lint`. The postgresql and valkey subtrees are passed to the Bitnami subcharts verbatim and are only checked for the keys this chart reads.",
+  "type": "object",
+  "definitions": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "labelMap": { "type": "object", "additionalProperties": { "type": "string" } },
+    "selector": {
+      "type": "object",
+      "properties": {
+        "matchLabels": { "$ref": "#/definitions/labelMap" },
+        "matchExpressions": { "type": "array", "items": { "type": "object" } }
+      },
+      "additionalProperties": false
+    },
+    "quantity": { "type": ["string", "number"], "pattern": "^[0-9]+(\\.[0-9]+)?(m|k|M|G|T|P|E|Ki|Mi|Gi|Ti|Pi|Ei)?$" },
+    "resourceList": {
+      "type": "object",
+      "properties": {
+        "cpu": { "$ref": "#/definitions/quantity" },
+        "memory": { "$ref": "#/definitions/quantity" },
+        "ephemeral-storage": { "$ref": "#/definitions/quantity" }
+      },
+      "additionalProperties": { "$ref": "#/definitions/quantity" }
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "requests": { "$ref": "#/definitions/resourceList" },
+        "limits": { "$ref": "#/definitions/resourceList" }
+      },
+      "additionalProperties": false
+    },
+    "probeTiming": {
+      "type": "object",
+      "properties": {
+        "periodSeconds": { "type": "integer", "minimum": 1 },
+        "timeoutSeconds": { "type": "integer", "minimum": 1 },
+        "failureThreshold": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "probes": {
+      "type": "object",
+      "properties": {
+        "livenessPath": { "type": "string", "pattern": "^/" },
+        "readinessPath": { "type": "string", "pattern": "^/" },
+        "startup": { "$ref": "#/definitions/probeTiming" },
+        "liveness": { "$ref": "#/definitions/probeTiming" },
+        "readiness": { "$ref": "#/definitions/probeTiming" }
+      },
+      "additionalProperties": false
+    },
+    "pdb": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "minAvailable": { "type": ["integer", "string"] },
+        "maxUnavailable": { "type": ["integer", "string"] }
+      },
+      "additionalProperties": false
+    },
+    "service": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["ClusterIP", "NodePort", "LoadBalancer"] },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "annotations": { "$ref": "#/definitions/labelMap" }
+      },
+      "additionalProperties": false
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "repository": { "$ref": "#/definitions/nonEmptyString" },
+        "tag": { "type": "string" },
+        "pullPolicy": { "type": "string", "enum": ["Always", "IfNotPresent", "Never"] }
+      },
+      "required": ["repository"],
+      "additionalProperties": false
+    },
+    "envMap": {
+      "description": "ENV_NAME: value — values are stringified; empty strings are skipped.",
+      "type": "object",
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "updateStrategy": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["RollingUpdate", "Recreate"] },
+        "rollingUpdate": {
+          "type": "object",
+          "properties": {
+            "maxUnavailable": { "type": ["integer", "string"] },
+            "maxSurge": { "type": ["integer", "string"] }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "networkPeer": {
+      "type": "object",
+      "properties": {
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "cidrs": { "type": "array", "items": { "type": "string", "pattern": "^[0-9a-fA-F:.]+/[0-9]{1,3}$" } },
+        "namespaceSelector": { "$ref": "#/definitions/selector" },
+        "podSelector": { "$ref": "#/definitions/selector" }
+      },
+      "additionalProperties": false
+    },
+    "workload": {
+      "type": "object",
+      "properties": {
+        "extraEnv": { "type": "array", "items": { "type": "object", "required": ["name"] } },
+        "extraVolumes": { "type": "array", "items": { "type": "object", "required": ["name"] } },
+        "extraVolumeMounts": { "type": "array", "items": { "type": "object", "required": ["name", "mountPath"] } },
+        "podAnnotations": { "$ref": "#/definitions/labelMap" },
+        "podLabels": { "$ref": "#/definitions/labelMap" },
+        "nodeSelector": { "$ref": "#/definitions/labelMap" },
+        "tolerations": { "type": "array", "items": { "type": "object" } },
+        "affinity": { "type": "object" },
+        "topologySpreadConstraints": { "type": "array", "items": { "type": "object" } },
+        "priorityClassName": { "type": "string" },
+        "preStopSleepSeconds": { "type": "integer", "minimum": 0 },
+        "terminationGracePeriodSeconds": { "type": "integer", "minimum": 0 },
+        "updateStrategy": { "$ref": "#/definitions/updateStrategy" },
+        "revisionHistoryLimit": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "properties": {
+    "global": { "type": "object" },
+    "nameOverride": { "type": "string", "maxLength": 63 },
+    "fullnameOverride": { "type": "string", "maxLength": 63 },
+    "commonLabels": { "$ref": "#/definitions/labelMap" },
+    "commonAnnotations": { "$ref": "#/definitions/labelMap" },
+    "image": {
+      "type": "object",
+      "properties": {
+        "edge": { "$ref": "#/definitions/image" },
+        "control": { "$ref": "#/definitions/image" }
+      },
+      "required": ["edge", "control"],
+      "additionalProperties": false
+    },
+    "imagePullSecrets": { "type": "array", "items": { "type": "object", "required": ["name"] } },
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "create": { "type": "boolean" },
+        "name": { "type": "string" },
+        "annotations": { "$ref": "#/definitions/labelMap" },
+        "automountServiceAccountToken": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "secrets": {
+      "type": "object",
+      "properties": {
+        "existingSecret": { "type": "string" },
+        "keys": {
+          "type": "object",
+          "properties": {
+            "masterSecret": { "$ref": "#/definitions/nonEmptyString" },
+            "postgresConnectionString": { "$ref": "#/definitions/nonEmptyString" },
+            "postgresReadConnectionString": { "$ref": "#/definitions/nonEmptyString" },
+            "valkeyConnectionString": { "$ref": "#/definitions/nonEmptyString" },
+            "clickHouseConnectionString": { "$ref": "#/definitions/nonEmptyString" }
+          },
+          "required": ["masterSecret", "postgresConnectionString", "postgresReadConnectionString", "valkeyConnectionString", "clickHouseConnectionString"],
+          "additionalProperties": false
+        },
+        "masterSecret": {
+          "description": "Dle:Crypto:MasterSecret — at least 32 characters, or empty when existingSecret is set.",
+          "type": "string",
+          "anyOf": [ { "const": "" }, { "minLength": 32 } ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "externalPostgres": {
+      "type": "object",
+      "properties": {
+        "connectionString": { "type": "string" },
+        "readConnectionString": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "postgresql": {
+      "description": "Bitnami postgresql subchart values (passed through). Only the keys the parent reads are constrained.",
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "architecture": { "type": "string", "enum": ["standalone", "replication"] },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "username": { "$ref": "#/definitions/nonEmptyString" },
+            "database": { "$ref": "#/definitions/nonEmptyString" },
+            "password": { "type": "string" }
+          }
+        }
+      }
+    },
+    "externalValkey": {
+      "type": "object",
+      "properties": { "connectionString": { "type": "string" } },
+      "additionalProperties": false
+    },
+    "valkey": {
+      "description": "Bitnami valkey subchart values (passed through).",
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "architecture": { "type": "string" },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "password": { "type": "string" }
+          }
+        }
+      }
+    },
+    "externalClickHouse": {
+      "type": "object",
+      "properties": { "connectionString": { "type": "string" } },
+      "additionalProperties": false
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "privacy": {
+          "type": "object",
+          "properties": {
+            "consentMode": { "type": "string", "enum": ["off", "aggregate_only", "full"] },
+            "ipStorage": { "type": "string", "enum": ["none", "hash_only", "prefix", "full"] }
+          },
+          "additionalProperties": false
+        },
+        "telemetry": {
+          "type": "object",
+          "properties": { "otlpEndpoint": { "type": "string" } },
+          "additionalProperties": false
+        },
+        "extra": { "$ref": "#/definitions/envMap" }
+      },
+      "additionalProperties": false
+    },
+    "edge": {
+      "allOf": [ { "$ref": "#/definitions/workload" } ],
+      "type": "object",
+      "properties": {
+        "replicaCount": { "type": "integer", "minimum": 1 },
+        "resources": { "$ref": "#/definitions/resources" },
+        "autoscaling": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "minReplicas": { "type": "integer", "minimum": 1 },
+            "maxReplicas": { "type": "integer", "minimum": 1 },
+            "targetCPUUtilizationPercentage": { "type": "integer", "minimum": 1, "maximum": 100 },
+            "rps": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "metricName": { "$ref": "#/definitions/nonEmptyString" },
+                "targetAverageValue": { "type": ["string", "number"] }
+              },
+              "additionalProperties": false
+            },
+            "behavior": { "type": "object" }
+          },
+          "additionalProperties": false
+        },
+        "pdb": { "$ref": "#/definitions/pdb" },
+        "probes": { "$ref": "#/definitions/probes" },
+        "service": { "$ref": "#/definitions/service" },
+        "config": {
+          "type": "object",
+          "properties": {
+            "network": {
+              "type": "object",
+              "properties": {
+                "useForwardedHeaders": { "type": "boolean" },
+                "forwardLimit": { "type": "integer", "minimum": 1 },
+                "knownNetworks": { "type": "array", "items": { "type": "string", "pattern": "^[0-9a-fA-F:.]+/[0-9]{1,3}$" } },
+                "knownProxies": { "type": "array", "items": { "type": "string" } }
+              },
+              "additionalProperties": false
+            },
+            "geoIp": {
+              "type": "object",
+              "properties": {
+                "path": { "type": "string" },
+                "existingClaim": { "type": "string" },
+                "mountPath": { "type": "string", "pattern": "^/" }
+              },
+              "additionalProperties": false
+            },
+            "botDetection": {
+              "type": "object",
+              "properties": { "reverseDnsVerify": { "type": "boolean" } },
+              "additionalProperties": false
+            },
+            "interstitial": {
+              "type": "object",
+              "properties": {
+                "productName": { "type": "string" },
+                "supportUrl": { "type": "string" },
+                "privacyUrl": { "type": "string" }
+              },
+              "additionalProperties": false
+            },
+            "cache": {
+              "type": "object",
+              "properties": {
+                "l1Seconds": { "type": "integer", "minimum": 0 },
+                "l2Minutes": { "type": "integer", "minimum": 0 },
+                "negativeSeconds": { "type": "integer", "minimum": 0 }
+              },
+              "additionalProperties": false
+            },
+            "dbPool": {
+              "type": "object",
+              "properties": {
+                "maxPoolSize": { "type": "integer", "minimum": 1 },
+                "minPoolSize": { "type": "integer", "minimum": 0 }
+              },
+              "additionalProperties": false
+            },
+            "extra": { "$ref": "#/definitions/envMap" }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "control": {
+      "allOf": [ { "$ref": "#/definitions/workload" } ],
+      "type": "object",
+      "properties": {
+        "replicaCount": { "type": "integer", "minimum": 1 },
+        "resources": { "$ref": "#/definitions/resources" },
+        "pdb": { "$ref": "#/definitions/pdb" },
+        "probes": { "$ref": "#/definitions/probes" },
+        "service": { "$ref": "#/definitions/service" },
+        "config": {
+          "type": "object",
+          "properties": {
+            "publicScheme": { "type": "string", "enum": ["https", "http"] },
+            "instanceTenantId": { "type": "string" },
+            "allowTenantSelfService": { "type": "boolean" },
+            "oidc": {
+              "type": "object",
+              "properties": {
+                "authority": { "type": "string" },
+                "clientId": { "type": "string" },
+                "audience": { "type": "string" },
+                "requireHttpsMetadata": { "type": "boolean" }
+              },
+              "additionalProperties": false
+            },
+            "analytics": {
+              "type": "object",
+              "properties": { "provider": { "type": "string", "enum": ["postgres", "clickhouse"] } },
+              "additionalProperties": false
+            },
+            "extra": { "$ref": "#/definitions/envMap" }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "migrate": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "hooks": { "type": "string", "pattern": "^$|^(pre|post)-(install|upgrade)(,(pre|post)-(install|upgrade))*$" },
+        "args": { "type": "array", "items": { "type": "string" } },
+        "backoffLimit": { "type": "integer", "minimum": 0 },
+        "activeDeadlineSeconds": { "type": "integer", "minimum": 1 },
+        "ttlSecondsAfterFinished": { "type": "integer", "minimum": 0 },
+        "resources": { "$ref": "#/definitions/resources" },
+        "podAnnotations": { "$ref": "#/definitions/labelMap" },
+        "nodeSelector": { "$ref": "#/definitions/labelMap" },
+        "tolerations": { "type": "array", "items": { "type": "object" } }
+      },
+      "additionalProperties": false
+    },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "className": { "type": "string" },
+        "controller": { "type": "string", "enum": ["nginx", "traefik", "none"] },
+        "host": { "$ref": "#/definitions/nonEmptyString" },
+        "annotations": { "$ref": "#/definitions/labelMap" },
+        "mainAnnotations": { "$ref": "#/definitions/labelMap" },
+        "wellKnownAnnotations": {
+          "description": "Must never contain a redirect or rewrite annotation (§A.2.1).",
+          "allOf": [
+            { "$ref": "#/definitions/labelMap" },
+            { "propertyNames": { "not": { "pattern": "redirect|rewrite-target|app-root" } } }
+          ]
+        },
+        "tls": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "secretName": { "type": "string" },
+            "certManager": {
+              "type": "object",
+              "properties": {
+                "clusterIssuer": { "type": "string" },
+                "issuer": { "type": "string" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "controlPaths": { "type": "array", "items": { "type": "string", "pattern": "^/" } },
+        "exposeControlOnHost": { "type": "boolean" },
+        "controlHost": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "networkPolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "ingressController": {
+          "type": "object",
+          "properties": {
+            "namespaceSelector": { "$ref": "#/definitions/selector" },
+            "podSelector": { "$ref": "#/definitions/selector" }
+          },
+          "additionalProperties": false
+        },
+        "dns": { "$ref": "#/definitions/networkPeer" },
+        "postgres": { "$ref": "#/definitions/networkPeer" },
+        "valkey": { "$ref": "#/definitions/networkPeer" },
+        "clickhouse": { "$ref": "#/definitions/networkPeer" },
+        "monitoring": {
+          "type": "object",
+          "properties": { "namespaceSelector": { "$ref": "#/definitions/selector" } },
+          "additionalProperties": false
+        },
+        "edge": {
+          "type": "object",
+          "properties": {
+            "extraEgress": { "type": "array", "items": { "type": "object" } },
+            "extraIngress": { "type": "array", "items": { "type": "object" } }
+          },
+          "additionalProperties": false
+        },
+        "control": {
+          "type": "object",
+          "properties": {
+            "restrictEgress": { "type": "boolean" },
+            "extraEgress": { "type": "array", "items": { "type": "object" } },
+            "extraIngress": { "type": "array", "items": { "type": "object" } }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "serviceMonitor": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "namespace": { "type": "string" },
+        "labels": { "$ref": "#/definitions/labelMap" },
+        "interval": { "type": "string", "pattern": "^[0-9]+(ms|s|m|h)$" },
+        "scrapeTimeout": { "type": "string", "pattern": "^[0-9]+(ms|s|m|h)$" },
+        "path": { "type": "string", "pattern": "^/" },
+        "relabelings": { "type": "array", "items": { "type": "object" } },
+        "metricRelabelings": { "type": "array", "items": { "type": "object" } }
+      },
+      "additionalProperties": false
+    },
+    "securityContext": {
+      "type": "object",
+      "properties": {
+        "pod": {
+          "type": "object",
+          "properties": {
+            "runAsNonRoot": { "type": "boolean", "const": true },
+            "runAsUser": { "type": "integer", "minimum": 1 },
+            "runAsGroup": { "type": "integer", "minimum": 1 },
+            "fsGroup": { "type": "integer", "minimum": 1 },
+            "fsGroupChangePolicy": { "type": "string", "enum": ["OnRootMismatch", "Always"] },
+            "seccompProfile": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "enum": ["RuntimeDefault", "Localhost"] },
+                "localhostProfile": { "type": "string" }
+              },
+              "required": ["type"]
+            }
+          },
+          "required": ["runAsNonRoot", "seccompProfile"]
+        },
+        "container": {
+          "type": "object",
+          "properties": {
+            "allowPrivilegeEscalation": { "type": "boolean", "const": false },
+            "readOnlyRootFilesystem": { "type": "boolean", "const": true },
+            "privileged": { "type": "boolean", "const": false },
+            "capabilities": {
+              "type": "object",
+              "properties": {
+                "drop": { "type": "array", "contains": { "const": "ALL" } },
+                "add": { "type": "array", "items": { "type": "string" } }
+              },
+              "required": ["drop"]
+            }
+          },
+          "required": ["allowPrivilegeEscalation", "readOnlyRootFilesystem", "capabilities"]
+        },
+        "tmpSizeLimit": { "$ref": "#/definitions/quantity" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": ["image", "secrets", "edge", "control", "ingress", "securityContext"]
+}

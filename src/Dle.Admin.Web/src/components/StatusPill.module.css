@@ -1,0 +1,47 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px 1px 6px;
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.glyph {
+  font-size: 9px;
+}
+
+.ok {
+  background: var(--ok-soft);
+  color: var(--ok-soft-fg);
+}
+
+.warn {
+  background: var(--warn-soft);
+  color: var(--warn-soft-fg);
+}
+
+.bad {
+  background: var(--bad-soft);
+  color: var(--bad-soft-fg);
+}
+
+.neutral {
+  background: var(--surface-3);
+  color: var(--fg-muted);
+}
+
+.pending {
+  background: transparent;
+  color: var(--fg-muted);
+  border-color: var(--border-strong);
+}
+
+.accent {
+  background: var(--accent-soft);
+  color: var(--accent-soft-fg);
+}

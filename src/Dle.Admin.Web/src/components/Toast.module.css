@@ -1,0 +1,73 @@
+.region {
+  position: fixed;
+  right: var(--sp-4);
+  bottom: var(--sp-4);
+  z-index: 60;
+  display: grid;
+  gap: var(--sp-2);
+  width: min(380px, calc(100vw - 2 * var(--sp-4)));
+  pointer-events: none;
+}
+
+.list {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--fg);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--fs-sm);
+  animation: rise 140ms ease-out;
+}
+
+.info {
+  border-left: 3px solid var(--accent);
+}
+
+.success {
+  border-left: 3px solid var(--ok);
+}
+
+.error {
+  border-left: 3px solid var(--bad);
+}
+
+.text {
+  flex: 1 1 auto;
+  word-break: break-word;
+}
+
+.close {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+  font-size: var(--fs-sm);
+}
+
+.close:hover {
+  color: var(--fg);
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

@@ -1,0 +1,37 @@
+.root {
+  display: grid;
+  gap: var(--sp-2);
+  justify-items: center;
+  text-align: center;
+  padding: var(--sp-8) var(--sp-4);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.error {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--bad) 45%, transparent);
+  background: var(--bad-soft);
+  color: var(--bad-soft-fg);
+}
+
+.title {
+  font-size: var(--fs-lg);
+}
+
+.detail {
+  color: var(--fg-muted);
+  max-width: 56ch;
+  font-size: var(--fs-sm);
+}
+
+.error .detail {
+  color: inherit;
+}
+
+.action {
+  margin-top: var(--sp-2);
+  display: flex;
+  gap: var(--sp-2);
+}

@@ -1,0 +1,89 @@
+{{- /*
+EF Core migration as a Helm hook (pre-install,pre-upgrade by default — see dle.migrate.hooks).
+Runs /app/efbundle from the CONTROL image: a framework-dependent `dotnet ef migrations bundle`
+of src/Dle.Persistence built in deploy/docker/Dockerfile.control. The bundle's design-time
+factory reads ConnectionStrings__Postgres from the environment; re-runs are idempotent.
+
+As a pre-upgrade hook it runs while the PREVIOUS version's pods still serve traffic: keep
+migrations expand/contract-safe. With the bundled PostgreSQL subchart the database only exists
+after install, so the hook moves to post-install,post-upgrade (control's /readyz then holds the
+pods out of the Service until the schema is there).
+
+The Job reads dle.migrate.secretName: secrets.existingSecret when set, otherwise the hook-scoped
+copy that secret.yaml renders (regular resources do not exist yet when a pre-install hook runs).
+before-hook-creation replaces the previous Job on every run; ttlSecondsAfterFinished cleans it
+up afterwards while keeping the logs around for a while.
+*/ -}}
+{{- if .Values.migrate.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "dle.migrate.fullname" . }}
+  labels:
+    {{- include "dle.migrate.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: {{ include "dle.migrate.hooks" . }}
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation
+    {{- with .Values.commonAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  backoffLimit: {{ .Values.migrate.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.migrate.activeDeadlineSeconds }}
+  ttlSecondsAfterFinished: {{ .Values.migrate.ttlSecondsAfterFinished }}
+  template:
+    metadata:
+      labels:
+        {{- include "dle.migrate.selectorLabels" . | nindent 8 }}
+      {{- with .Values.migrate.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      # OnFailure = the kubelet restarts the container with exponential back-off inside one pod,
+      # which is what "wait for a database that is still starting" needs.
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "dle.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.securityContext.pod | nindent 8 }}
+      containers:
+        - name: migrate
+          image: {{ include "dle.image.control" . | quote }}
+          imagePullPolicy: {{ .Values.image.control.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext.container | nindent 12 }}
+          command: ["/app/efbundle"]
+          {{- with .Values.migrate.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: ConnectionStrings__Postgres
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dle.migrate.secretName" . }}
+                  key: {{ .Values.secrets.keys.postgresConnectionString }}
+          resources:
+            {{- toYaml .Values.migrate.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: {{ .Values.securityContext.tmpSizeLimit }}
+      {{- with .Values.migrate.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.migrate.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

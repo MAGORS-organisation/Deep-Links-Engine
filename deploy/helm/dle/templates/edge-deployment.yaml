@@ -1,0 +1,189 @@
+{{- /*
+dle-edge — the data plane (§B.8 profile B: HPA 3–20 pods behind the Ingress).
+
+Probes: liveness AND readiness hit /healthz, which runs no dependency checks. NFR-06 / §D.6:
+resolves must keep working from cache (L1 + Valkey) while PostgreSQL is down, so a readiness
+probe that failed on the database would pull the whole fleet out of rotation at exactly the
+wrong moment. See edge.probes in values.yaml before changing this.
+
+Security: non-root uid 1654, read-only root filesystem, all capabilities dropped, seccomp
+RuntimeDefault, no service-account token. /tmp is the only writable path (.NET needs it).
+*/ -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dle.edge.fullname" . }}
+  labels:
+    {{- include "dle.edge.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.edge.autoscaling.enabled }}
+  replicas: {{ .Values.edge.replicaCount }}
+  {{- end }}
+  revisionHistoryLimit: {{ .Values.edge.revisionHistoryLimit }}
+  strategy:
+    {{- toYaml .Values.edge.updateStrategy | nindent 4 }}
+  selector:
+    matchLabels:
+      {{- include "dle.edge.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "dle.edge.selectorLabels" . | nindent 8 }}
+        {{- with .Values.edge.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        # A configuration or secret change rolls the pods.
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if not .Values.secrets.existingSecret }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.edge.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "dle.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.securityContext.pod | nindent 8 }}
+      {{- with .Values.edge.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.edge.terminationGracePeriodSeconds }}
+      containers:
+        - name: edge
+          image: {{ include "dle.image.edge" . | quote }}
+          imagePullPolicy: {{ .Values.image.edge.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext.container | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_HTTP_PORTS
+              value: "8080"
+            - name: ConnectionStrings__Postgres
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dle.secretName" . }}
+                  key: {{ .Values.secrets.keys.postgresConnectionString }}
+            # Optional read replica (§B.8: the edge reads from a replica). Absent key = primary.
+            - name: ConnectionStrings__PostgresRead
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dle.secretName" . }}
+                  key: {{ .Values.secrets.keys.postgresReadConnectionString }}
+                  optional: true
+            # Optional L2 cache. Absent key = HybridCache runs L1-only.
+            - name: ConnectionStrings__Valkey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dle.secretName" . }}
+                  key: {{ .Values.secrets.keys.valkeyConnectionString }}
+                  optional: true
+            - name: Dle__Crypto__MasterSecret
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dle.secretName" . }}
+                  key: {{ .Values.secrets.keys.masterSecret }}
+            {{- with .Values.edge.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "dle.edge.fullname" . }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.edge.probes.livenessPath }}
+              port: http
+            periodSeconds: {{ .Values.edge.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.edge.probes.startup.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.edge.probes.livenessPath }}
+              port: http
+            periodSeconds: {{ .Values.edge.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.edge.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.edge.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.edge.probes.readinessPath }}
+              port: http
+            periodSeconds: {{ .Values.edge.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.edge.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.edge.probes.readiness.failureThreshold }}
+          {{- if gt (int .Values.edge.preStopSleepSeconds) 0 }}
+          lifecycle:
+            preStop:
+              # Native sleep action: no binary needed, so the chiseled image works. Kubernetes
+              # ≥ 1.30 has it on by default; 1.29 needs the PodLifecycleSleepAction feature gate.
+              sleep:
+                seconds: {{ .Values.edge.preStopSleepSeconds }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.edge.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- if .Values.edge.config.geoIp.existingClaim }}
+            - name: geoip
+              mountPath: {{ .Values.edge.config.geoIp.mountPath }}
+              readOnly: true
+            {{- end }}
+            {{- with .Values.edge.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: {{ .Values.securityContext.tmpSizeLimit }}
+        {{- if .Values.edge.config.geoIp.existingClaim }}
+        - name: geoip
+          persistentVolumeClaim:
+            claimName: {{ .Values.edge.config.geoIp.existingClaim }}
+            readOnly: true
+        {{- end }}
+        {{- with .Values.edge.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.edge.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.edge.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.edge.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      topologySpreadConstraints:
+        {{- if .Values.edge.topologySpreadConstraints }}
+        {{- toYaml .Values.edge.topologySpreadConstraints | nindent 8 }}
+        {{- else }}
+        # Default: spread across zones and nodes, but never leave a pod unscheduled for it.
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              {{- include "dle.edge.selectorLabels" . | nindent 14 }}
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              {{- include "dle.edge.selectorLabels" . | nindent 14 }}
+        {{- end }}

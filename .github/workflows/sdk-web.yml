@@ -1,0 +1,72 @@
+# =============================================================================
+# Web SDK (sdk/web, @magors/dle-web) — lint, typecheck, build, test, bundle-size budget.
+#
+# Path-filtered. The step list is exactly package.json's prepublishOnly, so what passes here is
+# what `npm publish` would run. `npm run size` (scripts/size-check.mjs) is the budget from
+# docs/zadanie.md §C.5: an SDK's bytes are every customer's bytes.
+# =============================================================================
+name: Web SDK
+
+on:
+  pull_request:
+    paths:
+      - "sdk/web/**"
+      - ".github/workflows/sdk-web.yml"
+  push:
+    branches: [develop, master]
+    paths:
+      - "sdk/web/**"
+      - ".github/workflows/sdk-web.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdk-web-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    name: Lint, typecheck, build, test, size
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: sdk/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node 22
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sdk/web/package-lock.json
+
+      - name: Install (clean, from the lock file)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Bundle size budget
+        run: npm run size
+
+      - name: Upload dist
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sdk-web-dist-${{ github.sha }}
+          path: sdk/web/dist/
+          retention-days: 7

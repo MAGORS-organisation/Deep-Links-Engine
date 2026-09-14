@@ -1,0 +1,26 @@
+{{- /*
+Voluntary disruptions (node drains, cluster upgrades) may never take the edge below
+edge.pdb.minAvailable pods. Set edge.pdb.maxUnavailable (and leave minAvailable empty) to
+express it the other way round; Kubernetes rejects a PDB with both.
+*/ -}}
+{{- if .Values.edge.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "dle.edge.fullname" . }}
+  labels:
+    {{- include "dle.edge.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.edge.pdb.maxUnavailable }}
+  maxUnavailable: {{ .Values.edge.pdb.maxUnavailable }}
+  {{- else }}
+  minAvailable: {{ .Values.edge.pdb.minAvailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "dle.edge.selectorLabels" . | nindent 6 }}
+{{- end }}

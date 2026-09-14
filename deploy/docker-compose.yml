@@ -1,0 +1,305 @@
+# =============================================================================
+# Deep Link Engine (DLE) — Profile A: one server, one `docker compose up` (NFR-09).
+#
+#   docs/zadanie.md §B.8:
+#     caddy (TLS, HTTP/2+3)  →  dle-edge (2 replicas)  ┐
+#                               dle-control (1)        ├→ postgres:18
+#                                                      └→ valkey:8
+#   Sized for 2 vCPU / 4 GB RAM / 20 GB disk (NFR-10); ~1 000 req/s.
+#
+# Configuration comes from ./.env (copy .env.example). Two values are REQUIRED:
+# POSTGRES_PASSWORD and DLE_MASTER_SECRET. Every other variable has a default below.
+#
+# Start-up order (all enforced with depends_on conditions):
+#   postgres, valkey  →  migrate (one-shot EF Core migration, exits 0)  →  dle-control, dle-edge
+#   →  caddy
+#
+# Production: `docker compose -f docker-compose.yml up -d` — naming the file explicitly keeps
+# docker-compose.override.yml (local development: published ports, plain HTTP) out of the stack.
+# =============================================================================
+
+name: dle
+
+# ---- shared fragments --------------------------------------------------------------------------
+
+x-dotnet-service: &dotnet-service
+  restart: unless-stopped
+  # The images run as the non-root `app` user (uid 1654) with a read-only root filesystem; /tmp is
+  # the only writable path .NET needs (diagnostics IPC sockets, temporary files).
+  read_only: true
+  tmpfs:
+    - /tmp:size=64m,mode=1777
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  networks:
+    - dle
+  logging:
+    driver: json-file
+    options:
+      max-size: "20m"
+      max-file: "5"
+
+x-control-build: &control-build
+  context: ..
+  dockerfile: deploy/docker/Dockerfile.control
+
+# Both services connect with the same role; Npgsql "Application Name" tells pg_stat_activity apart.
+x-postgres-connection: &postgres-connection
+  "Host=postgres;Port=5432;Database=${POSTGRES_DB:-dle};Username=${POSTGRES_USER:-dle};Password=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required — see .env.example}"
+
+# ---- services ----------------------------------------------------------------------------------
+
+services:
+
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:2}
+    restart: unless-stopped
+    ports:
+      - "${DLE_HTTP_PORT:-80}:80"
+      - "${DLE_HTTPS_PORT:-443}:443"
+      - "${DLE_HTTPS_PORT:-443}:443/udp"   # HTTP/3 (QUIC)
+    environment:
+      DLE_DOMAIN: ${DLE_DOMAIN:?DLE_DOMAIN is required — the public host name of your links}
+      DLE_TLS: ${DLE_TLS:-internal}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data        # certificates and ACME account — keep it, or you hit rate limits
+      - caddy_config:/config
+    depends_on:
+      dle-edge:
+        condition: service_healthy
+      dle-control:
+        condition: service_healthy
+    healthcheck:
+      # The caddy image is Alpine/busybox: wget is present, curl is not. 2019 is the admin API.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:2019/config/"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "${DLE_CADDY_CPUS:-0.5}"
+          memory: ${DLE_CADDY_MEMORY:-128M}
+    networks:
+      - dle
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  dle-edge:
+    <<: *dotnet-service
+    image: ${DLE_EDGE_IMAGE:-ghcr.io/magors-organisation/dle-edge:${DLE_VERSION:-latest}}
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile.edge
+    deploy:
+      replicas: ${DLE_EDGE_REPLICAS:-2}
+      resources:
+        limits:
+          cpus: "${DLE_EDGE_CPUS:-0.75}"
+          memory: ${DLE_EDGE_MEMORY:-384M}
+        reservations:
+          memory: 128M
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__Postgres: *postgres-connection
+      ConnectionStrings__Valkey: "valkey:6379"
+      Dle__Crypto__MasterSecret: ${DLE_MASTER_SECRET:?DLE_MASTER_SECRET is required — at least 32 characters, see .env.example}
+      # Caddy terminates TLS and is the only peer whose X-Forwarded-* headers may be honoured.
+      # KnownNetworks is the compose subnet; a wider range would let any client choose its own
+      # address for rate limiting, click attribution and GeoIP (src/Dle.Edge/appsettings.json).
+      Dle__Edge__Network__UseForwardedHeaders: "true"
+      Dle__Edge__Network__ForwardLimit: "1"
+      Dle__Edge__Network__KnownNetworks__0: ${DLE_NETWORK_SUBNET:-172.28.0.0/24}
+      Dle__Edge__GeoIp__Path: ${DLE_GEOIP_PATH:-}
+      Dle__Edge__Interstitial__ProductName: ${DLE_PRODUCT_NAME:-}
+      Dle__Edge__Interstitial__SupportUrl: ${DLE_SUPPORT_URL:-}
+      Dle__Edge__Interstitial__PrivacyUrl: ${DLE_PRIVACY_URL:-}
+      Dle__Persistence__Fast__MaxPoolSize: ${DLE_EDGE_DB_POOL:-32}
+      Dle__Privacy__ConsentMode: ${DLE_CONSENT_MODE:-aggregate_only}
+      Dle__Privacy__IpStorage: ${DLE_IP_STORAGE:-hash_only}
+      Dle__Telemetry__OtlpEndpoint: ${DLE_OTLP_ENDPOINT:-}
+    volumes:
+      # MaxMind mmdb, read-only, supplied by the operator. Never downloaded from here (NFR-14).
+      - ${DLE_GEOIP_DIR:-./geoip}:/geoip:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 20s
+
+  dle-control:
+    <<: *dotnet-service
+    image: ${DLE_CONTROL_IMAGE:-ghcr.io/magors-organisation/dle-control:${DLE_VERSION:-latest}}
+    build: *control-build
+    deploy:
+      resources:
+        limits:
+          cpus: "${DLE_CONTROL_CPUS:-0.5}"
+          memory: ${DLE_CONTROL_MEMORY:-512M}
+        reservations:
+          memory: 192M
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8081"
+      ConnectionStrings__Postgres: *postgres-connection
+      ConnectionStrings__Valkey: "valkey:6379"
+      Dle__Crypto__MasterSecret: ${DLE_MASTER_SECRET:?DLE_MASTER_SECRET is required — at least 32 characters, see .env.example}
+      # Links are rendered with this scheme; Caddy serves https even when the control plane is
+      # reached over plain http on the compose network.
+      Dle__Control__PublicScheme: https
+      Dle__Control__InstanceTenantId: ${DLE_INSTANCE_TENANT_ID:-}
+      Dle__Control__AllowTenantSelfService: ${DLE_ALLOW_TENANT_SELF_SERVICE:-false}
+      # The image ships the built admin SPA under wwwroot/admin/ (Dockerfile.control); this makes
+      # the SPA fallback serve its index for client-side routes under /admin/.
+      Dle__Control__SpaIndexFile: admin/index.html
+      Dle__Identity__Oidc__Authority: ${DLE_OIDC_AUTHORITY:-}
+      Dle__Identity__Oidc__ClientId: ${DLE_OIDC_CLIENT_ID:-}
+      Dle__Identity__Oidc__Audience: ${DLE_OIDC_AUDIENCE:-}
+      Dle__Analytics__Provider: ${DLE_ANALYTICS_PROVIDER:-postgres}
+      Dle__Privacy__ConsentMode: ${DLE_CONSENT_MODE:-aggregate_only}
+      Dle__Privacy__IpStorage: ${DLE_IP_STORAGE:-hash_only}
+      Dle__Telemetry__OtlpEndpoint: ${DLE_OTLP_ENDPOINT:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8081/healthz"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
+  # One-shot: applies the EF Core migrations (src/Dle.Persistence, InitialSchema and later) and
+  # exits. The control image carries /app/efbundle, a framework-dependent `dotnet ef migrations
+  # bundle` built in Dockerfile.control, so no SDK is needed at run time. The bundle uses the
+  # design-time factory in Dle.Persistence, which reads ConnectionStrings__Postgres from the
+  # environment. Re-runs are idempotent (already-applied migrations are skipped).
+  migrate:
+    <<: *dotnet-service
+    image: ${DLE_CONTROL_IMAGE:-ghcr.io/magors-organisation/dle-control:${DLE_VERSION:-latest}}
+    build: *control-build
+    restart: "no"
+    entrypoint: ["/app/efbundle"]
+    command: ["--verbose"]
+    environment:
+      ConnectionStrings__Postgres: *postgres-connection
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:18}
+    # For a postgres:18 that also has pg_partman (daily click_events partitions with automatic
+    # retention, §B.5.2), build the variant and set POSTGRES_IMAGE=dle-postgres:18 in .env:
+    #   docker build -t dle-postgres:18 -f docker/Dockerfile.postgres docker
+    # Without it the migration installs a plain-SQL fallback maintenance function instead.
+    restart: unless-stopped
+    shm_size: 256m
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dle}
+      POSTGRES_USER: ${POSTGRES_USER:-dle}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required — see .env.example}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      # postgres:18 keeps PGDATA in a versioned sub-directory (/var/lib/postgresql/18/docker);
+      # mounting the parent is what the image documents for 18+ and it keeps in-place major
+      # upgrades possible. On 16/17 images this path still works.
+      - postgres_data:/var/lib/postgresql
+      # Run once, on an empty data directory only: extensions and the tuning include.
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+      # Included from postgresql.conf by init/00-include-tuning.sh; edit and restart to apply.
+      - ./postgres/postgresql.tuning.conf:/etc/postgresql/tuning.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "${DLE_POSTGRES_CPUS:-1.0}"
+          memory: ${DLE_POSTGRES_MEMORY:-1536M}
+        reservations:
+          memory: 512M
+    networks:
+      - dle
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+  valkey:
+    image: ${VALKEY_IMAGE:-valkey/valkey:8}
+    restart: unless-stopped
+    # Cache only (HybridCache L2): bounded memory, LRU eviction, nothing written to disk. A cold
+    # Valkey after a restart costs one round of L1 misses, which is fine; a volume would not be.
+    command:
+      - valkey-server
+      - --maxmemory
+      - ${VALKEY_MAXMEMORY:-256mb}
+      - --maxmemory-policy
+      - allkeys-lru
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "${DLE_VALKEY_CPUS:-0.25}"
+          memory: ${DLE_VALKEY_MEMORY:-320M}
+    networks:
+      - dle
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ---- networks and volumes ----------------------------------------------------------------------
+
+networks:
+  dle:
+    driver: bridge
+    # Fixed subnet so the edge can name the proxy network it trusts (KnownNetworks above).
+    ipam:
+      config:
+        - subnet: ${DLE_NETWORK_SUBNET:-172.28.0.0/24}
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

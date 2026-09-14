@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DLE webhook payload: webhook.test",
+  "description": "A delivery produced by the test endpoint, never by a real event. Envelope per docs/zadanie.md B.7.4.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event",
+    "id",
+    "occurred_at",
+    "data"
+  ],
+  "properties": {
+    "event": {
+      "const": "webhook.test",
+      "description": "Event type. Fixed for this schema."
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Delivery identifier the receiver uses for replay protection."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the underlying event happened, ISO 8601 with an offset."
+    },
+    "data": {
+      "type": "object",
+      "description": "Event payload. Every member is a string: the envelope is a flat string map on purpose, so a receiver never has to guess at a type it was not told about.",
+      "required": [
+        "subscription_id",
+        "message"
+      ],
+      "properties": {
+        "subscription_id": {
+          "type": "string",
+          "description": "Identifier of the subscription that was tested.",
+          "format": "uuid"
+        },
+        "message": {
+          "type": "string",
+          "description": "Human readable note explaining that no event occurred."
+        }
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}

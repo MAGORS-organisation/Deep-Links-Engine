@@ -1,0 +1,163 @@
+# syntax=docker/dockerfile:1.7
+# =============================================================================
+# Deep Link Engine (DLE) — dle-control image (control plane, admin console, migration bundle).
+#
+# Build from the REPOSITORY ROOT:
+#   docker build -f deploy/docker/Dockerfile.control -t dle-control:dev .
+#   docker buildx build --platform linux/amd64,linux/arm64 -f deploy/docker/Dockerfile.control .
+#
+# Stages
+#   spa              Node 22: `npm ci && npm run build` of src/Dle.Admin.Web → /spa/dist
+#   build            .NET 10 SDK on the BUILD platform: publishes Dle.Control for TARGETARCH and
+#                    produces /app/efbundle (`dotnet ef migrations bundle`, framework-dependent)
+#   runtime-chiseled aspnet:10.0-noble-chiseled, no HEALTHCHECK (no curl) — for Kubernetes
+#   runtime (final)  aspnet:10.0-noble + curl, HEALTHCHECK, non-root
+#
+# The admin SPA and the .NET build are independent stages. The control host serves whatever is
+# in wwwroot: with /app/wwwroot/admin/ present (this image) the SPA, without it the committed
+# wwwroot/index.html fallback console — a .NET-only `dotnet build` outside Docker still works
+# (the CopyAdminSpa target in Dle.Control.csproj is conditional on dist/ existing). Docker
+# copies dist/ into the runtime image directly rather than relying on that build-time target,
+# so the SPA ships regardless of MSBuild item-evaluation order. Set Dle__Control__SpaIndexFile
+# =admin/index.html (docker-compose.yml and the Helm chart do) so client-side routes resolve.
+#
+# Migrations: /app/efbundle applies src/Dle.Persistence migrations. It is framework-dependent
+# (runs on the runtime already in the image) and uses DleDesignTimeDbContextFactory, which reads
+# ConnectionStrings__Postgres (or DLE_DESIGN_TIME_CONNECTION) from the environment:
+#   docker run --rm -e ConnectionStrings__Postgres="Host=…" --entrypoint /app/efbundle dle-control
+# Fallback without the bundle: `dotnet tool restore && dotnet ef database update --project
+# src/Dle.Persistence` from a checkout, with the same environment variable.
+#
+# InvariantGlobalization=true (Directory.Build.props): no ICU needed in any runtime image.
+# CI=true is deliberately not set (RestoreLockedMode vs. RID-specific restore; see Dockerfile.edge).
+# =============================================================================
+
+ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0
+ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble
+ARG CHISELED_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled
+ARG NODE_IMAGE=node:22-alpine
+
+# ---- spa -----------------------------------------------------------------------------------------
+FROM --platform=$BUILDPLATFORM ${NODE_IMAGE} AS spa
+ENV NODE_ENV=production \
+    npm_config_update_notifier=false \
+    npm_config_fund=false \
+    npm_config_audit=false
+WORKDIR /spa
+COPY src/Dle.Admin.Web/package.json src/Dle.Admin.Web/package-lock.json ./
+# devDependencies (vite, tsc, eslint) are needed for the build even with NODE_ENV=production.
+RUN npm ci --include=dev
+COPY src/Dle.Admin.Web/ ./
+# `tsc -b && vite build` (package.json). vite.config.ts sets base: '/admin/'.
+RUN npm run build
+
+# ---- build ---------------------------------------------------------------------------------------
+FROM --platform=$BUILDPLATFORM ${SDK_IMAGE} AS build
+ARG TARGETARCH
+ARG BUILD_CONFIGURATION=Release
+# Packages are restored INTO the image (NUGET_PACKAGES under /src), not into a BuildKit cache
+# mount. A cache mount is empty on every fresh runner while the restore layer may be a layer-cache
+# hit, and dotnet publish --no-restore then fails with NETSDK1064 on packages the assets file
+# lists but the mount no longer holds. Inside a layer the two cannot diverge.
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1 \
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+    NUGET_XMLDOC_MODE=skip
+ENV NUGET_PACKAGES=/src/.nuget/packages
+WORKDIR /src
+
+COPY global.json Directory.Build.props Directory.Packages.props NuGet.config .editorconfig ./
+COPY .config/dotnet-tools.json .config/
+COPY src/Dle.Domain/Dle.Domain.csproj src/Dle.Domain/packages.lock.json src/Dle.Domain/
+COPY src/Dle.Crypto/Dle.Crypto.csproj src/Dle.Crypto/packages.lock.json src/Dle.Crypto/
+COPY src/Dle.Persistence/Dle.Persistence.csproj src/Dle.Persistence/packages.lock.json src/Dle.Persistence/
+COPY src/Dle.Persistence.Fast/Dle.Persistence.Fast.csproj src/Dle.Persistence.Fast/packages.lock.json src/Dle.Persistence.Fast/
+COPY src/Dle.Analytics.ClickHouse/Dle.Analytics.ClickHouse.csproj src/Dle.Analytics.ClickHouse/packages.lock.json src/Dle.Analytics.ClickHouse/
+COPY src/Dle.Analytics.Postgres/Dle.Analytics.Postgres.csproj src/Dle.Analytics.Postgres/packages.lock.json src/Dle.Analytics.Postgres/
+COPY src/Dle.Control/Dle.Control.csproj src/Dle.Control/packages.lock.json src/Dle.Control/
+RUN dotnet restore src/Dle.Control/Dle.Control.csproj -a "$TARGETARCH" \
+ && dotnet tool restore
+
+COPY src/ src/
+RUN dotnet publish src/Dle.Control/Dle.Control.csproj \
+      -c "$BUILD_CONFIGURATION" -a "$TARGETARCH" --no-restore --self-contained false \
+      -o /app/publish
+
+# Migration bundle for the target platform. The bundle command builds Dle.Persistence itself
+# (a RID-less build, distinct from the RID-specific publish above), which is why --no-build is
+# not passed. dotnet-ef comes from the tool manifest in .config/dotnet-tools.json.
+RUN case "$TARGETARCH" in \
+      arm64) RID=linux-arm64 ;; \
+      arm)   RID=linux-arm ;; \
+      *)     RID=linux-x64 ;; \
+    esac \
+ && dotnet ef migrations bundle \
+      --project src/Dle.Persistence \
+      --configuration "$BUILD_CONFIGURATION" \
+      --target-runtime "$RID" \
+      --output /app/efbundle \
+      --force
+
+# ---- runtime-chiseled (opt-in: --target runtime-chiseled) ----------------------------------------
+FROM ${CHISELED_IMAGE} AS runtime-chiseled
+ARG VERSION=0.1.0
+ARG VCS_REF=unknown
+ARG BUILD_DATE=unknown
+LABEL org.opencontainers.image.title="dle-control" \
+      org.opencontainers.image.description="Deep Link Engine — control plane, admin console and migration bundle" \
+      org.opencontainers.image.source="https://github.com/MAGORS-organisation/Deep-Links-Engine" \
+      org.opencontainers.image.url="https://github.com/MAGORS-organisation/Deep-Links-Engine" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.vendor="MAGORS organisation" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled"
+WORKDIR /app
+COPY --from=build --chown=$APP_UID:$APP_UID /app/publish ./
+COPY --from=build --chown=$APP_UID:$APP_UID /app/efbundle ./efbundle
+COPY --from=spa   --chown=$APP_UID:$APP_UID /spa/dist/ ./wwwroot/admin/
+ENV ASPNETCORE_HTTP_PORTS=8081 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    Dle__Control__SpaIndexFile=admin/index.html \
+    DOTNET_EnableDiagnostics=0
+USER $APP_UID
+EXPOSE 8081
+ENTRYPOINT ["dotnet", "Dle.Control.dll"]
+
+# ---- runtime (default) ---------------------------------------------------------------------------
+FROM ${RUNTIME_IMAGE} AS runtime
+ARG VERSION=0.1.0
+ARG VCS_REF=unknown
+ARG BUILD_DATE=unknown
+LABEL org.opencontainers.image.title="dle-control" \
+      org.opencontainers.image.description="Deep Link Engine — control plane, admin console and migration bundle" \
+      org.opencontainers.image.source="https://github.com/MAGORS-organisation/Deep-Links-Engine" \
+      org.opencontainers.image.url="https://github.com/MAGORS-organisation/Deep-Links-Engine" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.vendor="MAGORS organisation" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:10.0-noble"
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=build --chown=$APP_UID:$APP_UID /app/publish ./
+COPY --from=build --chown=$APP_UID:$APP_UID /app/efbundle ./efbundle
+COPY --from=spa   --chown=$APP_UID:$APP_UID /spa/dist/ ./wwwroot/admin/
+
+ENV ASPNETCORE_HTTP_PORTS=8081 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    Dle__Control__SpaIndexFile=admin/index.html
+# Required at run time: ConnectionStrings__Postgres, Dle__Crypto__MasterSecret.
+# Everything else: src/Dle.Control/appsettings.json.
+
+USER $APP_UID
+EXPOSE 8081
+HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:8081/healthz || exit 1
+ENTRYPOINT ["dotnet", "Dle.Control.dll"]

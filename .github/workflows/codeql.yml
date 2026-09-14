@@ -1,0 +1,69 @@
+# =============================================================================
+# CodeQL — SAST (docs/zadanie.md §C.8 "PR: SAST (CodeQL)", §C.7 DoD 6 "SAST bez nových nálezov").
+#
+# Covered:
+#   csharp                 src/** and tests/** (build-mode none: no compiler run needed)
+#   javascript-typescript  sdk/web, src/Dle.Admin.Web, tests/load
+#
+# NOT covered, deliberately and stated here so nobody assumes otherwise:
+#   Kotlin (sdk/android)   CodeQL analyses Kotlin only through a traced build (`java-kotlin`,
+#                          build-mode autobuild/manual). The Android SDK has never compiled
+#                          (see sdk-android.yml); add a `java-kotlin` matrix entry with a Gradle
+#                          build step once that workflow is green.
+#   Swift (sdk/ios)        CodeQL `swift` needs a macOS runner and a traced xcodebuild. Same
+#                          precondition: sdk-ios.yml must be green first. Neither language is
+#                          supported by build-mode none.
+# =============================================================================
+name: CodeQL
+
+on:
+  pull_request:
+  push:
+    branches: [develop, master]
+  schedule:
+    - cron: "41 4 * * 1" # Mondays 04:41 UTC — picks up new queries against an unchanged tree
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: csharp
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # security-extended: the default suite plus lower-precision security queries. Noisier
+          # than the default, which is the point for a product whose job is redirecting people.
+          queries: security-extended
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
+        with:
+          category: /language:${{ matrix.language }}

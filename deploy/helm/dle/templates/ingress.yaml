@@ -1,0 +1,229 @@
+{{- /*
+=============================================================================
+Ingress — mirrors deploy/Caddyfile on ingress.host:
+  /.well-known/jwks.json                       → control (public signing keys, §B.7)
+  /.well-known/*                               → edge    (apple-app-site-association, assetlinks.json)
+  ingress.controlPaths (/api /v1 /admin /scalar /openapi) → control
+  everything else, i.e. /{slug}, /{slug}/qr    → edge
+
+!!! /.well-known MUST NEVER BE REDIRECTED (docs/zadanie.md §A.2.1, TC-124) !!!
+Apple's CDN and Google's verifier refuse an apple-app-site-association / assetlinks.json that
+answers with ANY 3xx: HTTP→HTTPS, trailing slash, www canonicalisation — all of them. Hence:
+
+  * <release>-well-known is a SEPARATE Ingress for the same host, carrying only the association
+    paths, so that the controller's redirect features can be switched off for them alone:
+      nginx    nginx.ingress.kubernetes.io/ssl-redirect=false and force-ssl-redirect=false
+               (ingress-nginx applies them per location, so the main Ingress may still redirect).
+               No rewrite-target, no app-root, no permanent-redirect annotation may ever be added
+               to it. ingress-nginx adds no trailing slash to proxied locations.
+      traefik  a router's TLS setting applies to all of its entrypoints, so ONE Ingress cannot
+               serve both plain HTTP and HTTPS. The chart renders TWO: <release>-well-known
+               (entrypoint websecure, TLS) and <release>-well-known-http (entrypoint web, no
+               TLS, with a router priority above the one Traefik gives an entrypoint-level
+               redirection router — MaxInt32-1 — so it wins even if `entryPoints.web.http.
+               redirections` is set). Never attach a redirect middleware to either.
+      none     no controller annotations are rendered — supply the equivalent through
+               ingress.wellKnownAnnotations.
+  * Never enable a controller-wide redirect (nginx ConfigMap `ssl-redirect: "true"` is fine
+    because the annotation above overrides it per location; Traefik entrypoint redirections need
+    the priority note above) without checking the two curl lines below afterwards.
+  * cert-manager annotations are rendered on the MAIN Ingress only: every Ingress that names the
+    same TLS Secret with the annotation would produce a competing Certificate object.
+
+Verify after every change (both must print a 200, never a 301/302/307/308):
+  curl -sI http://<host>/.well-known/apple-app-site-association  | head -1
+  curl -sI https://<host>/.well-known/apple-app-site-association | head -1
+=============================================================================
+*/ -}}
+{{- if .Values.ingress.enabled }}
+{{- $controller := .Values.ingress.controller }}
+{{- $host := required "ingress.host is required: the public host name of your links" .Values.ingress.host }}
+{{- $edgeSvc := include "dle.edge.fullname" . }}
+{{- $controlSvc := include "dle.control.fullname" . }}
+{{- $tlsSecret := include "dle.tlsSecretName" . }}
+{{- $certManager := or .Values.ingress.tls.certManager.clusterIssuer .Values.ingress.tls.certManager.issuer }}
+{{- /* ---- annotation sets ---------------------------------------------------------------- */}}
+{{- $wellKnown := mergeOverwrite (dict) .Values.ingress.annotations .Values.ingress.wellKnownAnnotations }}
+{{- $wellKnownHttp := mergeOverwrite (dict) .Values.ingress.annotations .Values.ingress.wellKnownAnnotations }}
+{{- $main := mergeOverwrite (dict) .Values.ingress.annotations .Values.ingress.mainAnnotations }}
+{{- $controlHostAnnotations := mergeOverwrite (dict) .Values.ingress.annotations .Values.ingress.mainAnnotations }}
+{{- if eq $controller "nginx" }}
+{{- $_ := set $wellKnown "nginx.ingress.kubernetes.io/ssl-redirect" "false" }}
+{{- $_ := set $wellKnown "nginx.ingress.kubernetes.io/force-ssl-redirect" "false" }}
+{{- else if eq $controller "traefik" }}
+{{- $secureEntrypoint := ternary "websecure" "web" .Values.ingress.tls.enabled }}
+{{- $_ := set $wellKnown "traefik.ingress.kubernetes.io/router.entrypoints" $secureEntrypoint }}
+{{- $_ := set $wellKnownHttp "traefik.ingress.kubernetes.io/router.entrypoints" "web" }}
+{{- $_ := set $wellKnownHttp "traefik.ingress.kubernetes.io/router.priority" "2147483647" }}
+{{- $_ := set $main "traefik.ingress.kubernetes.io/router.entrypoints" $secureEntrypoint }}
+{{- $_ := set $controlHostAnnotations "traefik.ingress.kubernetes.io/router.entrypoints" $secureEntrypoint }}
+{{- end }}
+{{- with .Values.commonAnnotations }}
+{{- $wellKnown = mergeOverwrite (dict) . $wellKnown }}
+{{- $wellKnownHttp = mergeOverwrite (dict) . $wellKnownHttp }}
+{{- $main = mergeOverwrite (dict) . $main }}
+{{- $controlHostAnnotations = mergeOverwrite (dict) . $controlHostAnnotations }}
+{{- end }}
+{{- /* ---- 1. the association files: never redirected ------------------------------------- */}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "dle.fullname" . }}-well-known
+  labels:
+    {{- include "dle.labels" . | nindent 4 }}
+  annotations:
+    # DO NOT add rewrite, trailing-slash or redirect annotations here (§A.2.1).
+    {{- toYaml $wellKnown | nindent 4 }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $host }}
+      secretName: {{ $tlsSecret }}
+  {{- end }}
+  rules:
+    - host: {{ $host }}
+      http:
+        paths:
+          - path: /.well-known/jwks.json
+            pathType: Exact
+            backend:
+              service:
+                name: {{ $controlSvc }}
+                port:
+                  name: http
+          - path: /.well-known
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $edgeSvc }}
+                port:
+                  name: http
+{{- if and (eq $controller "traefik") .Values.ingress.tls.enabled }}
+---
+# Traefik only: the plain-HTTP router for the association files (see the header).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "dle.fullname" . }}-well-known-http
+  labels:
+    {{- include "dle.labels" . | nindent 4 }}
+  annotations:
+    # DO NOT add rewrite, trailing-slash or redirect annotations here (§A.2.1).
+    {{- toYaml $wellKnownHttp | nindent 4 }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  rules:
+    - host: {{ $host }}
+      http:
+        paths:
+          - path: /.well-known/jwks.json
+            pathType: Exact
+            backend:
+              service:
+                name: {{ $controlSvc }}
+                port:
+                  name: http
+          - path: /.well-known
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $edgeSvc }}
+                port:
+                  name: http
+{{- end }}
+---
+{{- /* ---- 2. everything else on the link host ------------------------------------------- */}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "dle.fullname" . }}
+  labels:
+    {{- include "dle.labels" . | nindent 4 }}
+  annotations:
+    {{- if and .Values.ingress.tls.enabled $certManager }}
+    {{- include "dle.certManagerAnnotations" . | nindent 4 }}
+    {{- end }}
+    {{- with $main }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $host }}
+      secretName: {{ $tlsSecret }}
+  {{- end }}
+  rules:
+    - host: {{ $host }}
+      http:
+        paths:
+          {{- if .Values.ingress.exposeControlOnHost }}
+          {{- range .Values.ingress.controlPaths }}
+          - path: {{ . }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $controlSvc }}
+                port:
+                  name: http
+          {{- end }}
+          {{- end }}
+          # /{slug}, /{slug}/qr, the interstitial and the root.
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $edgeSvc }}
+                port:
+                  name: http
+{{- if .Values.ingress.controlHost }}
+---
+{{- /* ---- 3. optional separate host for the control plane ------------------------------- */}}
+{{- /* A second TLS Secret when cert-manager issues them (one Certificate per Ingress); otherwise
+        the operator's Secret is expected to cover controlHost as a SAN. */}}
+{{- $controlTlsSecret := ternary (printf "%s-control" $tlsSecret) $tlsSecret (not (empty $certManager)) }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "dle.fullname" . }}-control
+  labels:
+    {{- include "dle.labels" . | nindent 4 }}
+  annotations:
+    {{- if and .Values.ingress.tls.enabled $certManager }}
+    {{- include "dle.certManagerAnnotations" . | nindent 4 }}
+    {{- end }}
+    {{- with $controlHostAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.controlHost }}
+      secretName: {{ $controlTlsSecret }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.controlHost }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $controlSvc }}
+                port:
+                  name: http
+{{- end }}
+{{- end }}

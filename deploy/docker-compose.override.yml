@@ -1,0 +1,55 @@
+# =============================================================================
+# Local development overrides — merged automatically by `docker compose up` when run in this
+# directory. Aspire-free: this is the plain compose stack, nothing here depends on deploy/aspire.
+#
+#   cp .env.example .env    # set POSTGRES_PASSWORD and DLE_MASTER_SECRET (any 32+ characters)
+#   docker compose up --build
+#
+# What it changes:
+#   - dle-edge, dle-control, postgres and valkey publish their ports on 127.0.0.1, so you can talk
+#     to the services over plain HTTP without Caddy:   http://localhost:8080  (edge)
+#                                                      http://localhost:8081  (control, /admin/)
+#   - one edge replica (a published port cannot be shared by two containers)
+#   - Caddy still runs, on https://localhost with its own local CA (DLE_TLS=internal), because the
+#     /.well-known files only count over https — accept the certificate warning or install the CA
+#     from the caddy_data volume (/data/caddy/pki/authorities/local/root.crt).
+#   - Development environment: verbose errors, PublicScheme=http, tenant self-service on, no https
+#     requirement on OIDC metadata.
+#
+# PRODUCTION MUST NOT LOAD THIS FILE:  docker compose -f docker-compose.yml up -d
+# =============================================================================
+
+services:
+
+  caddy:
+    environment:
+      DLE_DOMAIN: ${DLE_DOMAIN:-localhost}
+      DLE_TLS: internal
+
+  dle-edge:
+    ports:
+      - "127.0.0.1:8080:8080"
+    deploy:
+      replicas: 1
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      # Reverse-DNS bot verification needs outbound DNS to work; on a laptop behind a captive
+      # portal it only adds latency. It is ON in production (FR-161, TC-107).
+      Dle__Edge__BotDetection__ReverseDnsVerify: "false"
+
+  dle-control:
+    ports:
+      - "127.0.0.1:8081:8081"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Dle__Control__PublicScheme: http
+      Dle__Control__AllowTenantSelfService: "true"
+      Dle__Identity__Oidc__RequireHttpsMetadata: "false"
+
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  valkey:
+    ports:
+      - "127.0.0.1:6379:6379"

@@ -1,0 +1,663 @@
+# =============================================================================
+# Deep Link Engine (DLE) — Helm chart values (Profile B, docs/zadanie.md §B.8).
+#
+#   CDN/WAF → Ingress → dle-edge (HPA 3–20)      ┐
+#                     → dle-control (2 replicas)  ├→ PostgreSQL primary + read replicas
+#                                                 └→ Valkey
+#
+# Every value is documented in place. The chart mirrors deploy/docker-compose.yml: the same
+# images, the same ports (edge 8080, control 8081), the same environment variable names
+# (ASP.NET Core maps  Dle__Edge__Cache__L1Seconds  →  configuration key  Dle:Edge:Cache:L1Seconds;
+# the full inventory with defaults is src/Dle.Edge/appsettings.json and
+# src/Dle.Control/appsettings.json). Anything not modelled here can be passed through
+# config.extra / edge.config.extra / control.config.extra as  ENV_NAME: "value".
+#
+# Two values are REQUIRED before the chart renders (unless secrets.existingSecret is set):
+#   secrets.masterSecret               Dle:Crypto:MasterSecret, at least 32 characters
+#   externalPostgres.connectionString  or postgresql.enabled=true with postgresql.auth.password
+#
+# !!! /.well-known RESPONSES MUST NEVER BE REDIRECTED (§A.2.1) — see the `ingress` section. !!!
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Naming and labels
+# -----------------------------------------------------------------------------
+
+nameOverride: ""
+fullnameOverride: ""
+# Added to every object the chart creates.
+commonLabels: {}
+commonAnnotations: {}
+
+
+# -----------------------------------------------------------------------------
+# Images (built by deploy/docker/Dockerfile.edge and Dockerfile.control, published to GHCR)
+# -----------------------------------------------------------------------------
+
+image:
+  edge:
+    repository: ghcr.io/magors-organisation/dle-edge
+    # Empty = the chart's appVersion. The default image target (`runtime`) carries curl for the
+    # docker compose HEALTHCHECK; Kubernetes probes over HTTP itself, so the `runtime-chiseled`
+    # target (no shell, no package manager) is the better fit here when your pipeline publishes
+    # it — point `tag` at it. Nothing in this chart executes a binary inside the edge image.
+    tag: ""
+    pullPolicy: IfNotPresent
+  control:
+    repository: ghcr.io/magors-organisation/dle-control
+    tag: ""
+    pullPolicy: IfNotPresent
+
+# Names of existing image pull secrets in the release namespace (GHCR is public for this project).
+imagePullSecrets: []
+
+
+# -----------------------------------------------------------------------------
+# Service account
+# -----------------------------------------------------------------------------
+
+serviceAccount:
+  create: true
+  # Empty = the release full name.
+  name: ""
+  annotations: {}
+  # The applications never talk to the Kubernetes API; keep the token off the pods.
+  automountServiceAccountToken: false
+
+
+# -----------------------------------------------------------------------------
+# Secrets
+# -----------------------------------------------------------------------------
+# Two ways to supply them:
+#   1. secrets.existingSecret — RECOMMENDED. A Secret you manage (External Secrets Operator,
+#      sealed-secrets, SOPS, kubectl) that carries the keys listed under `keys`. Nothing secret
+#      is then written into Helm's release history, and the migration hook reads the same Secret.
+#   2. Inline: secrets.masterSecret plus externalPostgres.* / externalValkey.* (or the bundled
+#      subcharts). The chart renders a Secret from them, and — because pre-install hooks run
+#      before regular resources exist — a second, hook-scoped copy for the migration Job that
+#      `helm uninstall` does not remove (see templates/migrate-job.yaml).
+
+secrets:
+  existingSecret: ""
+  # Key names inside the Secret (existing or rendered). Optional keys may be absent.
+  keys:
+    masterSecret: master-secret                          # required
+    postgresConnectionString: postgres-connection-string # required
+    postgresReadConnectionString: postgres-read-connection-string  # optional, edge only
+    valkeyConnectionString: valkey-connection-string     # optional (no L2 cache without it)
+    clickHouseConnectionString: clickhouse-connection-string  # optional, control only
+  # Dle:Crypto:MasterSecret — at least 32 characters. Every keyed primitive in DLE (slug
+  # permutation, IP hashing salt, webhook bootstrap key, signing key wrapping) derives from it.
+  # Generate with:  openssl rand -base64 48
+  # Changing it later changes the slug permutation: back it up together with the database.
+  # Ignored when existingSecret is set.
+  masterSecret: ""
+
+
+# -----------------------------------------------------------------------------
+# PostgreSQL — external (production) ...
+# -----------------------------------------------------------------------------
+# Npgsql connection strings, exactly as docker-compose.yml builds them:
+#   Host=<primary>;Port=5432;Database=dle;Username=dle;Password=<pw>;SSL Mode=Require
+# PostgreSQL 16 is the minimum, 18 is recommended; extensions citext and — for the daily
+# click_events and sdk_events partitions with 180-day retention (§B.5.2) — pg_partman. Without
+# pg_partman the InitialSchema migration installs plain-SQL fallbacks, dle_click_events_maintain()
+# and dle_sdk_events_maintain(), that have to be called daily (pg_cron or a CronJob). deploy/docker/Dockerfile.postgres shows the package.
+# Ignored when secrets.existingSecret is set (the Secret carries the strings) or when
+# postgresql.enabled is true (the subchart's service is used).
+
+externalPostgres:
+  connectionString: ""
+  # ConnectionStrings:PostgresRead — the edge moves link lookups and well-known reads to this
+  # replica (§B.8 profile B: "edge reads from a replica"). Empty = the edge reads the primary.
+  # Point it at a read-only service (CloudNativePG `<cluster>-ro`, RDS reader endpoint, ...).
+  readConnectionString: ""
+
+# ... or bundled (evaluation only: bitnami/postgresql subchart, see Chart.yaml).
+# When enabled, the chart derives the connection strings from these values:
+#   primary  <release>-postgresql-primary   (architecture: replication) / <release>-postgresql
+#   read     <release>-postgresql-read       (only with architecture: replication)
+# The Bitnami image ships citext but not pg_partman (fallback maintenance applies, see above).
+# Everything under this key is passed to the subchart verbatim; see its own values for more.
+postgresql:
+  enabled: false
+  architecture: replication
+  auth:
+    username: dle
+    database: dle
+    # REQUIRED when enabled: set postgresql.auth.password on the command line or in your own
+    # values file (or use secrets.existingSecret with a matching connection string). Deliberately
+    # absent here so that no default of this chart ever ships an empty password; the templates
+    # refuse to render without it.
+  primary:
+    persistence:
+      size: 20Gi
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: "2"
+        memory: 2Gi
+  readReplicas:
+    replicaCount: 2
+    persistence:
+      size: 20Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+
+
+# -----------------------------------------------------------------------------
+# Valkey — shared L2 cache (HybridCache). Cache only: nothing is persisted, a cold Valkey costs one
+# round of L1 misses. Optional: without a connection string the edge runs on L1 + PostgreSQL.
+# -----------------------------------------------------------------------------
+# StackExchange.Redis connection string, e.g.  valkey.cache.svc:6379  or, for a cluster,
+# node-0:6379,node-1:6379,node-2:6379,password=...,ssl=true  (§B.8: three shards in production).
+
+externalValkey:
+  connectionString: ""
+
+# ... or bundled (evaluation only: bitnami/valkey subchart). Derived host:
+#   <release>-valkey-primary:6379
+valkey:
+  enabled: false
+  architecture: standalone
+  auth:
+    # Cache only, reachable only from this namespace's pods with the network policy on; an
+    # unauthenticated in-cluster cache keeps the connection string free of a second password.
+    # When enabling auth, set valkey.auth.password alongside it; there is no default on purpose.
+    enabled: false
+  primary:
+    persistence:
+      enabled: false
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 384Mi
+
+
+# -----------------------------------------------------------------------------
+# ClickHouse (optional analytics store; control plane only, §B.8 "ClickHouse (optional)")
+# -----------------------------------------------------------------------------
+
+externalClickHouse:
+  # ConnectionStrings:ClickHouse. Only used when control.config.analytics.provider=clickhouse.
+  connectionString: ""
+
+
+# -----------------------------------------------------------------------------
+# Configuration shared by both services (Dle:Privacy, Dle:Telemetry)
+# -----------------------------------------------------------------------------
+
+config:
+  privacy:
+    # Tenant default consent mode: off | aggregate_only | full
+    consentMode: aggregate_only
+    # Deployment ceiling on what may be derived from a client address: none | hash_only | prefix | full
+    ipStorage: hash_only
+  telemetry:
+    # OTLP endpoint for traces/metrics, e.g. http://otel-collector.observability:4317. Empty
+    # disables the exporter. The edge's network policy allows egress ONLY to DNS, PostgreSQL and
+    # Valkey (NFR-14): a collector needs a matching entry in networkPolicy.edge.extraEgress and
+    # must live on your own network — never a third-party endpoint on the resolve path.
+    otlpEndpoint: ""
+  # Free-form environment for BOTH services, e.g.
+  #   Dle__Crypto__KeyRotationDays: "90"
+  #   Dle__Privacy__Retention__RawDays: "30"
+  extra: {}
+
+
+# -----------------------------------------------------------------------------
+# Edge — the data plane (resolve, interstitial, /.well-known, QR). Port 8080.
+# -----------------------------------------------------------------------------
+
+edge:
+  # Used only while autoscaling.enabled is false.
+  replicaCount: 3
+
+  # NFR-10: the whole Profile A stack fits 2 vCPU / 4 GB and an edge replica is limited to
+  # 0.75 CPU / 384 Mi there (~500 req/s each). Requests are what the HPA divides by, so keep them
+  # honest: 250m CPU ≈ the utilisation floor at which a pod is worth its scheduling slot.
+  resources:
+    requests:
+      cpu: 250m
+      memory: 192Mi
+    limits:
+      cpu: "1"
+      memory: 384Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    # Average CPU across pods as a percentage of `resources.requests.cpu`.
+    targetCPUUtilizationPercentage: 65
+    # Optional second signal: requests per second per pod, as a Pods metric served by a metrics
+    # adapter (prometheus-adapter, KEDA's metrics API, a cloud provider adapter). The metric must
+    # exist in the adapter under `metricName`; the HPA scales on whichever signal asks for more.
+    rps:
+      enabled: false
+      metricName: http_server_requests_per_second
+      # Per-pod average. ~500 req/s is what one 0.75-CPU replica sustains (NFR-10 sizing).
+      targetAverageValue: "400"
+    # §D.6: a 10× traffic step must not push p99 above 200 ms while scaling. Scale up eagerly,
+    # scale down slowly.
+    behavior:
+      scaleUp:
+        stabilizationWindowSeconds: 0
+        policies:
+          - type: Percent
+            value: 100
+            periodSeconds: 30
+          - type: Pods
+            value: 4
+            periodSeconds: 30
+        selectPolicy: Max
+      scaleDown:
+        stabilizationWindowSeconds: 300
+        policies:
+          - type: Pods
+            value: 2
+            periodSeconds: 120
+
+  # PodDisruptionBudget for voluntary disruptions (node drains, upgrades).
+  pdb:
+    enabled: true
+    minAvailable: 2
+    # Set to use maxUnavailable instead of minAvailable (leave minAvailable empty then).
+    maxUnavailable: ""
+
+  probes:
+    # Liveness runs NO dependency checks by design (a database blip must never restart every
+    # replica at once). Readiness on the edge is /healthz too: NFR-06 / §D.6 require resolves to
+    # keep working from cache while PostgreSQL is down, so a probe that fails on the database
+    # would pull the whole fleet out of rotation at exactly the wrong moment. The edge also
+    # exposes /readyz, which reports GeoIP or analytics trouble as "degraded" rather than failing;
+    # switch to it only if you have verified it stays 200 with the database unreachable.
+    livenessPath: /healthz
+    readinessPath: /healthz
+    startup:
+      failureThreshold: 30
+      periodSeconds: 2
+    liveness:
+      periodSeconds: 15
+      timeoutSeconds: 3
+      failureThreshold: 3
+    readiness:
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 3
+
+  service:
+    type: ClusterIP
+    port: 80
+    annotations: {}
+
+  config:
+    network:
+      # The Ingress controller terminates TLS and sets X-Forwarded-*; the edge honours those
+      # headers ONLY from KnownNetworks/KnownProxies (Dle:Edge:Network). The client address is the
+      # rate-limit key, the click stream identifier and the GeoIP key — trust as little as you can.
+      # The defaults cover every RFC 1918 range because pod CIDRs differ per cluster; narrow them
+      # to your pod CIDR or the ingress controller's subnet. The network policy already restricts
+      # who can reach the edge at all, which is the second half of the defence.
+      useForwardedHeaders: true
+      # Number of proxy hops to trust in X-Forwarded-For. 1 = the ingress controller. Raise it by
+      # one for every layer in front of it that appends (a CDN/WAF, a cloud L7 balancer).
+      forwardLimit: 1
+      knownNetworks:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+      knownProxies: []
+    geoIp:
+      # Dle:Edge:GeoIp:Path — the MaxMind mmdb inside the container, e.g. /geoip/GeoLite2-Country.mmdb.
+      # Empty = no GeoIP: country stays null, geo rules fall through to the default rule.
+      # The edge never downloads it (NFR-14): mount it from a PVC you fill yourself
+      # (existingClaim) or through edge.extraVolumes / extraVolumeMounts.
+      path: ""
+      existingClaim: ""
+      mountPath: /geoip
+    botDetection:
+      # Reverse-DNS verification of self-declared crawlers (FR-161). Needs cluster DNS egress,
+      # which the network policy grants; it is ON in production.
+      reverseDnsVerify: true
+    interstitial:
+      productName: ""
+      supportUrl: ""
+      privacyUrl: ""
+    cache:
+      l1Seconds: 30
+      l2Minutes: 10
+      negativeSeconds: 15
+    # Npgsql pool PER EDGE POD (Dle:Persistence:Fast). 20 pods × 32 = 640 connections at full
+    # scale — size PostgreSQL's max_connections (or put PgBouncer in front) accordingly.
+    dbPool:
+      maxPoolSize: 32
+      minPoolSize: 4
+    # Free-form environment for the edge only, e.g.  Dle__RateLimits__Edge__Resolve__PermitsPerWindow: "600"
+    extra: {}
+
+  # Raw container env entries (valueFrom etc.) appended after the generated ones.
+  extraEnv: []
+  extraVolumes: []
+  extraVolumeMounts: []
+
+  podAnnotations: {}
+  podLabels: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # When empty, the chart spreads edge pods across nodes and zones (ScheduleAnyway).
+  topologySpreadConstraints: []
+  priorityClassName: ""
+  # The ingress controller keeps sending for a moment after the endpoint is removed; a pause
+  # before SIGTERM (native `sleep` lifecycle action, Kubernetes ≥ 1.29 — no binary needed, so the
+  # chiseled image works) avoids 502s during rollouts. 0 disables.
+  preStopSleepSeconds: 5
+  # The edge flushes its click-event channel on shutdown (Dle:Persistence:Fast:ShutdownFlushSeconds,
+  # 10 s by default); leave room for that plus the pre-stop pause.
+  terminationGracePeriodSeconds: 30
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 25%
+  revisionHistoryLimit: 5
+
+
+# -----------------------------------------------------------------------------
+# Control — the control plane, admin console (/admin), API (/api, /v1), Scalar, OpenAPI. Port 8081.
+# -----------------------------------------------------------------------------
+
+control:
+  # §B.8 profile B: two pods.
+  replicaCount: 2
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+
+  pdb:
+    enabled: true
+    minAvailable: 1
+    maxUnavailable: ""
+
+  probes:
+    # Liveness /healthz (process only). Readiness /readyz gates on the database: a control pod
+    # that cannot reach PostgreSQL should not receive API calls (it would answer 503 anyway).
+    livenessPath: /healthz
+    readinessPath: /readyz
+    startup:
+      failureThreshold: 30
+      periodSeconds: 2
+    liveness:
+      periodSeconds: 15
+      timeoutSeconds: 3
+      failureThreshold: 3
+    readiness:
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 3
+
+  service:
+    type: ClusterIP
+    port: 80
+    annotations: {}
+
+  config:
+    # Links are rendered with this scheme; the Ingress serves https even though the control plane
+    # is reached over plain http inside the cluster.
+    publicScheme: https
+    # Dle:Control:InstanceTenantId — the tenant whose owners operate this instance (multi-tenant
+    # deployments). Leave empty and set allowTenantSelfService=true for a single-organisation
+    # deployment. With neither set the tenant routes deny every caller (deliberate).
+    instanceTenantId: ""
+    allowTenantSelfService: false
+    # OIDC for the admin console and human users (Dle:Identity:Oidc). Empty = API keys only.
+    oidc:
+      authority: ""
+      clientId: ""
+      audience: ""
+      requireHttpsMetadata: true
+    analytics:
+      # postgres (default) or clickhouse (needs externalClickHouse.connectionString).
+      provider: postgres
+    # Free-form environment for the control plane only.
+    extra: {}
+
+  extraEnv: []
+  extraVolumes: []
+  extraVolumeMounts: []
+
+  podAnnotations: {}
+  podLabels: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  topologySpreadConstraints: []
+  priorityClassName: ""
+  preStopSleepSeconds: 5
+  # Webhook delivery and bulk imports finish in-flight work on shutdown.
+  terminationGracePeriodSeconds: 60
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  revisionHistoryLimit: 5
+
+
+# -----------------------------------------------------------------------------
+# Database migration (Helm hook Job)
+# -----------------------------------------------------------------------------
+# Runs /app/efbundle from the control image — a `dotnet ef migrations bundle` of
+# src/Dle.Persistence (InitialSchema and later), built in deploy/docker/Dockerfile.control —
+# against ConnectionStrings__Postgres. Re-runs are idempotent. As a pre-upgrade hook it runs
+# while the PREVIOUS version's pods still serve traffic: keep migrations expand/contract-safe.
+
+migrate:
+  enabled: true
+  # Helm hook events. Empty = "pre-install,pre-upgrade", except with the bundled PostgreSQL
+  # subchart, where the database only exists after install, so "post-install,post-upgrade".
+  hooks: ""
+  args:
+    - --verbose
+  # Pod retries with exponential back-off — enough to wait for a database that is still starting.
+  backoffLimit: 6
+  activeDeadlineSeconds: 900
+  ttlSecondsAfterFinished: 600
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+
+
+# -----------------------------------------------------------------------------
+# Ingress
+# -----------------------------------------------------------------------------
+# Routes on `host` (mirrors deploy/Caddyfile):
+#   /.well-known/jwks.json                       → control (public signing keys, §B.7)
+#   /.well-known/*                               → edge    (AASA, assetlinks.json)
+#   /api /v1 /admin /scalar /openapi             → control
+#   everything else, i.e. /{slug}, /{slug}/qr    → edge
+#
+# !!! /.well-known MUST NEVER BE REDIRECTED (§A.2.1, TC-124) !!!
+# Apple's CDN and Google's verifier refuse an apple-app-site-association / assetlinks.json that
+# answers with ANY 3xx: HTTP→HTTPS, trailing slash, www canonicalisation, all of them. The chart
+# therefore renders TWO Ingress objects for the same host: `<release>-well-known`, which carries
+# the controller's "do not redirect to TLS" annotation (nginx: ssl-redirect=false,
+# force-ssl-redirect=false; Traefik: entrypoints web AND websecure, no redirect middleware), and
+# `<release>` for everything else, which may redirect. Never add a rewrite, a trailing-slash or a
+# redirect annotation to the well-known Ingress, and never turn on a controller-wide redirect
+# (Traefik `entryPoints.web.http.redirections`, nginx `ssl-redirect` in the ConfigMap) without an
+# exemption for /.well-known. Verify after every change:
+#   curl -sI http://<host>/.well-known/apple-app-site-association  | head -1   → 200
+#   curl -sI https://<host>/.well-known/apple-app-site-association | head -1   → 200
+
+ingress:
+  enabled: true
+  # IngressClass name (nginx, traefik, ...). Empty = the cluster default class.
+  className: ""
+  # Which annotation dialect to render for the well-known exemption: nginx | traefik | none.
+  # `none` renders no controller-specific annotations — supply your own in wellKnownAnnotations
+  # and make sure they exempt the path from TLS redirection.
+  controller: nginx
+  # REQUIRED: the public host name of your links. Apple/Google fetch https://<host>/.well-known/*.
+  host: go.example.com
+  # Applied to every Ingress the chart renders.
+  annotations: {}
+  # Applied to the main Ingress only (e.g. a Traefik redirect middleware, rate limits).
+  mainAnnotations: {}
+  # Applied to the well-known Ingress only — must never contain a redirect or rewrite.
+  wellKnownAnnotations: {}
+  tls:
+    enabled: true
+    # Existing TLS Secret for `host`. Empty = "<release>-tls", which cert-manager fills when
+    # certManager.clusterIssuer or .issuer is set.
+    secretName: ""
+    certManager:
+      clusterIssuer: ""
+      issuer: ""
+  # Prefix paths that go to the control plane on `host`. /.well-known/jwks.json is always added.
+  controlPaths:
+    - /api
+    - /v1
+    - /admin
+    - /scalar
+    - /openapi
+  # Set to false to keep the admin console, API reference and API off the link host entirely
+  # (then set controlHost, or reach the control Service another way). jwks.json stays on `host`.
+  exposeControlOnHost: true
+  # Optional separate host for the control plane (admin.example.com). Rendered as a third
+  # Ingress that sends everything on that host to control, with the same TLS handling.
+  controlHost: ""
+
+
+# -----------------------------------------------------------------------------
+# Network policy (on by default)
+# -----------------------------------------------------------------------------
+# edge:    ingress only from the ingress controller (and Prometheus when serviceMonitor.enabled);
+#          egress ONLY to cluster DNS, PostgreSQL and Valkey — NFR-14: no outbound call to any
+#          third party from the resolve path. Add an OTLP collector via edge.extraEgress.
+# control: ingress only from the ingress controller; egress unrestricted by default because the
+#          control plane delivers webhooks to tenant URLs and validates OIDC metadata.
+# Peers can be named by CIDR (external / managed databases) or by pod/namespace selector
+# (in-cluster). With neither given for PostgreSQL or Valkey — and the subchart off — the chart
+# falls back to "any destination on that port" and NOTES.txt says so; tighten it.
+
+networkPolicy:
+  enabled: true
+  ingressController:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: ingress-nginx
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: ingress-nginx
+  dns:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: kube-system
+    podSelector:
+      matchLabels:
+        k8s-app: kube-dns
+    port: 53
+  postgres:
+    port: 5432
+    # e.g. ["10.20.0.0/24"] for a managed instance; takes precedence over the selectors.
+    cidrs: []
+    namespaceSelector: {}
+    podSelector: {}
+  valkey:
+    port: 6379
+    cidrs: []
+    namespaceSelector: {}
+    podSelector: {}
+  # Only used when control.restrictEgress is true and externalClickHouse.connectionString is set.
+  # 8123 is the ClickHouse HTTP interface (what the .NET client speaks); native TCP is 9000.
+  clickhouse:
+    port: 8123
+    cidrs: []
+    namespaceSelector: {}
+    podSelector: {}
+  # Namespace Prometheus scrapes from; used only when serviceMonitor.enabled.
+  monitoring:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: monitoring
+  edge:
+    # Raw NetworkPolicyEgressRule / NetworkPolicyIngressRule entries appended verbatim.
+    extraEgress: []
+    extraIngress: []
+  control:
+    # true = only DNS, PostgreSQL, Valkey, ClickHouse CIDRs and extraEgress. Webhooks and OIDC
+    # discovery then need explicit extraEgress entries.
+    restrictEgress: false
+    extraEgress: []
+    extraIngress: []
+
+
+# -----------------------------------------------------------------------------
+# Prometheus Operator ServiceMonitor (off by default)
+# -----------------------------------------------------------------------------
+# NOTE: the images export telemetry over OTLP (config.telemetry.otlpEndpoint) and expose NO
+# Prometheus /metrics endpoint today. Enable this only after adding a scrape endpoint to the
+# services; the usual bridge is an OpenTelemetry Collector with a Prometheus exporter, in which
+# case Prometheus should scrape the collector, not these pods.
+
+serviceMonitor:
+  enabled: false
+  # Namespace to create it in. Empty = the release namespace.
+  namespace: ""
+  # Labels the Prometheus instance selects ServiceMonitors by (e.g. release: kube-prometheus-stack).
+  labels: {}
+  interval: 30s
+  scrapeTimeout: 10s
+  path: /metrics
+  relabelings: []
+  metricRelabelings: []
+
+
+# -----------------------------------------------------------------------------
+# Security contexts (both deployments and the migration job)
+# -----------------------------------------------------------------------------
+# The images run as user `app` (uid 1654, from the aspnet base image) with a read-only root
+# filesystem; /tmp is the only writable path .NET needs and is an emptyDir.
+
+securityContext:
+  pod:
+    runAsNonRoot: true
+    runAsUser: 1654
+    runAsGroup: 1654
+    fsGroup: 1654
+    fsGroupChangePolicy: OnRootMismatch
+    seccompProfile:
+      type: RuntimeDefault
+  container:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    privileged: false
+    capabilities:
+      drop:
+        - ALL
+  tmpSizeLimit: 64Mi

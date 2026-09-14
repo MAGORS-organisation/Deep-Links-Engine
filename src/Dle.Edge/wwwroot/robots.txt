@@ -1,0 +1,10 @@
+# Deep Link Engine edge.
+#
+# Short links are campaign infrastructure, not content: they must stay fetchable
+# by the social crawlers that build link previews (FR-161) and stay out of search
+# indexes. Disallow would break the preview, so indexing is suppressed per page
+# with <meta name="robots" content="noindex, nofollow"> instead, and the preview
+# page carries rel=canonical to the destination.
+User-agent: *
+Allow: /
+Disallow: /.well-known/

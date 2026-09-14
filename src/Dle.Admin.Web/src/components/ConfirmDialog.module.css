@@ -1,0 +1,49 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: var(--overlay);
+  cursor: default;
+}
+
+.dialog {
+  position: relative;
+  width: min(440px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--sp-5);
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.dialog:focus {
+  outline: none;
+}
+
+.title {
+  font-size: var(--fs-lg);
+}
+
+.detail {
+  color: var(--fg-muted);
+  font-size: var(--fs-sm);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}

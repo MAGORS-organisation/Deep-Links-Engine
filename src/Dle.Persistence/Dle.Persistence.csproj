@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Control-plane persistence: EF Core DbContext, entity configurations and
+    migrations against PostgreSQL 18. ADR-003 / ADR-004, docs/zadanie.md §B.5.2.
+  -->
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>Dle.Persistence</PackageId>
+    <Description>Deep Link Engine control-plane persistence: EF Core 10 DbContext, entity configurations and PostgreSQL migrations.</Description>
+    <RootNamespace>Dle.Persistence</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dle.Domain\Dle.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <!-- PostgresException is inspected directly to tell a unique violation apart (TC-144). -->
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+    <!--
+      AddDlePersistence(IServiceCollection, IConfiguration) needs IConfiguration and the
+      options binder; neither is part of the Microsoft.NETCore.App shared framework, and
+      EF Core does not bring them transitively.
+    -->
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Design-time only: `dotnet ef migrations add`. PrivateAssets=all keeps it out of the
+      dependencies of the produced package. Unlike the stock template this project also takes
+      the `compile` assets, because DleDesignTimeDbContextFactory implements
+      IDesignTimeDbContextFactory<T>, which lives in this assembly — without compile assets the
+      interface is invisible and a migration cannot be generated without a running database.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>compile; runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

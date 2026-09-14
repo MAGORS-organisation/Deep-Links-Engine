@@ -1,0 +1,58 @@
+name: Feature request
+description: Propose a change in behaviour or a new capability.
+title: "[feature] "
+labels: [enhancement, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        DLE is deliberately narrow: self-hosted, EU-first, consent-first deep linking and attribution — no fingerprinting, no third-party calls, no probabilistic matching by default. Proposals that move away from that need a very good reason; proposals that stay inside it are welcome.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can you not do today, and who is affected (operator, app developer, end user)?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Behaviour, API shape, configuration key, SDK surface. Reference docs/zadanie.md requirements (FR-/NFR-/S-) if the proposal touches them.
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      multiple: true
+      options:
+        - Edge
+        - Control plane
+        - Admin console
+        - Web SDK
+        - Android SDK
+        - iOS SDK
+        - Deployment
+        - Documentation
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy and security impact
+      description: Does it collect, store or transmit anything new? Does it change what an unauthenticated caller can learn? Which consent mode does it depend on?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including "do nothing" and "do it outside DLE".
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and discussions.
+          required: true
+        - label: The proposal does not introduce fingerprinting, third-party calls from end-user devices, or non-consensual identifiers.
+          required: true

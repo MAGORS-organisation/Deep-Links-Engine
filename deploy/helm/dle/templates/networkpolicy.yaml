@@ -1,0 +1,219 @@
+{{- /*
+Network policies (NFR-14: no outbound call to any third party from the resolve path).
+
+  <release>-edge     ingress ONLY from the ingress controller (and the monitoring namespace when
+                     serviceMonitor.enabled); egress ONLY to cluster DNS, PostgreSQL and Valkey,
+                     plus networkPolicy.edge.extraEgress (an OTLP collector on your own network).
+  <release>-control  ingress only from the ingress controller; egress unrestricted unless
+                     networkPolicy.control.restrictEgress (webhooks and OIDC discovery then need
+                     explicit extraEgress entries).
+  <release>-migrate  hook-scoped: the migration Job may reach DNS and PostgreSQL even in a
+                     namespace with a default-deny egress policy.
+
+PostgreSQL / Valkey peers come from networkPolicy.<store>.cidrs (managed instances) or the
+selectors, or — with the bundled subchart — its pods. With none of those the rule keeps the port
+but drops the destination ("any destination on that port"); NOTES.txt flags it. Tighten it.
+DNS is matched by namespace + pod selector (k8s-app=kube-dns fits CoreDNS on every major
+distribution; adjust networkPolicy.dns for the rest).
+*/ -}}
+{{- if .Values.networkPolicy.enabled }}
+{{- $ingressController := include "dle.networkPolicy.peers" (dict "cidrs" list "namespaceSelector" .Values.networkPolicy.ingressController.namespaceSelector "podSelector" .Values.networkPolicy.ingressController.podSelector) | trim }}
+{{- $dns := include "dle.networkPolicy.peers" (dict "cidrs" list "namespaceSelector" .Values.networkPolicy.dns.namespaceSelector "podSelector" .Values.networkPolicy.dns.podSelector) | trim }}
+{{- $postgres := include "dle.networkPolicy.postgresPeers" . | trim }}
+{{- $valkey := include "dle.networkPolicy.valkeyPeers" . | trim }}
+{{- $clickhouse := include "dle.networkPolicy.clickHousePeers" . | trim }}
+{{- $monitoring := include "dle.networkPolicy.peers" (dict "cidrs" list "namespaceSelector" .Values.networkPolicy.monitoring.namespaceSelector "podSelector" dict) | trim }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "dle.edge.fullname" . }}
+  labels:
+    {{- include "dle.edge.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "dle.edge.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # The ingress controller.
+    -
+      {{- if $ingressController }}
+      from:
+        {{- $ingressController | nindent 8 }}
+      {{- end }}
+      ports:
+        - port: 8080
+          protocol: TCP
+    {{- if and .Values.serviceMonitor.enabled $monitoring }}
+    # Prometheus.
+    - from:
+        {{- $monitoring | nindent 8 }}
+      ports:
+        - port: 8080
+          protocol: TCP
+    {{- end }}
+    {{- with .Values.networkPolicy.edge.extraIngress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  egress:
+    # Cluster DNS (service discovery and FR-161 reverse-DNS bot verification).
+    -
+      {{- if $dns }}
+      to:
+        {{- $dns | nindent 8 }}
+      {{- end }}
+      ports:
+        - port: {{ .Values.networkPolicy.dns.port }}
+          protocol: UDP
+        - port: {{ .Values.networkPolicy.dns.port }}
+          protocol: TCP
+    # PostgreSQL (primary and read replica).
+    -
+      {{- if $postgres }}
+      to:
+        {{- $postgres | nindent 8 }}
+      {{- end }}
+      ports:
+        - port: {{ .Values.networkPolicy.postgres.port }}
+          protocol: TCP
+    # Valkey (L2 cache).
+    -
+      {{- if $valkey }}
+      to:
+        {{- $valkey | nindent 8 }}
+      {{- end }}
+      ports:
+        - port: {{ .Values.networkPolicy.valkey.port }}
+          protocol: TCP
+    {{- with .Values.networkPolicy.edge.extraEgress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "dle.control.fullname" . }}
+  labels:
+    {{- include "dle.control.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "dle.control.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    {{- if .Values.networkPolicy.control.restrictEgress }}
+    - Egress
+    {{- end }}
+  ingress:
+    -
+      {{- if $ingressController }}
+      from:
+        {{- $ingressController | nindent 8 }}
+      {{- end }}
+      ports:
+        - port: 8081
+          protocol: TCP
+    {{- if and .Values.serviceMonitor.enabled $monitoring }}
+    - from:
+        {{- $monitoring | nindent 8 }}
+      ports:
+        - port: 8081
+          protocol: TCP
+    {{- end }}
+    {{- with .Values.networkPolicy.control.extraIngress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- if .Values.networkPolicy.control.restrictEgress }}
+  egress:
+    -
+      {{- if $dns }}
+      to:
+        {{- $dns | nindent 8 }}
+      {{- end }}
+      ports:
+        - port: {{ .Values.networkPolicy.dns.port }}
+          protocol: UDP
+        - port: {{ .Values.networkPolicy.dns.port }}
+          protocol: TCP
+    -
+      {{- if $postgres }}
+      to:
+        {{- $postgres | nindent 8 }}
+      {{- end }}
+      ports:
+        - port: {{ .Values.networkPolicy.postgres.port }}
+          protocol: TCP
+    -
+      {{- if $valkey }}
+      to:
+        {{- $valkey | nindent 8 }}
+      {{- end }}
+      ports:
+        - port: {{ .Values.networkPolicy.valkey.port }}
+          protocol: TCP
+    {{- if .Values.externalClickHouse.connectionString }}
+    -
+      {{- if $clickhouse }}
+      to:
+        {{- $clickhouse | nindent 8 }}
+      {{- end }}
+      ports:
+        - port: {{ .Values.networkPolicy.clickhouse.port }}
+          protocol: TCP
+    {{- end }}
+    {{- with .Values.networkPolicy.control.extraEgress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+{{- if .Values.migrate.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "dle.migrate.fullname" . }}
+  labels:
+    {{- include "dle.migrate.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: {{ include "dle.migrate.hooks" . }}
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation
+    {{- with .Values.commonAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "dle.migrate.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Egress
+  egress:
+    -
+      {{- if $dns }}
+      to:
+        {{- $dns | nindent 8 }}
+      {{- end }}
+      ports:
+        - port: {{ .Values.networkPolicy.dns.port }}
+          protocol: UDP
+        - port: {{ .Values.networkPolicy.dns.port }}
+          protocol: TCP
+    -
+      {{- if $postgres }}
+      to:
+        {{- $postgres | nindent 8 }}
+      {{- end }}
+      ports:
+        - port: {{ .Values.networkPolicy.postgres.port }}
+          protocol: TCP
+{{- end }}
+{{- end }}

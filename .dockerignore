@@ -1,0 +1,61 @@
+# =============================================================================
+# Build-context ignore rules for deploy/docker/Dockerfile.* (context = repository root).
+#
+# Docker reads ignore rules from TWO places only: `.dockerignore` at the ROOT of the build
+# context, or — with BuildKit — a file named `<Dockerfile-name>.dockerignore` next to the
+# Dockerfile. This file is the single source of truth; Dockerfile.edge.dockerignore and
+# Dockerfile.control.dockerignore next to it are verbatim copies that BuildKit actually applies.
+# Keep the three identical (deploy/README.md has a one-liner that checks this).
+# =============================================================================
+
+# Version control and editors
+.git
+.github
+.vs
+.vscode
+.idea
+**/*.user
+**/*.swp
+
+# Build output — everything is rebuilt inside the image
+**/bin
+**/obj
+**/out
+**/artifacts
+**/publish
+**/TestResults
+**/*.binlog
+**/BenchmarkDotNet.Artifacts
+
+# Node: fetched with npm ci in the spa stage; dist is produced there
+**/node_modules
+**/dist
+**/.vite
+**/*.tsbuildinfo
+src/Dle.Control/wwwroot/admin
+
+# Not needed for either image
+tests
+docs
+sdk
+deploy/aspire
+deploy/helm
+deploy/k6
+deploy/postgres
+deploy/*.yml
+deploy/.env
+deploy/.env.*
+deploy/Caddyfile
+deploy/geoip
+*.md
+!src/Dle.Admin.Web/README.md
+LICENSE
+
+# Local secrets and databases
+**/.env
+**/.env.*
+**/secrets.json
+**/*.mmdb
+**/*.pfx
+**/*.key
+**/*.pem

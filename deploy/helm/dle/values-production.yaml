@@ -1,0 +1,174 @@
+# =============================================================================
+# Deep Link Engine (DLE) — production overrides for Profile B (docs/zadanie.md §B.8).
+#
+#   helm upgrade --install dle deploy/helm/dle -n dle --create-namespace \
+#     -f deploy/helm/dle/values-production.yaml --set ingress.host=go.example.com
+#
+# Every value here is an OVERRIDE of values.yaml (which documents each key). Replace the
+# placeholders marked CHANGE ME. Data stores are external: a PostgreSQL primary with two read
+# replicas (CloudNativePG, a managed service, ...) and a Valkey cluster with three shards,
+# handed over through an operator-managed Secret (secrets.existingSecret) so that nothing secret
+# enters Helm's release history.
+# =============================================================================
+
+# Pin the images to a release — never `latest` in production.
+image:
+  edge:
+    tag: "0.1.0"          # CHANGE ME: the release you validated (a runtime-chiseled build if you publish one)
+  control:
+    tag: "0.1.0"          # CHANGE ME
+
+# A Secret you manage (External Secrets Operator, sealed-secrets, SOPS, kubectl) carrying:
+#   master-secret                    Dle:Crypto:MasterSecret (openssl rand -base64 48)
+#   postgres-connection-string       Host=<primary>;Port=5432;Database=dle;Username=dle;Password=...;SSL Mode=Require
+#   postgres-read-connection-string  the same against the read-only service (edge only)
+#   valkey-connection-string         node-0:6379,node-1:6379,node-2:6379,ssl=true,password=...
+secrets:
+  existingSecret: dle-secrets   # CHANGE ME
+
+# Bundled data stores stay OFF in production (evaluation only — see Chart.yaml).
+postgresql:
+  enabled: false
+valkey:
+  enabled: false
+
+config:
+  privacy:
+    consentMode: aggregate_only
+    ipStorage: hash_only
+  telemetry:
+    # An OpenTelemetry Collector on YOUR network (§B.8: OTel collector → Prometheus/Grafana/Tempo).
+    # The edge's egress policy must allow it: see networkPolicy.edge.extraEgress below.
+    otlpEndpoint: ""      # e.g. http://otel-collector.observability.svc:4317
+
+edge:
+  # Requests sized so that ~20 pods fit the node pool; the HPA divides by them (values.yaml).
+  resources:
+    requests:
+      cpu: 500m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 60
+    rps:
+      # Turn on once a metrics adapter serves the per-pod request rate.
+      enabled: false
+  pdb:
+    minAvailable: 2
+  config:
+    network:
+      # CHANGE ME: narrow to the ingress controller's pod CIDR / subnet. The client address is the
+      # rate-limit key, the click identifier and the GeoIP key; the defaults trust all of RFC 1918.
+      knownNetworks:
+        - 10.0.0.0/8
+      # One hop = the ingress controller. +1 for each CDN/WAF/L7 balancer in front that appends.
+      forwardLimit: 2
+    geoIp:
+      # A PVC you fill with the MaxMind mmdb yourself (never downloaded by the edge, NFR-14).
+      existingClaim: ""   # e.g. dle-geoip
+      path: ""            # e.g. /geoip/GeoLite2-Country.mmdb
+    botDetection:
+      reverseDnsVerify: true
+    interstitial:
+      productName: ""     # CHANGE ME (shown on the interstitial page)
+      supportUrl: ""
+      privacyUrl: ""
+    dbPool:
+      # 20 pods × 24 = 480 connections at full scale: size max_connections or add PgBouncer.
+      maxPoolSize: 24
+      minPoolSize: 4
+  priorityClassName: ""   # e.g. a class above batch workloads so the data plane is never evicted first
+  topologySpreadConstraints: []   # empty = spread across zones and nodes (values.yaml)
+
+control:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 250m
+      memory: 384Mi
+    limits:
+      cpu: "1"
+      memory: 768Mi
+  config:
+    publicScheme: https
+    # CHANGE ME — one of the two (values.yaml explains): the operating tenant's id, or self-service
+    # for a single-organisation deployment.
+    instanceTenantId: ""
+    allowTenantSelfService: false
+    oidc:
+      authority: ""       # CHANGE ME: https://login.example.com/realms/dle
+      clientId: ""        # CHANGE ME
+      audience: ""        # CHANGE ME
+      requireHttpsMetadata: true
+    analytics:
+      provider: postgres  # clickhouse when externalClickHouse.connectionString is set
+
+migrate:
+  enabled: true
+  # pre-install,pre-upgrade: the Job runs while the previous pods still serve — keep migrations
+  # expand/contract-safe (values.yaml).
+  hooks: ""
+
+ingress:
+  enabled: true
+  className: nginx        # CHANGE ME to your IngressClass; controller must match its dialect
+  controller: nginx       # nginx | traefik | none — governs the /.well-known redirect exemption
+  host: go.example.com    # CHANGE ME — the public host name of your links
+  tls:
+    enabled: true
+    certManager:
+      clusterIssuer: letsencrypt-prod   # CHANGE ME (or set tls.secretName to a Secret you manage)
+  # Keep the admin console and API off the link domain; jwks.json stays on `host`.
+  exposeControlOnHost: false
+  controlHost: admin.example.com        # CHANGE ME
+  # Never put a redirect or rewrite annotation into wellKnownAnnotations (§A.2.1).
+  wellKnownAnnotations: {}
+  mainAnnotations: {}
+
+networkPolicy:
+  enabled: true
+  ingressController:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: ingress-nginx   # CHANGE ME to your controller's namespace
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: ingress-nginx        # CHANGE ME to your controller's pod labels
+  postgres:
+    port: 5432
+    # CHANGE ME — name the database: CIDRs for a managed instance, or selectors for an in-cluster
+    # operator (CloudNativePG: podSelector {cnpg.io/cluster: <name>} + the namespace selector).
+    cidrs: []
+    namespaceSelector: {}
+    podSelector: {}
+  valkey:
+    port: 6379
+    cidrs: []             # CHANGE ME
+    namespaceSelector: {}
+    podSelector: {}
+  edge:
+    # The OTLP collector, if config.telemetry.otlpEndpoint is set. Nothing else: NFR-14.
+    extraEgress: []
+    #  - to:
+    #      - namespaceSelector:
+    #          matchLabels:
+    #            kubernetes.io/metadata.name: observability
+    #        podSelector:
+    #          matchLabels:
+    #            app.kubernetes.io/name: opentelemetry-collector
+    #    ports:
+    #      - port: 4317
+    #        protocol: TCP
+  control:
+    # The control plane delivers webhooks to tenant URLs and reads OIDC discovery documents;
+    # restricting its egress needs explicit entries for both.
+    restrictEgress: false
+
+serviceMonitor:
+  # Off until a Prometheus scrape endpoint exists on the services (values.yaml).
+  enabled: false

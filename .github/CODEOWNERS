@@ -1,0 +1,20 @@
+# Code owners — automatic review requests. The LAST matching pattern wins.
+#
+# One maintainer today. When a maintainers team exists in the MAGORS-organisation org, replace
+# the handle with @MAGORS-organisation/<team> — a non-existent team silently disables the rule,
+# so only do that once the team is created.
+
+*                                   @PRAESTAR
+
+# Security-sensitive: cryptography, identity, abuse handling, and everything that ships secrets
+# or defines what CI is allowed to do. These need a maintainer even when the org grows.
+/src/Dle.Crypto/                    @PRAESTAR
+/src/Dle.Edge/                      @PRAESTAR
+/src/Dle.Control/                   @PRAESTAR
+/deploy/                            @PRAESTAR
+/.github/                           @PRAESTAR
+/SECURITY.md                        @PRAESTAR
+/Directory.Packages.props           @PRAESTAR
+/NuGet.config                       @PRAESTAR
+/**/packages.lock.json              @PRAESTAR
+/**/package-lock.json               @PRAESTAR

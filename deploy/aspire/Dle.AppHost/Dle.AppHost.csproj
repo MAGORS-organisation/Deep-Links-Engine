@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    .NET Aspire app host for local development: brings up PostgreSQL, Valkey,
+    the Aspire dashboard, Dle.Edge and Dle.Control with one command.
+    docs/zadanie.md §C.1 (deploy/aspire) and §C.2 (Aspire 13.5).
+
+    The Aspire.AppHost.Sdk version is pinned in global.json under msbuild-sdks,
+    so no Version attribute belongs here either.
+  -->
+  <Sdk Name="Aspire.AppHost.Sdk" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsAspireHost>true</IsAspireHost>
+    <!-- The CLI bundle only adds `aspire run` conveniences; CI and docker compose do not use it. -->
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <IsPackable>false</IsPackable>
+    <UserSecretsId>dle-apphost-7c4e2a89-1d63-4b57-90fe-8a5c3b0d6e42</UserSecretsId>
+
+    <!--
+      Aspire.AppHost.Sdk emits a public Projects.* class for every referenced
+      project. That generated code carries no XML documentation, so CS1591 is
+      suppressed for this project only. It stays an error everywhere else.
+    -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup Label="Orchestrated services">
+    <ProjectReference Include="..\..\..\src\Dle.Edge\Dle.Edge.csproj" />
+    <ProjectReference Include="..\..\..\src\Dle.Control\Dle.Control.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Aspire hosting">
+    <PackageReference Include="Aspire.Hosting.AppHost" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.Redis" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,146 @@
+# =============================================================================
+# iOS SDK (sdk/ios, SwiftPM, swift-tools 6.0, Swift 6 language mode).
+#
+# FIRST COMPILATION: the iOS SDK has never been compiled. It was written on a machine without
+# Xcode, so this workflow is the first time the package is built or its tests (DleSDKTests) are
+# run anywhere. A red first run is expected to be the compiler's list of what to fix, not a CI
+# defect. Swift 6 strict concurrency in particular is only ever proven by a compiler.
+#
+# Sources are iOS-only in practice (UIKit / app-links behaviour), so the build targets the iOS
+# Simulator even though Package.swift also lists other platforms. The Sample/ directory is not a
+# package target and is not built here.
+#
+# Runner: macos-15 ships Xcode 16.0–16.4 with 16.4 as default; 16.4 is pinned explicitly so a
+# runner-image change cannot silently move the toolchain.
+# =============================================================================
+name: iOS SDK
+
+on:
+  pull_request:
+    paths:
+      - "sdk/ios/**"
+      - ".github/workflows/sdk-ios.yml"
+  push:
+    branches: [develop, master]
+    paths:
+      - "sdk/ios/**"
+      - ".github/workflows/sdk-ios.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdk-ios-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-test:
+    name: Build and test (iOS Simulator)
+    runs-on: macos-15
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: sdk/ios
+    env:
+      # SIMULATOR_DESTINATION is resolved at run time by the "Pick an available iPhone simulator"
+      # step below; the runner image decides which simulators exist, and a name pinned here went
+      # stale between two runs of this workflow.
+      DERIVED_DATA: ${{ github.workspace }}/sdk/ios/.derivedData
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Select Xcode 16.4
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
+        with:
+          xcode-version: "16.4"
+
+      - name: Toolchain and package manifest
+        run: |
+          xcodebuild -version
+          swift --version
+          swift package describe --type json > /dev/null && echo "Package.swift parses"
+
+      - name: Pick an available iPhone simulator
+        # The set of simulators is a property of the runner image and changes without notice: the
+        # image that shipped "iPhone 16" one day shipped only newer devices the next, and a device
+        # name pinned in this file turned a documentation-only commit red. Resolve the newest
+        # available iPhone by UDID instead, and fail with the full device list when there is none.
+        run: |
+          set -o pipefail
+          devices="$(xcrun simctl list devices available --json)"
+          udid="$(echo "$devices" | jq -r '
+            .devices | to_entries
+            | map(select(.key | contains("SimRuntime.iOS")))
+            | sort_by(.key) | reverse
+            | map(.value[] | select(.isAvailable == true and (.name | startswith("iPhone"))))
+            | .[0].udid // empty')"
+          if [ -z "$udid" ]; then
+            echo "::error::No available iPhone simulator on this runner image. Devices present:"
+            echo "$devices" | jq -r '.devices | to_entries[] | "\(.key): \([.value[] | .name] | join(", "))"'
+            exit 1
+          fi
+          name="$(echo "$devices" | jq -r --arg u "$udid" '.devices[][] | select(.udid == $u) | .name')"
+          echo "Using simulator: $name ($udid)"
+          echo "SIMULATOR_DESTINATION=platform=iOS Simulator,id=$udid" >> "$GITHUB_ENV"
+
+      - name: Pick the scheme that carries the test target
+        # xcodebuild synthesises one scheme per product ("DleSDK") and, for the package as a whole,
+        # "DleSDK-Package", which is the one guaranteed to include DleSDKTests. Prefer it when it
+        # exists; fall back to the product scheme.
+        id: scheme
+        run: |
+          schemes="$(xcodebuild -list -json 2>/dev/null | jq -r '.workspace.schemes[]? // .project.schemes[]?')"
+          echo "Available schemes:"; echo "$schemes"
+          if echo "$schemes" | grep -qx 'DleSDK-Package'; then s='DleSDK-Package'; else s='DleSDK'; fi
+          echo "test-scheme=$s" >> "$GITHUB_OUTPUT"
+
+      - name: Build library for the iOS Simulator (generic)
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -scheme DleSDK \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$DERIVED_DATA" \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee build.log | grep -E 'error:|warning:|BUILD (SUCCEEDED|FAILED)' || true
+          grep -q 'BUILD SUCCEEDED' build.log
+
+      - name: Build for testing
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -scheme '${{ steps.scheme.outputs.test-scheme }}' \
+            -destination "$SIMULATOR_DESTINATION" \
+            -derivedDataPath "$DERIVED_DATA" \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee build-for-testing.log | grep -E 'error:|BUILD (SUCCEEDED|FAILED)' || true
+          grep -q 'BUILD SUCCEEDED' build-for-testing.log
+
+      - name: Test (DleSDKTests)
+        run: |
+          set -o pipefail
+          rm -rf TestResults.xcresult
+          xcodebuild test-without-building \
+            -scheme '${{ steps.scheme.outputs.test-scheme }}' \
+            -destination "$SIMULATOR_DESTINATION" \
+            -derivedDataPath "$DERIVED_DATA" \
+            -resultBundlePath TestResults.xcresult \
+            -skipPackagePluginValidation \
+            | tee test.log | grep -E 'Test Case|error:|failed|passed|TEST (EXECUTE )?(SUCCEEDED|FAILED)' || true
+          grep -qE 'TEST (EXECUTE )?SUCCEEDED' test.log
+
+      - name: Upload logs and result bundle
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dle-sdk-ios-results-${{ github.sha }}
+          path: |
+            sdk/ios/*.log
+            sdk/ios/TestResults.xcresult
+          if-no-files-found: ignore
+          retention-days: 14

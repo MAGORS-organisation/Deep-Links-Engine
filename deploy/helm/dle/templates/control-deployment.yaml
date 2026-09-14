@@ -1,0 +1,164 @@
+{{- /*
+dle-control — the control plane: admin console (/admin), API (/api, /v1), Scalar, OpenAPI,
+workers (domain verifier, roll-ups, webhook dispatcher, retention). §B.8 profile B: two pods.
+
+Probes: liveness /healthz (process only), readiness /readyz (gates on PostgreSQL — a control pod
+that cannot reach the database would answer 503 anyway, so it leaves the Service until it can).
+
+Same security posture as the edge: uid 1654, read-only root filesystem, drop ALL, seccomp
+RuntimeDefault, no service-account token, /tmp on an emptyDir.
+*/ -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dle.control.fullname" . }}
+  labels:
+    {{- include "dle.control.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.control.replicaCount }}
+  revisionHistoryLimit: {{ .Values.control.revisionHistoryLimit }}
+  strategy:
+    {{- toYaml .Values.control.updateStrategy | nindent 4 }}
+  selector:
+    matchLabels:
+      {{- include "dle.control.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "dle.control.selectorLabels" . | nindent 8 }}
+        {{- with .Values.control.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if not .Values.secrets.existingSecret }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.control.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "dle.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.securityContext.pod | nindent 8 }}
+      {{- with .Values.control.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.control.terminationGracePeriodSeconds }}
+      containers:
+        - name: control
+          image: {{ include "dle.image.control" . | quote }}
+          imagePullPolicy: {{ .Values.image.control.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext.container | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 8081
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_HTTP_PORTS
+              value: "8081"
+            - name: ConnectionStrings__Postgres
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dle.secretName" . }}
+                  key: {{ .Values.secrets.keys.postgresConnectionString }}
+            - name: ConnectionStrings__Valkey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dle.secretName" . }}
+                  key: {{ .Values.secrets.keys.valkeyConnectionString }}
+                  optional: true
+            # Only read when Dle:Analytics:Provider is clickhouse.
+            - name: ConnectionStrings__ClickHouse
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dle.secretName" . }}
+                  key: {{ .Values.secrets.keys.clickHouseConnectionString }}
+                  optional: true
+            - name: Dle__Crypto__MasterSecret
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dle.secretName" . }}
+                  key: {{ .Values.secrets.keys.masterSecret }}
+            {{- with .Values.control.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "dle.control.fullname" . }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.control.probes.livenessPath }}
+              port: http
+            periodSeconds: {{ .Values.control.probes.startup.periodSeconds }}
+            failureThreshold: {{ .Values.control.probes.startup.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.control.probes.livenessPath }}
+              port: http
+            periodSeconds: {{ .Values.control.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.control.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.control.probes.liveness.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.control.probes.readinessPath }}
+              port: http
+            periodSeconds: {{ .Values.control.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.control.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.control.probes.readiness.failureThreshold }}
+          {{- if gt (int .Values.control.preStopSleepSeconds) 0 }}
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: {{ .Values.control.preStopSleepSeconds }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.control.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- with .Values.control.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: {{ .Values.securityContext.tmpSizeLimit }}
+        {{- with .Values.control.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.control.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.control.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.control.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      topologySpreadConstraints:
+        {{- if .Values.control.topologySpreadConstraints }}
+        {{- toYaml .Values.control.topologySpreadConstraints | nindent 8 }}
+        {{- else }}
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              {{- include "dle.control.selectorLabels" . | nindent 14 }}
+        {{- end }}

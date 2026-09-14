@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Deep Link Engine SDK.
+
+  INTERNET is the only permission the SDK needs: it talks to the DLE SDK plane and nothing else.
+  It never asks for the advertising identifier, never reads the clipboard and never touches
+  READ_PHONE_STATE or similar identifiers (FR-227, spec §0.2, §E.7).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+</manifest>

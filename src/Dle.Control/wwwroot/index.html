@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Deep Link Engine — control plane</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fbfbfd; --fg: #16181d; --muted: #454b59; --line: #dfe2e8;
+    --accent: #2b5fd9; --bad: #b3261e; --ok: #1b7a3d; --card: #ffffff;
+    font-synthesis-weight: none;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#101216; --fg:#e8eaee; --muted:#aeb6c4; --line:#282c34;
+            --accent:#7fa2ff; --bad:#ff8a80; --ok:#7ee2a8; --card:#171a20; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.55 ui-sans-serif,system-ui,"Segoe UI",Roboto,sans-serif; }
+  header { padding:18px 24px; border-bottom:1px solid var(--line); display:flex; gap:16px; align-items:baseline; flex-wrap:wrap; }
+  header h1 { font-size:20px; margin:0; font-weight:650; letter-spacing:-0.02em; }
+  header p { margin:0; color:var(--muted); font-size:13px; }
+  main { max-width:1080px; margin:0 auto; padding:24px; display:grid; gap:20px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px; }
+  h2 { font-size:13px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin:0 0 12px; font-weight:650; }
+  label { display:block; font-size:12px; color:var(--muted); margin:10px 0 4px; }
+  input, textarea, select { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:7px;
+    background:var(--bg); color:var(--fg); font:inherit; font-size:14px; }
+  textarea { min-height:96px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px; }
+  button { padding:8px 14px; border:1px solid transparent; border-radius:7px; background:var(--accent);
+    color:#fff; font:inherit; font-weight:550; cursor:pointer; }
+  button.secondary { background:transparent; border-color:var(--line); color:var(--fg); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+  .row > * { flex:1 1 200px; }
+  .row > .actions { flex:0 0 auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th, td { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.05em; }
+  code, pre { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; }
+  pre { background:var(--bg); border:1px solid var(--line); border-radius:7px; padding:12px; overflow:auto; margin:0; }
+  .note { color:var(--muted); font-size:12.5px; margin:8px 0 0; }
+  .bad { color:var(--bad); }
+  .ok { color:var(--ok); }
+  ol.trace { margin:8px 0 0; padding-left:20px; font-size:13px; }
+  ol.trace li { margin:3px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Deep Link Engine</h1>
+  <p>Control plane console. The full API reference is at <a href="/scalar/v1">/scalar/v1</a>.</p>
+</header>
+
+<main>
+  <section>
+    <h2>Credential</h2>
+    <label for="key">Control-plane API key</label>
+    <input id="key" type="password" autocomplete="off" spellcheck="false"
+           placeholder="dle_XXXXXXXX_…">
+    <p class="note">
+      Held in this tab only and sent as a bearer token. It is never written to storage: a key in
+      local storage is a key any script on this origin can read.
+    </p>
+    <div class="row" style="margin-top:12px">
+      <div class="actions"><button id="load">Load links</button></div>
+      <div class="actions"><button id="whoami" class="secondary">Show tenant</button></div>
+    </div>
+    <p id="status" class="note"></p>
+  </section>
+
+  <section>
+    <h2>Links</h2>
+    <div class="row">
+      <div><label for="search">Search slug or title</label><input id="search" type="search"></div>
+      <div><label for="tags">Tags, comma separated</label><input id="tags" type="text"></div>
+      <div class="actions"><button id="filter" class="secondary">Filter</button></div>
+    </div>
+    <table id="links" style="margin-top:14px">
+      <thead><tr><th>Slug</th><th>Short URL</th><th>Target</th><th>State</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Create a link</h2>
+    <div class="row">
+      <div><label for="domain">Domain identifier</label><input id="domain" placeholder="UUID of a registered host"></div>
+      <div><label for="slug">Slug, optional</label><input id="slug" placeholder="left empty: generated"></div>
+    </div>
+    <label for="target">Target URL</label>
+    <input id="target" placeholder="https://example.com/campaign">
+    <label for="rules">Routing rules, optional JSON array</label>
+    <textarea id="rules" spellcheck="false" placeholder='[{"id":"default","then":{"action":"web","url":"https://example.com"}}]'></textarea>
+    <p class="note">
+      Leave the rules empty for an ordinary short link and one will be derived from the target. A
+      rule set you do supply must contain exactly one default rule, and it must be last.
+    </p>
+    <div class="row" style="margin-top:12px"><div class="actions"><button id="create">Create</button></div></div>
+    <pre id="createResult" hidden></pre>
+  </section>
+
+  <section>
+    <h2>Rule simulator</h2>
+    <div class="row">
+      <div><label for="simId">Link identifier</label><input id="simId"></div>
+      <div><label for="simPlatform">Platform</label>
+        <select id="simPlatform"><option value="">any</option><option>ios</option><option>android</option><option>desktop</option></select>
+      </div>
+      <div><label for="simCountry">Country</label><input id="simCountry" placeholder="SK" maxlength="2"></div>
+      <div><label for="simChannel">Channel</label><input id="simChannel" placeholder="in_app_ig"></div>
+      <div class="actions"><button id="simulate" class="secondary">Simulate</button></div>
+    </div>
+    <p class="note">Nothing is written: no click event, no attribution.</p>
+    <div id="simOut"></div>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+const $ = (id) => document.getElementById(id);
+const status = $("status");
+
+function key() {
+  const value = $("key").value.trim();
+  if (!value) { throw new Error("Enter a control-plane API key first."); }
+  return value;
+}
+
+async function call(path, init) {
+  const options = init || {};
+  const headers = Object.assign({ "Authorization": "Bearer " + key() }, options.headers || {});
+  if (options.body) { headers["Content-Type"] = "application/json"; }
+  const response = await fetch(path, Object.assign({}, options, { headers }));
+  const text = await response.text();
+  const body = text ? JSON.parse(text) : null;
+  if (!response.ok) {
+    const detail = body && (body.detail || body.title) ? (body.detail || body.title) : response.statusText;
+    const error = new Error(detail);
+    error.problem = body;
+    throw error;
+  }
+  return body;
+}
+
+function report(message, bad) {
+  status.textContent = message;
+  status.className = "note " + (bad ? "bad" : "ok");
+}
+
+async function loadLinks() {
+  try {
+    const query = new URLSearchParams();
+    if ($("search").value.trim()) { query.set("search", $("search").value.trim()); }
+    if ($("tags").value.trim()) { query.set("tags", $("tags").value.trim()); }
+    query.set("limit", "50");
+    const page = await call("/api/v1/links?" + query.toString());
+    const body = document.querySelector("#links tbody");
+    body.replaceChildren();
+    for (const link of page.items) {
+      const tr = document.createElement("tr");
+      tr.append(
+        cell(link.slug),
+        cellLink(link.short_url),
+        cell(link.target_url),
+        cell(link.quarantined_at ? "quarantined" : (link.is_active ? "active" : "archived")),
+        cellButton("Simulate", () => { $("simId").value = link.id; simulate(); }));
+      body.append(tr);
+    }
+    report(page.items.length + " link(s) loaded.", false);
+  } catch (error) { report(error.message, true); }
+}
+
+function cell(text) { const td = document.createElement("td"); td.textContent = text || ""; return td; }
+function cellLink(href) {
+  const td = document.createElement("td");
+  const a = document.createElement("a");
+  a.href = href; a.textContent = href; a.rel = "noreferrer noopener";
+  td.append(a); return td;
+}
+function cellButton(label, handler) {
+  const td = document.createElement("td");
+  const button = document.createElement("button");
+  button.className = "secondary"; button.textContent = label;
+  button.addEventListener("click", handler);
+  td.append(button); return td;
+}
+
+async function createLink() {
+  const output = $("createResult");
+  try {
+    const rules = $("rules").value.trim();
+    const payload = {
+      domain_id: $("domain").value.trim(),
+      target_url: $("target").value.trim(),
+      is_active: true
+    };
+    if ($("slug").value.trim()) { payload.slug = $("slug").value.trim(); }
+    if (rules) { payload.routing_rules = JSON.parse(rules); }
+
+    const created = await call("/api/v1/links", {
+      method: "POST",
+      body: JSON.stringify(payload),
+      // A fresh key per attempt: retrying the same submission replays the first response
+      // instead of creating a second link.
+      headers: { "Idempotency-Key": crypto.randomUUID() }
+    });
+    output.hidden = false;
+    output.textContent = JSON.stringify(created, null, 2);
+    report("Created " + created.short_url, false);
+    await loadLinks();
+  } catch (error) {
+    output.hidden = false;
+    output.textContent = error.problem ? JSON.stringify(error.problem, null, 2) : error.message;
+    report(error.message, true);
+  }
+}
+
+async function simulate() {
+  const out = $("simOut");
+  out.replaceChildren();
+  try {
+    const query = new URLSearchParams();
+    if ($("simPlatform").value) { query.set("platform", $("simPlatform").value); }
+    if ($("simCountry").value.trim()) { query.set("country", $("simCountry").value.trim().toUpperCase()); }
+    if ($("simChannel").value.trim()) { query.set("channel", $("simChannel").value.trim()); }
+    const id = encodeURIComponent($("simId").value.trim());
+    const result = await call("/api/v1/links/" + id + "/simulate?" + query.toString());
+
+    const summary = document.createElement("pre");
+    summary.textContent = JSON.stringify({
+      matched_rule_id: result.matched_rule_id,
+      decision: result.decision,
+      url: result.url,
+      store_url: result.store_url,
+      deeplink_path: result.deeplink_path,
+      ab_bucket: result.ab_bucket,
+      consent_mode: result.consent_mode
+    }, null, 2);
+
+    const trace = document.createElement("ol");
+    trace.className = "trace";
+    for (const line of result.trace) {
+      const li = document.createElement("li");
+      li.textContent = line;
+      trace.append(li);
+    }
+    out.append(summary, trace);
+    report("Simulated.", false);
+  } catch (error) { report(error.message, true); }
+}
+
+async function whoami() {
+  try {
+    const tenant = await call("/api/v1/tenants/me");
+    report(tenant.name + " (" + tenant.slug + "), consent mode " + tenant.consent_mode, false);
+  } catch (error) { report(error.message, true); }
+}
+
+$("load").addEventListener("click", loadLinks);
+$("filter").addEventListener("click", loadLinks);
+$("create").addEventListener("click", createLink);
+$("simulate").addEventListener("click", simulate);
+$("whoami").addEventListener("click", whoami);
+</script>
+</body>
+</html>
