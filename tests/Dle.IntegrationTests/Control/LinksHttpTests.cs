@@ -342,8 +342,22 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     public async Task Patch_ChangesTheFields_BumpsTheVersion_AndTheHistoryRemembersWhy()
     {
         Fixture fixture = await SeedAsync("links-patch");
-        long id = await TestSeed.LinkAsync(Database, fixture.TenantId, fixture.DomainId, "editable", SafeTarget, cancellationToken: Ct);
         using HttpClient client = fixture.Host.CreateDirectClient();
+
+        // Created through the API, not seeded: version 1 of the history is written by the create,
+        // and the point of this test is that the history runs from creation to the edit.
+        using HttpResponseMessage created = await fixture.Key.PostRawAsync(
+            client,
+            "/api/v1/links",
+            Body(fixture.DomainId, "\"slug\": \"editable\""),
+            Ct);
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        long id;
+        using (JsonDocument creation = JsonDocument.Parse(await created.Content.ReadAsStringAsync(Ct)))
+        {
+            id = creation.RootElement.GetProperty("id").GetInt64();
+            Assert.Equal(1, creation.RootElement.GetProperty("version").GetInt32());
+        }
 
         using HttpResponseMessage patched = await fixture.Key.PatchRawAsync(
             client,

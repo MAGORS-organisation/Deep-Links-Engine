@@ -283,7 +283,7 @@ public sealed class AbuseHttpTests(DleInfrastructureFixture infrastructure)
         {
             // The public form is limited per source address; a test that reports several times
             // from the same loopback address must not trip it.
-            settings["Dle:Abuse:ReportsPerHourPerIp"] = "10000";
+            settings["Dle:Abuse:ReportsPerHourPerIp"] = "1000";
 
             if (asOperator)
             {

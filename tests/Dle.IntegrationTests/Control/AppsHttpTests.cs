@@ -93,7 +93,9 @@ public sealed class AppsHttpTests(DleInfrastructureFixture infrastructure)
         JsonElement warnings = document.RootElement.GetProperty("warnings");
         Assert.Equal(1, warnings.GetArrayLength());
         Assert.Contains("No signing certificate fingerprint", warnings[0].GetString(), StringComparison.Ordinal);
-        Assert.Null(document.RootElement.GetProperty("team_id").GetString());
+        Assert.False(
+            document.RootElement.TryGetProperty("team_id", out JsonElement teamId) && teamId.ValueKind != JsonValueKind.Null,
+            "an Android application has no team id");
     }
 
     [RequiresDockerFact]
@@ -268,7 +270,8 @@ public sealed class AppsHttpTests(DleInfrastructureFixture infrastructure)
         Guid keyId = issued.RootElement.GetProperty("id").GetGuid();
         string secret = issued.RootElement.GetProperty("secret").GetString()!;
         string prefix = issued.RootElement.GetProperty("prefix").GetString()!;
-        Assert.StartsWith(prefix, secret, StringComparison.Ordinal);
+        // dlk_<prefix>_<secret>: the prefix is the public part a list can show.
+        Assert.Equal(prefix, secret.Split('_')[1]);
         Assert.Equal(id, issued.RootElement.GetProperty("app_id").GetGuid());
 
         // Only the prefix and a hash are stored; the secret itself is nowhere in the database.

@@ -170,8 +170,12 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
         using HttpResponseMessage deleted = await fixture.Key.DeleteAsync(client, path, Ct);
         Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
 
+        // The operator can still read the row, marked deleted: the audit trail needs the name
+        // and the slug, and a deleted tenant is not an unknown one.
         using HttpResponseMessage gone = await fixture.Key.GetAsync(client, path, Ct);
-        Assert.Equal(HttpStatusCode.NotFound, gone.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, gone.StatusCode);
+        using JsonDocument marked = JsonDocument.Parse(await gone.Content.ReadAsStringAsync(Ct));
+        Assert.Equal("deleted", marked.RootElement.GetProperty("status").GetString());
 
         using HttpResponseMessage again = await fixture.Key.DeleteAsync(client, path, Ct);
         Assert.Equal(HttpStatusCode.NotFound, again.StatusCode);
@@ -205,7 +209,8 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
         string secret = issued.RootElement.GetProperty("secret").GetString()!;
         string prefix = issued.RootElement.GetProperty("prefix").GetString()!;
         Assert.Equal("editor", issued.RootElement.GetProperty("role").GetString());
-        Assert.StartsWith(prefix, secret, StringComparison.Ordinal);
+        // dle_<prefix>_<secret>: the prefix is the public part a list can show.
+        Assert.Equal(prefix, secret.Split('_')[1]);
 
         // Stored as a prefix and a hash, never as the secret.
         Assert.Equal(prefix, await Sql.ScalarAsync<string>(Database.DataSource, "SELECT prefix FROM api_keys WHERE id = $1", [keyId], Ct));

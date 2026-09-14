@@ -51,7 +51,10 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
         Assert.Equal("pending", domain.GetProperty("aasa_status").GetString());
         Assert.Equal("pending", domain.GetProperty("assetlinks_status").GetString());
         Assert.Equal(fixture.TenantId, domain.GetProperty("tenant_id").GetGuid());
-        Assert.Null(domain.GetProperty("consent_mode_override").GetString());
+        Assert.False(
+            domain.TryGetProperty("consent_mode_override", out JsonElement consentOverride)
+            && consentOverride.ValueKind != JsonValueKind.Null,
+            "a domain inherits the tenant consent mode unless one is set");
 
         Assert.Equal(
             "links.example.com",
@@ -239,7 +242,19 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
         using JsonDocument records = JsonDocument.Parse(await history.Content.ReadAsStringAsync(Ct));
         JsonElement items = records.RootElement.GetProperty("items");
         Assert.Equal(checks.GetArrayLength(), items.GetArrayLength());
-        Assert.All(items.EnumerateArray(), item => Assert.Equal("failed", item.GetProperty("status").GetString()));
+        Assert.Equal("failed", FindCheck(checks, "tls").GetProperty("status").GetString());
+
+        // No application is paired with the host, so no association file is expected and those
+        // two checks pass on their own terms. The history records every check as the run
+        // reported it.
+        foreach (JsonElement check in checks.EnumerateArray())
+        {
+            string kind = check.GetProperty("kind").GetString()!;
+            JsonElement recorded = Assert.Single(
+                items.EnumerateArray(),
+                item => string.Equals(item.GetProperty("kind").GetString(), kind, StringComparison.Ordinal));
+            Assert.Equal(check.GetProperty("status").GetString(), recorded.GetProperty("status").GetString());
+        }
 
         Assert.Equal(
             (long)checks.GetArrayLength(),
@@ -254,10 +269,20 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
     [Trait("Spec", "FR-134")]
     public async Task Verify_AReachableHostWithoutAssociationFiles_PassesDnsAndFailsTheFiles()
     {
-        // example.com resolves publicly and answers 404 for both association files: DNS passes,
-        // the transport passes, and both file checks fail for the reason an operator has to fix.
+        // example.com resolves publicly and answers 404 for both association files. With an iOS
+        // and an Android application paired, both files are expected: DNS passes, the transport
+        // passes, and both file checks fail for the reason an operator has to fix.
         Fixture fixture = await SeedAsync("domains-verify-reachable");
         Guid id = await TestSeed.DomainAsync(Database, fixture.TenantId, "example.com", cancellationToken: Ct);
+        _ = await TestSeed.AppAsync(Database, fixture.TenantId, id, "ios", "com.example.app", teamId: "ABCDE12345", cancellationToken: Ct);
+        _ = await TestSeed.AppAsync(
+            Database,
+            fixture.TenantId,
+            id,
+            "android",
+            "com.example.app",
+            playSigningFingerprints: ["AB:5C:" + string.Join(":", Enumerable.Repeat("00", 30))],
+            cancellationToken: Ct);
         using HttpClient client = fixture.Host.CreateDirectClient();
 
         using HttpResponseMessage response = await fixture.Key.SendRawAsync(

@@ -237,6 +237,13 @@ public sealed class LinkWriteService
             ? request.RoutingRules
             : template?.RoutingRules is { Count: > 0 } fromTemplate ? fromTemplate : null;
 
+        LinkWriteOutcome? syntaxFailure = ValidateTargetSyntax(targetUrl);
+
+        if (syntaxFailure is not null)
+        {
+            return syntaxFailure;
+        }
+
         IReadOnlyList<RoutingRule> rules = ResolveRules(supplied, targetUrl);
 
         LinkWriteOutcome? ruleFailure = ValidateRules(supplied, rules);
@@ -370,6 +377,16 @@ public sealed class LinkWriteService
         }
 
         string targetUrl = request.TargetUrl?.Trim() ?? link.TargetUrl;
+
+        if (request.TargetUrl is not null)
+        {
+            LinkWriteOutcome? syntaxFailure = ValidateTargetSyntax(targetUrl);
+
+            if (syntaxFailure is not null)
+            {
+                return syntaxFailure;
+            }
+        }
 
         IReadOnlyList<RoutingRule> rules = request.RoutingRules is null
             ? ControlJson.ReadRoutingRules(link.RoutingRules)
@@ -535,6 +552,48 @@ public sealed class LinkWriteService
             LinkWriteError.InvalidRoutingRules,
             "The routing rules are invalid.",
             fieldErrors);
+    }
+
+    /// <summary>
+    /// Refuses a target the safety policy would refuse on sight — a <c>javascript:</c>, <c>data:</c>
+    /// or relative URL, a forbidden host name — before the rule set is derived from it (§E.3 step 1,
+    /// TC-161).
+    /// </summary>
+    /// <param name="targetUrl">The web fallback target, or nothing when the rules supply every target.</param>
+    /// <returns>A failure, or <see langword="null"/> when the target may go on to the rules and the full check.</returns>
+    /// <remarks>
+    /// Without this the default rule synthesised from the target carries the bad URL, and a caller
+    /// who sent only <c>target_url</c> is told about <c>routing_rules[0].then.url</c>, a field that
+    /// was never in the request, under the wrong problem type. The full check runs afterwards as
+    /// before; this is the same syntax verdict, delivered against the right field.
+    /// </remarks>
+    private static LinkWriteOutcome? ValidateTargetSyntax(string? targetUrl)
+    {
+        if (string.IsNullOrWhiteSpace(targetUrl))
+        {
+            return null;
+        }
+
+        UrlSafetyVerdict verdict = TargetUrlPolicy.ValidateSyntax(targetUrl);
+
+        if (verdict.Level == UrlSafetyLevel.Safe)
+        {
+            return null;
+        }
+
+        return LinkWriteOutcome.Failure(
+            LinkWriteError.UnsafeTarget,
+            string.Create(
+                CultureInfo.InvariantCulture,
+                $"The target was refused by the {verdict.Source} check: {verdict.Reason}"),
+            new Dictionary<string, string[]>(StringComparer.Ordinal)
+            {
+                ["target_url"] =
+                [
+                    verdict.Reason
+                        ?? "The target is not a permitted redirect destination.",
+                ],
+            });
     }
 
     /// <summary>

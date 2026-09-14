@@ -64,6 +64,13 @@ not been executed anywhere.
 
 ### Fixed
 
+- **Control plane** — `DELETE /api/v1/domains/{id}` on a host that still serves links answered
+  500 instead of the documented `409 domain-in-use`: PostgreSQL reports an `ON DELETE RESTRICT`
+  constraint as SQLSTATE `23001`, and only `23503` was recognised.
+- **Control plane** — a `target_url` with a forbidden scheme (`javascript:`, `data:`) or that is
+  not an absolute URL is refused as `422 unsafe-target` keyed on `target_url` (§E.3 step 1,
+  TC-161). Before, the default rule synthesised from it failed as `400 invalid-routing-rules`
+  on `routing_rules[0].then.url`, a field the caller never sent.
 - Four defects found by the test suites while they were being written (see commit
   `8f99c56`): recorded here so the first release notes do not present them as never having existed.
 - Seven defects found by the first CI run of the integration suite against a live PostgreSQL 18

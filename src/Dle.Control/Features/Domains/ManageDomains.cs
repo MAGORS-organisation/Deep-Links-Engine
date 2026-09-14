@@ -410,7 +410,14 @@ public static class ManageDomains
     /// <summary>Tells a foreign key violation from any other write failure.</summary>
     /// <param name="exception">The failure reported by EF Core.</param>
     /// <returns><see langword="true"/> when rows still reference the domain.</returns>
+    /// <remarks>
+    /// PostgreSQL reports a constraint declared <c>ON DELETE RESTRICT</c>, which is how
+    /// <c>fk_links_domain</c> is declared, as <c>23001</c> (<c>restrict_violation</c>), and only a
+    /// <c>NO ACTION</c> constraint as <c>23503</c> (<c>foreign_key_violation</c>). Matching one of
+    /// the two turned the documented 409 into a 500.
+    /// </remarks>
     private static bool IsForeignKeyViolation(DbUpdateException exception) =>
         exception.InnerException is PostgresException postgres
-        && string.Equals(postgres.SqlState, "23503", StringComparison.Ordinal);
+        && (string.Equals(postgres.SqlState, "23503", StringComparison.Ordinal)
+            || string.Equals(postgres.SqlState, "23001", StringComparison.Ordinal));
 }
