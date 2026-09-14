@@ -64,6 +64,11 @@ not been executed anywhere.
 
 ### Fixed
 
+- **Control plane** — `POST /api/v1/webhooks` without `is_active` registered an inactive
+  subscription that received nothing: the request is read through a source-generated JSON
+  context, which materialises an init-only record through an object initializer and gives an
+  absent member `default(bool)` rather than the declared `true`. The member is now nullable and
+  an omitted value means active.
 - **Control plane** — `DELETE /api/v1/domains/{id}` on a host that still serves links answered
   500 instead of the documented `409 domain-in-use`: PostgreSQL reports an `ON DELETE RESTRICT`
   constraint as SQLSTATE `23001`, and only `23503` was recognised.
