@@ -224,7 +224,9 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
         Assert.Equal("Reporting", mine.GetProperty("name").GetString());
         Assert.Equal(prefix, mine.GetProperty("prefix").GetString());
         Assert.Equal("links:read", mine.GetProperty("scopes")[0].GetString());
-        Assert.True(mine.GetProperty("revoked_at").ValueKind == JsonValueKind.Null);
+        Assert.False(
+            mine.TryGetProperty("revoked_at", out JsonElement revokedAt) && revokedAt.ValueKind != JsonValueKind.Null,
+            "a live key carries no revocation time");
 
         // The scope holds: the key reads links and cannot write them, whatever its role says.
         ControlCredentials scoped = ControlCredentials.FromToken(secret, fixture.TenantId);

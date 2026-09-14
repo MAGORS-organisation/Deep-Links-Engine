@@ -225,7 +225,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
 
     [RequiresDockerFact]
     [Trait("Spec", "FR-230")]
-    public async Task Delete_RemovesTheSubscription_AndAnotherTenantsIs404()
+    public async Task Delete_DeactivatesTheSubscription_AndAnotherTenantsIs404()
     {
         Fixture fixture = await SeedAsync("webhooks-delete");
         Guid otherTenant = await TestSeed.TenantAsync(Database, "webhooks-delete-other", cancellationToken: Ct);
@@ -239,12 +239,19 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
         using HttpResponseMessage deleted = await fixture.Key.DeleteAsync(client, "/api/v1/webhooks/" + id.ToString(), Ct);
         Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
 
+        // A delete deactivates and keeps the row, so the deliveries it received stay explicable;
+        // deactivating again changes nothing and says so with the same 204.
         using HttpResponseMessage again = await fixture.Key.DeleteAsync(client, "/api/v1/webhooks/" + id.ToString(), Ct);
-        Assert.Equal(HttpStatusCode.NotFound, again.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, again.StatusCode);
 
         using HttpResponseMessage listed = await fixture.Key.GetAsync(client, "/api/v1/webhooks", Ct);
         using JsonDocument list = JsonDocument.Parse(await listed.Content.ReadAsStringAsync(Ct));
-        Assert.Equal(0, list.RootElement.GetArrayLength());
+        JsonElement inactive = Assert.Single(list.RootElement.EnumerateArray());
+        Assert.False(inactive.GetProperty("is_active").GetBoolean());
+
+        using HttpResponseMessage active = await fixture.Key.GetAsync(client, "/api/v1/webhooks?onlyActive=true", Ct);
+        using JsonDocument activeList = JsonDocument.Parse(await active.Content.ReadAsStringAsync(Ct));
+        Assert.Equal(0, activeList.RootElement.GetArrayLength());
     }
 
     private static async Task<Guid> CreateSubscriptionAsync(Fixture fixture, HttpClient client, string url, params string[] eventTypes)

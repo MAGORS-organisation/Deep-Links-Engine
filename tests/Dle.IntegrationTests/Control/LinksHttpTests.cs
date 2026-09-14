@@ -349,13 +349,13 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
         using HttpResponseMessage created = await fixture.Key.PostRawAsync(
             client,
             "/api/v1/links",
-            Body(fixture.DomainId, "\"slug\": \"editable\""),
+            Body(fixture.DomainId, "\"slug\": \"editable-link\""),
             Ct);
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
         long id;
         using (JsonDocument creation = JsonDocument.Parse(await created.Content.ReadAsStringAsync(Ct)))
         {
-            id = creation.RootElement.GetProperty("id").GetInt64();
+            id = long.Parse(creation.RootElement.GetProperty("id").GetString()!, CultureInfo.InvariantCulture);
             Assert.Equal(1, creation.RootElement.GetProperty("version").GetInt32());
         }
 
