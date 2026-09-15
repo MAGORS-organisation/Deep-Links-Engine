@@ -271,9 +271,17 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
                 [seeded.AlignedTo],
                 Ct));
 
-        // A second run straight after the first finds nothing new and says so without writing.
+        // A second run re-aggregates only the overlap window behind the high-water mark, so that
+        // late events are counted; the upsert leaves the figures exactly where they were.
         RollupRunResult again = await rollups.RunAsync(Ct);
-        Assert.False(again.DidWork);
+        Assert.True(again.HourlyThrough >= run.HourlyThrough, "the high-water mark never moves back");
+        Assert.Equal(
+            2L,
+            await Sql.ScalarAsync<long>(
+                Database.DataSource,
+                "SELECT coalesce(sum(clicks), 0)::bigint FROM click_rollup_hourly WHERE tenant_id = $1 AND is_bot = false",
+                [fixture.TenantId],
+                Ct));
 
         // Hour-aligned edges inside the covered range: the store answers from the rollup and the
         // figures are the ones the raw events gave.
