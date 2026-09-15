@@ -123,7 +123,7 @@ public static class CreateWebhook
                 Url = request.Url.Trim(),
                 SecretEncrypted = secrets.Protect(secret),
                 EventTypes = eventTypes,
-                IsActive = request.IsActive,
+                IsActive = request.IsActive ?? true,
                 CreatedAt = now,
             },
             cancellationToken);

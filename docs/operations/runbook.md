@@ -74,6 +74,21 @@ four hours ([§E.3](../zadanie.md)).
    deleted, so the record survives for the notice-and-action trail.
 3. Record the decision with a note. That note is what a later complaint is answered from.
 
+### Analytics rollup or retention worker failing on every run
+
+**Symptom.** Log event 6501 at control plane start (`The analytics rollup schema could not
+be applied`), the rollup and retention workers reporting a missing relation on every run,
+`GET /api/v1/analytics/breakdown?dimension=platform` answering 500.
+
+**Cause.** The rollup schema is not part of the EF Core migration set (ADR-006). The control
+plane applies `src/Dle.Analytics.Postgres/Sql/001_analytics_rollups.sql` itself when it
+starts, and the database role it runs as may not create tables.
+
+**Action.** Run the script once against the analytics database with a role that may create
+tables and functions; it is idempotent. Restart nothing — the next worker run finds the
+schema. Grant the runtime role `CREATE` on the schema if every future upgrade should apply
+its own changes.
+
 ### GeoIP database missing or stale
 
 **Meaning.** Country is `null` on every click; geo rules fall through to their default.

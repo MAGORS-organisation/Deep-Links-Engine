@@ -197,8 +197,11 @@ public sealed record CreateWebhookRequest
     /// <summary>Event types to deliver, for example <c>attribution.created</c>.</summary>
     public required IReadOnlyList<string> EventTypes { get; init; }
 
-    /// <summary>Whether the subscription is active on creation.</summary>
-    public bool IsActive { get; init; } = true;
+    /// <summary>
+    /// Whether the subscription is active on creation. Omitted means active; only an explicit
+    /// <see langword="false"/> registers a subscription that receives nothing until it is enabled.
+    /// </summary>
+    public bool? IsActive { get; init; }
 }
 
 /// <summary>Representation of a webhook subscription. The signing secret is never returned.</summary>

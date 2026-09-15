@@ -102,6 +102,10 @@ public static class AnalyticsServiceCollectionExtensions
         services.TryAddSingleton<IClickAnalyticsStore, PostgresClickAnalyticsStore>();
         services.TryAddSingleton<IRollupService, PostgresRollupService>();
         services.TryAddSingleton<IRetentionService, PostgresRetentionService>();
+
+        // The rollup schema is not part of the EF Core migration set (ADR-006); the host applies
+        // the idempotent script itself, before the workers that depend on it are started.
+        services.AddHostedService<PostgresAnalyticsSchema>();
     }
 
     private static void AddClickHouseProvider(

@@ -64,6 +64,35 @@ not been executed anywhere.
 
 ### Fixed
 
+- **Analytics** — three defects the analytics integration tests found on their first run against
+  a live PostgreSQL, all fixed in the same pull request:
+  - The rollup job crashed on a database that had never been aggregated: with no state row the
+    earliest covered instant is `DateTimeOffset.MinValue`, and stepping the overlap back from it
+    threw before the first query. The floor is applied first now.
+  - The retention job never dropped a partition: the partition listing returned `partition_name`
+    and `upper_bound`, which Dapper does not map onto `PartitionName` and `UpperBound`, so every
+    partition looked unbounded and was skipped. The columns are aliased to the property names.
+  - The Parquet export died mid-stream with a 500: Parquet.Net flushes synchronously and Kestrel
+    refuses synchronous writes on the response body. The file is assembled in memory and copied
+    out asynchronously.
+- **Analytics** — the rollup schema (`click_rollup_*`, `install_rollup_*`,
+  `attribution_quality_daily`, `analytics_rollup_state`, `analytics_retention_runs` and the
+  `dle_platform_of` function) shipped as an embedded script that nothing ever ran: on a fresh
+  database the rollup and retention workers failed on every run and a breakdown by platform
+  was a 500. The control plane now applies the idempotent script when it starts
+  (`PostgresAnalyticsSchema`); a failure is logged and leaves link management untouched.
+- **Control plane** — `POST /api/v1/webhooks` without `is_active` registered an inactive
+  subscription that received nothing: the request is read through a source-generated JSON
+  context, which materialises an init-only record through an object initializer and gives an
+  absent member `default(bool)` rather than the declared `true`. The member is now nullable and
+  an omitted value means active.
+- **Control plane** — `DELETE /api/v1/domains/{id}` on a host that still serves links answered
+  500 instead of the documented `409 domain-in-use`: PostgreSQL reports an `ON DELETE RESTRICT`
+  constraint as SQLSTATE `23001`, and only `23503` was recognised.
+- **Control plane** — a `target_url` with a forbidden scheme (`javascript:`, `data:`) or that is
+  not an absolute URL is refused as `422 unsafe-target` keyed on `target_url` (§E.3 step 1,
+  TC-161). Before, the default rule synthesised from it failed as `400 invalid-routing-rules`
+  on `routing_rules[0].then.url`, a field the caller never sent.
 - Four defects found by the test suites while they were being written (see commit
   `8f99c56`): recorded here so the first release notes do not present them as never having existed.
 - Seven defects found by the first CI run of the integration suite against a live PostgreSQL 18
@@ -118,7 +147,7 @@ not been executed anywhere.
 
 ### Verified in CI on this pull request
 
-- 1 430 unit, 75 contract, 850 security and 103 integration tests pass; the integration suite runs
+- 1 430 unit, 75 contract, 850 security and 219 integration tests pass; the integration suite runs
   against PostgreSQL 18 and Valkey 8 in Testcontainers, applies and rolls back the migration, and
   covers the chaos scenarios of §D.6 (PostgreSQL stopped, Valkey unreachable).
 - The Android SDK compiles and passes its unit tests (JDK 17, Gradle 8.11); the iOS SDK builds and
@@ -127,10 +156,10 @@ not been executed anywhere.
   against the edge. CodeQL (C#, JavaScript/TypeScript), the SBOM/CBOM, the NuGet vulnerability
   gate, the licence policy (four packages carry a licence override to MIT, verified upstream) and
   the format gate are green.
-- Overall line coverage is 61.4 % against a 70 % target; the domain tier is at 95.5 %
-  (`Dle.Domain`) and 94.7 % (`Dle.Crypto`) against a 90 % gate. The overall gate is a warning
-  until the number is reached; `Dle.Control` (39.2 %) and `Dle.Analytics.Postgres` (4.6 %) are
-  the gap.
+- Overall line coverage is 83.8 % against a 70 % target; the domain tier is at 97.4 %
+  (`Dle.Domain`) and 94.7 % (`Dle.Crypto`) against a 90 % gate. The HTTP integration suite
+  of the control plane took `Dle.Control` from 39.2 % to 78.7 % and
+  `Dle.Analytics.Postgres` from 4.6 % to 79.9 %.
 
 ### Not yet verified — read before relying on anything above
 

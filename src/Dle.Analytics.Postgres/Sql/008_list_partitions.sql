@@ -11,14 +11,14 @@
 -- partition, a MAXVALUE bound, a list or hash partition. The caller treats a NULL upper bound as
 -- "never drop", so an unrecognised partition shape fails closed.
 
-SELECT child.relname AS partition_name,
+SELECT child.relname AS "PartitionName",
        CASE
            WHEN bound.expr LIKE 'FOR VALUES FROM (%) TO (%)'
                 AND bound.expr NOT LIKE '%MAXVALUE%'
                 AND bound.expr NOT LIKE '%MINVALUE%'
            THEN (regexp_match(bound.expr, 'TO \(''([^'']+)''\)'))[1]::timestamptz
            ELSE NULL
-       END AS upper_bound
+       END AS "UpperBound"
 FROM pg_class AS parent
 JOIN pg_namespace AS ns ON ns.oid = parent.relnamespace
 JOIN pg_inherits AS inh ON inh.inhparent = parent.oid

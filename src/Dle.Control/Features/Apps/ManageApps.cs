@@ -1,6 +1,8 @@
 using Dle.Control.Features.Shared;
 using Dle.Control.Identity;
 using Dle.Control.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace Dle.Control.Features.Apps;
 
@@ -19,6 +21,8 @@ public static class ManageApps
 
     /// <summary>Stored platform value for an Android application.</summary>
     private const string AndroidPlatform = "android";
+
+    private const string UniqueViolation = "23505";
 
     /// <summary>Lists the tenant's applications.</summary>
     /// <param name="apps">Application storage.</param>
@@ -159,7 +163,21 @@ public static class ManageApps
             AppClipBundleId = Trim(request.AppClipBundleId),
         };
 
-        await apps.AddAsync(app, cancellationToken);
+        try
+        {
+            await apps.AddAsync(app, cancellationToken);
+        }
+        catch (DbUpdateException exception)
+            when (exception.InnerException is PostgresException { SqlState: UniqueViolation })
+        {
+            // One registration per platform and bundle identifier in a tenant (uq_apps_tenant_platform_bundle).
+            // The unique index is the arbiter; the caller is told to update the existing one.
+            return DleProblem.Conflict(
+                ProblemCodes.AppTaken,
+                "The application is already registered.",
+                "An application with this platform and bundle identifier already exists in this "
+                + "tenant. Update that registration instead of adding a second one.");
+        }
 
         IReadOnlyList<Guid> attached =
             await pairings.ReplaceAsync(app.Id, request.DomainIds, cancellationToken);

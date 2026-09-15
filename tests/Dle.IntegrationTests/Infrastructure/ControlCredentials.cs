@@ -43,6 +43,20 @@ public sealed class ControlCredentials
     public Guid TenantId { get; }
 
     /// <summary>
+    /// Wraps a control-plane API key the test obtained from the API itself (the secret a
+    /// <c>POST /api/v1/api-keys</c> answered with), so it can be used like an issued one.
+    /// </summary>
+    /// <param name="token">The secret as the API returned it.</param>
+    /// <param name="tenantId">The tenant it belongs to.</param>
+    /// <returns>The credential.</returns>
+    public static ControlCredentials FromToken(string token, Guid tenantId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(token);
+
+        return new ControlCredentials(token, DleKeyAuthenticationOptions.ApiKeyHeader, tenantId);
+    }
+
+    /// <summary>
     /// Issues a control-plane API key for a tenant and stores its hash.
     /// </summary>
     /// <param name="host">The control plane host, which supplies the hasher.</param>
@@ -170,4 +184,63 @@ public sealed class ControlCredentials
 
         return await client.SendAsync(request, cancellationToken);
     }
+
+    /// <summary>
+    /// Sends a request with any method and an optional raw JSON body under this credential, for
+    /// the PATCH, PUT and DELETE routes of the control plane.
+    /// </summary>
+    /// <param name="client">The client.</param>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="path">Path and query, relative to the host root.</param>
+    /// <param name="json">The body, exactly as it goes on the wire, or <see langword="null"/> for none.</param>
+    /// <param name="headers">Extra request headers, for example <c>Idempotency-Key</c>.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The response.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="client"/> or <paramref name="method"/> is <see langword="null"/>.</exception>
+    public async Task<HttpResponseMessage> SendRawAsync(
+        HttpClient client,
+        HttpMethod method,
+        string path,
+        string? json,
+        IReadOnlyDictionary<string, string>? headers,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(client);
+        ArgumentNullException.ThrowIfNull(method);
+
+        using HttpRequestMessage request = new(method, new Uri(path, UriKind.Relative));
+        request.Headers.Add(_headerName, Token);
+
+        if (headers is not null)
+        {
+            foreach ((string name, string value) in headers)
+            {
+                request.Headers.TryAddWithoutValidation(name, value);
+            }
+        }
+
+        if (json is not null)
+        {
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+        }
+
+        return await client.SendAsync(request, cancellationToken);
+    }
+
+    /// <summary>Issues an authenticated PATCH carrying a body written out by hand.</summary>
+    /// <param name="client">The client.</param>
+    /// <param name="path">Path and query, relative to the host root.</param>
+    /// <param name="json">The body, exactly as it goes on the wire.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The response.</returns>
+    public Task<HttpResponseMessage> PatchRawAsync(HttpClient client, string path, string json, CancellationToken cancellationToken) =>
+        SendRawAsync(client, HttpMethod.Patch, path, json, headers: null, cancellationToken);
+
+    /// <summary>Issues an authenticated DELETE.</summary>
+    /// <param name="client">The client.</param>
+    /// <param name="path">Path and query, relative to the host root.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The response.</returns>
+    public Task<HttpResponseMessage> DeleteAsync(HttpClient client, string path, CancellationToken cancellationToken) =>
+        SendRawAsync(client, HttpMethod.Delete, path, json: null, headers: null, cancellationToken);
 }

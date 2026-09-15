@@ -184,6 +184,7 @@ public static class BulkCreateLinks
                         json,
                         new BulkLinkResult
                         {
+                            Ref = item?.Ref,
                             Ok = false,
                             Error = ProblemCodes.ValidationFailed,
                             Detail = "The row carries no link definition.",

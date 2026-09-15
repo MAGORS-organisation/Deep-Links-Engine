@@ -59,11 +59,7 @@ public sealed class ParquetAnalyticsExporter : IAnalyticsExporter
             });
         }
 
-        await ParquetSerializer.SerializeUntypedAsync(
-            data,
-            schema,
-            destination,
-            cancellationToken: ct);
+        await WriteBufferedAsync(destination, data, schema, ct);
     }
 
     /// <inheritdoc />
@@ -101,11 +97,7 @@ public sealed class ParquetAnalyticsExporter : IAnalyticsExporter
             });
         }
 
-        await ParquetSerializer.SerializeUntypedAsync(
-            data,
-            schema,
-            destination,
-            cancellationToken: ct);
+        await WriteBufferedAsync(destination, data, schema, ct);
     }
 
     /// <inheritdoc />
@@ -134,10 +126,31 @@ public sealed class ParquetAnalyticsExporter : IAnalyticsExporter
             });
         }
 
-        await ParquetSerializer.SerializeUntypedAsync(
-            data,
-            schema,
-            destination,
-            cancellationToken: ct);
+        await WriteBufferedAsync(destination, data, schema, ct);
+    }
+
+    /// <summary>
+    /// Assembles the Parquet file in memory and copies it to the destination asynchronously.
+    /// </summary>
+    /// <remarks>
+    /// Parquet.Net flushes its column pages with synchronous writes, which Kestrel refuses on a
+    /// response body (<c>AllowSynchronousIO</c> is off): written straight to the response, the
+    /// export died mid-stream with a 500 the client saw as a truncated file. An export is bounded
+    /// (at most <see cref="AnalyticsOptions.MaxBreakdownRows"/> rows, or one point per bucket of a
+    /// window of at most two years), so the whole file fits comfortably in memory.
+    /// </remarks>
+    private static async Task WriteBufferedAsync(
+        Stream destination,
+        IReadOnlyList<IDictionary<string, object?>> data,
+        ParquetSchema schema,
+        CancellationToken ct)
+    {
+        using MemoryStream buffer = new();
+
+        await ParquetSerializer.SerializeUntypedAsync(data, schema, buffer, cancellationToken: ct);
+
+        buffer.Position = 0;
+        await buffer.CopyToAsync(destination, ct);
+        await destination.FlushAsync(ct);
     }
 }

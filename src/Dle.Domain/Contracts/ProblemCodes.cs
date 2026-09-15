@@ -75,6 +75,12 @@ public static class ProblemCodes
     public const string LinkTooLarge = Base + "link-too-large";
 
     /// <summary>
+    /// An application with this platform and bundle identifier is already registered in the
+    /// tenant (FR-140). Update the existing registration instead of adding a second one.
+    /// </summary>
+    public const string AppTaken = Base + "app-taken";
+
+    /// <summary>
     /// Every identifier declared above, in declaration order.
     /// </summary>
     /// <remarks>
@@ -103,5 +109,6 @@ public static class ProblemCodes
         DependencyUnavailable,
         WriteConflict,
         LinkTooLarge,
+        AppTaken,
     ];
 }

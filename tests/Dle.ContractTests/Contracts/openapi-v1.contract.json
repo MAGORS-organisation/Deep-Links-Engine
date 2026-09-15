@@ -3613,7 +3613,8 @@
         },
         "is_active": {
           "type": [
-            "boolean"
+            "boolean",
+            "null"
           ]
         },
         "url": {
