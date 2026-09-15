@@ -100,7 +100,7 @@ Be precise about what "done" means here.
 | Android SDK | ✅ | Compiled and unit-tested in CI (`sdk-android.yml`, JDK 17, Gradle 8.11) |
 | iOS SDK | ✅ | Built and tested in CI on the iOS Simulator (`sdk-ios.yml`, Xcode, Swift 6) |
 | Container images, compose stack, ZAP | ✅ | Both images build in CI, pass Trivy, and the compose stack starts for an OWASP ZAP baseline against the edge (`security.yml`) |
-| Coverage | ⚠️ | Domain tier 95.5 % / 94.7 % (gate ≥ 90 %); overall **61.4 % against a 70 % target** — `Dle.Control` (39.2 %) and `Dle.Analytics.Postgres` (4.6 %) are the gap; the overall gate warns until it is reached |
+| Coverage | ✅ | Domain tier 97.4 % / 94.7 % (gate ≥ 90 %); overall **83.8 % against a 70 % target** — `Dle.Control` 78.7 % and `Dle.Analytics.Postgres` 79.9 % after the HTTP integration suite; the overall gate is met |
 | Load profile (k6, §D.5) | ✅ written | **Never run** — needs a deployed, seeded instance |
 | 8-device manual matrix (§D.2) | — | Not automatable by design; pending |
 
