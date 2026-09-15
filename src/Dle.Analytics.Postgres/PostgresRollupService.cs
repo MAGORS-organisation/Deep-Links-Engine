@@ -74,10 +74,15 @@ public sealed partial class PostgresRollupService : IRollupService
 
         IReadOnlyDictionary<string, DateTimeOffset> state = await ReadStateAsync(connection, ct);
 
+        // A stream never aggregated before has no state row, and Earliest() answers MinValue for
+        // it: the overlap is stepped back only after the floor has been applied, because
+        // MinValue.AddHours(-3) is not a date.
         DateTimeOffset hourlyFloor = hourlyTarget.AddHours(-options.RollupMaxWindowHours);
-        DateTimeOffset hourlyFrom = TruncateHour(Later(
-            Earliest(state, ClickHourlyState, InstallHourlyState).AddHours(-options.RollupOverlapHours),
-            hourlyFloor));
+        DateTimeOffset hourlyFrom = TruncateHour(
+            Later(
+                Earliest(state, ClickHourlyState, InstallHourlyState),
+                hourlyFloor.AddHours(options.RollupOverlapHours))
+            .AddHours(-options.RollupOverlapHours));
         DateTimeOffset hourlyThrough = Earlier(
             hourlyFrom.AddHours(options.RollupMaxWindowHours),
             hourlyTarget);
@@ -90,9 +95,11 @@ public sealed partial class PostgresRollupService : IRollupService
 
         DateTimeOffset dailyTarget = TruncateDay(hourlyThrough);
         DateTimeOffset dailyFloor = dailyTarget.AddDays(-(options.RollupMaxWindowHours / 24) - 1);
-        DateTimeOffset dailyFrom = TruncateDay(Later(
-            Earliest(state, ClickDailyState, InstallDailyState, AttributionQualityState).AddDays(-1),
-            dailyFloor));
+        DateTimeOffset dailyFrom = TruncateDay(
+            Later(
+                Earliest(state, ClickDailyState, InstallDailyState, AttributionQualityState),
+                dailyFloor.AddDays(1))
+            .AddDays(-1));
         DateTimeOffset dailyThrough = dailyTarget > dailyFrom ? dailyTarget : dailyFrom;
 
         int clickHourly;

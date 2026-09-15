@@ -64,6 +64,17 @@ not been executed anywhere.
 
 ### Fixed
 
+- **Analytics** — three defects the analytics integration tests found on their first run against
+  a live PostgreSQL, all fixed in the same pull request:
+  - The rollup job crashed on a database that had never been aggregated: with no state row the
+    earliest covered instant is `DateTimeOffset.MinValue`, and stepping the overlap back from it
+    threw before the first query. The floor is applied first now.
+  - The retention job never dropped a partition: the partition listing returned `partition_name`
+    and `upper_bound`, which Dapper does not map onto `PartitionName` and `UpperBound`, so every
+    partition looked unbounded and was skipped. The columns are aliased to the property names.
+  - The Parquet export died mid-stream with a 500: Parquet.Net flushes synchronously and Kestrel
+    refuses synchronous writes on the response body. The file is assembled in memory and copied
+    out asynchronously.
 - **Analytics** — the rollup schema (`click_rollup_*`, `install_rollup_*`,
   `attribution_quality_daily`, `analytics_rollup_state`, `analytics_retention_runs` and the
   `dle_platform_of` function) shipped as an embedded script that nothing ever ran: on a fresh
