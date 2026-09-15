@@ -163,9 +163,10 @@ not been executed anywhere.
 
 ### Not yet verified — read before relying on anything above
 
-- **The Helm chart has never been rendered, linted or installed** (no Helm on the authoring
-  machine). Its bitnami sub-chart version ranges are unresolved; `release.yml` runs
-  `helm dependency update` and will fail loudly if they do not resolve.
+- **The Helm chart has been linted, rendered and schema-validated in CI** (the `Helm chart`
+  workflow: three profiles, kubeconform against Kubernetes 1.31) but **never installed on a
+  cluster**. The bitnami sub-charts are pinned to the versions the registry served on first
+  resolution (postgresql 18.11.1, valkey 4.1.3).
 - **The k6 load profile (`tests/load`) has never been run.** It needs a deployed, seeded instance
   and a control-plane API key; the release workflow runs it only when a staging target is
   configured and otherwise marks the release as pre-release.

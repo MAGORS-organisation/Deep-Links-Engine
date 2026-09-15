@@ -286,3 +286,6 @@ sdk/ios/**/*.xcuserstate
 
 # The compose override under deploy/ is a committed development profile referenced by CI (security.yml), not a local scratch file.
 !deploy/docker-compose.override.yml
+
+# Local agent worktrees (Claude Code); never part of the repository.
+.claude/worktrees/
