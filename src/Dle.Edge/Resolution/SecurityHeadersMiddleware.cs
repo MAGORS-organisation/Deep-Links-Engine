@@ -49,6 +49,19 @@ public sealed class SecurityHeadersMiddleware
     /// </remarks>
     public const string ReferrerPolicy = "no-referrer";
 
+    /// <summary>
+    /// The default <c>Cross-Origin-Resource-Policy</c>, which keeps a response out of another
+    /// site's document unless the response says otherwise.
+    /// </summary>
+    /// <remarks>
+    /// The HTML and QR results set their own, and theirs wins because an endpoint writes its
+    /// headers after this middleware has run. The default is here so that everything else the edge
+    /// serves — <c>robots.txt</c>, the interstitial stylesheet, the icon, every problem document —
+    /// carries one too. Without it those responses could be embedded by any origin, which is what
+    /// the ZAP baseline reported the first time it ran as a gate rather than as a report.
+    /// </remarks>
+    public const string CrossOriginResourcePolicy = "same-origin";
+
     /// <summary>Value of the <c>Permissions-Policy</c> header.</summary>
     public const string PermissionsPolicy =
         "accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()";
@@ -94,6 +107,7 @@ public sealed class SecurityHeadersMiddleware
         headers["Referrer-Policy"] = ReferrerPolicy;
         headers["Permissions-Policy"] = PermissionsPolicy;
         headers.ContentSecurityPolicy = NonDocumentContentSecurityPolicy;
+        headers["Cross-Origin-Resource-Policy"] = CrossOriginResourcePolicy;
 
         if (context.Request.IsHttps)
         {

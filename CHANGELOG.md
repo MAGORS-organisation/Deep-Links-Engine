@@ -65,6 +65,17 @@ not been executed anywhere.
 
 ### Fixed
 
+- **Edge** — the two findings the OWASP ZAP baseline raised the first time it ran as a gate rather
+  than as a report (it is report-only on pull requests by design, so a push to `develop` is where
+  it first had to be answered):
+  - Every HTML page carried `img-src 'self' https:`, which allows every image on the web from a
+    page that references none. The policy is now built from what the page actually rendered: a
+    status page allows no remote image at all, and a preview allows the origin of its own Open
+    Graph picture and nothing else (§E.8 S-04).
+  - `robots.txt`, the interstitial stylesheet, the icon and every problem document went out without
+    a `Cross-Origin-Resource-Policy` header, so any origin could embed them. The hardening
+    middleware sets `same-origin` for everything; the QR image still declares `cross-origin`,
+    because being embedded is what it is for.
 - **Control plane** — `Dle:Webhooks:AllowPrivateDestinations` could not do the one thing it exists
   for. The switch was read after the address rules, and those refuse every loopback and private
   literal, so an operator who turned it on still could not point a subscription at a listener on

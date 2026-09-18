@@ -53,7 +53,7 @@ internal abstract class StatusPageResult : HtmlPageResult
     protected sealed override string Render(string nonce, InterstitialOptions options)
     {
         PageStrings strings = PageStrings.For(_language, _domain, options);
-        PageBranding branding = PageBranding.Resolve(options.Branding, _domain, options);
+        PageBranding branding = ResolveBranding(options, _domain);
 
         HtmlBuilder html = new(4 * 1024);
 

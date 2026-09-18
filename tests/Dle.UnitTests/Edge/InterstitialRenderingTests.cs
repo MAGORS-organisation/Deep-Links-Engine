@@ -29,6 +29,36 @@ public sealed class InterstitialRenderingTests
     private static readonly DateTimeOffset Now = new(2026, 7, 1, 8, 0, 0, TimeSpan.Zero);
 
     [Fact]
+    [Trait("Criterion", "S-04")]
+    public async Task OgPreview_AllowsTheOriginOfItsOwnImage_AndNoOther()
+    {
+        LinkSnapshot link = Link(og: new OgMeta
+        {
+            Title = "Autumn",
+            ImageUrl = "https://cdn.example/promo/image.png?v=2",
+        });
+
+        RenderedPage page = await RenderedPage.RenderAsync(
+            InterstitialResults.OgPreview(link, Crawler(), domain: null, canonicalUrl: "https://go.example/abc"));
+
+        // The preview is the one page that shows a picture from outside the deployment, and the
+        // policy names where it comes from: the origin, not the path it was fetched by and not the
+        // scheme it happens to use. A page that referenced no image would carry none of this.
+        Assert.Contains("img-src 'self' https://cdn.example;", page.ContentSecurityPolicy, StringComparison.Ordinal);
+        Assert.DoesNotContain("https:;", page.ContentSecurityPolicy, StringComparison.Ordinal);
+        Assert.DoesNotContain("promo/image.png", page.ContentSecurityPolicy, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("Criterion", "S-04")]
+    public async Task AStatusPage_ReferencesNoImage_AndItsPolicySaysSo()
+    {
+        RenderedPage page = await RenderedPage.RenderAsync(InterstitialResults.NotFound(language: null));
+
+        Assert.Contains("img-src 'self';", page.ContentSecurityPolicy, StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Trait("TestCase", "T-11")]
     public async Task OgPreview_HostileOpenGraphMetadata_IsEncoded()
     {

@@ -72,11 +72,16 @@ internal sealed class OgPreviewResult : HtmlPageResult
     protected override string Render(string nonce, InterstitialOptions options)
     {
         PageStrings strings = PageStrings.For(_client, _domain, options);
-        PageBranding branding = PageBranding.Resolve(options.Branding, _domain, options);
+        PageBranding branding = ResolveBranding(options, _domain);
 
         string title = Coalesce(_og.Title, _linkTitle, branding.ProductName, strings.InterstitialDocumentTitle);
         string? description = Trimmed(_og.Description);
         string? imageUrl = SafeUrl.Web(_og.ImageUrl);
+
+        // The preview is the one page with an image from outside the deployment: the link's
+        // own Open Graph picture, on whatever origin the customer put it. Its origin, and no
+        // other, joins the policy.
+        AllowImage(imageUrl);
 
         HtmlBuilder html = new();
 
