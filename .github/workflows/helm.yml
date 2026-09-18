@@ -330,7 +330,9 @@ jobs:
           echo "== control"
           curl -fsS -o /dev/null -w 'healthz %{http_code}\n' http://127.0.0.1:18081/healthz
           # /readyz is gated on the database: a 200 here is the pod's own statement that it reached
-          # the PostgreSQL the chart wired it to, through the Secret the chart wrote.
+          # the PostgreSQL the chart wired it to, through the Secret the chart wrote. Control writes
+          # that report as JSON where the edge writes plain text, so the two are read differently
+          # below — a substring match against the wrong shape would have passed on nothing at all.
           control_ready="$(curl -fsS http://127.0.0.1:18081/readyz)"
           echo "readyz: $control_ready"
           # The OpenAPI document only exists once the application has finished composing itself.
@@ -357,10 +359,10 @@ jobs:
           esac
 
           # Control's only readiness check is the database, so its overall status is that check.
-          case "$control_ready" in
-            *"postgres: Healthy"*) ;;
-            *) echo "control is not ready: $control_ready"; exit 1 ;;
-          esac
+          # Both are asserted by name: the status alone would also be Healthy if the check had
+          # silently stopped being registered, which is the failure this step exists to catch.
+          echo "$control_ready" | jq -e '.status == "Healthy" and .checks.postgres == "Healthy"' >/dev/null \
+            || { echo "control is not ready: $control_ready"; exit 1; }
 
       - name: Upgrade in place
         # The other half of what an operator does with a chart. The migration hook runs again on
