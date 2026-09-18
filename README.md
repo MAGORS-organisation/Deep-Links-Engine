@@ -4,9 +4,11 @@
 open the right screen in your app, deferred deep linking through the app-store install, and attribution
 that tells you honestly how sure it is. One `docker compose up`, your PostgreSQL, your data.
 
-> Status: initial implementation on the `develop` branch. The .NET services, the web SDK and the admin
-> console build and their tests pass. The Android and iOS SDKs are written but have not yet been compiled
-> anywhere. Read [Where this stands](#where-this-stands) before relying on any of it.
+> Status: on the `develop` branch. The .NET services, the web SDK, the admin console and both mobile
+> SDKs build and pass their tests in CI, against PostgreSQL 18 and Valkey 8 for the integration suite.
+> What no test can stand in for is still open: the k6 load profile has never been run, the eight-device
+> matrix is manual, and there has been no external penetration test. Read
+> [Where this stands](#where-this-stands) before relying on any of it.
 
 ## Why this exists
 

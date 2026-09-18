@@ -20,9 +20,11 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 
     <!--
-      The OpenAPI document is written to openapi/dle-control.json, which is the copy the
-      contract tests diff against so that a breaking change to the public surface shows up in a
-      pull request rather than in an integrator's logs.
+      The OpenAPI document is written to openapi/dle-control.json as a convenience copy for
+      anyone who wants to read the surface without running the host. It is NOT what guards the
+      contract: the contract tests render the document from the running application and diff it
+      against tests/Dle.ContractTests/Contracts/openapi-v1.contract.json, which is the reviewed
+      baseline and the file to regenerate when the surface changes deliberately.
 
       It is opt-in rather than automatic because the generator starts the application host in
       order to enumerate the endpoints: it therefore needs a configuration the host will accept,

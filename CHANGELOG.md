@@ -39,9 +39,10 @@ not been executed anywhere.
   queue with backoff, sample app.
 - **iOS SDK** (`sdk/ios`, `DleSDK`) — Universal Links, deferred resolve, event queue, privacy
   manifest, sample app; dependency-free (URLSession only).
-- **Tests** — `Dle.UnitTests` (1 419), `Dle.ContractTests` (75), `Dle.SecurityTests` (850,
-  including a property-based driver for the three §D.4 fuzz targets), `Dle.IntegrationTests` (97,
-  Testcontainers postgres:18 + valkey:8, two-tenant isolation and chaos cases).
+- **Tests** — `Dle.UnitTests`, `Dle.ContractTests`, `Dle.SecurityTests` (including a
+  property-based driver for the three §D.4 fuzz targets) and `Dle.IntegrationTests`
+  (Testcontainers postgres:18 + valkey:8, two-tenant isolation and chaos cases). The counts are in
+  *Verified in CI on this pull request* below, which is the one place they are kept current.
 - **Deployment** — Profile A compose stack (Caddy → edge ×2 + control → postgres:18 + valkey:8)
   with hardened service defaults, Dockerfiles for edge and control (multi-arch, chiseled runtime
   variant, EF Core migration bundle in the control image), a pg_partman-enabled Postgres image,
