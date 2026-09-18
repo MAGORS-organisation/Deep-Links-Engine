@@ -88,6 +88,26 @@ public sealed class SecurityHeaderTests
         Assert.Equal(SecurityHeadersMiddleware.ReferrerPolicy, Single(response, "Referrer-Policy"));
         Assert.Equal(SecurityHeadersMiddleware.PermissionsPolicy, Single(response, "Permissions-Policy"));
         Assert.False(string.IsNullOrEmpty(Single(response, "Content-Security-Policy")));
+        Assert.Equal("same-origin", Single(response, "Cross-Origin-Resource-Policy"));
+    }
+
+    [Theory]
+    [Trait("Criterion", "S-04")]
+    [InlineData("/robots.txt")]
+    [InlineData("/there-is-no-such-slug")]
+    public async Task AResponseWithNoImageOfItsOwn_KeepsEveryOriginOutOfItsPolicy(string path)
+    {
+        // img-src used to read 'self' https: on every HTML page, which allowed every image on the
+        // web from a page that references none: an injected <img> would have loaded, and its
+        // request would have told that origin about the visit. A scheme is not a source.
+        using HttpResponseMessage response = await GetAsync(path, InAppUserAgent, "198.18.30.1");
+
+        string policy = Single(response, "Content-Security-Policy");
+
+        Assert.DoesNotContain("https:", policy, StringComparison.Ordinal);
+        Assert.DoesNotContain("http:", policy, StringComparison.Ordinal);
+        Assert.DoesNotContain("*", policy, StringComparison.Ordinal);
+        Assert.Equal("same-origin", Single(response, "Cross-Origin-Resource-Policy"));
     }
 
     [Fact]

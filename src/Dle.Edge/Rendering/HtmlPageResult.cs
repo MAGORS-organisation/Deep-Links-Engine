@@ -29,6 +29,8 @@ internal abstract class HtmlPageResult : IResult
 {
     private const int NonceBytes = 16;
 
+    private readonly SortedSet<string> _imageSources = new(StringComparer.Ordinal);
+
     /// <summary>HTTP status code of the response.</summary>
     protected abstract int StatusCode { get; }
 
@@ -69,6 +71,8 @@ internal abstract class HtmlPageResult : IResult
         response.ContentType = "text/html; charset=utf-8";
         response.ContentLength = payload.Length;
 
+        // Built after Render, which is what collected the image sources: the policy describes the
+        // page that was actually produced rather than every page this type could ever produce.
         headers.ContentSecurityPolicy = BuildContentSecurityPolicy(nonce);
         headers.CacheControl = CacheControl;
         headers.XContentTypeOptions = "nosniff";
@@ -120,11 +124,78 @@ internal abstract class HtmlPageResult : IResult
     /// Level 3 admits <c>-</c> and <c>_</c> alongside <c>+</c> and <c>/</c>, and the padding is optional.
     /// </para>
     /// </remarks>
+    /// <summary>
+    /// Resolves the branding for this page and allows the images it brings with it.
+    /// </summary>
+    /// <param name="options">The interstitial options.</param>
+    /// <param name="domain">The domain whose branding overrides the instance default.</param>
+    /// <returns>The branding to render with.</returns>
+    /// <remarks>
+    /// Every page resolves its branding through here rather than calling
+    /// <see cref="PageBranding.Resolve"/> itself, so that a logo can never be rendered into a page
+    /// whose policy does not allow it. The two are one step, and they cannot drift apart.
+    /// </remarks>
+    private protected PageBranding ResolveBranding(InterstitialOptions options, DomainRuntimeConfig? domain)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        PageBranding branding = PageBranding.Resolve(options.Branding, domain, options);
+
+        AllowImage(branding.LogoUrl);
+        AllowImage(branding.QrLogoDataUri);
+
+        return branding;
+    }
+
+    /// <summary>
+    /// Records that the page is about to reference an image, so the policy can name its origin.
+    /// </summary>
+    /// <param name="url">The image URL, or <see langword="null"/> when there is none.</param>
+    /// <remarks>
+    /// An absolute URL contributes its origin (scheme, host and port) and nothing else, so allowing
+    /// a tenant's logo does not allow the rest of the web. A data URI contributes <c>data:</c>,
+    /// which is the only way to allow an inline image at all. Anything that is neither is ignored:
+    /// it would not have survived <see cref="SafeUrl"/> either.
+    /// </remarks>
+    private protected void AllowImage(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return;
+        }
+
+        if (url.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        {
+            _ = _imageSources.Add("data:");
+            return;
+        }
+
+        if (Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed)
+            && (parsed.Scheme == Uri.UriSchemeHttps || parsed.Scheme == Uri.UriSchemeHttp))
+        {
+            _ = _imageSources.Add(parsed.GetLeftPart(UriPartial.Authority));
+        }
+    }
+
     private static string CreateNonce() => Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(NonceBytes));
 
-    private static string BuildContentSecurityPolicy(string nonce) => string.Concat(
+    /// <summary>
+    /// Builds the policy for the page that has just been rendered.
+    /// </summary>
+    /// <param name="nonce">The nonce the page's own style and script carry.</param>
+    /// <returns>The header value.</returns>
+    /// <remarks>
+    /// <c>img-src</c> names the origins the page actually references and nothing more. It used to
+    /// read <c>'self' https:</c>, which allowed every image on the web on every page, including the
+    /// status pages that reference no remote image at all: a scheme is not a source, and an
+    /// injected <c>&lt;img&gt;</c> pointing anywhere would have loaded and leaked the visit in its
+    /// request. §E.8 S-04.
+    /// </remarks>
+    private string BuildContentSecurityPolicy(string nonce) => string.Concat(
         "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; ",
-        "img-src 'self' https:; style-src 'self' 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'; ",
+        "img-src 'self'",
+        _imageSources.Count == 0 ? string.Empty : " " + string.Join(' ', _imageSources),
+        "; style-src 'self' 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'; ",
         "font-src 'self'; connect-src 'none'; manifest-src 'none'; object-src 'none'; ",
         "require-trusted-types-for 'script'");
 }

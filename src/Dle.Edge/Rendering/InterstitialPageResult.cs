@@ -109,7 +109,7 @@ internal sealed class InterstitialPageResult : HtmlPageResult
     protected override string Render(string nonce, InterstitialOptions options)
     {
         PageStrings strings = PageStrings.For(_client, _domain, options);
-        PageBranding branding = PageBranding.Resolve(options.Branding, _domain, options);
+        PageBranding branding = ResolveBranding(options, _domain);
 
         // The automatic redirect is suppressed inside an in-app webview on purpose. There the whole
         // point of the page is the tap on the deep link anchor, and navigating away from under the user
