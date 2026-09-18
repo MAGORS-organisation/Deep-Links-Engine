@@ -87,8 +87,15 @@ not been executed anywhere.
   absent member `default(bool)` rather than the declared `true`. The member is now nullable and
   an omitted value means active.
 - **Control plane** — `DELETE /api/v1/domains/{id}` on a host that still serves links answered
-  500 instead of the documented `409 domain-in-use`: PostgreSQL reports an `ON DELETE RESTRICT`
-  constraint as SQLSTATE `23001`, and only `23503` was recognised.
+  500 instead of `409 domain-in-use`: PostgreSQL reports an `ON DELETE RESTRICT` constraint as
+  SQLSTATE `23001`, and only `23503` was recognised. The problem type itself was built inline and
+  so appeared in neither `ProblemCodes.All` nor the published OpenAPI catalogue; it is declared and
+  documented now, which is what makes it something an integrator can branch on.
+- **Control plane** — `POST /api/v1/apps` for a platform and bundle identifier already registered
+  in the tenant answered 500 (the unique violation escaped as a `DbUpdateException`); it now answers
+  `409 app-taken`, a new problem type in the catalogue.
+- **Control plane** — a row of a `POST /api/v1/links/bulk` batch that carries no link definition now
+  echoes the caller's `ref` on its result line, so the failing row can be identified in the answer.
 - **Control plane** — a `target_url` with a forbidden scheme (`javascript:`, `data:`) or that is
   not an absolute URL is refused as `422 unsafe-target` keyed on `target_url` (§E.3 step 1,
   TC-161). Before, the default rule synthesised from it failed as `400 invalid-routing-rules`

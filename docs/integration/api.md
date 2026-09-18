@@ -229,6 +229,7 @@ Every error is `application/problem+json` with `type`, `title`, `status`, `detai
 | `invalid-routing-rules` | 400 | Rule set otherwise invalid (depth, size, unknown operator …) | `errors[]` |
 | `domain-not-verified` | 409 | Operation needs a verified domain (FR-143) | |
 | `domain-taken` | 409 | Host already registered, possibly by another tenant | |
+| `domain-in-use` | 409 | The host still serves links, so it cannot be deleted (FR-133); delete or move the links first | |
 | `idempotency-conflict` | 409 | See below | |
 | `unauthorized` | 401 | Credential missing, malformed, expired | |
 | `forbidden` | 403 | Valid credential, insufficient scope or wrong tenant | |

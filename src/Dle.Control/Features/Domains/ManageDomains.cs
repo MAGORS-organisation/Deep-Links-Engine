@@ -284,7 +284,7 @@ public static class ManageDomains
             // circulation, so the operator is told to deal with the links first rather than having
             // them silently removed.
             return DleProblem.Conflict(
-                ProblemCodes.Base + "domain-in-use",
+                ProblemCodes.DomainInUse,
                 "The domain still serves links.",
                 "Delete or move the links on this host before removing it. Short URLs already in "
                 + "circulation would otherwise stop resolving with no trace of why.");

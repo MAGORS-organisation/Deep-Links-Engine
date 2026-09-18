@@ -93,7 +93,7 @@ Be precise about what "done" means here.
 |---|---|---|
 | `Dle.Domain`, `Dle.Crypto`, `Dle.Persistence*`, `Dle.Analytics.*` | ✅ | `dotnet build -warnaserror` 0/0; 1 430 unit tests pass; Feistel bijection proven exhaustively at narrow widths |
 | `Dle.Edge`, `Dle.Control` | ✅ | Both hosts start; 75 contract + 850 security tests pass; 404/410/302 paths verified through `WebApplicationFactory` |
-| Integration suite (103 tests, Testcontainers) | ✅ | **Green in CI** against PostgreSQL 18 and Valkey 8, including the chaos tests that stop PostgreSQL and point the edge at an unreachable Valkey. Its first run found seven defects and an adversarial review of the fixes found nine more; all are fixed and listed in the changelog |
+| Integration suite (219 tests, Testcontainers) | ✅ | **Green in CI** against PostgreSQL 18 and Valkey 8, including the chaos tests that stop PostgreSQL and point the edge at an unreachable Valkey. Its first run found seven defects and an adversarial review of the fixes found nine more; the control plane's HTTP suite that followed found nine further ones. All are fixed and listed in the changelog |
 | EF Core migration | ✅ | Applied and rolled back on a live PostgreSQL 18 by the integration suite: every table the product writes to exists, both event streams are partitioned and accept inserts, `ix_links_resolve` is answered by an index-only scan |
 | Web SDK `@magors/dle-web` | ✅ | lint, typecheck, build, 145 tests, 8.85 kB gzip |
 | Admin console | ✅ | lint, typecheck, Vite build, copied into the control host |
@@ -104,8 +104,10 @@ Be precise about what "done" means here.
 | Load profile (k6, §D.5) | ✅ written | **Never run** — needs a deployed, seeded instance |
 | 8-device manual matrix (§D.2) | — | Not automatable by design; pending |
 
-Coverage: the domain tier (routing engine, classifier, attribution matcher, crypto) is above the 90 %
-target; overall is 47 % against a 70 % target, with `Dle.Control` endpoints the main gap.
+Coverage: the domain tier (routing engine, classifier, attribution matcher, crypto) is above the
+90 % target, and overall is 83.8 % against the 70 % target of §D.1. The HTTP integration suite of the
+control plane closed the gap that used to be there: `Dle.Control` is at 78.7 % and
+`Dle.Analytics.Postgres` at 79.9 %.
 
 Two defects the test suite found and fixed are worth knowing about, because they are the kind that
 never show up in a demo: under `InvariantGlobalization` the NFKC slug normalisation was a silent no-op,
