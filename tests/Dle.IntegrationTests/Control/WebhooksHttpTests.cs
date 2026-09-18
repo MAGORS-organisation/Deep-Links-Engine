@@ -3,7 +3,9 @@ using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using Dle.Control.Configuration;
+using Dle.Control.Features.Webhooks;
 using Dle.Domain.Contracts;
+using Microsoft.AspNetCore.Http;
 
 namespace Dle.IntegrationTests.Control;
 
@@ -31,7 +33,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     private const string Destination = "https://example.com/hooks/dle";
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-230")]
+    [Trait("Spec", "FR-204")]
     public async Task Create_ASubscription_ShowsTheSecretOnce_AndListsWithoutIt()
     {
         Fixture fixture = await SeedAsync("webhooks-create");
@@ -104,7 +106,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerTheory]
-    [Trait("Spec", "FR-231")]
+    [Trait("Spec", "FR-204")]
     [InlineData("""{"url": "https://example.com/hooks", "event_types": []}""")]
     [InlineData("""{"url": "https://example.com/hooks", "event_types": ["link.exploded"]}""")]
     public async Task Create_WithUnknownOrMissingEventTypes_IsValidationFailedOnEventTypes(string body)
@@ -120,7 +122,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-230")]
+    [Trait("Spec", "FR-204")]
     public async Task Create_BeyondTheTenantsSubscriptionLimit_Is409()
     {
         Fixture fixture = await SeedAsync("webhooks-limit", settings => settings["Dle:Webhooks:MaxSubscriptionsPerTenant"] = "2");
@@ -156,7 +158,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-233")]
+    [Trait("Spec", "FR-204")]
     public async Task Test_DeliversASignedTestEventSynchronously_AndReportsTheEndpointsAnswer()
     {
         Fixture fixture = await SeedAsync("webhooks-test");
@@ -173,8 +175,17 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
         // honest "failed" with the status the endpoint gave, not an exception and not a success.
         Assert.False(result.GetProperty("delivered").GetBoolean());
         Assert.Equal("failed", result.GetProperty("outcome").GetString());
-        Assert.True(result.GetProperty("response_code").GetInt32() >= 400);
         Assert.True(result.GetProperty("elapsed_ms").GetInt32() >= 0);
+
+        // The destination is a third party: it answers, but what it answers is not this
+        // repository's to promise. Read the status defensively and say what happened when it is
+        // absent, so an unreachable endpoint reads as that rather than as a key lookup crash.
+        Assert.True(
+            result.TryGetProperty("response_code", out JsonElement code) && code.ValueKind != JsonValueKind.Null,
+            "the destination never answered: " + (result.TryGetProperty("error", out JsonElement error)
+                ? error.GetString()
+                : "no error reported"));
+        Assert.True(code.GetInt32() >= 400, "a destination that answers 2xx is a delivery, not a failure");
         using JsonDocument payload = JsonDocument.Parse(result.GetProperty("payload").GetString()!);
         Assert.Equal("webhook.test", payload.RootElement.GetProperty("event").GetString());
 
@@ -183,7 +194,86 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-232")]
+    [Trait("Spec", "FR-204")]
+    [Trait("Threat", "T-07")]
+    public async Task Test_AgainstAnEndpointTheSuiteOwns_ArrivesSignedAndVerifiable()
+    {
+        // The signature is the whole security story of a webhook: a subscriber who cannot verify
+        // it has to trust the network. Its algorithm is covered by unit, contract and security
+        // tests, but whether a delivery actually leaves the host carrying a header that verifies
+        // was covered nowhere, because every other test points at a public address that refuses
+        // the request before it can be read. This one listens and reads what arrived.
+        await using CapturingEndpoint endpoint = await CapturingEndpoint.StartAsync(StatusCodes.Status202Accepted, Ct);
+
+        Fixture fixture = await SeedAsync(
+            "webhooks-signed",
+            settings => settings["Dle:Webhooks:AllowPrivateDestinations"] = "true");
+        using HttpClient client = fixture.Host.CreateDirectClient();
+
+        using HttpResponseMessage created = await fixture.Key.PostRawAsync(
+            client,
+            "/api/v1/webhooks",
+            "{\"url\": " + JsonSerializer.Serialize(endpoint.Url) + ", \"event_types\": [\"link.quarantined\"]}",
+            Ct);
+
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        Guid id;
+        byte[] secret;
+
+        using (JsonDocument subscription = JsonDocument.Parse(await created.Content.ReadAsStringAsync(Ct)))
+        {
+            id = subscription.RootElement.GetProperty("id").GetGuid();
+            secret = Convert.FromBase64String(subscription.RootElement.GetProperty("secret").GetString()!);
+        }
+
+        using HttpResponseMessage delivery = await fixture.Key.PostRawAsync(
+            client,
+            "/api/v1/webhooks/" + id.ToString() + "/test",
+            "{}",
+            Ct);
+
+        Assert.Equal(HttpStatusCode.OK, delivery.StatusCode);
+        using JsonDocument result = JsonDocument.Parse(await delivery.Content.ReadAsStringAsync(Ct));
+        Assert.True(
+            result.RootElement.GetProperty("delivered").GetBoolean(),
+            "the delivery did not reach the endpoint: outcome "
+            + result.RootElement.GetProperty("outcome").GetString()
+            + ", error " + (result.RootElement.TryGetProperty("error", out JsonElement why)
+                ? why.GetString()
+                : "(none reported)"));
+        Assert.Equal("delivered", result.RootElement.GetProperty("outcome").GetString());
+        Assert.Equal(StatusCodes.Status202Accepted, result.RootElement.GetProperty("response_code").GetInt32());
+
+        CapturedRequest arrived = await endpoint.WaitAsync(Ct);
+
+        Assert.Equal(WebhookEventTypes.Test, arrived.Headers["DLE-Event"]);
+        Assert.Equal(WebhookSignature.AlgorithmValue, arrived.Headers[WebhookSignature.AlgorithmHeader]);
+        Assert.True(
+            WebhookSignature.VerifySymmetric(
+                arrived.Headers[WebhookSignature.SignatureHeader],
+                System.Text.Encoding.UTF8.GetBytes(arrived.Body),
+                secret,
+                DateTimeOffset.UtcNow,
+                TimeSpan.FromMinutes(5)),
+            "the delivery carried a signature the subscriber cannot verify with the secret it was given");
+
+        // The same verification over a body the attacker changed must fail, or the assertion above
+        // would pass for a signature that covers nothing.
+        Assert.False(
+            WebhookSignature.VerifySymmetric(
+                arrived.Headers[WebhookSignature.SignatureHeader],
+                System.Text.Encoding.UTF8.GetBytes(arrived.Body.Replace("webhook.test", "link.quarantined", StringComparison.Ordinal)),
+                secret,
+                DateTimeOffset.UtcNow,
+                TimeSpan.FromMinutes(5)),
+            "the signature verified over a body it did not cover");
+
+        using JsonDocument payload = JsonDocument.Parse(arrived.Body);
+        Assert.Equal(WebhookEventTypes.Test, payload.RootElement.GetProperty("event").GetString());
+    }
+
+    [RequiresDockerFact]
+    [Trait("Spec", "FR-204")]
     public async Task AQuarantine_LandsInTheOutboxOncePerSubscriptionThatAskedForIt()
     {
         Fixture fixture = await SeedAsync("webhooks-outbox");
@@ -224,7 +314,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-230")]
+    [Trait("Spec", "FR-204")]
     public async Task Delete_DeactivatesTheSubscription_AndAnotherTenantsIs404()
     {
         Fixture fixture = await SeedAsync("webhooks-delete");

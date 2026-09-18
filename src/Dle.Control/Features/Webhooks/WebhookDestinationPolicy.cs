@@ -62,6 +62,28 @@ public static class WebhookDestinationPolicy
         bool allowPrivate,
         CancellationToken cancellationToken)
     {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed))
+        {
+            return WebhookDestinationVerdict.Reject("The destination is not an absolute URL.");
+        }
+
+        if (!string.Equals(parsed.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(parsed.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            return WebhookDestinationVerdict.Reject("The destination must be an absolute http or https URL.");
+        }
+
+        if (allowPrivate)
+        {
+            // The switch is read before the address rules rather than after them. Read after, it
+            // could never do the thing it exists for: the syntax stage already refuses every
+            // loopback and private literal, so a destination on a development machine or an
+            // internal network was refused whatever the switch said. Everything below this line is
+            // the SSRF defence of T-02, which is exactly what an operator turns off here, knowingly
+            // and only on an instance where no untrusted tenant can register a subscription.
+            return WebhookDestinationVerdict.Ok;
+        }
+
         UrlSafetyVerdict syntax = TargetUrlPolicy.ValidateSyntax(url);
 
         if (syntax.Level != UrlSafetyLevel.Safe)
@@ -70,21 +92,11 @@ public static class WebhookDestinationPolicy
                 syntax.Reason ?? "The destination must be an absolute http or https URL.");
         }
 
-        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed))
-        {
-            return WebhookDestinationVerdict.Reject("The destination is not an absolute URL.");
-        }
-
-        if (!string.Equals(parsed.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) && !allowPrivate)
+        if (!string.Equals(parsed.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
         {
             // Plain HTTP is refused rather than merely discouraged. The payload carries attribution
             // data about the customer's own users, and a signature proves origin, not confidentiality.
             return WebhookDestinationVerdict.Reject("The destination must use https.");
-        }
-
-        if (allowPrivate)
-        {
-            return WebhookDestinationVerdict.Ok;
         }
 
         if (TargetUrlPolicy.IsForbiddenHost(parsed.Host))

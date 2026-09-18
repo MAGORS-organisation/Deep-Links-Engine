@@ -65,6 +65,60 @@ not been executed anywhere.
 
 ### Fixed
 
+- **Control plane** — `Dle:Webhooks:AllowPrivateDestinations` could not do the one thing it exists
+  for. The switch was read after the address rules, and those refuse every loopback and private
+  literal, so an operator who turned it on still could not point a subscription at a listener on
+  their own machine or an internal network. It is read before them now, and it also allows plain
+  `http`, because a loopback listener with a certificate nobody trusts is not something a
+  development machine or a test can usefully arrange. The dispatcher ignored the switch too, so a
+  subscription registered under it had every delivery refused as unsendable — the same refusal,
+  reported where nobody is looking. Everything the switch turns off is the SSRF defence of T-02,
+  which the dispatcher still applies on every delivery of every other instance, because a name that
+  resolved to a public address at registration can resolve to an internal one later, and the
+  connect-time guard that catches exactly that rebinding is the third place the switch had to reach:
+  it judged every address the socket was about to connect to, whatever the option said. A security
+  test pins both directions of the policy, and the delivery test proves the whole path now carries a
+  request to a listener the suite owns.
+- **Tests** — assertions that could not fail, and two claims the code does not keep. A revoked key
+  was only ever presented for the first time after its revocation, so the credential cache was
+  never in the path and the property under test was not the one documented: revocation takes
+  effect within `Dle:Identity:CredentialCacheSeconds`, which the configuration reference has always
+  said and two code comments denied. There is now a test that uses a key, revokes it and presents
+  it again with the cache out of the way. A link delete asserted that no revisions survived a link
+  that never had any; it creates and edits the link first. The link write policy pinned viewer and
+  owner but not editor, which is where the line actually is. The bot assertion could not fail, and
+  the rank guard named in a test's name is unreachable over HTTP.
+- **Tests** — the `Spec` traits named requirements that denote something else in `docs/zadanie.md`
+  (`FR-244` is URL reputation, not tenant deletion) or nothing at all (`FR-3xx`), so a report
+  grouped by requirement credited the wrong ones and showed the real ones as uncovered. They are
+  re-mapped, and a contract test now fails on any `Spec` trait the specification does not define.
+- **Tests** — webhook signing had no test of a delivery that leaves the host. The algorithm has
+  unit, contract and security tests, but every delivery test pointed at a public address that
+  refuses the request, so nothing checked that a subscriber receives a header they can verify. The
+  suite now listens on loopback, reads the request that arrived, and verifies its signature against
+  the secret the API handed out — and re-verifies it over a changed body to prove the check bites.
+- **Control plane** — `PATCH /api/v1/links/{id}` with only a new `target_url` left the stored
+  routing rules pointing at the old one. A link created without rules is stored with a catch-all
+  synthesised from its target, and the edge routes from the rules alone, so every visitor kept
+  going to the old destination while the API, the revision history and the console all reported
+  the new one. A catch-all web rule that was pointing at the target now moves with it; a rule set
+  the caller authored is left exactly as written.
+- **Analytics** — the rollup job marked spans it had never aggregated as covered. A pass
+  aggregates at most `RollupMaxWindowHours`, but the watermark was advanced to the present
+  regardless, so on a database with events older than one window (a fresh install, or a job that
+  had been down) every report over the skipped span was answered from the empty rollup tables as
+  zeros instead of from the raw events. Each pass now starts where the last one ended, so the
+  covered span stays contiguous, and `analytics_rollup_state` records the lower bound as well:
+  a report is answered from a rollup only when its window lies inside what that rollup has really
+  aggregated. This became reachable in the previous release, when the first rollup pass on an
+  empty state table stopped throwing.
+- **Analytics** — retention could delete raw events the rollups had never read. The partition drop
+  was the first thing a run did, before every statement that needs the analytics schema, so on an
+  instance where that schema is missing each run destroyed partitions older than `RawDays` and
+  then failed before writing its audit row (§E.6.3, FR-247). The run now reads the rollup
+  watermark first, which fails before anything is dropped when the schema is absent, and the raw
+  cutoff never passes that watermark: a rollup job that is behind holds the drop back and says so
+  (event 6306).
 - **Analytics** — three defects the analytics integration tests found on their first run against
   a live PostgreSQL, all fixed in the same pull request:
   - The rollup job crashed on a database that had never been aggregated: with no state row the

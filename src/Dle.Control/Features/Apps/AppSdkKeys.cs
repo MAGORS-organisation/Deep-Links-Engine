@@ -158,7 +158,10 @@ public static class AppSdkKeys
     /// <remarks>
     /// The row is kept and switched off rather than deleted, so that the audit entries referring to
     /// it keep referring to something that exists. The authentication lookup requires
-    /// <c>is_active</c>, so a revoked key stops authenticating immediately.
+    /// <c>is_active</c>, so a revoked key stops authenticating as soon as the lookup runs again:
+    /// within <c>Dle:Identity:CredentialCacheSeconds</c> (60 by default) for a key that was in use,
+    /// and at once for one that was not. An operator who needs revocation to bite immediately sets
+    /// that to 0 and pays a credential verification per request.
     /// </remarks>
     public static async Task<IResult> RevokeAsync(
         Guid id,

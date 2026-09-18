@@ -74,15 +74,16 @@ public sealed partial class PostgresRollupService : IRollupService
 
         IReadOnlyDictionary<string, DateTimeOffset> state = await ReadStateAsync(connection, ct);
 
-        // A stream never aggregated before has no state row, and Earliest() answers MinValue for
-        // it: the overlap is stepped back only after the floor has been applied, because
-        // MinValue.AddHours(-3) is not a date.
-        DateTimeOffset hourlyFloor = hourlyTarget.AddHours(-options.RollupMaxWindowHours);
-        DateTimeOffset hourlyFrom = TruncateHour(
-            Later(
-                Earliest(state, ClickHourlyState, InstallHourlyState),
-                hourlyFloor.AddHours(options.RollupOverlapHours))
-            .AddHours(-options.RollupOverlapHours));
+        // Each pass aggregates at most RollupMaxWindowHours, and the next pass starts where this
+        // one ended, less the overlap that catches late events. A job that has been down for longer
+        // than one window therefore walks forward window by window until it is level, instead of
+        // jumping to the newest window and marking everything behind it as covered — the covered
+        // span has to stay contiguous, because a report inside it is answered from the rollup and a
+        // span that was never aggregated answers with zeros rather than with the truth.
+        DateTimeOffset previousHourly = Earliest(state, ClickHourlyState, InstallHourlyState);
+        DateTimeOffset hourlyFrom = previousHourly == DateTimeOffset.MinValue
+            ? hourlyTarget.AddHours(-options.RollupMaxWindowHours)
+            : TruncateHour(previousHourly.AddHours(-options.RollupOverlapHours));
         DateTimeOffset hourlyThrough = Earlier(
             hourlyFrom.AddHours(options.RollupMaxWindowHours),
             hourlyTarget);
@@ -93,14 +94,14 @@ public sealed partial class PostgresRollupService : IRollupService
             return RollupRunResult.Idle(startedAt);
         }
 
+        int dailyWindowDays = Math.Max(1, options.RollupMaxWindowHours / 24);
         DateTimeOffset dailyTarget = TruncateDay(hourlyThrough);
-        DateTimeOffset dailyFloor = dailyTarget.AddDays(-(options.RollupMaxWindowHours / 24) - 1);
-        DateTimeOffset dailyFrom = TruncateDay(
-            Later(
-                Earliest(state, ClickDailyState, InstallDailyState, AttributionQualityState),
-                dailyFloor.AddDays(1))
-            .AddDays(-1));
-        DateTimeOffset dailyThrough = dailyTarget > dailyFrom ? dailyTarget : dailyFrom;
+        DateTimeOffset previousDaily =
+            Earliest(state, ClickDailyState, InstallDailyState, AttributionQualityState);
+        DateTimeOffset dailyFrom = previousDaily == DateTimeOffset.MinValue
+            ? dailyTarget.AddDays(-dailyWindowDays)
+            : TruncateDay(previousDaily.AddDays(-1));
+        DateTimeOffset dailyThrough = Earlier(dailyFrom.AddDays(dailyWindowDays), dailyTarget);
 
         int clickHourly;
         int installHourly;
@@ -118,8 +119,10 @@ public sealed partial class PostgresRollupService : IRollupService
                 connection, transaction, AnalyticsSqlScripts.RefreshInstallRollupHourly,
                 hourlyFrom, hourlyThrough, startedAt, ct);
 
-            await AdvanceAsync(connection, transaction, ClickHourlyState, hourlyThrough, startedAt, ct);
-            await AdvanceAsync(connection, transaction, InstallHourlyState, hourlyThrough, startedAt, ct);
+            await AdvanceAsync(
+                connection, transaction, ClickHourlyState, hourlyFrom, hourlyThrough, startedAt, ct);
+            await AdvanceAsync(
+                connection, transaction, InstallHourlyState, hourlyFrom, hourlyThrough, startedAt, ct);
 
             if (dailyThrough > dailyFrom)
             {
@@ -135,10 +138,18 @@ public sealed partial class PostgresRollupService : IRollupService
                     connection, transaction, AnalyticsSqlScripts.RefreshAttributionQualityDaily,
                     dailyFrom, dailyThrough, startedAt, ct);
 
-                await AdvanceAsync(connection, transaction, ClickDailyState, dailyThrough, startedAt, ct);
-                await AdvanceAsync(connection, transaction, InstallDailyState, dailyThrough, startedAt, ct);
                 await AdvanceAsync(
-                    connection, transaction, AttributionQualityState, dailyThrough, startedAt, ct);
+                    connection, transaction, ClickDailyState, dailyFrom, dailyThrough, startedAt, ct);
+                await AdvanceAsync(
+                    connection, transaction, InstallDailyState, dailyFrom, dailyThrough, startedAt, ct);
+                await AdvanceAsync(
+                    connection,
+                    transaction,
+                    AttributionQualityState,
+                    dailyFrom,
+                    dailyThrough,
+                    startedAt,
+                    ct);
             }
 
             await transaction.CommitAsync(ct);
@@ -188,8 +199,6 @@ public sealed partial class PostgresRollupService : IRollupService
         return new DateTimeOffset(new DateTime(utc.Year, utc.Month, utc.Day, 0, 0, 0, DateTimeKind.Utc));
     }
 
-    private static DateTimeOffset Later(DateTimeOffset left, DateTimeOffset right) =>
-        left >= right ? left : right;
 
     private static DateTimeOffset Earlier(DateTimeOffset left, DateTimeOffset right) =>
         left <= right ? left : right;
@@ -228,6 +237,7 @@ public sealed partial class PostgresRollupService : IRollupService
             SELECT name AS "Name", covered_through AS "CoveredThrough"
             FROM analytics_rollup_state
             """;
+
 
         IEnumerable<RollupStateRow> rows = await connection.QueryAsync<RollupStateRow>(
             new CommandDefinition(Sql, cancellationToken: ct));
@@ -271,6 +281,7 @@ public sealed partial class PostgresRollupService : IRollupService
         NpgsqlConnection connection,
         DbTransaction transaction,
         string name,
+        DateTimeOffset coveredFrom,
         DateTimeOffset coveredThrough,
         DateTimeOffset now,
         CancellationToken ct)
@@ -280,6 +291,7 @@ public sealed partial class PostgresRollupService : IRollupService
             new
             {
                 name,
+                coveredFrom = coveredFrom.UtcDateTime,
                 coveredThrough = coveredThrough.UtcDateTime,
                 now = now.UtcDateTime,
             },

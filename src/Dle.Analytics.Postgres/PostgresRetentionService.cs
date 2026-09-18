@@ -89,7 +89,23 @@ public sealed partial class PostgresRetentionService : IRetentionService
 
         try
         {
-            DateTimeOffset rawCutoff = TruncateDay(startedAt.AddDays(-options.RawDays));
+            // Reading the watermark first is deliberate. It fails before anything has been
+            // dropped when the analytics schema is missing — the state the start-up applier leaves
+            // behind when it cannot create its tables (event 6501) — so a run that could not be
+            // recorded in analytics_retention_runs has not deleted anything either. It also gives
+            // the second guard below the instant up to which the raw events have been aggregated.
+            DateTimeOffset aggregatedThrough = await ReadHourlyWatermarkAsync(connection, ct);
+            DateTimeOffset requestedCutoff = TruncateDay(startedAt.AddDays(-options.RawDays));
+
+            // Raw events are the only copy of anything the rollups have not aggregated yet, so the
+            // cutoff never passes the watermark: a rollup job that is behind (or has never run)
+            // holds the drop back rather than taking the data with it (§E.6.3).
+            DateTimeOffset rawCutoff = Earlier(requestedCutoff, aggregatedThrough);
+
+            if (rawCutoff < requestedCutoff)
+            {
+                LogRawDropHeldBack(requestedCutoff, aggregatedThrough);
+            }
 
             foreach (string parent in PartitionedTables)
             {
@@ -214,6 +230,48 @@ public sealed partial class PostgresRetentionService : IRetentionService
         return new DateTimeOffset(
             new DateTime(utc.Year, utc.Month, utc.Day, 0, 0, 0, DateTimeKind.Utc));
     }
+
+    /// <summary>
+    /// The instant up to which both hourly rollups have aggregated the raw events.
+    /// </summary>
+    /// <param name="connection">The open connection.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The earlier of the two watermarks, or <see cref="DateTimeOffset.MinValue"/> when either
+    /// rollup has never run, which holds every drop back until it has.
+    /// </returns>
+    private async Task<DateTimeOffset> ReadHourlyWatermarkAsync(
+        NpgsqlConnection connection,
+        CancellationToken ct)
+    {
+        const string Sql = """
+            SELECT covered_through
+            FROM analytics_rollup_state
+            WHERE name = ANY(ARRAY['click_rollup_hourly', 'install_rollup_hourly'])
+            """;
+
+        IEnumerable<DateTime> watermarks = await connection.QueryAsync<DateTime>(
+            new CommandDefinition(
+                Sql,
+                commandTimeout: _connections.CommandTimeoutSeconds,
+                cancellationToken: ct));
+
+        List<DateTime> found = [.. watermarks];
+
+        if (found.Count < 2)
+        {
+            return DateTimeOffset.MinValue;
+        }
+
+        return new DateTimeOffset(DateTime.SpecifyKind(found.Min(), DateTimeKind.Utc));
+    }
+
+    /// <summary>The earlier of two instants.</summary>
+    /// <param name="left">One instant.</param>
+    /// <param name="right">The other.</param>
+    /// <returns>The earlier one.</returns>
+    private static DateTimeOffset Earlier(DateTimeOffset left, DateTimeOffset right) =>
+        left <= right ? left : right;
 
     private async Task DropExpiredPartitionsAsync(
         NpgsqlConnection connection,
@@ -422,6 +480,16 @@ public sealed partial class PostgresRetentionService : IRetentionService
 
     /// <summary>How many days ahead partitions are kept ready; matches the migration's own default.</summary>
     private const int PartitionDaysAhead = 7;
+
+    [LoggerMessage(
+        EventId = 6306,
+        Level = LogLevel.Warning,
+        Message = "Retention held the raw drop back at {AggregatedThrough:o} instead of "
+                  + "{RequestedCutoff:o}: the hourly rollups have not aggregated that far yet, and "
+                  + "raw events are the only copy of what they have not read.")]
+    private partial void LogRawDropHeldBack(
+        DateTimeOffset requestedCutoff,
+        DateTimeOffset aggregatedThrough);
 
     [LoggerMessage(
         EventId = 6305,

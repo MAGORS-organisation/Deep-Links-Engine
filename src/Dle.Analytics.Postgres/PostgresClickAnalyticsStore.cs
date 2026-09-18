@@ -764,7 +764,9 @@ public sealed partial class PostgresClickAnalyticsStore : IClickAnalyticsStore
         }
 
         const string Sql = """
-            SELECT name AS "Name", covered_through AS "CoveredThrough"
+            SELECT name AS "Name",
+                   covered_from AS "CoveredFrom",
+                   covered_through AS "CoveredThrough"
             FROM analytics_rollup_state
             WHERE name = ANY(@names)
             """;
@@ -775,17 +777,29 @@ public sealed partial class PostgresClickAnalyticsStore : IClickAnalyticsStore
         IEnumerable<RollupStateRow> states = await connection.QueryAsync<RollupStateRow>(
             new CommandDefinition(Sql, parameters, cancellationToken: ct));
 
-        Dictionary<string, DateTime> covered = new(StringComparer.Ordinal);
+        Dictionary<string, RollupStateRow> covered = new(StringComparer.Ordinal);
 
         foreach (RollupStateRow state in states)
         {
-            covered[state.Name] = state.CoveredThrough;
+            covered[state.Name] = state;
         }
 
         foreach (string name in rollupNames)
         {
-            if (!covered.TryGetValue(name, out DateTime through)
-                || Utc(through) < query.To)
+            if (!covered.TryGetValue(name, out RollupStateRow? state)
+                || Utc(state.CoveredThrough) < query.To)
+            {
+                return false;
+            }
+
+            // The window has to sit inside what the rollup has actually aggregated, at both ends.
+            // A rollup whose job has only ever run over the last week holds no rows for the month
+            // before it, and those missing rows read as zeros rather than as an absence: without
+            // the lower bound, a report over that month would be answered confidently and wrongly,
+            // while the raw events that could answer it correctly sit untouched. A row with no
+            // recorded lower bound is one written before the column existed; its reach is unknown,
+            // which is not the same as complete.
+            if (state.CoveredFrom is not { } from || Utc(from) > query.From)
             {
                 return false;
             }

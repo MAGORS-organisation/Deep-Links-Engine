@@ -82,7 +82,9 @@ public static class WebhookServiceCollectionExtensions
         {
             WebhookOptions options = provider.GetRequiredService<IOptions<WebhookOptions>>().Value;
 
-            return PublicEndpointGuard.CreateHandler(TimeSpan.FromSeconds(options.ConnectTimeoutSeconds));
+            return PublicEndpointGuard.CreateHandler(
+                TimeSpan.FromSeconds(options.ConnectTimeoutSeconds),
+                options.AllowPrivateDestinations);
         });
 
         services.TryAddSingleton<WebhookDispatcher>();
