@@ -74,8 +74,11 @@ not been executed anywhere.
   subscription registered under it had every delivery refused as unsendable — the same refusal,
   reported where nobody is looking. Everything the switch turns off is the SSRF defence of T-02,
   which the dispatcher still applies on every delivery of every other instance, because a name that
-  resolved to a public address at registration can resolve to an internal one later. A security
-  test pins both directions.
+  resolved to a public address at registration can resolve to an internal one later, and the
+  connect-time guard that catches exactly that rebinding is the third place the switch had to reach:
+  it judged every address the socket was about to connect to, whatever the option said. A security
+  test pins both directions of the policy, and the delivery test proves the whole path now carries a
+  request to a listener the suite owns.
 - **Tests** — assertions that could not fail, and two claims the code does not keep. A revoked key
   was only ever presented for the first time after its revocation, so the credential cache was
   never in the path and the property under test was not the one documented: revocation takes

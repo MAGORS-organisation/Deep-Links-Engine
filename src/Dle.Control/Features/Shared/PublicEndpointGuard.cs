@@ -31,6 +31,12 @@ internal static class PublicEndpointGuard
     /// redirect on its own.
     /// </summary>
     /// <param name="connectTimeout">Upper bound on establishing one TCP connection.</param>
+    /// <param name="allowPrivate">
+    /// Whether the address rules are turned off for this client. Only ever <see langword="true"/>
+    /// where the operator has asked for it (<c>Dle:Webhooks:AllowPrivateDestinations</c>), which is
+    /// a development machine or a test harness: a listener on loopback is unreachable otherwise,
+    /// and the option would mean nothing.
+    /// </param>
     /// <returns>The handler, ready to be used as the primary handler of a named client.</returns>
     /// <remarks>
     /// Redirects are off because a 302 to <c>http://169.254.169.254/</c> would otherwise be
@@ -38,7 +44,7 @@ internal static class PublicEndpointGuard
     /// caller cannot judge. A webhook endpoint that answers with a redirect is a misconfigured
     /// endpoint, and the delivery is recorded as failed with that status.
     /// </remarks>
-    internal static SocketsHttpHandler CreateHandler(TimeSpan connectTimeout) => new()
+    internal static SocketsHttpHandler CreateHandler(TimeSpan connectTimeout, bool allowPrivate = false) => new()
     {
         AllowAutoRedirect = false,
         UseCookies = false,
@@ -46,8 +52,35 @@ internal static class PublicEndpointGuard
         ConnectTimeout = connectTimeout,
         AutomaticDecompression = DecompressionMethods.All,
         PooledConnectionLifetime = TimeSpan.FromMinutes(2),
-        ConnectCallback = ConnectAsync,
+        ConnectCallback = allowPrivate ? ConnectWithoutAddressRulesAsync : ConnectAsync,
     };
+
+    /// <summary>
+    /// Resolves the destination and connects, without judging the addresses.
+    /// </summary>
+    /// <param name="context">The connection being established.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The connected stream.</returns>
+    /// <exception cref="HttpRequestException">No address accepted a connection.</exception>
+    /// <remarks>
+    /// Everything else the handler does is unchanged: no redirects, no proxy, no cookies. This is
+    /// reachable only on an instance whose operator turned the address rules off, and the defence
+    /// stays exactly where it was for every other instance.
+    /// </remarks>
+    internal static async ValueTask<Stream> ConnectWithoutAddressRulesAsync(
+        SocketsHttpConnectionContext context,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        string host = context.DnsEndPoint.Host;
+
+        IPAddress[] addresses = IPAddress.TryParse(host, out IPAddress? literal)
+            ? [literal]
+            : await Dns.GetHostAddressesAsync(host, cancellationToken);
+
+        return await ConnectToFirstAsync(addresses, context.DnsEndPoint.Port, cancellationToken);
+    }
 
     /// <summary>
     /// Resolves the destination, drops every address the policy forbids and connects to the first
@@ -93,9 +126,25 @@ internal static class PublicEndpointGuard
                 "The destination resolves only to addresses that are not permitted targets (T-02).");
         }
 
+        return await ConnectToFirstAsync(permitted, port, cancellationToken);
+    }
+
+    /// <summary>
+    /// Connects to the first address that accepts, and hands the socket to a stream.
+    /// </summary>
+    /// <param name="addresses">The addresses to try, in order.</param>
+    /// <param name="port">The port.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The connected stream.</returns>
+    /// <exception cref="HttpRequestException">None of them accepted a connection.</exception>
+    private static async ValueTask<Stream> ConnectToFirstAsync(
+        IReadOnlyList<IPAddress> addresses,
+        int port,
+        CancellationToken cancellationToken)
+    {
         Exception? last = null;
 
-        foreach (IPAddress address in permitted)
+        foreach (IPAddress address in addresses)
         {
             Socket? socket = null;
 
