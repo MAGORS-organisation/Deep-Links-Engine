@@ -146,13 +146,22 @@ public sealed partial class WebhookDispatcher
 
         long started = Stopwatch.GetTimestamp();
 
-        UrlSafetyVerdict verdict = TargetUrlPolicy.ValidateSyntax(url);
-
-        if (verdict.Level != UrlSafetyLevel.Safe)
+        // Checked again at send time, not only when the subscription was registered: a name that
+        // resolved to a public address then can resolve to an internal one now (DNS rebinding), and
+        // this is the last moment before the request leaves. The one instance where it is skipped
+        // is the one whose operator has deliberately turned the address rules off; without that,
+        // the switch would let a subscription be registered and then refuse every delivery it was
+        // registered for, which is the same refusal reported where nobody is looking.
+        if (!_options.CurrentValue.AllowPrivateDestinations)
         {
-            // Not retryable: the destination is wrong, not unavailable. Retrying would burn the
-            // attempt budget on a request that can never be made.
-            return Unsendable(eventType, started, "The destination URL is not a permitted target.");
+            UrlSafetyVerdict verdict = TargetUrlPolicy.ValidateSyntax(url);
+
+            if (verdict.Level != UrlSafetyLevel.Safe)
+            {
+                // Not retryable: the destination is wrong, not unavailable. Retrying would burn the
+                // attempt budget on a request that can never be made.
+                return Unsendable(eventType, started, "The destination URL is not a permitted target.");
+            }
         }
 
         if (!_secrets.TryUnprotect(secretEncrypted, out byte[] secret))

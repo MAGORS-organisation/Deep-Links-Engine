@@ -234,7 +234,13 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
 
         Assert.Equal(HttpStatusCode.OK, delivery.StatusCode);
         using JsonDocument result = JsonDocument.Parse(await delivery.Content.ReadAsStringAsync(Ct));
-        Assert.True(result.RootElement.GetProperty("delivered").GetBoolean());
+        Assert.True(
+            result.RootElement.GetProperty("delivered").GetBoolean(),
+            "the delivery did not reach the endpoint: outcome "
+            + result.RootElement.GetProperty("outcome").GetString()
+            + ", error " + (result.RootElement.TryGetProperty("error", out JsonElement why)
+                ? why.GetString()
+                : "(none reported)"));
         Assert.Equal("delivered", result.RootElement.GetProperty("outcome").GetString());
         Assert.Equal(StatusCodes.Status202Accepted, result.RootElement.GetProperty("response_code").GetInt32());
 

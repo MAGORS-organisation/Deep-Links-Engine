@@ -70,8 +70,12 @@ not been executed anywhere.
   literal, so an operator who turned it on still could not point a subscription at a listener on
   their own machine or an internal network. It is read before them now, and it also allows plain
   `http`, because a loopback listener with a certificate nobody trusts is not something a
-  development machine or a test can usefully arrange. Everything the switch turns off is the SSRF
-  defence of T-02, and a security test pins both directions.
+  development machine or a test can usefully arrange. The dispatcher ignored the switch too, so a
+  subscription registered under it had every delivery refused as unsendable — the same refusal,
+  reported where nobody is looking. Everything the switch turns off is the SSRF defence of T-02,
+  which the dispatcher still applies on every delivery of every other instance, because a name that
+  resolved to a public address at registration can resolve to an internal one later. A security
+  test pins both directions.
 - **Tests** — assertions that could not fail, and two claims the code does not keep. A revoked key
   was only ever presented for the first time after its revocation, so the credential cache was
   never in the path and the property under test was not the one documented: revocation takes
