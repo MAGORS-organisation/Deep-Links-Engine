@@ -74,6 +74,13 @@ jobs:
       actions: read
 
   # ---------------------------------------------------------------------------------------------
+  helm-install:
+    name: Helm chart install (kind)
+    # The chart installs the images built from src/, so a change that never touches deploy/ can
+    # still break an install. helm.yml runs on its own paths; this runs it against develop daily.
+    uses: ./.github/workflows/helm.yml
+
+  # ---------------------------------------------------------------------------------------------
   fuzz-harness:
     name: Fuzz targets (property-based driver, extended budget)
     runs-on: ubuntu-latest

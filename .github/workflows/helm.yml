@@ -13,6 +13,13 @@
 # The rendered manifests are then validated against the Kubernetes API schemas (and the CRD catalog
 # for ServiceMonitor) with kubeconform, pinned by version and checksum like every other tool here.
 #
+# The second job installs the chart for real. Rendering proves a template produces valid YAML; it
+# cannot tell whether the migration hook runs before the pods that need the schema, whether a probe
+# path answers, whether a Secret key the Deployment names is one the Secret actually has, or whether
+# the images even start. Those are exactly the failures an operator meets on their first install, so
+# the job builds both images, loads them into a throw-away kind cluster, installs the chart against
+# PostgreSQL and Valkey it brings itself, and then asserts on the database and on both services.
+#
 # Read-only: no registry login, no push. Packaging and publishing stay in release.yml.
 
 name: Helm chart
@@ -21,12 +28,20 @@ on:
   pull_request:
     paths:
       - "deploy/helm/**"
+      - "deploy/docker/**"
+      - ".github/helm/**"
       - ".github/workflows/helm.yml"
   push:
     branches: [develop, master]
     paths:
       - "deploy/helm/**"
+      - "deploy/docker/**"
+      - ".github/helm/**"
       - ".github/workflows/helm.yml"
+  # The install job runs the product, not only the chart, so it is also reachable by hand and from
+  # the nightly: a change to src/ can break an install without touching a file listed above.
+  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -162,3 +177,223 @@ jobs:
           path: rendered/
           if-no-files-found: ignore
           retention-days: 14
+
+  # ---------------------------------------------------------------------------------------------
+  install:
+    name: Install into a kind cluster
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      KIND_VERSION: "0.33.0"
+      KIND_SHA256: "aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d"
+      # Pinned by digest, from the kind v0.33.0 release notes. The chart declares
+      # kubeVersion ">=1.29.0-0"; this is well above it and is what kind itself tests against.
+      KIND_NODE_IMAGE: "kindest/node:v1.34.11@sha256:44e222ee2132dab25ff87301682f89eb82c7880ea3a1bf543bfe9708fd08d67d"
+      CLUSTER: dle-ci
+      RELEASE: dle
+      VALUES_FILE: .github/helm/values-kind.yaml
+      STORES_FILE: .github/helm/stores.yaml
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+
+      - name: Install kind (pinned, checksum verified)
+        run: |
+          set -euo pipefail
+          curl -sSfL -o kind \
+            "https://github.com/kubernetes-sigs/kind/releases/download/v${KIND_VERSION}/kind-linux-amd64"
+          echo "${KIND_SHA256}  kind" | sha256sum -c -
+          install -m 0755 kind /usr/local/bin/kind
+          kind version
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      # The two images are the slowest part of this job, not the install: Dockerfile.control also
+      # builds the admin SPA and the EF migration bundle. The cache scopes are the ones the other
+      # workflows write, so a run that follows a security.yml run on the same commit is mostly warm.
+      - name: Build dle-edge
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.edge
+          load: true
+          push: false
+          platforms: linux/amd64
+          tags: dle-edge:ci
+          cache-from: type=gha,scope=dle-edge
+          cache-to: type=gha,mode=max,scope=dle-edge
+
+      - name: Build dle-control
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.control
+          load: true
+          push: false
+          platforms: linux/amd64
+          tags: dle-control:ci
+          cache-from: type=gha,scope=dle-control
+          cache-to: type=gha,mode=max,scope=dle-control
+
+      - name: Create the cluster
+        run: |
+          set -euo pipefail
+          kind create cluster --name "$CLUSTER" --image "$KIND_NODE_IMAGE" --wait 120s
+          kubectl cluster-info
+          kubectl get nodes -o wide
+
+      - name: Load the images into the cluster
+        # values-kind.yaml sets pullPolicy Never, so a load that did not work shows up as
+        # ErrImageNeverPull rather than as a silent pull of the last published GHCR image.
+        run: |
+          set -euo pipefail
+          kind load docker-image dle-edge:ci dle-control:ci --name "$CLUSTER"
+          docker exec "${CLUSTER}-control-plane" crictl images | grep -E 'dle-(edge|control)'
+
+      - name: PostgreSQL and Valkey
+        run: |
+          set -euo pipefail
+          kubectl apply -f "$STORES_FILE"
+          kubectl rollout status deploy/dle-postgres --timeout=180s
+          kubectl rollout status deploy/dle-valkey --timeout=120s
+
+      - name: Resolve chart dependencies
+        # Helm refuses to install a chart whose declared dependencies are absent from charts/, even
+        # when their condition is false, and this install disables both.
+        run: |
+          set -euo pipefail
+          helm dependency update "$CHART_DIR"
+          ls -l "$CHART_DIR/charts"
+
+      - name: Install the chart
+        # No --atomic: on failure it rolls back and deletes the pods, which takes the logs and the
+        # events with it, and each rediscovery costs another run of this job.
+        run: |
+          set -euo pipefail
+          master_secret="$(openssl rand -base64 48 | tr -d '\n')"
+          echo "::add-mask::$master_secret"
+          helm install "$RELEASE" "$CHART_DIR" \
+            --values "$VALUES_FILE" \
+            --set "secrets.masterSecret=$master_secret" \
+            --wait \
+            --timeout 12m
+          helm status "$RELEASE"
+
+      - name: The migration ran
+        # With external PostgreSQL the Job is a pre-install hook, so `helm install` has already
+        # waited for it. Asserting on it anyway is what distinguishes "the pods are up" from "the
+        # schema is there", and the second is the thing an operator actually needs.
+        run: |
+          set -euo pipefail
+          kubectl get jobs -o wide
+          kubectl wait --for=condition=complete "job/${RELEASE}-migrate" --timeout=60s
+
+      - name: The schema is in the database
+        # The tables the product writes to, read from PostgreSQL itself rather than from a health
+        # endpoint that only proves a connection could be opened.
+        run: |
+          set -euo pipefail
+          pod="$(kubectl get pod -l app.kubernetes.io/name=postgres -o jsonpath='{.items[0].metadata.name}')"
+          tables="$(kubectl exec "$pod" -- psql -U dle -d dle -tAc \
+            "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('tenants','domains','links','apps','click_events','api_keys','webhook_subscriptions','__dle_migrations_history')")"
+          echo "tables found: $tables of 8"
+          test "$tables" = "8"
+
+      - name: Both services answer
+        # Reached by port-forward rather than through an Ingress: there is no controller here, and
+        # an assertion against an address nothing serves would be an assertion about nothing.
+        run: |
+          set -euo pipefail
+          kubectl port-forward "svc/${RELEASE}-edge" 18080:80 >/dev/null 2>&1 &
+          kubectl port-forward "svc/${RELEASE}-control" 18081:80 >/dev/null 2>&1 &
+          for _ in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://127.0.0.1:18080/healthz && curl -fsS -o /dev/null http://127.0.0.1:18081/healthz; then
+              break
+            fi
+            sleep 2
+          done
+
+          echo "== edge"
+          curl -fsS -o /dev/null -w 'healthz %{http_code}\n' http://127.0.0.1:18080/healthz
+          curl -fsS -o /dev/null -w 'robots %{http_code}\n' http://127.0.0.1:18080/robots.txt
+          edge_readyz="$(curl -fsS http://127.0.0.1:18080/readyz)"
+          edge_ready="$(printf '%s' "$edge_readyz" | head -n 1)"
+          echo "readyz:"
+          echo "$edge_readyz"
+
+          echo "== control"
+          curl -fsS -o /dev/null -w 'healthz %{http_code}\n' http://127.0.0.1:18081/healthz
+          # /readyz is gated on the database: a 200 here is the pod's own statement that it reached
+          # the PostgreSQL the chart wired it to, through the Secret the chart wrote. Control writes
+          # that report as JSON where the edge writes plain text, so the two are read differently
+          # below — a substring match against the wrong shape would have passed on nothing at all.
+          control_ready="$(curl -fsS http://127.0.0.1:18081/readyz)"
+          echo "readyz: $control_ready"
+          # The OpenAPI document only exists once the application has finished composing itself.
+          curl -fsS -o /dev/null -w 'openapi %{http_code}\n' http://127.0.0.1:18081/openapi/v1.json
+
+          # The edge reports two checks by name. `database` is the one that matters here: it is the
+          # edge's own statement that it reached the PostgreSQL the chart wired it to, through the
+          # Secret the chart wrote, which no probe in this cluster would have caught — both edge
+          # probes point at /healthz, which runs no checks at all.
+          case "$edge_readyz" in
+            *"database: Healthy"*) ;;
+            *) echo "the edge cannot reach its database"; exit 1 ;;
+          esac
+
+          # `resolve` is allowed to be Degraded and the overall status with it: no MaxMind database
+          # is mounted here, so the resolve path says it cannot determine a country. Unhealthy is
+          # not allowed, and neither is any other overall status.
+          case "$edge_readyz" in
+            *"resolve: Unhealthy"*) echo "the resolve path is unhealthy"; exit 1 ;;
+          esac
+          case "$edge_ready" in
+            Healthy|Degraded) ;;
+            *) echo "edge readiness is $edge_ready"; exit 1 ;;
+          esac
+
+          # Control's only readiness check is the database, so its overall status is that check.
+          # Both are asserted by name: the status alone would also be Healthy if the check had
+          # silently stopped being registered, which is the failure this step exists to catch.
+          echo "$control_ready" | jq -e '.status == "Healthy" and .checks.postgres == "Healthy"' >/dev/null \
+            || { echo "control is not ready: $control_ready"; exit 1; }
+
+      - name: Upgrade in place
+        # The other half of what an operator does with a chart. The migration hook runs again on
+        # pre-upgrade, against a database that is already migrated, so this also says that a second
+        # run of the bundle is a no-op rather than a failure.
+        run: |
+          set -euo pipefail
+          master_secret="$(kubectl get secret "$RELEASE" -o jsonpath='{.data.master-secret}' | base64 -d)"
+          echo "::add-mask::$master_secret"
+          helm upgrade "$RELEASE" "$CHART_DIR" \
+            --values "$VALUES_FILE" \
+            --set "secrets.masterSecret=$master_secret" \
+            --set "control.config.allowTenantSelfService=true" \
+            --wait \
+            --timeout 8m
+          helm history "$RELEASE"
+          kubectl wait --for=condition=complete "job/${RELEASE}-migrate" --timeout=120s
+
+      - name: What the cluster looked like
+        if: ${{ failure() }}
+        run: |
+          kubectl get all -o wide || true
+          kubectl get events --sort-by=.lastTimestamp | tail -40 || true
+          for p in $(kubectl get pods -o jsonpath='{.items[*].metadata.name}'); do
+            echo "===== describe $p"; kubectl describe pod "$p" | tail -30 || true
+            echo "===== logs $p";     kubectl logs "$p" --all-containers --tail=80 || true
+          done
+          helm status "$RELEASE" || true
+
+      - name: Uninstall and tear down
+        if: ${{ always() }}
+        run: |
+          helm uninstall "$RELEASE" --wait --timeout 3m || true
+          kind delete cluster --name "$CLUSTER" || true

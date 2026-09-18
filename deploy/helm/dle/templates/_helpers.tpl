@@ -7,6 +7,7 @@ Labels    dle.labels / dle.selectorLabels (release-wide) and the per-component v
           dle.edge.*, dle.control.*, dle.migrate.* (component label added)
 Images    dle.image.edge, dle.image.control — repository:tag, tag defaulting to appVersion
 Secrets   dle.secretName (existingSecret or the rendered one), dle.migrate.secretName
+Accounts  dle.serviceAccountName, dle.migrate.serviceAccountName (hook-scoped)
 Config    dle.env — ONE environment entry from an ASP.NET Core configuration key:
             {{ include "dle.env" (dict "key" "Dle:Edge:Cache:L1Seconds" "value" 30) }}
           renders   Dle__Edge__Cache__L1Seconds: "30"   (colon → double underscore).
@@ -132,6 +133,21 @@ without an existingSecret the hook reads a hook-scoped copy (secret.yaml renders
 */}}
 {{- define "dle.migrate.secretName" -}}
 {{- default (include "dle.migrate.fullname" .) .Values.secrets.existingSecret -}}
+{{- end -}}
+
+{{/*
+The ServiceAccount the migration hook runs under, and the same problem as the Secret above: the
+kubelet refuses to create a pod whose ServiceAccount does not exist yet, and a pre-install hook
+runs before the chart's own ServiceAccount does. So when the chart creates that account the hook
+gets a copy of it (serviceaccount.yaml renders both, with the same annotations, because those are
+what carry a cloud identity). An account the chart did not create already exists, and is named.
+*/}}
+{{- define "dle.migrate.serviceAccountName" -}}
+{{- if .Values.serviceAccount.create -}}
+{{- include "dle.migrate.fullname" . -}}
+{{- else -}}
+{{- include "dle.serviceAccountName" . -}}
+{{- end -}}
 {{- end -}}
 
 {{/* Hook events for the migration Job (values.migrate.hooks, with the documented default). */}}

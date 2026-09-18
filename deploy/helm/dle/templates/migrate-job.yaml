@@ -10,7 +10,9 @@ after install, so the hook moves to post-install,post-upgrade (control's /readyz
 pods out of the Service until the schema is there).
 
 The Job reads dle.migrate.secretName: secrets.existingSecret when set, otherwise the hook-scoped
-copy that secret.yaml renders (regular resources do not exist yet when a pre-install hook runs).
+copy that secret.yaml renders, and runs under dle.migrate.serviceAccountName, which is the same
+kind of copy — regular resources do not exist yet when a pre-install hook runs, and a pod whose
+Secret or ServiceAccount is missing never starts.
 before-hook-creation replaces the previous Job on every run; ttlSecondsAfterFinished cleans it
 up afterwards while keeping the logs around for a while.
 */ -}}
@@ -44,7 +46,7 @@ spec:
       # OnFailure = the kubelet restarts the container with exponential back-off inside one pod,
       # which is what "wait for a database that is still starting" needs.
       restartPolicy: OnFailure
-      serviceAccountName: {{ include "dle.serviceAccountName" . }}
+      serviceAccountName: {{ include "dle.migrate.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:

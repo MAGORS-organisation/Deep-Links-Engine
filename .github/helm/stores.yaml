@@ -1,0 +1,122 @@
+# PostgreSQL and Valkey for the install job of .github/workflows/helm.yml.
+#
+# The chart can bring its own (the Bitnami sub-charts, `postgresql.enabled=true`), and that path is
+# rendered, linted and schema-validated by the render job. It is not installed here on purpose: the
+# sub-charts pull images from a registry whose publishing policy is not ours, and a gate that goes
+# red because a third party moved a tag teaches a team to ignore the gate. These two use the exact
+# images the compose stack and the integration suite already pull in this CI.
+#
+# Nothing here is a template for production. Storage is an emptyDir, the password is in plain sight
+# and there is one replica of each: the subject under test is the chart, and these only have to be
+# reachable and real while it installs.
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dle-postgres
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: dle-ci
+spec:
+  selector:
+    app.kubernetes.io/name: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dle-postgres
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: dle-ci
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18-alpine
+          env:
+            - name: POSTGRES_DB
+              value: dle
+            - name: POSTGRES_USER
+              value: dle
+            - name: POSTGRES_PASSWORD
+              value: kind-ci-postgres
+            # The data directory has to sit under the mount, not be the mount: initdb refuses a
+            # directory that is not empty, and a volume root is never empty.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "dle", "-d", "dle"]
+            periodSeconds: 2
+            failureThreshold: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dle-valkey
+  labels:
+    app.kubernetes.io/name: valkey
+    app.kubernetes.io/part-of: dle-ci
+spec:
+  selector:
+    app.kubernetes.io/name: valkey
+  ports:
+    - name: valkey
+      port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dle-valkey
+  labels:
+    app.kubernetes.io/name: valkey
+    app.kubernetes.io/part-of: dle-ci
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: valkey
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: valkey
+    spec:
+      containers:
+        - name: valkey
+          image: valkey/valkey:8-alpine
+          ports:
+            - containerPort: 6379
+          readinessProbe:
+            exec:
+              command: ["valkey-cli", "ping"]
+            periodSeconds: 2
+            failureThreshold: 30
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
