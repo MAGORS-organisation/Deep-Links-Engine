@@ -95,9 +95,16 @@ public sealed class WebhookOptions
     /// Whether a subscription may point at a host that is not resolvable to a public address.
     /// </summary>
     /// <remarks>
-    /// Off, and it should stay off outside a test harness. The check is what stops a webhook from
-    /// being aimed at <c>169.254.169.254</c> and turning the control plane into a proxy for the
-    /// cloud metadata service (T-02).
+    /// <para>
+    /// Off, and it should stay off outside a test harness or a development machine. The checks it
+    /// turns off are what stop a webhook from being aimed at <c>169.254.169.254</c> and turning the
+    /// control plane into a proxy for the cloud metadata service (T-02).
+    /// </para>
+    /// <para>
+    /// On, it also allows plain <c>http</c>, because a loopback listener with a certificate nobody
+    /// trusts is not a thing a test can usefully set up. Everything else about a delivery is
+    /// unchanged: the payload is the same and the signature is the same.
+    /// </para>
     /// </remarks>
     public bool AllowPrivateDestinations { get; set; }
 

@@ -64,6 +64,13 @@ not been executed anywhere.
 
 ### Fixed
 
+- **Control plane** — `Dle:Webhooks:AllowPrivateDestinations` could not do the one thing it exists
+  for. The switch was read after the address rules, and those refuse every loopback and private
+  literal, so an operator who turned it on still could not point a subscription at a listener on
+  their own machine or an internal network. It is read before them now, and it also allows plain
+  `http`, because a loopback listener with a certificate nobody trusts is not something a
+  development machine or a test can usefully arrange. Everything the switch turns off is the SSRF
+  defence of T-02, and a security test pins both directions.
 - **Tests** — assertions that could not fail, and two claims the code does not keep. A revoked key
   was only ever presented for the first time after its revocation, so the credential cache was
   never in the path and the property under test was not the one documented: revocation takes

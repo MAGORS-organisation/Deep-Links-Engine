@@ -297,13 +297,16 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
         // The rollup and the raw events agree on this tenant, so an assertion on the figure alone
         // would pass whichever path answered. Make them disagree: from here a 12 can only have come
         // from the rollup and a 2 can only have come from the raw events.
-        Assert.Equal(
-            1,
-            await Sql.ExecuteAsync(
-                Database.DataSource,
-                "UPDATE click_rollup_hourly SET clicks = clicks + 10 WHERE tenant_id = $1 AND is_bot = false AND clicks = 2",
-                [fixture.TenantId],
-                Ct));
+        int poisoned = await Sql.ExecuteAsync(
+            Database.DataSource,
+            "UPDATE click_rollup_hourly SET clicks = clicks + 10 WHERE tenant_id = $1 AND is_bot = false",
+            [fixture.TenantId],
+            Ct);
+
+        // The two clicks are an hour apart, so they sit in a row each; the figure to expect is
+        // whatever the rollup now holds, and it is not the figure the raw events hold.
+        Assert.True(poisoned > 0, "the rollup holds no row for this tenant, so nothing was aggregated");
+        long fromRollup = 2 + (10 * poisoned);
 
         string window = string.Create(
             CultureInfo.InvariantCulture,
@@ -311,11 +314,11 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
         using HttpResponseMessage aligned = await fixture.Key.GetAsync(client, Analytics + "/clicks?grain=hour&" + window, Ct);
         Assert.Equal(HttpStatusCode.OK, aligned.StatusCode);
         using JsonDocument series = JsonDocument.Parse(await aligned.Content.ReadAsStringAsync(Ct));
-        Assert.Equal(12, SumOf(series.RootElement.GetProperty("points"), "clicks"));
+        Assert.Equal(fromRollup, SumOf(series.RootElement.GetProperty("points"), "clicks"));
 
         using HttpResponseMessage breakdown = await fixture.Key.GetAsync(client, Analytics + "/breakdown?dimension=platform&" + window, Ct);
         using JsonDocument rows = JsonDocument.Parse(await breakdown.Content.ReadAsStringAsync(Ct));
-        Assert.Equal(12, SumOf(rows.RootElement.GetProperty("rows"), "clicks"));
+        Assert.Equal(fromRollup, SumOf(rows.RootElement.GetProperty("rows"), "clicks"));
 
         // A window the rollup does not reach back to. One pass aggregates at most
         // Dle:Analytics:RollupMaxWindowHours, so a click from ten days ago was never aggregated,

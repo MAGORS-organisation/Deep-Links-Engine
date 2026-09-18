@@ -220,6 +220,33 @@ public sealed class UrlSafetyCheckerTests : IDisposable
         Assert.False(verdict.Accepted, url + " must not be registerable as a webhook destination.");
     }
 
+    [Theory]
+    [Trait("Threat", "T-02")]
+    [InlineData("http://127.0.0.1:8080/hook")]
+    [InlineData("https://10.0.0.5/hook")]
+    [InlineData("http://192.168.1.10:9000/hook")]
+    public async Task WebhookDestination_InsideTheNetwork_OpensOnlyForAnOperatorWhoAskedForIt(string url)
+    {
+        // Dle:Webhooks:AllowPrivateDestinations is the one thing that opens this, and it has to
+        // actually open it: the address rules used to run before the switch was read, so an
+        // operator who set it still could not point a subscription at a listener on their own
+        // machine, and a test could not watch a delivery arrive. Both directions are pinned here,
+        // because a switch that silently does nothing and a switch that is on by mistake fail in
+        // opposite directions and only one of them is visible in a log.
+        WebhookDestinationVerdict refused = await WebhookDestinationPolicy.ValidateAsync(
+            url,
+            allowPrivate: false,
+            TestContext.Current.CancellationToken);
+
+        WebhookDestinationVerdict allowed = await WebhookDestinationPolicy.ValidateAsync(
+            url,
+            allowPrivate: true,
+            TestContext.Current.CancellationToken);
+
+        Assert.False(refused.Accepted, url + " must be refused on an instance that has not asked for it.");
+        Assert.True(allowed.Accepted, url + " must be reachable once the operator has asked for it: " + allowed.Reason);
+    }
+
     [Fact]
     [Trait("Threat", "T-02")]
     public async Task WebhookDestination_OverPlainHttp_IsRefused()
