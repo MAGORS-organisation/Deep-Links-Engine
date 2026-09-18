@@ -3,7 +3,9 @@ using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using Dle.Control.Configuration;
+using Dle.Control.Features.Webhooks;
 using Dle.Domain.Contracts;
+using Microsoft.AspNetCore.Http;
 
 namespace Dle.IntegrationTests.Control;
 
@@ -189,6 +191,79 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
 
         using HttpResponseMessage unknown = await fixture.Key.PostRawAsync(client, "/api/v1/webhooks/" + Guid.NewGuid().ToString() + "/test", "{}", Ct);
         Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
+    }
+
+    [RequiresDockerFact]
+    [Trait("Spec", "FR-233")]
+    [Trait("Threat", "T-07")]
+    public async Task Test_AgainstAnEndpointTheSuiteOwns_ArrivesSignedAndVerifiable()
+    {
+        // The signature is the whole security story of a webhook: a subscriber who cannot verify
+        // it has to trust the network. Its algorithm is covered by unit, contract and security
+        // tests, but whether a delivery actually leaves the host carrying a header that verifies
+        // was covered nowhere, because every other test points at a public address that refuses
+        // the request before it can be read. This one listens and reads what arrived.
+        await using CapturingEndpoint endpoint = await CapturingEndpoint.StartAsync(StatusCodes.Status202Accepted, Ct);
+
+        Fixture fixture = await SeedAsync(
+            "webhooks-signed",
+            settings => settings["Dle:Webhooks:AllowPrivateDestinations"] = "true");
+        using HttpClient client = fixture.Host.CreateDirectClient();
+
+        using HttpResponseMessage created = await fixture.Key.PostRawAsync(
+            client,
+            "/api/v1/webhooks",
+            "{\"url\": " + JsonSerializer.Serialize(endpoint.Url) + ", \"event_types\": [\"link.quarantined\"]}",
+            Ct);
+
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        Guid id;
+        byte[] secret;
+
+        using (JsonDocument subscription = JsonDocument.Parse(await created.Content.ReadAsStringAsync(Ct)))
+        {
+            id = subscription.RootElement.GetProperty("id").GetGuid();
+            secret = Convert.FromBase64String(subscription.RootElement.GetProperty("secret").GetString()!);
+        }
+
+        using HttpResponseMessage delivery = await fixture.Key.PostRawAsync(
+            client,
+            "/api/v1/webhooks/" + id.ToString() + "/test",
+            "{}",
+            Ct);
+
+        Assert.Equal(HttpStatusCode.OK, delivery.StatusCode);
+        using JsonDocument result = JsonDocument.Parse(await delivery.Content.ReadAsStringAsync(Ct));
+        Assert.True(result.RootElement.GetProperty("delivered").GetBoolean());
+        Assert.Equal("delivered", result.RootElement.GetProperty("outcome").GetString());
+        Assert.Equal(StatusCodes.Status202Accepted, result.RootElement.GetProperty("response_code").GetInt32());
+
+        CapturedRequest arrived = await endpoint.WaitAsync(Ct);
+
+        Assert.Equal(WebhookEventTypes.Test, arrived.Headers["DLE-Event"]);
+        Assert.Equal(WebhookSignature.AlgorithmValue, arrived.Headers[WebhookSignature.AlgorithmHeader]);
+        Assert.True(
+            WebhookSignature.VerifySymmetric(
+                arrived.Headers[WebhookSignature.SignatureHeader],
+                System.Text.Encoding.UTF8.GetBytes(arrived.Body),
+                secret,
+                DateTimeOffset.UtcNow,
+                TimeSpan.FromMinutes(5)),
+            "the delivery carried a signature the subscriber cannot verify with the secret it was given");
+
+        // The same verification over a body the attacker changed must fail, or the assertion above
+        // would pass for a signature that covers nothing.
+        Assert.False(
+            WebhookSignature.VerifySymmetric(
+                arrived.Headers[WebhookSignature.SignatureHeader],
+                System.Text.Encoding.UTF8.GetBytes(arrived.Body.Replace("webhook.test", "link.quarantined", StringComparison.Ordinal)),
+                secret,
+                DateTimeOffset.UtcNow,
+                TimeSpan.FromMinutes(5)),
+            "the signature verified over a body it did not cover");
+
+        using JsonDocument payload = JsonDocument.Parse(arrived.Body);
+        Assert.Equal(WebhookEventTypes.Test, payload.RootElement.GetProperty("event").GetString());
     }
 
     [RequiresDockerFact]

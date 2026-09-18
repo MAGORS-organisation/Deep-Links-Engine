@@ -64,6 +64,11 @@ not been executed anywhere.
 
 ### Fixed
 
+- **Tests** — webhook signing had no test of a delivery that leaves the host. The algorithm has
+  unit, contract and security tests, but every delivery test pointed at a public address that
+  refuses the request, so nothing checked that a subscriber receives a header they can verify. The
+  suite now listens on loopback, reads the request that arrived, and verifies its signature against
+  the secret the API handed out — and re-verifies it over a changed body to prove the check bites.
 - **Control plane** — `PATCH /api/v1/links/{id}` with only a new `target_url` left the stored
   routing rules pointing at the old one. A link created without rules is stored with a catch-all
   synthesised from its target, and the edge routes from the rules alone, so every visitor kept
