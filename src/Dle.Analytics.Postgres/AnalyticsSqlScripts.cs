@@ -9,9 +9,12 @@ namespace Dle.Analytics.Postgres;
 /// <remarks>
 /// <para>
 /// <see cref="Migration"/> is the schema: the rollup tables, the shared platform function, the
-/// rollup watermark and the retention audit table. It is idempotent and is meant to be applied by
-/// the persistence migration, not by this module — an application does not create its own schema
-/// at startup.
+/// rollup watermark and the retention audit table. It is outside the EF Core migration set because
+/// the PostgreSQL analytics provider is one of two and an instance running ClickHouse has no use
+/// for these tables (ADR-0006), so this module applies it itself: every statement is idempotent and
+/// <c>PostgresAnalyticsSchema</c> runs the script when the host starts. A host whose database role
+/// may not create tables logs the failure and carries on without the rollups rather than refusing
+/// to start.
 /// </para>
 /// <para>
 /// The remaining scripts are the parameterised statements the rollup and retention services run.
@@ -61,11 +64,13 @@ public static class AnalyticsSqlScripts
         new(StringComparer.Ordinal);
 
     /// <summary>
-    /// The schema scripts a migration should apply, in order.
+    /// The schema scripts an applier runs, in order.
     /// </summary>
     /// <remarks>
-    /// A list rather than "everything in the folder": the parameterised maintenance statements
-    /// live in the same folder and must never be handed to a migration runner.
+    /// A list rather than "everything in the folder": the parameterised maintenance statements live
+    /// in the same folder and must never be handed to an applier. <c>PostgresAnalyticsSchema</c>
+    /// runs these at start-up; an operator whose runtime role may not create tables runs the same
+    /// files by hand, which is what the runbook entry tells them to do.
     /// </remarks>
     public static IReadOnlyList<string> MigrationScripts { get; } = [Migration];
 

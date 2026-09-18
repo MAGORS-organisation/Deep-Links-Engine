@@ -43,6 +43,12 @@ public static class ProblemCodes
     /// <summary>The host is already registered, possibly by another tenant.</summary>
     public const string DomainTaken = Base + "domain-taken";
 
+    /// <summary>
+    /// The domain still serves links, so it cannot be removed (FR-133). Delete or move the links
+    /// first; short URLs already in circulation would otherwise stop resolving with no trace of why.
+    /// </summary>
+    public const string DomainInUse = Base + "domain-in-use";
+
     /// <summary>An <c>Idempotency-Key</c> was replayed with a different request body.</summary>
     public const string IdempotencyConflict = Base + "idempotency-conflict";
 
@@ -101,6 +107,7 @@ public static class ProblemCodes
         InvalidRoutingRules,
         DomainNotVerified,
         DomainTaken,
+        DomainInUse,
         IdempotencyConflict,
         Unauthorized,
         Forbidden,

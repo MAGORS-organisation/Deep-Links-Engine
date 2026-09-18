@@ -223,12 +223,13 @@ Every error is `application/problem+json` with `type`, `title`, `status`, `detai
 | `validation-failed` | 400 | Body or query failed validation | `errors[]` |
 | `slug-taken` | 409 | Slug already used on that domain | |
 | `slug-invalid` | 400 | Syntactically invalid or reserved slug (`admin`, `api`, `.well-known` …). NFKC-normalised before the check, so homoglyphs are refused | |
-| `unsafe-target` | 422 | `target_url` failed the safety policy — scheme not `http(s)`, resolves to a private / link-local address, or on a blocklist ([§E.3](../zadanie.md#e3-ochrana-proti-zneužitiu-redirektora), T-01, T-02) | |
+| `unsafe-target` | 422 | `errors` names the field that failed — `target_url`, `expired_url` or `routing_rules[i].then.url`. The policy: scheme not `http(s)` — scheme not `http(s)`, resolves to a private / link-local address, or on a blocklist ([§E.3](../zadanie.md#e3-ochrana-proti-zneužitiu-redirektora), T-01, T-02) | |
 | `rate-limited` | 429 | A limit in the table below | `Retry-After` header |
 | `missing-default-rule` | 400 | Rule set has no catch-all rule (TC-105) | |
 | `invalid-routing-rules` | 400 | Rule set otherwise invalid (depth, size, unknown operator …) | `errors[]` |
 | `domain-not-verified` | 409 | Operation needs a verified domain (FR-143) | |
 | `domain-taken` | 409 | Host already registered, possibly by another tenant | |
+| `domain-in-use` | 409 | The host still serves links, so it cannot be deleted (FR-133); delete or move the links first | |
 | `idempotency-conflict` | 409 | See below | |
 | `unauthorized` | 401 | Credential missing, malformed, expired | |
 | `forbidden` | 403 | Valid credential, insufficient scope or wrong tenant | |
@@ -246,7 +247,7 @@ Every error is `application/problem+json` with `type`, `title`, `status`, `detai
   "status": 400,
   "detail": "target_url must be an absolute http or https URL.",
   "instance": "/api/v1/links",
-  "errors": [ { "path": "target_url", "message": "must be an absolute http or https URL" } ]
+  "errors": { "target_url": ["must be an absolute http or https URL"] }
 }
 ```
 
