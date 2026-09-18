@@ -173,8 +173,17 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
         // honest "failed" with the status the endpoint gave, not an exception and not a success.
         Assert.False(result.GetProperty("delivered").GetBoolean());
         Assert.Equal("failed", result.GetProperty("outcome").GetString());
-        Assert.True(result.GetProperty("response_code").GetInt32() >= 400);
         Assert.True(result.GetProperty("elapsed_ms").GetInt32() >= 0);
+
+        // The destination is a third party: it answers, but what it answers is not this
+        // repository's to promise. Read the status defensively and say what happened when it is
+        // absent, so an unreachable endpoint reads as that rather than as a key lookup crash.
+        Assert.True(
+            result.TryGetProperty("response_code", out JsonElement code) && code.ValueKind != JsonValueKind.Null,
+            "the destination never answered: " + (result.TryGetProperty("error", out JsonElement error)
+                ? error.GetString()
+                : "no error reported"));
+        Assert.True(code.GetInt32() >= 400, "a destination that answers 2xx is a delivery, not a failure");
         using JsonDocument payload = JsonDocument.Parse(result.GetProperty("payload").GetString()!);
         Assert.Equal("webhook.test", payload.RootElement.GetProperty("event").GetString());
 

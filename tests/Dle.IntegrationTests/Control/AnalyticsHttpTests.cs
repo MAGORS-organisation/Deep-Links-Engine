@@ -283,19 +283,46 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
                 [fixture.TenantId],
                 Ct));
 
-        // Hour-aligned edges inside the covered range: the store answers from the rollup and the
-        // figures are the ones the raw events gave.
+        // The rollup and the raw events agree on this tenant, so an assertion on the figure alone
+        // would pass whichever path answered. Make them disagree: from here a 12 can only have come
+        // from the rollup and a 2 can only have come from the raw events.
+        Assert.Equal(
+            1,
+            await Sql.ExecuteAsync(
+                Database.DataSource,
+                "UPDATE click_rollup_hourly SET clicks = clicks + 10 WHERE tenant_id = $1 AND is_bot = false AND clicks = 2",
+                [fixture.TenantId],
+                Ct));
+
         string window = string.Create(
             CultureInfo.InvariantCulture,
             $"from={seeded.AlignedFrom:yyyy-MM-dd'T'HH:mm:ss'Z'}&to={seeded.AlignedTo:yyyy-MM-dd'T'HH:mm:ss'Z'}");
         using HttpResponseMessage aligned = await fixture.Key.GetAsync(client, Analytics + "/clicks?grain=hour&" + window, Ct);
         Assert.Equal(HttpStatusCode.OK, aligned.StatusCode);
         using JsonDocument series = JsonDocument.Parse(await aligned.Content.ReadAsStringAsync(Ct));
-        Assert.Equal(2, SumOf(series.RootElement.GetProperty("points"), "clicks"));
+        Assert.Equal(12, SumOf(series.RootElement.GetProperty("points"), "clicks"));
 
         using HttpResponseMessage breakdown = await fixture.Key.GetAsync(client, Analytics + "/breakdown?dimension=platform&" + window, Ct);
         using JsonDocument rows = JsonDocument.Parse(await breakdown.Content.ReadAsStringAsync(Ct));
-        Assert.Equal(2, SumOf(rows.RootElement.GetProperty("rows"), "clicks"));
+        Assert.Equal(12, SumOf(rows.RootElement.GetProperty("rows"), "clicks"));
+
+        // A window the rollup does not reach back to. One pass aggregates at most
+        // Dle:Analytics:RollupMaxWindowHours, so a click from ten days ago was never aggregated,
+        // and the rollup holds no row for that day — which reads as a zero rather than as an
+        // absence. The recorded lower bound is what sends this query to the raw events instead, so
+        // it answers with the one click that is really there.
+        DateTimeOffset oldDay = DateTimeOffset.UtcNow.AddDays(-10);
+        DateTimeOffset oldFrom = new(oldDay.Year, oldDay.Month, oldDay.Day, 0, 0, 0, TimeSpan.Zero);
+        await TestSeed.ClickEventAsync(
+            Database, fixture.TenantId, seeded.LinkId, fixture.Tag + "-old", oldFrom.AddHours(9), cancellationToken: Ct);
+
+        string oldWindow = string.Create(
+            CultureInfo.InvariantCulture,
+            $"from={oldFrom:yyyy-MM-dd'T'HH:mm:ss'Z'}&to={oldFrom.AddDays(1):yyyy-MM-dd'T'HH:mm:ss'Z'}");
+        using HttpResponseMessage older = await fixture.Key.GetAsync(client, Analytics + "/clicks?grain=day&" + oldWindow, Ct);
+        Assert.Equal(HttpStatusCode.OK, older.StatusCode);
+        using JsonDocument beyond = JsonDocument.Parse(await older.Content.ReadAsStringAsync(Ct));
+        Assert.Equal(1, SumOf(beyond.RootElement.GetProperty("points"), "clicks"));
     }
 
     [RequiresDockerFact]
@@ -316,6 +343,11 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
         await TestSeed.ClickEventAsync(Database, fixture.TenantId, linkId, recent, now.AddDays(-2), ipPrefix: "203.0.113.0/24", cancellationToken: Ct);
         await TestSeed.ClickEventAsync(Database, fixture.TenantId, linkId, expired, now.AddDays(-45), ipPrefix: "198.51.100.0/24", cancellationToken: Ct);
         IRetentionService retention = fixture.Host.Services.GetRequiredService<IRetentionService>();
+
+        // Raw events are the only copy of what the rollups have not read, so retention drops
+        // nothing until they have caught up. Both jobs run in production; here the rollup is run
+        // once so that the watermark exists and the drop below is the one under test.
+        _ = await fixture.Host.Services.GetRequiredService<IRollupService>().RunAsync(Ct);
 
         // First run: nothing older than the raw window has a partition of its own yet, so nothing
         // is dropped; the stranded days are given partitions, and prefixes older than a day go.
@@ -342,6 +374,40 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
                 "SELECT count(*) FROM analytics_retention_runs WHERE id = ANY($1)",
                 [new[] { first.Id, second.Id }],
                 Ct));
+    }
+
+    [RequiresDockerFact]
+    [Trait("Spec", "FR-312")]
+    public async Task Retention_HoldsTheDropBack_WhileTheRollupsHaveNotCaughtUp()
+    {
+        Fixture fixture = await SeedAsync(
+            "analytics-retention-held",
+            settings => settings["Dle:Privacy:Retention:RawDays"] = "30");
+        long linkId = await TestSeed.LinkAsync(Database, fixture.TenantId, fixture.DomainId, "held", "https://example.com/", cancellationToken: Ct);
+        string clickId = fixture.Tag + "-held";
+        await TestSeed.ClickEventAsync(Database, fixture.TenantId, linkId, clickId, DateTimeOffset.UtcNow.AddDays(-45), cancellationToken: Ct);
+        IRetentionService retention = fixture.Host.Services.GetRequiredService<IRetentionService>();
+
+        // The first run gives the stranded day a partition of its own; it drops nothing yet.
+        _ = await retention.RunAsync(Ct);
+
+        // No hourly watermark: the rollups have never read that day. The partition is old enough
+        // to drop and would be dropped without the guard, taking with it the only copy of events
+        // nothing has aggregated. The rollup state is global to the database, which is why the
+        // test writes it rather than arranging it; the tests of this class run one after another.
+        _ = await Sql.ExecuteAsync(
+            Database.DataSource,
+            "DELETE FROM analytics_rollup_state WHERE name = ANY($1)",
+            [new[] { "click_rollup_hourly", "install_rollup_hourly" }],
+            Ct);
+
+        RetentionRunResult held = await retention.RunAsync(Ct);
+
+        Assert.Equal(RetentionRunResult.StatusOk, held.Status);
+        Assert.Empty(held.PartitionsDropped);
+        Assert.Equal(
+            1L,
+            await Sql.ScalarAsync<long>(Database.DataSource, "SELECT count(*) FROM click_events WHERE click_id = $1", [clickId], Ct));
     }
 
     [RequiresDockerFact]

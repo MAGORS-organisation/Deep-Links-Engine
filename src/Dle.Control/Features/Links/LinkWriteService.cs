@@ -389,7 +389,7 @@ public sealed class LinkWriteService
         }
 
         IReadOnlyList<RoutingRule> rules = request.RoutingRules is null
-            ? ControlJson.ReadRoutingRules(link.RoutingRules)
+            ? Retarget(ControlJson.ReadRoutingRules(link.RoutingRules), link.TargetUrl, request.TargetUrl)
             : ResolveRules(request.RoutingRules, targetUrl);
 
         if (request.RoutingRules is not null)
@@ -552,6 +552,61 @@ public sealed class LinkWriteService
             LinkWriteError.InvalidRoutingRules,
             "The routing rules are invalid.",
             fieldErrors);
+    }
+
+    /// <summary>
+    /// Moves a catch-all web rule that was pointing at the link's target along with the target, so
+    /// that a <c>PATCH</c> of <c>target_url</c> alone cannot leave the two disagreeing.
+    /// </summary>
+    /// <param name="stored">The rule set as it is stored.</param>
+    /// <param name="previousTarget">The target the stored rules were written against.</param>
+    /// <param name="requestedTarget">The new target, or <see langword="null"/> when the request leaves it alone.</param>
+    /// <returns>The rule set to store.</returns>
+    /// <remarks>
+    /// A link created with only a <c>target_url</c> is stored with a default rule synthesised from
+    /// that URL, and the edge routes from the rules alone: <c>target_url</c> is never read at
+    /// resolve time. Writing the stored rules back unchanged after a target change therefore kept
+    /// every visitor going to the old destination while the API, the revision history and the
+    /// console all reported the new one — a link silently serving the wrong page, with nothing in
+    /// the product disagreeing with anything else.
+    /// </remarks>
+    /// <remarks>
+    /// Only a rule that was in step with the target moves: a catch-all (no <c>when</c>) web rule
+    /// whose URL is the previous target. A rule set the caller authored to send the default case
+    /// somewhere other than <c>target_url</c> is left exactly as written, because there the two
+    /// fields are meant to differ.
+    /// </remarks>
+    private static IReadOnlyList<RoutingRule> Retarget(
+        IReadOnlyList<RoutingRule> stored,
+        string? previousTarget,
+        string? requestedTarget)
+    {
+        string? target = Trim(requestedTarget);
+
+        if (target is null || string.IsNullOrWhiteSpace(previousTarget))
+        {
+            return stored;
+        }
+
+        string previous = previousTarget.Trim();
+        List<RoutingRule>? moved = null;
+
+        for (int i = 0; i < stored.Count; i++)
+        {
+            RoutingRule rule = stored[i];
+
+            if (rule.When is not null
+                || rule.Then.Action != RoutingActionKind.Web
+                || !string.Equals(rule.Then.Url?.Trim(), previous, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            moved ??= [.. stored];
+            moved[i] = rule with { Then = rule.Then with { Url = target } };
+        }
+
+        return moved ?? stored;
     }
 
     /// <summary>

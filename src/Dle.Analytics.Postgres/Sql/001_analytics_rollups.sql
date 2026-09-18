@@ -171,9 +171,16 @@ CREATE INDEX IF NOT EXISTS ix_attribution_quality_daily_tenant
 -- ---------------------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS analytics_rollup_state (
     name            text        NOT NULL PRIMARY KEY,
+    covered_from    timestamptz,
     covered_through timestamptz NOT NULL,
     updated_at      timestamptz NOT NULL
 );
+
+-- covered_from arrived after covered_through and is nullable so that an instance created before it
+-- keeps working. A NULL lower bound means "we do not know how far back this rollup reaches", and
+-- the reporting store reads that as a reason to answer from the raw events instead: an unknown
+-- lower bound must never be mistaken for a complete one.
+ALTER TABLE analytics_rollup_state ADD COLUMN IF NOT EXISTS covered_from timestamptz;
 
 -- ---------------------------------------------------------------------------------------------
 -- Retention audit (FR-247, §E.6.3: "configurable retention with an automatic job and an audit of

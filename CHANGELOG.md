@@ -64,6 +64,28 @@ not been executed anywhere.
 
 ### Fixed
 
+- **Control plane** — `PATCH /api/v1/links/{id}` with only a new `target_url` left the stored
+  routing rules pointing at the old one. A link created without rules is stored with a catch-all
+  synthesised from its target, and the edge routes from the rules alone, so every visitor kept
+  going to the old destination while the API, the revision history and the console all reported
+  the new one. A catch-all web rule that was pointing at the target now moves with it; a rule set
+  the caller authored is left exactly as written.
+- **Analytics** — the rollup job marked spans it had never aggregated as covered. A pass
+  aggregates at most `RollupMaxWindowHours`, but the watermark was advanced to the present
+  regardless, so on a database with events older than one window (a fresh install, or a job that
+  had been down) every report over the skipped span was answered from the empty rollup tables as
+  zeros instead of from the raw events. Each pass now starts where the last one ended, so the
+  covered span stays contiguous, and `analytics_rollup_state` records the lower bound as well:
+  a report is answered from a rollup only when its window lies inside what that rollup has really
+  aggregated. This became reachable in the previous release, when the first rollup pass on an
+  empty state table stopped throwing.
+- **Analytics** — retention could delete raw events the rollups had never read. The partition drop
+  was the first thing a run did, before every statement that needs the analytics schema, so on an
+  instance where that schema is missing each run destroyed partitions older than `RawDays` and
+  then failed before writing its audit row (§E.6.3, FR-247). The run now reads the rollup
+  watermark first, which fails before anything is dropped when the schema is absent, and the raw
+  cutoff never passes that watermark: a rollup job that is behind holds the drop back and says so
+  (event 6306).
 - **Analytics** — three defects the analytics integration tests found on their first run against
   a live PostgreSQL, all fixed in the same pull request:
   - The rollup job crashed on a database that had never been aggregated: with no state row the

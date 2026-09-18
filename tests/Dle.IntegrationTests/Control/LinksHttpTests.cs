@@ -392,6 +392,86 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
+    [Trait("Spec", "FR-101")]
+    public async Task Patch_OfTheTargetAlone_MovesTheRuleThatWasFollowingIt()
+    {
+        // The edge routes from the rule set alone; target_url is not read at resolve time. A link
+        // created without rules is stored with a catch-all synthesised from its target, so a patch
+        // of the target that left that rule behind would send every visitor to the old page while
+        // the API, the history and the console all showed the new one.
+        Fixture fixture = await SeedAsync("links-retarget");
+        using HttpClient client = fixture.Host.CreateDirectClient();
+        long id;
+
+        using (HttpResponseMessage created = await fixture.Key.PostRawAsync(client, "/api/v1/links", Body(fixture.DomainId), Ct))
+        {
+            Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+            using JsonDocument document = JsonDocument.Parse(await created.Content.ReadAsStringAsync(Ct));
+            id = long.Parse(document.RootElement.GetProperty("id").GetString()!, CultureInfo.InvariantCulture);
+            JsonElement rule = Assert.Single(document.RootElement.GetProperty("routing_rules").EnumerateArray());
+            Assert.Equal(SafeTarget, rule.GetProperty("then").GetProperty("url").GetString());
+        }
+
+        using HttpResponseMessage patched = await fixture.Key.PatchRawAsync(
+            client,
+            LinkPath(id),
+            """{"target_url": "https://example.com/moved"}""",
+            Ct);
+
+        Assert.Equal(HttpStatusCode.OK, patched.StatusCode);
+        using JsonDocument answer = JsonDocument.Parse(await patched.Content.ReadAsStringAsync(Ct));
+        Assert.Equal("https://example.com/moved", answer.RootElement.GetProperty("target_url").GetString());
+        JsonElement moved = Assert.Single(answer.RootElement.GetProperty("routing_rules").EnumerateArray());
+        Assert.Equal("https://example.com/moved", moved.GetProperty("then").GetProperty("url").GetString());
+
+        // What the edge will read, not only what the API answered.
+        Assert.Contains(
+            "https://example.com/moved",
+            await Sql.ScalarAsync<string>(Database.DataSource, "SELECT routing_rules::text FROM links WHERE id = $1", [id], Ct),
+            StringComparison.Ordinal);
+    }
+
+    [RequiresDockerFact]
+    [Trait("Spec", "FR-101")]
+    public async Task Patch_OfTheTargetAlone_LeavesAnAuthoredRuleSetAsWritten()
+    {
+        // The other half of the contract: where the caller wrote a rule set of their own, the two
+        // fields are meant to be able to differ, and a target change must not rewrite their rules.
+        Fixture fixture = await SeedAsync("links-authored-rules");
+        using HttpClient client = fixture.Host.CreateDirectClient();
+        long id;
+
+        using (HttpResponseMessage created = await fixture.Key.PostRawAsync(
+            client,
+            "/api/v1/links",
+            Body(
+                fixture.DomainId,
+                """
+                "routing_rules": [
+                  {"id": "everyone", "then": {"action": "web", "url": "https://example.com/authored"}}
+                ]
+                """),
+            Ct))
+        {
+            Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+            using JsonDocument document = JsonDocument.Parse(await created.Content.ReadAsStringAsync(Ct));
+            id = long.Parse(document.RootElement.GetProperty("id").GetString()!, CultureInfo.InvariantCulture);
+        }
+
+        using HttpResponseMessage patched = await fixture.Key.PatchRawAsync(
+            client,
+            LinkPath(id),
+            """{"target_url": "https://example.com/elsewhere"}""",
+            Ct);
+
+        Assert.Equal(HttpStatusCode.OK, patched.StatusCode);
+        using JsonDocument answer = JsonDocument.Parse(await patched.Content.ReadAsStringAsync(Ct));
+        Assert.Equal("https://example.com/elsewhere", answer.RootElement.GetProperty("target_url").GetString());
+        JsonElement rule = Assert.Single(answer.RootElement.GetProperty("routing_rules").EnumerateArray());
+        Assert.Equal("https://example.com/authored", rule.GetProperty("then").GetProperty("url").GetString());
+    }
+
+    [RequiresDockerFact]
     [Trait("Threat", "T-01")]
     public async Task Patch_WithAnUnsafeTarget_Is422AndLeavesTheLinkAlone()
     {
