@@ -1,0 +1,80 @@
+# Overrides for the install job of .github/workflows/helm.yml — a real `helm install` into a
+# throw-away kind cluster on a two-core runner.
+#
+# The chart's own defaults describe a production deployment: three edge pods behind an HPA, two
+# control pods, a PostgreSQL primary with two read replicas and 20 Gi volumes each. That asks for
+# roughly 2.25 CPU of requests, which a GitHub runner cannot schedule, so the pods would sit
+# Pending until `--wait` gave up. Everything here exists to make the same templates fit one node.
+#
+# PostgreSQL and Valkey are NOT the bundled sub-charts. They come from .github/helm/stores.yaml,
+# which runs the same postgres:18 and valkey/valkey:8 images the compose stack and the integration
+# suite already pull in this CI. The sub-charts are rendered, linted and schema-validated by the
+# job above; installing them here would make this gate depend on a third party's registry policy
+# rather than on our chart.
+#
+# The master secret is not in this file. It is generated per run and passed with --set, because a
+# secret committed to a repository is a secret whatever it protects.
+
+image:
+  edge:
+    repository: dle-edge
+    tag: ci
+    # Never, not IfNotPresent: the default repository is a public GHCR one, so a `kind load` that
+    # silently failed would leave the kubelet pulling the last published image and the job would
+    # pass against something this run did not build. With Never that failure is ErrImageNeverPull.
+    pullPolicy: Never
+  control:
+    repository: dle-control
+    tag: ci
+    pullPolicy: Never
+
+# Profile B of §B.8: stores handed in as connection strings. The password matches stores.yaml.
+externalPostgres:
+  connectionString: "Host=dle-postgres;Port=5432;Database=dle;Username=dle;Password=kind-ci-postgres;Application Name=dle-control;Include Error Detail=true"
+externalValkey:
+  connectionString: "dle-valkey:6379"
+
+edge:
+  replicaCount: 1
+  autoscaling:
+    # No metrics-server in a bare kind cluster, and an HPA whose minReplicas is 3 would scale the
+    # Deployment to 3 without ever reading a metric.
+    enabled: false
+  pdb:
+    # minAvailable 2 against a single replica is a budget nothing can satisfy.
+    enabled: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: "1"
+      memory: 384Mi
+
+control:
+  replicaCount: 1
+  pdb:
+    enabled: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 192Mi
+    limits:
+      cpu: "1"
+      memory: 512Mi
+
+ingress:
+  # There is no ingress controller here, and an Ingress that nothing serves would leave the job
+  # asserting against an address that never answers. The services are reached by port-forward.
+  enabled: false
+
+networkPolicy:
+  # kind's default CNI does not enforce NetworkPolicy, so these objects would be decoration; the
+  # day it does, the edge policy admits only ingress-nginx and a port-forward would be denied.
+  # They are rendered and validated by the job above.
+  enabled: false
+
+migrate:
+  # Well under the 12-minute install timeout, so a migration that cannot finish fails as itself
+  # rather than as a Helm timeout with nothing to read.
+  activeDeadlineSeconds: 300

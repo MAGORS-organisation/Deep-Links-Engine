@@ -15,6 +15,14 @@ not been executed anywhere.
 
 ### Added
 
+- **The Helm chart is installed, not only rendered.** `helm.yml` gained a second job that creates a
+  kind cluster, builds both images and loads them into it, installs the chart against a PostgreSQL
+  and a Valkey it brings itself, and then asserts on what an operator would check: the migration
+  Job completed, the eight tables the product writes to exist in the database, the edge and the
+  control plane answer, and each reports by name that it reached the store the chart wired it to.
+  It then upgrades the release in place, which runs the migration hook a second time against an
+  already-migrated database. The nightly runs the same workflow, because the images come from
+  `src/` and a change there can break an install without touching `deploy/`.
 - **Edge (data plane)** — slug resolve with L1/L2 caching (HybridCache over Valkey), client
   classification, routing rules, 302 redirect or interstitial (CSP without `unsafe-inline`), Open
   Graph documents for verified crawlers (302-not-301, ADR-009), `/.well-known/apple-app-site-association`
@@ -236,10 +244,12 @@ not been executed anywhere.
 
 ### Not yet verified — read before relying on anything above
 
-- **The Helm chart has been linted, rendered and schema-validated in CI** (the `Helm chart`
-  workflow: three profiles, kubeconform against Kubernetes 1.31) but **never installed on a
-  cluster**. The bitnami sub-charts are pinned to the versions the registry served on first
-  resolution (postgresql 18.11.1, valkey 4.1.3).
+- **The Helm chart is installed into a real cluster in CI** (the `Helm chart` workflow): rendered
+  and schema-validated for all three profiles, then installed into kind with the external-stores
+  profile and upgraded in place. What is still unproven is the bundled Bitnami sub-chart path,
+  which is rendered and linted but not installed — a gate that depends on another project's
+  registry policy teaches a team to ignore the gate — and every profile on a multi-node cluster
+  with an ingress controller, a metrics server and enforced NetworkPolicy.
 - **The k6 load profile (`tests/load`) has never been run.** It needs a deployed, seeded instance
   and a control-plane API key; the release workflow runs it only when a staging target is
   configured and otherwise marks the release as pre-release.
