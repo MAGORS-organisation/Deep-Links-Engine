@@ -34,7 +34,7 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     private const string Analytics = "/api/v1/analytics";
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-300")]
+    [Trait("Spec", "FR-202")]
     public async Task TimeSeries_CountsClicksAndInstalls_LeavesBotsOutUnlessAsked_AndTotalsTheFunnel()
     {
         Fixture fixture = await SeedAsync("analytics-series");
@@ -71,7 +71,7 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-301")]
+    [Trait("Spec", "FR-202")]
     public async Task Breakdown_GroupsByPlatform_AndRefusesADimensionOffTheAllowlist()
     {
         Fixture fixture = await SeedAsync("analytics-breakdown");
@@ -87,7 +87,18 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
             .ToDictionary(row => row.GetProperty("key").GetString()!, row => row.GetProperty("clicks").GetInt64(), StringComparer.Ordinal);
         Assert.Equal(1, clicksByKey["ios"]);
         Assert.Equal(1, clicksByKey["android"]);
-        Assert.False(clicksByKey.ContainsKey("bot"), "bots are left out unless asked for");
+        Assert.Equal(2, clicksByKey.Values.Sum());
+
+        // The bot click is seeded with an iOS user agent, so leaving bots out is not visible as a
+        // missing "bot" row: it is visible as an iOS count of one instead of two. Asking for them
+        // is what tells the two apart, and it is the only form of this assertion that can fail.
+        using HttpResponseMessage withBots = await fixture.Key.GetAsync(client, Analytics + "/breakdown?dimension=platform&include_bots=true", Ct);
+        using JsonDocument all = JsonDocument.Parse(await withBots.Content.ReadAsStringAsync(Ct));
+        Dictionary<string, long> everything = all.RootElement.GetProperty("rows")
+            .EnumerateArray()
+            .ToDictionary(row => row.GetProperty("key").GetString()!, row => row.GetProperty("clicks").GetInt64(), StringComparer.Ordinal);
+        Assert.Equal(2, everything["ios"]);
+        Assert.Equal(3, everything.Values.Sum());
 
         // Grouping by a column the caller names is exactly the SQL injection surface a breakdown
         // has; anything off the allowlist is refused before a query is built.
@@ -127,7 +138,7 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerTheory]
-    [Trait("Spec", "FR-300")]
+    [Trait("Spec", "FR-202")]
     [InlineData("from=2026-02-01T00:00:00Z&to=2026-01-01T00:00:00Z", "from")]
     [InlineData("from=2020-01-01T00:00:00Z&to=2026-01-01T00:00:00Z", "from")]
     [InlineData("from=yesterday", "from")]
@@ -173,7 +184,7 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-310")]
+    [Trait("Spec", "FR-203")]
     public async Task Export_WritesCsvOrParquet_NamedAfterTheReportAndWindow()
     {
         Fixture fixture = await SeedAsync("analytics-export");
@@ -208,7 +219,7 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-311")]
+    [Trait("Spec", "FR-206")]
     public async Task Stream_SendsTheFunnelAsAServerSentEvent()
     {
         Fixture fixture = await SeedAsync("analytics-stream");
@@ -326,7 +337,7 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-312")]
+    [Trait("Spec", "FR-247")]
     public async Task Retention_ForgetsIpPrefixes_DropsExpiredDays_AndKeepsALedger()
     {
         Fixture fixture = await SeedAsync(
@@ -377,7 +388,7 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-312")]
+    [Trait("Spec", "FR-247")]
     public async Task Retention_HoldsTheDropBack_WhileTheRollupsHaveNotCaughtUp()
     {
         Fixture fixture = await SeedAsync(
@@ -411,7 +422,7 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-312")]
+    [Trait("Spec", "FR-247")]
     public async Task Retention_InDryRun_ReportsWithoutChangingAnything()
     {
         Fixture fixture = await SeedAsync(
@@ -438,7 +449,7 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-320")]
+    [Trait("Spec", "FR-249")]
     public async Task TenantExport_IsAZipOfNdjsonPerEntity_WithAManifest_ForTheOwnerOnly()
     {
         Fixture fixture = await SeedAsync("analytics-tenant-export");

@@ -33,7 +33,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     private const string Destination = "https://example.com/hooks/dle";
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-230")]
+    [Trait("Spec", "FR-204")]
     public async Task Create_ASubscription_ShowsTheSecretOnce_AndListsWithoutIt()
     {
         Fixture fixture = await SeedAsync("webhooks-create");
@@ -106,7 +106,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerTheory]
-    [Trait("Spec", "FR-231")]
+    [Trait("Spec", "FR-204")]
     [InlineData("""{"url": "https://example.com/hooks", "event_types": []}""")]
     [InlineData("""{"url": "https://example.com/hooks", "event_types": ["link.exploded"]}""")]
     public async Task Create_WithUnknownOrMissingEventTypes_IsValidationFailedOnEventTypes(string body)
@@ -122,7 +122,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-230")]
+    [Trait("Spec", "FR-204")]
     public async Task Create_BeyondTheTenantsSubscriptionLimit_Is409()
     {
         Fixture fixture = await SeedAsync("webhooks-limit", settings => settings["Dle:Webhooks:MaxSubscriptionsPerTenant"] = "2");
@@ -158,7 +158,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-233")]
+    [Trait("Spec", "FR-204")]
     public async Task Test_DeliversASignedTestEventSynchronously_AndReportsTheEndpointsAnswer()
     {
         Fixture fixture = await SeedAsync("webhooks-test");
@@ -194,7 +194,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-233")]
+    [Trait("Spec", "FR-204")]
     [Trait("Threat", "T-07")]
     public async Task Test_AgainstAnEndpointTheSuiteOwns_ArrivesSignedAndVerifiable()
     {
@@ -267,7 +267,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-232")]
+    [Trait("Spec", "FR-204")]
     public async Task AQuarantine_LandsInTheOutboxOncePerSubscriptionThatAskedForIt()
     {
         Fixture fixture = await SeedAsync("webhooks-outbox");
@@ -308,7 +308,7 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-230")]
+    [Trait("Spec", "FR-204")]
     public async Task Delete_DeactivatesTheSubscription_AndAnotherTenantsIs404()
     {
         Fixture fixture = await SeedAsync("webhooks-delete");

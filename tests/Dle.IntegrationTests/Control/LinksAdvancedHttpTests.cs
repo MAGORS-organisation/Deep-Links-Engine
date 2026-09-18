@@ -29,7 +29,7 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     private const string IdempotencyHeader = "Idempotency-Key";
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-104")]
+    [Trait("Spec", "FR-103")]
     public async Task Bulk_CreatesEveryUsableRow_AndAnswersOneLinePerRowInOrder()
     {
         Fixture fixture = await SeedAsync("bulk-rows");
@@ -145,7 +145,7 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-104")]
+    [Trait("Spec", "FR-103")]
     public async Task Bulk_WithARowThatIsNotJson_ReportsThatRow_AndImportsTheRest()
     {
         Fixture fixture = await SeedAsync("bulk-garbage");
@@ -188,7 +188,7 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-109")]
+    [Trait("Spec", "FR-129")]
     public async Task Simulate_ExplainsTheDecisionForAClient_WithoutRecordingAClick()
     {
         Fixture fixture = await SeedAsync("simulate");

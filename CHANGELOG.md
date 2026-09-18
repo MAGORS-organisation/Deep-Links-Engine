@@ -64,6 +64,19 @@ not been executed anywhere.
 
 ### Fixed
 
+- **Tests** — assertions that could not fail, and two claims the code does not keep. A revoked key
+  was only ever presented for the first time after its revocation, so the credential cache was
+  never in the path and the property under test was not the one documented: revocation takes
+  effect within `Dle:Identity:CredentialCacheSeconds`, which the configuration reference has always
+  said and two code comments denied. There is now a test that uses a key, revokes it and presents
+  it again with the cache out of the way. A link delete asserted that no revisions survived a link
+  that never had any; it creates and edits the link first. The link write policy pinned viewer and
+  owner but not editor, which is where the line actually is. The bot assertion could not fail, and
+  the rank guard named in a test's name is unreachable over HTTP.
+- **Tests** — the `Spec` traits named requirements that denote something else in `docs/zadanie.md`
+  (`FR-244` is URL reputation, not tenant deletion) or nothing at all (`FR-3xx`), so a report
+  grouped by requirement credited the wrong ones and showed the real ones as uncovered. They are
+  re-mapped, and a contract test now fails on any `Spec` trait the specification does not define.
 - **Tests** — webhook signing had no test of a delivery that leaves the host. The algorithm has
   unit, contract and security tests, but every delivery test pointed at a public address that
   refuses the request, so nothing checked that a subscriber receives a header they can verify. The

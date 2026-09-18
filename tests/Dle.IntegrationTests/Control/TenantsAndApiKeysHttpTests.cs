@@ -10,8 +10,8 @@ namespace Dle.IntegrationTests.Control;
 /// Tenants, API keys and the JWKS document through HTTP against a real PostgreSQL (§B.7.4, §E.4,
 /// FR-240 to FR-244): a tenant reads itself, only the instance operator provisions, lists,
 /// suspends and deletes tenants, keys are issued once in the clear with a role no stronger than
-/// the issuer's, listed by prefix, and stop authenticating the moment they are revoked or their
-/// tenant is suspended.
+/// the issuer's, listed by prefix, and stop authenticating once they are revoked or their tenant
+/// is suspended.
 /// </summary>
 /// <remarks>
 /// The instance operator is whichever tenant <c>Dle:Control:InstanceTenantId</c> names; the tests
@@ -26,7 +26,7 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("Spec", "FR-240")]
+    [Trait("Spec", "FR-241")]
     public async Task Me_ReturnsTheCallersOwnTenant_EvenForAViewer()
     {
         Fixture fixture = await SeedAsync("tenants-me", asOperator: false);
@@ -125,7 +125,7 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-243")]
+    [Trait("Spec", "FR-248")]
     public async Task Patch_ATenant_ChangesNameAndConsent_AndSuspensionLocksItsKeysOut()
     {
         Fixture fixture = await SeedAsync("tenants-patch", asOperator: true);
@@ -158,7 +158,7 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-244")]
+    [Trait("Spec", "FR-241")]
     public async Task Delete_ATenant_Is204_AndTheTenantAndItsKeysVanish()
     {
         Fixture fixture = await SeedAsync("tenants-delete", asOperator: true);
@@ -280,6 +280,38 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
         Assert.Equal(HttpStatusCode.Unauthorized, refused.StatusCode);
     }
 
+    [RequiresDockerFact]
+    [Trait("Spec", "E.4.1")]
+    public async Task ApiKeys_AKeyThatWasInUse_StopsAuthenticatingWhenTheCacheIsNotInTheWay()
+    {
+        // The test above revokes a key that was never presented, so the credential cache was never
+        // asked about it. This one takes the path a leaked key really takes — used, then revoked,
+        // then used again — with Dle:Identity:CredentialCacheSeconds at 0, which is the setting an
+        // operator who needs revocation to bite at once has to choose. Left at its default of 60,
+        // the same sequence answers 200 until the entry expires; that window is the documented
+        // cost of not verifying a credential on every request (docs/self-hosting/configuration.md).
+        Fixture fixture = await SeedAsync(
+            "keys-revoked-live",
+            asOperator: false,
+            configure: settings => settings["Dle:Identity:CredentialCacheSeconds"] = "0");
+        using HttpClient client = fixture.Host.CreateDirectClient();
+
+        using HttpResponseMessage created = await fixture.Key.PostRawAsync(
+            client, "/api/v1/api-keys", """{"name": "In use", "role": "viewer"}""", Ct);
+        using JsonDocument issued = JsonDocument.Parse(await created.Content.ReadAsStringAsync(Ct));
+        Guid keyId = issued.RootElement.GetProperty("id").GetGuid();
+        ControlCredentials live = ControlCredentials.FromToken(issued.RootElement.GetProperty("secret").GetString()!, fixture.TenantId);
+
+        using HttpResponseMessage before = await live.GetAsync(client, "/api/v1/tenants/me", Ct);
+        Assert.Equal(HttpStatusCode.OK, before.StatusCode);
+
+        using HttpResponseMessage revoked = await fixture.Key.DeleteAsync(client, "/api/v1/api-keys/" + keyId.ToString(), Ct);
+        Assert.Equal(HttpStatusCode.NoContent, revoked.StatusCode);
+
+        using HttpResponseMessage after = await live.GetAsync(client, "/api/v1/tenants/me", Ct);
+        Assert.Equal(HttpStatusCode.Unauthorized, after.StatusCode);
+    }
+
     [RequiresDockerTheory]
     [Trait("Spec", "E.4.1")]
     [InlineData("""{"name": "   ", "role": "viewer"}""", "name")]
@@ -301,7 +333,7 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
 
     [RequiresDockerFact]
     [Trait("Spec", "E.4.1")]
-    public async Task ApiKeys_AnAdminMayListButOnlyAnOwnerMayIssue_AndNoKeyOutranksItsIssuer()
+    public async Task ApiKeys_AnAdminMayListButOnlyAnOwnerMayIssue()
     {
         Fixture fixture = await SeedAsync("keys-roles", asOperator: false);
         ControlCredentials admin = await ControlCredentials.IssueApiKeyAsync(fixture.Host, Database, fixture.TenantId, "admin", Ct);
@@ -351,12 +383,21 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
         throw new Xunit.Sdk.XunitException("key " + id.ToString() + " is not listed");
     }
 
-    private async Task<Fixture> SeedAsync(string name, bool asOperator)
+    private async Task<Fixture> SeedAsync(
+        string name,
+        bool asOperator,
+        Action<Dictionary<string, string?>>? configure = null)
     {
         Guid tenantId = await TestSeed.TenantAsync(Database, name, cancellationToken: Ct);
-        DleTestHost<DleControlOptions> controlHost = asOperator
-            ? StartControl(settings => settings["Dle:Control:InstanceTenantId"] = tenantId.ToString())
-            : StartControl();
+        DleTestHost<DleControlOptions> controlHost = StartControl(settings =>
+        {
+            if (asOperator)
+            {
+                settings["Dle:Control:InstanceTenantId"] = tenantId.ToString();
+            }
+
+            configure?.Invoke(settings);
+        });
         ControlCredentials key = await ControlCredentials.IssueApiKeyAsync(controlHost, Database, tenantId, "owner", Ct);
         return new Fixture(controlHost, key, tenantId);
     }
