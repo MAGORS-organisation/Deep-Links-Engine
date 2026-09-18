@@ -73,6 +73,16 @@ not been executed anywhere.
 
 ### Fixed
 
+- **Helm chart — the migration never ran on a first install.** The first time the chart was
+  installed rather than rendered, `helm install` failed with `Job/dle-migrate not ready ...
+  failed: 0/1`: no pod had failed because no pod had ever been created. The Job named the
+  release's ServiceAccount, and as a `pre-install` hook it runs before that account exists, so
+  the kubelet refused the pod (`error looking up service account default/dle`) until
+  `activeDeadlineSeconds` ended the Job. The chart already solved this for the Job's Secret with
+  a hook-scoped copy and simply did not do the same for its account; it does now, carrying
+  `serviceAccount.annotations` so an IRSA or Workload Identity binding reaches the migration as
+  well as the pods. Every install of this chart with `secrets.existingSecret` unset and an
+  external database would have hit it, and no amount of `helm template` could have shown it.
 - **Edge** — the two findings the OWASP ZAP baseline raised the first time it ran as a gate rather
   than as a report (it is report-only on pull requests by design, so a push to `develop` is where
   it first had to be answered):

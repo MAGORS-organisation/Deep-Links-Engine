@@ -70,6 +70,14 @@ uninstall` leaves it behind — delete it by hand afterwards:
      kubectl -n {{ .Release.Namespace }} delete secret {{ include "dle.migrate.fullname" . }}
 {{- end }}
 {{- end }}
+{{- if and .Values.migrate.enabled .Values.serviceAccount.create }}
+
+NOTE — the migration hook runs under its own ServiceAccount "{{ include "dle.migrate.serviceAccountName" . }}": a
+{{ include "dle.migrate.hooks" . }} hook can only name accounts that already exist. It is a hook resource too, so it
+outlives `helm uninstall` — which is what lets the migration be re-run by hand:
+     kubectl -n {{ .Release.Namespace }} create job --from=job/{{ include "dle.migrate.fullname" . }} {{ include "dle.migrate.fullname" . }}-retry
+     kubectl -n {{ .Release.Namespace }} delete serviceaccount {{ include "dle.migrate.serviceAccountName" . }}
+{{- end }}
 {{- if or .Values.postgresql.enabled .Values.valkey.enabled }}
 
 NOTE — bundled {{ if .Values.postgresql.enabled }}PostgreSQL{{ end }}{{ if and .Values.postgresql.enabled .Values.valkey.enabled }} and {{ end }}{{ if .Values.valkey.enabled }}Valkey{{ end }} subchart(s) are for evaluation only. Production (§B.8) wants
