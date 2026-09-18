@@ -25,7 +25,8 @@ The click stream is stored **primarily in a partitioned PostgreSQL table** (`cli
 - Positive: logical replication from PostgreSQL is the ready path to feed ClickHouse without an ETL layer ([ADR-0003](0003-postgresql-as-primary-store.md)).
 - Negative: report queries over months of data in PostgreSQL will be slower than ClickHouse; rollup tables written by the rollup worker exist to make the dashboard cheap regardless.
 - Negative: two implementations of one interface to keep in step.
-- Verification: both providers build and are covered by unit tests; the partition DDL and `pg_partman` configuration are in the generated migration, which has not been applied to a live PostgreSQL on the build machine.
+- Negative: the rollup schema cannot live in the EF Core migration set, because an instance running the ClickHouse provider has no use for it. It ships as `src/Dle.Analytics.Postgres/Sql/001_analytics_rollups.sql`, every statement idempotent, and the control plane applies it at start-up (`PostgresAnalyticsSchema`); an instance whose database role may not create tables gets a logged failure and a runbook entry rather than a silent one.
+- Verification: both providers build and are covered by unit tests; the partition DDL and `pg_partman` configuration are in the generated migration, which the integration suite applies to and rolls back on a live PostgreSQL 18 in CI. The rollup schema and the jobs that read it are covered by the analytics integration tests.
 
 ## Alternatives considered
 

@@ -139,17 +139,16 @@ jobs:
 
       - name: Coverage gate
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
-        # Domain tier (Dle.Domain, Dle.Crypto) >= 90 % is a HARD gate.
-        # Overall is a WARNING, not a failure: the product is at ~47 % against the 70 % target
-        # (§D.1). Hosts (Dle.Edge, Dle.Control) and the persistence layer are covered mostly by the
-        # integration suite, which is small so far. Flip --overall-mode to `fail` once the number
-        # is above 70 % on develop — a gate that fails every PR from day one gets bypassed, not
-        # honoured.
+        # Domain tier (Dle.Domain, Dle.Crypto) >= 90 % is a HARD gate, and so is the overall
+        # 70 % of §D.1: the product reached 83.8 % once the control plane's HTTP integration
+        # suite landed, which is the condition this step waited for. It ran in `warn` mode while
+        # the number was below the threshold, because a gate that fails every pull request from
+        # day one gets bypassed rather than honoured.
         run: |
           python3 .github/scripts/coverage-gate.py "$RESULTS_DIR/coverage/merged.cobertura.xml" \
             --domain-threshold 90 --overall-threshold 70 \
             --domain-assemblies Dle.Domain,Dle.Crypto \
-            --overall-mode warn \
+            --overall-mode fail \
             --summary "$GITHUB_STEP_SUMMARY"
 
       - name: Upload TestResults

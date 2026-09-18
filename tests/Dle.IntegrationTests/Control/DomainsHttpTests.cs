@@ -203,7 +203,7 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
         using HttpResponseMessage refused = await fixture.Key.DeleteAsync(client, "/api/v1/domains/" + fixture.DomainId.ToString(), Ct);
         Assert.Equal(HttpStatusCode.Conflict, refused.StatusCode);
         using JsonDocument problem = JsonDocument.Parse(await refused.Content.ReadAsStringAsync(Ct));
-        Assert.Equal(ProblemCodes.Base + "domain-in-use", problem.RootElement.GetProperty("type").GetString());
+        Assert.Equal(ProblemCodes.DomainInUse, problem.RootElement.GetProperty("type").GetString());
         Assert.Equal(1L, await Sql.ScalarAsync<long>(Database.DataSource, "SELECT count(*) FROM domains WHERE id = $1", [fixture.DomainId], Ct));
 
         using HttpResponseMessage removed = await fixture.Key.DeleteAsync(client, "/api/v1/domains/" + empty.ToString(), Ct);

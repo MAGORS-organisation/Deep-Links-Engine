@@ -77,12 +77,17 @@ four hours ([§E.3](../zadanie.md)).
 ### Analytics rollup or retention worker failing on every run
 
 **Symptom.** Log event 6501 at control plane start (`The analytics rollup schema could not
-be applied`), the rollup and retention workers reporting a missing relation on every run,
-`GET /api/v1/analytics/breakdown?dimension=platform` answering 500.
+be applied`), the rollup and retention workers reporting a missing relation on every run, and
+every report that may be answered from a rollup failing with 500 on a bucket-aligned window:
+`GET /api/v1/analytics/clicks`, `/installs`, `/breakdown`, `/funnels` and `/attribution-quality`.
+Each of them reads `analytics_rollup_state` before deciding between the rollup and the raw
+events, so the missing relation surfaces before any fallback can.
 
-**Cause.** The rollup schema is not part of the EF Core migration set (ADR-006). The control
-plane applies `src/Dle.Analytics.Postgres/Sql/001_analytics_rollups.sql` itself when it
-starts, and the database role it runs as may not create tables.
+**Cause.** The rollup schema is not part of the EF Core migration set: the PostgreSQL analytics
+provider is one of two (ADR-006), and an operator running the ClickHouse provider has no use for
+these tables. The control plane applies
+`src/Dle.Analytics.Postgres/Sql/001_analytics_rollups.sql` itself when it starts, and the
+database role it runs as may not create tables.
 
 **Action.** Run the script once against the analytics database with a role that may create
 tables and functions; it is idempotent. Restart nothing — the next worker run finds the
