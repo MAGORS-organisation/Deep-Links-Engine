@@ -39,7 +39,7 @@ One domain schema, two access mechanisms. **EF Core migrations are the single so
 
 - Positive: the edge process has no EF Core dependency (`src/Dle.Persistence.Fast`), so it stays small, fast and AOT-ready; the control plane keeps the migration story and the productivity.
 - Negative: two ways of talking to the same tables. A column added in a migration must be picked up by hand in the Dapper query and in the covering index (`ix_links_resolve`, [architecture/data-model.md](../architecture/data-model.md)).
-- Negative: the safety net for that drift is the integration suite — **97 tests, written, never run on the build machine** (no Docker). Until CI runs them with `DLE_TESTS_REQUIRE_DOCKER=1`, drift between the migration and the hot-path SQL is caught by review only.
+- Negative: the safety net for that drift is the integration suite. As of 2026-09-24 CI runs it against PostgreSQL 18 and Valkey 8 in Testcontainers with `DLE_TESTS_REQUIRE_DOCKER=1` (a missing Docker fails the job rather than skipping the suite), and `CoveringIndexTests` checks the plan of the resolve statement; the current result is in the CI summary.
 - Verification: `Dle.Persistence` and `Dle.Persistence.Fast` are separate projects; the edge host references only the latter.
 
 ## Alternatives considered

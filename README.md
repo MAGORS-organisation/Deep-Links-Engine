@@ -146,6 +146,10 @@ earlier version of these documents promised.
   an interstitial, in-app browsers included. Store and interstitial behaviour needs an explicit
   `app_or_store` or `store_only` rule with its own `store_url`.
 - **Deferred resolve returns the link-level `deeplink_path`**, not the one of the rule that matched.
+- **Generated slugs can collide.** They are mixed-case base62, but the slug column is `citext`, so two
+  generated slugs that differ only in case count as the same; the create without a slug then answers
+  `409 slug-taken`. At a million generated slugs on one domain the odds of at least one such pair are
+  roughly one in four ([ADR-0007](docs/adr/0007-slug-generation-keyed-feistel-base62.md)).
 
 **Operating it**
 

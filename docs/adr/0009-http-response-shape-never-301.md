@@ -7,6 +7,8 @@
 
 Accepted
 
+**Status note (2026-09-24).** The in-app-webview interstitial is applied only when the matched rule's action is `app_or_store` (`ResolveAppOrStore` in [`RoutingEngine.cs`](../../src/Dle.Domain/Routing/RoutingEngine.cs)). A `web` or `store_only` rule is answered with a `302` inside Instagram, Facebook and the other webviews too, and a link created without `routing_rules` gets a single `web` default rule, so it never shows an interstitial. Where the interstitial is shown, its "open in app" button is a custom-scheme URL — never a Universal Link / App Link, because `deeplink_path` must be relative — or is absent when the app has no custom scheme. See [Known gaps](../../README.md#known-gaps).
+
 ## Date
 
 Decided: in the specification ([§B.4 ADR-009](../zadanie.md#adr-009--tvar-http-odpovede)) · Recorded: 2026-09-11
@@ -35,7 +37,7 @@ In code the classes are the `DecisionKind` enum ([`src/Dle.Domain/Routing/Decisi
 - Positive: the same rule action (`app_or_store`) produces the right shape per client without the author thinking about webviews ([architecture/routing-rules.md](../architecture/routing-rules.md)).
 - Negative: an interstitial is a page, not a hop — it needs branding, i18n (EN + SK, [NFR-15](../zadanie.md#a5-nefunkčné-požiadavky)) and WCAG 2.2 AA ([NFR-16](../zadanie.md#a5-nefunkčné-požiadavky)).
 - Negative: `302` responses are not cached, so every click reaches the edge. That is the point, and it is why the cache tier exists.
-- Verification: the 404 / 410 / 302 paths are verified through `WebApplicationFactory` in the security suite (850 tests); the crawler and webview classification lives in the domain tier (≥ 90 % coverage). Behaviour on real devices is the pending 8-device manual matrix ([§D.2.1](../zadanie.md#d21-povinná-manuálna-matica-pred-release-8-kombinácií)).
+- Verification: the 404 / 410 / 302 paths are verified through `WebApplicationFactory` in the security suite; the crawler and webview classification lives in the domain tier (≥ 90 % coverage). Behaviour on real devices is the pending 8-device manual matrix ([§D.2.1](../zadanie.md#d21-povinná-manuálna-matica-pred-release-8-kombinácií)).
 
 ## Alternatives considered
 

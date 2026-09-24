@@ -1095,6 +1095,9 @@ Dle:Abuse:{UrlHausEnabled,BlocklistPath,RecheckIntervalHours}
 ConnectionStrings:{Postgres,Valkey,ClickHouse}
 ```
 
+> **Stav k 2026-09-24:** `Dle:Privacy:IpSaltRotationHours` nie je naviazaný na nič; kód číta len
+> `Dle:Crypto:IpSaltRotationHours` (`CryptoOptions`).
+
 ---
 
 ## 17. Čo je zakázané (code review gate)

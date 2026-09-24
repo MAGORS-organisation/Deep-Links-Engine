@@ -19,9 +19,19 @@ that integrates it, so the list above is the whole list.
 
 ## 1. Add the dependency
 
+Nothing is published yet: the artifact is not on Maven Central (the build has no Maven Central
+configuration) and the repository has no Gradle wrapper (`gradlew` and its JAR are not committed; only
+`gradle/wrapper/gradle-wrapper.properties`, which pins Gradle 8.11.1). Build it from a checkout with a
+locally installed Gradle 8.11.1, the way CI does, and publish it to your local Maven repository
+([Known gaps](../../README.md#known-gaps)):
+
+```sh
+cd sdk/android
+gradle :dle-sdk:publishToMavenLocal      # → ~/.m2/repository/sk/magors/dle/dle-sdk/0.1.0/
+```
+
 ```kotlin
-// settings.gradle.kts — until the artifact is on Maven Central, publish it locally:
-//   ./gradlew :dle-sdk:publishToMavenLocal
+// settings.gradle.kts
 dependencyResolutionManagement {
     repositories {
         google()
@@ -120,6 +130,12 @@ What happens on the first call:
    without `dl_cid` is an organic install: the engine answers `match_type: "none"`, and that is a
    normal answer, not an error (TC-142).
 
+**Deferred deep linking is off by default on the engine side.** The edge writes `dl_cid` into the
+Play referrer only when the tenant's consent mode is `full` and the click itself carries attribution
+consent (`dl_consent=all` or `gdpr=0` on the short URL — asserted by whoever built the link; the
+interstitial collects none). Under the default `aggregate_only` every install resolves to `none`
+([Known gaps](../../README.md#known-gaps)).
+
 Two things make the SDK ask again: a non final answer (`expires_in > 0`) that has aged out, and a
 call carrying new deterministic evidence while the stored answer is not deterministic:
 
@@ -130,6 +146,10 @@ Dle.resolve(ResolveOptions.claimCode("ACD-EFG"))
 // S2 — the user signed in; pass the same keyed hash your website recorded on the click.
 Dle.resolve(ResolveOptions.loginKey(hashedAccountId))
 ```
+
+Neither supplement matches anything today: the edge never issues or shows a claim code, and login
+matching reads a click field nothing writes ([Known gaps](../../README.md#known-gaps)). Only the SDK side
+is implemented.
 
 A malformed claim code fails locally with `DleException.InvalidArgument`. An unknown, consumed or
 expired one comes back as `DleException.Http` with `isClaimCodeInvalid == true`; read
@@ -244,7 +264,13 @@ override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(
 
 `handleIntent` returns an `AppLinkOpen` with the URL as delivered and the URL as reported (scheme,
 host and path; query and fragment are dropped on the device). Each intent is reported once however
-often it is handed in, so calling it in addition to the automatic reporting is harmless.
+often it is handed in, so calling it in addition to the automatic reporting is harmless. Every
+`ACTION_VIEW` intent with `http(s)` data is reported; the SDK has no host list of its own.
+
+The URL is the short link as tapped (`https://link.example.sk/aB3xK9pQ`), not the link's
+`deeplink_path`: nothing on the SDK plane expands a slug, and an SDK key cannot read the link API.
+Your app can open the right screen only when the operator uses readable slugs your allowlist parses,
+like the sample's `/promo/…` and `/p/…` ([Known gaps](../../README.md#known-gaps)).
 
 ### 5.5 Validate before you route
 
@@ -279,9 +305,9 @@ dropped when full), delivered in batches of at most 100, and retried with expone
 jitter, honouring `Retry-After`. `first_open` is queued once, automatically, after the first
 resolve. `trackEvent` never throws.
 
-Keep `properties` free of personal data: the engine stores them as sent, and the deletion endpoint
-keyed on `install_id` is the only remedy afterwards. `Dle.installId` is the value to hand to your
-backend for that call.
+Keep `properties` free of personal data: the engine stores them as sent, and there is no deletion
+endpoint keyed on `install_id` — removing them afterwards is an SQL job for the operator
+([Known gaps](../../README.md#known-gaps)). `Dle.installId` is the value such a deletion is keyed on.
 
 ## 7. Privacy statement
 
@@ -310,16 +336,18 @@ resolves, shows the deferred link, validates incoming links through the allowlis
 record consent and track a conversion. Point it at a local `dle-control`:
 
 ```sh
-./gradlew :sample:installDebug -Pdle.sample.endpoint=http://10.0.2.2:8081 -Pdle.sample.sdkKey=dle_pk_…
+gradle :sample:installDebug -Pdle.sample.endpoint=http://10.0.2.2:8081 -Pdle.sample.sdkKey=dle_pk_…
 adb shell am start -a android.intent.action.VIEW -d "https://link.example.sk/promo/autumn?promo=AUTUMN20" sk.magors.dle.sample
 ```
 
 ## 9. Building and testing
 
+With Gradle 8.11.1 installed locally (there is no `gradlew`), from `sdk/android`:
+
 ```sh
-./gradlew :dle-sdk:test              # JUnit 5 + MockWebServer, JVM only, no emulator
-./gradlew :dle-sdk:assembleRelease
-./gradlew :dle-sdk:publishToMavenLocal
+gradle :dle-sdk:test              # JUnit 5 + MockWebServer, JVM only, no emulator
+gradle :dle-sdk:assembleRelease
+gradle :dle-sdk:publishToMavenLocal
 ```
 
 The unit tests assert the SDK's request and response bodies byte for byte against the literals of

@@ -41,7 +41,7 @@ Every property is optional. A property left out (or an empty array) means "do no
 | `time_window` | object | every component that is set holds, evaluated in **UTC** (FR-126) | see below |
 | `ab` | `AbVariant[]` | the click's bucket falls inside one of the variants' consecutive percentage ranges | see below |
 
-**Canonical channel names** (`ChannelNames.cs`; part of the public wire contract, they never change): `unknown`, `browser`, `crawler`, `in_app_fb`, `in_app_ig`, `in_app_tiktok`, `in_app_linkedin`, `in_app_snapchat`, `in_app_x`, `in_app_whatsapp`, `in_app_telegram`, `in_app_pinterest`, `in_app_other`, `app`. Everything `in_app_*` is an in-app webview and is always served an interstitial, whatever the rule says.
+**Canonical channel names** (`ChannelNames.cs`; part of the public wire contract, they never change): `unknown`, `browser`, `crawler`, `in_app_fb`, `in_app_ig`, `in_app_tiktok`, `in_app_linkedin`, `in_app_snapchat`, `in_app_x`, `in_app_whatsapp`, `in_app_telegram`, `in_app_pinterest`, `in_app_other`, `app`. Everything `in_app_*` is an in-app webview. A webview is served an interstitial when the matched rule's action is `app_or_store`, whatever that rule's `interstitial` mode says; for every other action it gets what the action table below says, which for `web` and `store_only` is a `302`.
 
 ### Version predicate
 
@@ -82,11 +82,13 @@ The bucket is **FNV-1a over the UTF-8 bytes of `click_id`, modulo 100** (`Consis
 |---|---|---|
 | `web` | send to a web page | `302` to `url` |
 | `app_or_store` | try the app, fall back to the store | interstitial for in-app webviews (and, per `interstitial`, mobile browsers); otherwise `302` to the store URL with campaign/referrer parameters; desktop gets the web fallback |
-| `store_only` | always the store | `302` to `store_url` (interstitial in webviews) |
+| `store_only` | always the store | `302` to `store_url`, in-app webviews included |
 | `app_only` | open the installed app, never offer the store | deep link only; web fallback if the app cannot be opened |
 | `block` | serve nothing | `Blocked` — used for geo blocking, abuse containment and kill switches |
 
-**Interstitial modes.** `auto`: interstitial for in-app webviews and mobile, redirect for desktop. `always`: interstitial even for an ordinary mobile browser. `never`: no interstitial where a redirect actually works — **in-app webviews still get it**, because a Universal Link fires in a webview only on a genuine tap on an `<a>` element ([§A.2.6](../zadanie.md#a26-in-app-prehliadače-a-crawlery)).
+**Interstitial modes.** They apply to `app_or_store` only; the other actions ignore `interstitial`. `auto`: interstitial for in-app webviews and mobile, redirect for desktop. `always`: interstitial even for an ordinary mobile browser. `never`: no interstitial where a redirect actually works — **in-app webviews still get it**, because a Universal Link fires in a webview only on a genuine tap on an `<a>` element ([§A.2.6](../zadanie.md#a26-in-app-prehliadače-a-crawlery)).
+
+**Status (2026-09-24).** A link created without `routing_rules` gets a single `web` default rule: always a `302` to `target_url`, never the store and never an interstitial — also inside Instagram and Facebook webviews. `app_or_store` and `store_only` rules must carry their own `store_url`; the app-level store URL is not used as a fallback. The interstitial's "open in app" button is a custom-scheme URL (never a Universal Link / App Link, because `deeplink_path` must be relative), or is absent when the app has no custom scheme. See [Known gaps](../../README.md#known-gaps).
 
 ## Store URLs and the install referrer
 
@@ -95,7 +97,7 @@ The bucket is **FNV-1a over the UTF-8 bytes of `click_id`, modulo 100** (`Consis
 - **Forwardable query keys.** Only these keys from the *incoming* request are copied onto the target, percent-encoded: `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `gclid`, `fbclid`, `ttclid`, `msclkid`, `twclid`, `li_fat_id`, `igshid`, `ref`. Everything else is dropped. The link's own `utm` defaults are applied first and are not overridden by the request.
 - **Click id.** Appended as `dl_cid=<click_id>` on web targets — only when the consent decision allows click-id linking. Consent gates the click id and nothing else.
 - **Android referrer.** The `referrer` parameter on the Play URL is rendered from `referrer_template` (default `dl_cid={click_id}&utm_source={utm_source}&utm_medium={utm_medium}&utm_campaign={utm_campaign}`), URL-encoded once, and capped at **500 encoded characters**. This string is what the SDK reads back through `InstallReferrerClient` ([request-flows.md](request-flows.md#2-deferred-deep-link--android-deterministic-b62)).
-- **iOS.** The App Store `ct` campaign parameter on `store_url` is preserved; there is no referrer equivalent, which is why the iOS flow uses claim codes and login ([ADR-0008](../adr/0008-deferred-deep-linking-strategies.md)).
+- **iOS.** The App Store `ct` campaign parameter on `store_url` is preserved; there is no referrer equivalent, which is why the iOS flow is designed around claim codes and login ([ADR-0008](../adr/0008-deferred-deep-linking-strategies.md); neither works end to end today, see its status note).
 - **Schemes.** Only `http` and `https` may appear as a redirect target. `javascript:`, `data:`, `vbscript:`, `file:`, `blob:`, `about:` and `intent:` are rejected — at validation time for rule URLs, and again at build time for anything derived.
 
 ## What the validator rejects
@@ -129,4 +131,4 @@ The [§B.5.4](../zadanie.md#b54-schéma-pravidiel-routovania-linksrouting_rules)
 
 ## Where this is verified
 
-The engine, the validator, `ConsistentBucket` and `RoutingUrlBuilder` sit in `Dle.Domain`, the tier with ≥ 90 % coverage in the 1 419-test unit suite; the API's RFC 9457 mapping of validator errors is covered by the contract suite. The rule simulator's parity with the edge on real devices is part of the pending manual matrix.
+The engine, the validator, `ConsistentBucket` and `RoutingUrlBuilder` sit in `Dle.Domain`, the tier held at ≥ 90 % coverage by the unit suite (counts in the CI summary); the API's RFC 9457 mapping of validator errors is covered by the contract suite. The rule simulator's parity with the edge on real devices is part of the pending manual matrix.

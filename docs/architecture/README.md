@@ -24,7 +24,7 @@ The root README lists seven things the product does; architecturally they are th
 |---|---|---|---|---|
 | **1. Link resolution** (data plane) | any browser, crawler or webview hitting `https://link.example/{slug}` | p50 ≤ 8 ms, p99 ≤ 50 ms server-side ([NFR-01](../zadanie.md#a5-nefunkčné-požiadavky)) | none — public | slug lookup behind a stampede-safe cache, client classification, consent gate, rule evaluation, `302` / interstitial / OG preview, QR, `/.well-known/*` per domain, telemetry emission |
 | **2. Attribution** (SDK plane) | the customer's app through the Android, iOS or web SDK | seconds are fine; correctness is not negotiable | SDK key — `resolve` and `events` only, never configuration ([TB2](context.md#trust-boundaries)) | `POST /v1/resolve`, `POST /v1/events`, install matching (S0–S4, [ADR-0008](../adr/0008-deferred-deep-linking-strategies.md)), `confidence` and `evidence` |
-| **3. Management, analytics and integrations** (control plane) | operators and marketers through the console or `/api/v1`, external systems through webhooks | interactive | operator session (OIDC) or tenant API key | links, domains, apps, tenants, keys; domain verification; event ingest and rollups; dashboard with the deterministic / probabilistic / unmatched split; signed webhooks; abuse workflow; audit log |
+| **3. Management, analytics and integrations** (control plane) | operators and marketers through the console or `/api/v1`, external systems through webhooks | interactive | tenant API key (the console takes a pasted key). OIDC is designed in but does not work today: the configured tenant claim is never mapped and the console has no OIDC sign-in, so a fresh install has no working first credential ([Known gaps](../../README.md#known-gaps)) | links, domains, apps, tenants, keys; domain verification; event ingest and rollups; dashboard with the deterministic / probabilistic / unmatched split; signed webhooks; abuse workflow; audit log |
 
 Layer 1 never calls layer 2 or 3 synchronously. The only thing that crosses from the hot path to the rest is a click event dropped into a bounded channel — and it is dropped on the floor rather than delaying the response when the channel is full ([NFR-06](../zadanie.md#a5-nefunkčné-požiadavky)).
 
@@ -37,7 +37,7 @@ One solution, one database, two processes ([ADR-0010](../adr/0010-modular-monoli
 | **`dle-edge`** | `:8080` | `GET /{slug}`, `GET /{slug}/qr`, `/.well-known/apple-app-site-association`, `/.well-known/assetlinks.json` | C-01 Edge Resolver · C-02 Well-Known Server (must be on the link domain itself) · C-03 Interstitial Renderer | stateless, N replicas; HPA in Helm |
 | **`dle-control`** | `:8081` | `/api/v1/*`, `/v1/resolve`, `/v1/events`, `/scalar/v1`, `/.well-known/jwks.json`, `/admin/` | C-04 Control Plane API · C-05 Admin UI (static SPA) · C-06 Attribution Service (separate rate limit and authentication) · C-07 Domain Verifier · C-08 Event Ingest · C-09 Rollup Worker · C-10 Webhook Dispatcher · C-11 Abuse & Reputation · C-12 Key Management | by operator count; 1 replica in Profile A, 2 in Profile B |
 
-The six background workers (C-07…C-12) run inside the control process with leader election over a PostgreSQL advisory lock — no extra coordination system. C-13, the SDKs, live under `sdk/`.
+The background workers (domain verification, rollups, retention, webhook dispatch, URL reputation, GeoIP updates) run inside the control process with leader election over a PostgreSQL advisory lock — no extra coordination system. C-12 Key Management has no worker: signing-key rotation is not implemented ([ADR-0013](../adr/0013-crypto-agility-from-day-one.md), status note). C-13, the SDKs, live under `sdk/`.
 
 Both units read the same PostgreSQL; the edge additionally uses Valkey as its L2 cache ([ADR-0005](../adr/0005-hybridcache-and-valkey.md)). How they are put on a box or a cluster (Profile A Compose, Profile B Helm, [§B.8](../zadanie.md#b8-topológia-nasadenia)) is in [../../deploy/README.md](../../deploy/README.md).
 
@@ -48,15 +48,15 @@ Twelve `.csproj` files plus the two front-ends; the specification's layout ([§C
 | Project | Role | Referenced by |
 |---|---|---|
 | `Dle.Domain` | entities, value objects, routing engine, classifier, attribution matcher, problem codes — **no dependencies** | everything |
-| `Dle.Crypto` | `ISigner`/`IVerifier`, JWKS, key rotation, provider abstraction ([ADR-0013](../adr/0013-crypto-agility-from-day-one.md)) | both hosts |
+| `Dle.Crypto` | `ISigner`/`IVerifier`, JWKS, the key ring (its rotation code is not called by the product), provider abstraction ([ADR-0013](../adr/0013-crypto-agility-from-day-one.md)) | both hosts |
 | `Dle.Persistence` | EF Core `DbContext`, configurations, **migrations — the schema's single source of truth** | control |
 | `Dle.Persistence.Fast` | Dapper hot-path queries, `NpgsqlBinaryImporter` batch writer ([ADR-0004](../adr/0004-split-data-access-efcore-and-dapper.md)) | edge, control |
 | `Dle.Analytics.Postgres` · `Dle.Analytics.ClickHouse` | `IClickAnalyticsStore` implementations ([ADR-0006](../adr/0006-analytics-postgres-partitions-clickhouse-optional.md)) | control |
 | `Dle.Edge` | data-plane host: `Resolution/` (Normalize → Lookup → Classify → Consent → Route → Respond), `Clients/`, `Rendering/`, `WellKnown/`, `Telemetry/` | — |
 | `Dle.Control` | control-plane host: `Features/{Links,Domains,Attribution,Analytics,Abuse,…}` vertical slices, `Workers/` | — |
 | `Dle.Admin.Web` | React/Vite console, built and copied into the control host | control |
-| `tests/Dle.UnitTests` · `Dle.ContractTests` · `Dle.SecurityTests` · `Dle.IntegrationTests` | 1 419 · 75 · 850 passing; 97 integration tests written, need Docker | — |
-| `sdk/android` · `sdk/ios` · `sdk/web` | the three SDKs; web verified (145 tests, 8.85 kB gzip), Android and iOS not yet compiled | — |
+| `tests/Dle.UnitTests` · `Dle.ContractTests` · `Dle.SecurityTests` · `Dle.IntegrationTests` | the four .NET suites; all run in CI, the integration suite against PostgreSQL 18 and Valkey 8 in Testcontainers (counts in the CI summary) | — |
+| `sdk/android` · `sdk/ios` · `sdk/web` | the three SDKs; each builds and passes its tests in its own CI workflow. None is published yet | — |
 
 ## Request flow overview
 
@@ -84,9 +84,9 @@ Cache hit: about 5.5 ms p50 out of an 8 ms budget. The full sequence diagrams, t
 - `/.well-known/*` is **never** redirected ([§A.2.1](../zadanie.md#a21-apple-universal-links)); it is served by the edge on the link domain itself.
 - **No outbound call to a third party on the resolve path**, GeoIP included — MaxMind data is a memory-mapped file updated by a background job ([NFR-14](../zadanie.md#a5-nefunkčné-požiadavky)); the Helm NetworkPolicy enforces no egress from the edge.
 - Wire JSON is `snake_case`; errors are RFC 9457 with types from [`ProblemCodes.cs`](../../src/Dle.Domain/Contracts/ProblemCodes.cs); rate limits are those of [§E.9](../zadanie.md#e9-rate-limity-a-kvóty--konkrétne-hodnoty), with a separate budget for 404s.
-- Every signed artefact carries `alg` and `kid` ([ADR-0013](../adr/0013-crypto-agility-from-day-one.md)).
+- Webhook signatures name their algorithm and key (`DLE-Alg`, `kid`). [ADR-0013](../adr/0013-crypto-agility-from-day-one.md) asks the same of every signed artefact; `click_id` does not meet it — it carries a truncated HMAC with neither (ADR-0013, status note).
 - Routing rules are **data, not code**: deterministic, first match wins, exactly one default rule, last ([routing-rules.md](routing-rules.md)).
 
 ## What is and is not verified
 
-The .NET solution builds with `-warnaserror` at 0/0 and both hosts start; unit, contract and security suites pass on the build machine. The integration suite, the migration against a live PostgreSQL, the Android and iOS SDK builds, the k6 profile and the 8-device manual matrix have **not** been exercised here. Each document in this directory says which of its claims fall on which side of that line.
+As of 2026-09-24, in CI: the .NET solution builds with `-warnaserror` at 0/0 and both hosts start; the unit, contract, security and integration suites pass, the last applying the migration to PostgreSQL 18 and running the PostgreSQL and Valkey chaos scenarios; the Android and iOS SDKs compile and pass their unit tests. The results are in the CI summary. **Not** exercised: the k6 profile, which cannot pass as written ([../../tests/load/README.md](../../tests/load/README.md)), and the 8-device manual matrix. Several flows do not work end to end yet; they are listed in the root README under [Known gaps](../../README.md#known-gaps). Each document in this directory says which of its claims fall on which side of that line.

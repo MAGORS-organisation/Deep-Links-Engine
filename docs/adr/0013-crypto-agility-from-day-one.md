@@ -7,6 +7,14 @@
 
 Accepted
 
+**Status note (2026-09-24).** The decision stands; the code does not meet it yet, in three places.
+
+- **Signing-key rotation is not implemented.** Only the configuration-backed key store (`ConfigurationSigningKeyStore`) is registered; `Dle:Crypto:KeyRotationDays` is read only by `KeyRing.RotateAsync`, which nothing in the product calls; the `signing_keys` table is never used. The webhook Ed25519 key is derived from the master secret and never rotates. The rotation described under Consequences, and the bootstrap-key fix under Verification, exist in `KeyRing` and its unit tests only.
+- **`click_id` carries no `alg` and no `kid`.** It is a Feistel-permuted timestamp and sequence followed by a truncated (32-bit) HMAC ([`ClickIdCodec`](../../src/Dle.Crypto/ClickIdCodec.cs)).
+- **The edge receives the master secret** (Compose and Helm), and the control plane's webhook signing key and the key that wraps webhook secrets are derived from it too. The separation T-15 asks for — an edge that holds no signing keys — does not hold today.
+
+See [Known gaps](../../README.md#known-gaps) in the root README.
+
 ## Date
 
 Decided: in the specification ([§B.4 ADR-013](../zadanie.md#adr-013--krypto-agilita-od-začiatku), detail in [§E.5](../zadanie.md#e5-post-quantum-architektúra)) · Recorded: 2026-09-11
@@ -26,10 +34,10 @@ Post-quantum cryptography is not a redesign of this system, but it is a design d
 ## Consequences
 
 - Positive: an algorithm swap is a new provider and a new `kid`; consumers that honour `alg` and `kid` need no change ([NFR-17](../zadanie.md#a5-nefunkčné-požiadavky)).
-- Positive: key rotation is routine — publish the new key in the JWKS, sign with it, retire the old one after the overlap.
+- Positive: key rotation is routine — publish the new key in the JWKS, sign with it, retire the old one after the overlap. (Not implemented as of 2026-09-24; see the status note.)
 - Negative: two signatures per webhook delivery cost CPU and bytes; consumers must be told which to verify and how to fetch the JWKS.
 - Negative: "reserved slot" is a promise about the format, not an implementation — no PQ signature provider exists in v1.
-- Verification: `Dle.Crypto` is in the domain tier with ≥ 90 % coverage. One defect the suite found is exactly the kind this ADR is meant to prevent: **key rotation could not retire the bootstrap key**, so a leaked bootstrap key stayed valid forever while the operator saw a successful rotation. Fixed; in the commit history. Webhook signature and JWKS shapes are covered by the 75 contract tests.
+- Verification: `Dle.Crypto` is in the domain tier with ≥ 90 % coverage. One defect the suite found is exactly the kind this ADR is meant to prevent: **key rotation could not retire the bootstrap key**, so a leaked bootstrap key stayed valid forever while the operator saw a successful rotation. Fixed; in the commit history. Webhook signature and JWKS shapes are covered by the contract suite.
 
 ## Alternatives considered
 
