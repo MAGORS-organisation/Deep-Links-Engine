@@ -59,7 +59,7 @@ curl -s "https://go.example.com/api/v1/links/<ID>/simulate?ua=Slackbot-LinkExpan
 
 ## 4. Universal Link not opening from Instagram
 
-**Cause.** Not a bug. In-app browsers (Instagram, Facebook, TikTok) do **not** trigger the OS-level Universal Link interception on page load; only a genuine tap on an `<a>` element does, and `window.location.href` from JavaScript is not a user gesture on iOS ([§A.2.6](../zadanie.md#a26-in-app-prehliadače-a-crawlery)). This is why the engine serves an interstitial with a real button to the `in_app_*` channels instead of redirecting.
+**Cause.** Not a bug. In-app browsers (Instagram, Facebook, TikTok) do **not** trigger the OS-level Universal Link interception on page load; only a genuine tap on an `<a>` element does, and `window.location.href` from JavaScript is not a user gesture on iOS ([§A.2.6](../zadanie.md#a26-in-app-prehliadače-a-crawlery)). This is why the engine serves an interstitial with a real button to the `in_app_*` channels instead of redirecting — but only when the matching rule is `app_or_store`. A `web` rule, which is all a link created without `routing_rules` has, redirects the webview to `target_url` like any other client. And the button is a custom-scheme URL built from the app's `custom_scheme`, never a Universal Link; an app registered without a custom scheme gets no button ([README — Known gaps](../../README.md#known-gaps)).
 
 **Prove it.** Simulate with the Instagram UA and check the decision is `interstitial`:
 
@@ -67,13 +67,13 @@ curl -s "https://go.example.com/api/v1/links/<ID>/simulate?ua=Slackbot-LinkExpan
 curl -s "https://go.example.com/api/v1/links/<ID>/simulate?platform=ios&channel=in_app_instagram" -H "Authorization: Bearer …"
 ```
 
-On a device: tap the link in an Instagram post — the interstitial page must appear with an "Open in *App*" button; tapping the button opens the app. If the interstitial appears but the button does not open the app, it is a Universal Link problem (sections 1–2), not a webview problem.
+On a device: tap the link in an Instagram post — the interstitial page must appear with an "Open in *App*" button; tapping the button opens the app. If the interstitial appears but the button is missing or does not open the app, look at the app's `custom_scheme` registration and at whether the app handles that scheme: the button does not go through the Universal Link, so sections 1–2 do not explain it.
 
-**Fix.** Keep `Dle:Edge:Interstitial:Enabled=true`; do not add a routing rule that forces `web` for `in_app_*` channels unless you mean it. TikTok strips some query parameters and Facebook appends `fbclid` — the engine tolerates both; keep your own parameters in the link's `utm`, not in the shared URL.
+**Fix.** Keep `Dle:Edge:Interstitial:Enabled=true`; give the link an `app_or_store` rule (with its own `store_url`) and the app a `custom_scheme`; do not add a routing rule that forces `web` for `in_app_*` channels unless you mean it. TikTok strips some query parameters and Facebook appends `fbclid` — the engine tolerates both; keep your own parameters in the link's `utm`, not in the shared URL.
 
 ## 5. Empty install referrer
 
-**Cause.** One of: the user installed from a Play URL that did not carry `&referrer=`; the routing rule's `then.referrer_template` is missing, so no `dl_cid={click_id}` was put on the store URL; the install came from a source other than Play (side-load, other store, pre-install); the app read the referrer after its 90-day availability, or from a second install on the same device where Play no longer reports it; the Android SDK is queried before the Install Referrer client connected ([§A.2.4](../zadanie.md#a24-odovzdávanie-kontextu-cez-inštaláciu)).
+**Cause.** One of: the click had no attribution consent — `dl_cid` is written into the referrer only when the tenant's `consent_mode` is `full` **and** the short URL carried `dl_consent=all` (or `gdpr=0`), the only click-time consent signal the edge reads; otherwise `{click_id}` is dropped from the template, which is what happens by default ([README — Known gaps](../../README.md#known-gaps)); the link has no `app_or_store` or `store_only` rule, so nobody was sent to the store at all; the user installed from a Play URL that did not carry `&referrer=`; the routing rule's `then.referrer_template` is missing, so no `dl_cid={click_id}` was put on the store URL; the install came from a source other than Play (side-load, other store, pre-install); the app read the referrer after its 90-day availability, or from a second install on the same device where Play no longer reports it; the Android SDK is queried before the Install Referrer client connected ([§A.2.4](../zadanie.md#a24-odovzdávanie-kontextu-cez-inštaláciu)).
 
 **Prove it.**
 
@@ -93,11 +93,11 @@ Work through the deterministic paths in the order the engine evaluates them ([§
 | Check | Command / place | Expect |
 |---|---|---|
 | Did the click get recorded at all? | `GET /api/v1/analytics/clicks?…` for the minute of the click; `is_bot` | A human click. A `?_dl=preview` hit records nothing by design |
-| Was the consent mode `full`? | `GET /api/v1/tenants/me` → `consent_mode`; domain `consent_mode_override` | `full`. In `aggregate_only` there is **no** `click_id` ↔ install binding — that is the mode's point ([compliance/privacy.md](../compliance/privacy.md)) |
+| Was the consent mode `full`? | `GET /api/v1/tenants/me` → `consent_mode`; domain `consent_mode_override` | `full`. In `aggregate_only` there is **no** `click_id` ↔ install binding — that is the mode's point ([compliance/privacy.md](../compliance/privacy.md)). Even in `full`, the click itself must have carried `dl_consent=all` (or `gdpr=0`) on the short URL; otherwise `/v1/resolve` answers `none` with `consent_missing` |
 | Did the SDK send consent? | The `POST /v1/resolve` body: `consent.attribution=true` with `ts` | Without it signals are dropped before storage, not stored and ignored later |
 | Android: referrer present and untampered? | Section 5; `match_type` in the response | `install_referrer`, `confidence: 1.0`. A modified `dl_cid` fails the HMAC (T-05) and yields `none` |
-| iOS: claim code entered? | `match_type: claim_code` | The code is single-use and expires after `Dle:Attribution:ClaimCode:TtlMinutes` (15); `claim-code-invalid` afterwards |
-| iOS: login reconciliation? | `login_key` on `/v1/resolve`, `match_type: login` | Requires the web side to have sent the same key |
+| iOS: claim code entered? | `match_type: claim_code` | Not reachable today: the edge never issues or shows a claim code, so there is none to enter — expect `none` ([README — Known gaps](../../README.md#known-gaps)). By design the code is single-use and expires after `Dle:Attribution:ClaimCode:TtlMinutes` (15) |
+| iOS: login reconciliation? | `login_key` on `/v1/resolve`, `match_type: login` | Not reachable today: login matching reads a click field that nothing writes — expect `none` |
 | Was `/v1/resolve` called within 5/h per `install_id`? | `429 rate-limited` in the SDK log | The SDK should call it once per install |
 | Probabilistic expected? | `Dle:Attribution:Probabilistic:Enabled` and `Strategies` | Off by default; on, it needs consent and a click within **60 minutes** — an install a day after the click is `none` on purpose ([§A.2.5](../zadanie.md#a25-presnosť-probabilistického-párovania--čísla)) |
 | Direct open counted? | `POST /v1/events` with `type: link_open` | An installed app opens **without** any HTTP request to the engine; if the SDK does not report it, the click stream is systematically under-counted on your best campaigns ([§B.6.4](../zadanie.md#b64-priame-otvorenie-najčastejší-prípad-ktorý-sa-zabúda)) |
@@ -116,7 +116,7 @@ curl -sI https://go.example.com/aB3xK9pQ                       # 302 if cached, 
 docker compose -f docker-compose.yml ps postgres               # or kubectl get pods -n dle
 ```
 
-Metrics: `dle_resolve_total{outcome="dependency_unavailable"}` climbs, `dle_cache_hit_ratio` stays high for warm links. Click events written during the outage are buffered in the bounded channel; when it fills they are dropped and `dle_click_events_dropped_total` increments — that is the alert that tells you how much analytics you lost ([§C.6](../zadanie.md#c6-pozorovateľnosť)).
+Metrics: `dle_resolve_total{outcome="dependency_unavailable"}` climbs, `dle_cache_hit_ratio` stays high for warm links. Click events written during the outage are buffered in the bounded channel; when it fills they are dropped and `dle_click_events_dropped_total` increments — that is the metric that tells you how much analytics you lost, and the one to alert on; no alert rule ships ([§C.6](../zadanie.md#c6-pozorovateľnosť), [operations/runbook.md](../operations/runbook.md)).
 
 **Fix.** Restore PostgreSQL ([backup-restore.md](backup-restore.md)); nothing on the edge needs a restart. To widen the window the edge can ride out, raise `Dle:Edge:Cache:L2Minutes` and run Valkey — with L1 only, a restart of the edge empties the cache.
 

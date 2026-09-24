@@ -24,9 +24,13 @@ flowchart LR
 | 3 | `GET /.well-known/apple-app-site-association` → `200`, `application/json`, **no redirect**, no query string | see below | `aasa` |
 | 4 | `GET /.well-known/assetlinks.json` → `200`, `application/json`, **no redirect** | see below | `assetlinks` |
 | 5 | iOS: `applinks:go.example.com` in the app's Associated Domains entitlement; `?mode=developer` **removed before App Store submission** | Xcode → Signing & Capabilities; `codesign -d --entitlements :- App.app \| grep applinks` on the archive | manual |
-| 6 | Android: SHA-256 fingerprint taken from **Play Console → Setup → App signing → App signing key certificate**, not from the local keystore | The fingerprint you registered equals the one Play shows; `warnings` on `POST /api/v1/apps` is empty | `assetlinks` (content) |
+| 6 | Android: SHA-256 fingerprint taken from **Play Console → Setup → App signing → App signing key certificate**, not from the local keystore | The fingerprint you registered equals the one Play shows. An empty `warnings` array on `POST /api/v1/apps` is not proof: the upload-certificate warning fires only when the app declares both `cert_fingerprints` and `play_signing_fingerprints` and they differ | `assetlinks` (content — that the registered fingerprints are in the file, not which certificate they belong to) |
 | 7 | Verified on a device | `adb shell pm get-app-links com.example.app` → `verified`; iOS: tap a link in Notes/Messages and the app opens | manual |
 | 8 | The customer has been told: Apple propagation ~7 days, Android 15+ up to 7 days | `propagation_notice` in the verify response is shown in the console and repeated in the ticket | — |
+
+Registering a host (`POST /api/v1/domains`) needs no proof of ownership; the `dns` check only reports where the name points.
+
+**Profile A (compose)** serves TLS for one host only: Caddy obtains a certificate for `DLE_DOMAIN` and nothing else. Every additional link domain needs its own pair of site blocks in `deploy/Caddyfile` — an HTTPS block and an `http://` block that serves `/.well-known/*` without a redirect, copied from the existing pair — or step 2 fails for it.
 
 ## Steps 3 and 4 — the association files
 
@@ -44,8 +48,8 @@ done
 
 What the content must contain:
 
-- **AASA** — `applinks.details[].appIDs` as `TEAMID.bundle.id`, and `components` (path/query/fragment patterns with `exclude`) rather than the legacy `paths`. `webcredentials` and `appclips` are emitted when the app registers them. Every subdomain needs its own AASA and its own entitlement; nothing is inherited ([§A.2.1](../zadanie.md#a21-apple-universal-links)).
-- **assetlinks.json** — one `android_app` statement per package with `sha256_cert_fingerprints`; on Android 15+ the engine also emits `dynamic_app_link_components`, so a routing change can ship without a new app build (FR-142).
+- **AASA** — `applinks.details[].appIDs` as `TEAMID.bundle.id`, and `components` (path/query/fragment patterns with `exclude`) rather than the legacy `paths`. `appclips` is emitted when the app registers an App Clip; `webcredentials` is never emitted. Every subdomain needs its own AASA and its own entitlement; nothing is inherited ([§A.2.1](../zadanie.md#a21-apple-universal-links)).
+- **assetlinks.json** — one `android_app` statement per package with `sha256_cert_fingerprints` (the registered `cert_fingerprints` and `play_signing_fingerprints` together). The engine does not emit the Android 15+ `dynamic_app_link_components` today (FR-142), so which paths open the app is decided by the app's intent filter, and changing that needs a new app build ([README — Known gaps](../../README.md#known-gaps)).
 
 Rules for whatever sits in front of the edge — from [deploy/README — Never redirect /.well-known](../../deploy/README.md#never-redirect-well-known):
 
@@ -68,7 +72,7 @@ Since 2021 new Play apps are signed by Google: the certificate installed on real
 | Production via Play | Google app-signing key | same as above |
 | APK side-loaded from CI | upload key | upload certificate SHA-256 — different again |
 
-The verifier flags a fingerprint that matches a known debug-keystore pattern, and `POST /api/v1/apps` returns it in `warnings`. Register **both** the Play fingerprint and the upload/debug fingerprint if you need links to work on side-loaded builds; `cert_fingerprints` is a list for that reason.
+Nothing recognises a debug or upload fingerprint by itself. `POST /api/v1/apps` warns only when you declare the Play certificates in `play_signing_fingerprints` and a `cert_fingerprints` entry is not among them; an app that declares only its upload key gets no warning, and the domain verifier does not apply even that check. So declare the Play fingerprints in `play_signing_fingerprints`, and register **both** the Play fingerprint and the upload/debug fingerprint if you need links to work on side-loaded builds; `cert_fingerprints` is a list for that reason.
 
 ```bash
 # What is on the device right now — this is the fingerprint that matters
@@ -114,11 +118,11 @@ Consequences the console shows and the operator should repeat to the customer:
 
 | Check | Typical cause | Fix |
 |---|---|---|
-| `dns` | CNAME to a decommissioned host (T-04) | Fix DNS; the engine deactivates a domain whose ownership is lost, so re-verify to reactivate |
+| `dns` | CNAME to a decommissioned host (T-04) | Fix DNS and re-verify. A failed nightly verification is logged and fires the `domain.verification_failed` webhook; nothing deactivates the domain automatically — if the host is gone, set `is_active: false` yourself (`PATCH /api/v1/domains/{id}`) |
 | `tls` | Expired or incomplete chain | Caddy renews automatically; on Kubernetes check cert-manager |
 | `aasa` / `assetlinks` **redirect** | A layer in front forces HTTPS or a trailing slash | See the table above; verify with `curl -sI http://…` **and** `https://…` |
 | `aasa` / `assetlinks` **content_type** | A CDN rewrote it to `text/plain` or `application/octet-stream` | Exempt the path from content transformation |
-| `assetlinks` fingerprint | Local keystore fingerprint (Step 6) | Replace with the Play App Signing fingerprint |
+| `assetlinks` fingerprint | A registered fingerprint is missing from the file that was served. The verifier cannot tell a local-keystore fingerprint from the Play one, so a green check does not rule out Step 6 | Check what serves the file; compare the registered fingerprints with Play Console (Step 6) |
 | Green verifier, links still do not open | Propagation (Step 8), or the iOS build shipped with `mode=developer` | Wait, or re-submit without the developer flag |
 
-The nightly run writes to `dle_domain_verification_failures` ([§C.6](../zadanie.md#c6-pozorovateľnosť)); the alert and its first actions are in [operations/runbook.md](../operations/runbook.md).
+The nightly run writes to `dle_domain_verification_failures` ([§C.6](../zadanie.md#c6-pozorovateľnosť)). No alert rule ships; what to alert on and the first actions are in [operations/runbook.md](../operations/runbook.md).
