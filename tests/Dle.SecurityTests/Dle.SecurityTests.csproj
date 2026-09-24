@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Adversarial tests for the threat register in docs/zadanie.md §E.2.2:
+    open-redirect fuzzing (T-01/T-02, TC-161..164), click-id tampering
+    (T-05/TC-167), cross-tenant access returning 404 not 403 (TC-166),
+    timing-safe secret comparison (T-17/S-03) and rate-limit enforcement (§E.9).
+  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dle.Edge\Dle.Edge.csproj" />
+    <ProjectReference Include="..\..\src\Dle.Control\Dle.Control.csproj" />
+    <ProjectReference Include="..\..\src\Dle.Domain\Dle.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="CsCheck" />
+  </ItemGroup>
+
+</Project>

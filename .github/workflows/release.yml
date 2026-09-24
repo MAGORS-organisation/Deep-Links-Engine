@@ -1,0 +1,465 @@
+# =============================================================================
+# Release — on a `v*` tag (docs/zadanie.md §C.8 "main" + "release" rows, §E.8 S-06, T-14).
+#
+#   version ─┬─ ci (reusable: build, format, all four suites, coverage gate)
+#            ├─ sbom (reusable: SBOM ×3 + CBOM, schema-validated)
+#            ├─ images  [edge, control]  buildx linux/amd64+arm64 → ghcr.io, provenance + SBOM
+#            │                           attestations, cosign keyless signature, verified back
+#            ├─ helm    lint → package → push oci://ghcr.io/<owner>/charts → cosign sign
+#            ├─ gates   compose stack from the pushed images: smoke (/healthz, /readyz, edge stays
+#            │          up with postgres stopped) → ZAP baseline (hard) → k6 §D.5 profile (see below)
+#            └─ release cosign sign-blob SBOM/CBOM → GitHub release with SBOM, CBOM, chart, digests
+#
+# k6 gate: tests/load/resolve.js needs a seeded corpus (tests/load/seed.js), and seeding needs a
+# control-plane API key on a verified domain. The control plane has no bootstrap credential (see
+# deploy/.env.example), so an ephemeral compose stack cannot seed itself. The profile therefore
+# runs against a persistent staging instance described by four repository secrets:
+#   DLE_LOADTEST_CONTROL_URL, DLE_LOADTEST_API_KEY, DLE_LOADTEST_DOMAIN_ID, DLE_LOADTEST_LINK_HOST
+# When they are set the run is a hard gate (the thresholds inside resolve.js decide). When they
+# are not, the run is skipped with a warning and the GitHub release is forced to PRE-RELEASE:
+# no load-test evidence, no GA release (§D.7 criterion 2).
+#
+# Image names are ghcr.io/<owner lower-cased>/dle-edge and dle-control, matching the defaults in
+# deploy/docker-compose.yml and deploy/helm/dle/values.yaml.
+# =============================================================================
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # ---------------------------------------------------------------------------------------------
+  version:
+    name: Version from tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      prerelease: ${{ steps.v.outputs.prerelease }}
+      owner: ${{ steps.v.outputs.owner }}
+    steps:
+      - name: Parse
+        id: v
+        env:
+          TAG: ${{ github.ref_name }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          version="${TAG#v}"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'; then
+            echo "::error::tag '$TAG' is not vMAJOR.MINOR.PATCH[-prerelease][+build]"; exit 1
+          fi
+          prerelease=false; case "$version" in *-*) prerelease=true ;; esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+          echo "owner=${OWNER,,}" >> "$GITHUB_OUTPUT"
+          echo "version=$version prerelease=$prerelease owner=${OWNER,,}"
+
+  # ---------------------------------------------------------------------------------------------
+  ci:
+    name: CI
+    needs: [version]
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  sbom:
+    name: SBOM
+    needs: [version]
+    uses: ./.github/workflows/sbom.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
+    permissions:
+      contents: read
+
+  # ---------------------------------------------------------------------------------------------
+  images:
+    name: Image dle-${{ matrix.image }}
+    needs: [version, ci]
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # cosign keyless (Fulcio certificate bound to this workflow's OIDC identity)
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [edge, control]
+    env:
+      IMAGE: ghcr.io/${{ needs.version.outputs.owner }}/dle-${{ matrix.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up QEMU (arm64 emulation for the runtime stage)
+        uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # v4.3.0
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      - name: Login to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}},value=v${{ needs.version.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ needs.version.outputs.version }},enable=${{ needs.version.outputs.prerelease == 'false' }}
+            type=raw,value=latest,enable=${{ needs.version.outputs.prerelease == 'false' }}
+          labels: |
+            org.opencontainers.image.title=dle-${{ matrix.image }}
+            org.opencontainers.image.vendor=MAGORS organisation
+            org.opencontainers.image.licenses=MIT
+
+      - name: Build date
+        id: now
+        run: echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push (linux/amd64, linux/arm64)
+        id: build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.${{ matrix.image }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ needs.version.outputs.version }}
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ steps.now.outputs.date }}
+          # BuildKit attestations, attached to the image index: SLSA provenance and a per-image SBOM.
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=dle-${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=dle-${{ matrix.image }}
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Sign the image index (keyless, Rekor-logged)
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "${IMAGE}@${DIGEST}"
+
+      - name: Verify the signature we just made
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          cosign verify "${IMAGE}@${DIGEST}" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-identity-regexp "^https://github.com/${{ github.repository }}/\.github/workflows/release\.yml@refs/tags/v" \
+            | head -c 2000
+
+      - name: Record digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p digests
+          printf '%s@%s\n' "$IMAGE" "$DIGEST" > "digests/dle-${{ matrix.image }}.txt"
+          echo "dle-${{ matrix.image }}: ${IMAGE}@${DIGEST}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: image-digest-${{ matrix.image }}
+          path: digests/*.txt
+          if-no-files-found: error
+          retention-days: 90
+
+  # ---------------------------------------------------------------------------------------------
+  helm:
+    name: Helm chart
+    needs: [version, ci]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    env:
+      CHART_DIR: deploy/helm/dle
+      CHART_OCI: oci://ghcr.io/${{ needs.version.outputs.owner }}/charts
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Resolve chart dependencies
+        # Chart.yaml declares optional bitnami postgresql/valkey sub-charts with version RANGES the
+        # authoring machine could not resolve (no Helm there). If this step fails, the ranges need
+        # pinning to what the OCI registry serves — Chart.yaml says so in its own comment.
+        run: helm dependency update "$CHART_DIR"
+
+      - name: Lint
+        run: helm lint "$CHART_DIR"
+
+      - name: Package
+        run: |
+          mkdir -p chart
+          helm package "$CHART_DIR" --version "$VERSION" --app-version "$VERSION" --destination chart
+          ls -l chart
+
+      - name: Push to GHCR and sign
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GITHUB_TOKEN" | helm registry login ghcr.io --username "${{ github.actor }}" --password-stdin
+          helm push "chart/dle-${VERSION}.tgz" "$CHART_OCI" 2>&1 | tee push.log
+          digest="$(sed -n 's/^Digest: *//p' push.log | tr -d '[:space:]')"
+          if [ -z "$digest" ]; then echo "::error::helm push printed no digest"; exit 1; fi
+          ref="ghcr.io/${{ needs.version.outputs.owner }}/charts/dle@${digest}"
+          cosign sign --yes "$ref"
+          echo "helm chart: ${ref}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload chart
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: helm-chart
+          path: chart/*.tgz
+          if-no-files-found: error
+          retention-days: 90
+
+  # ---------------------------------------------------------------------------------------------
+  gates:
+    name: Release gates (compose smoke, ZAP, k6)
+    needs: [version, images]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      loadtest: ${{ steps.k6.outputs.result }}
+    env:
+      COMPOSE_FILES: -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml
+      DLE_VERSION: ${{ needs.version.outputs.version }}
+      DLE_EDGE_IMAGE: ghcr.io/${{ needs.version.outputs.owner }}/dle-edge:${{ needs.version.outputs.version }}
+      DLE_CONTROL_IMAGE: ghcr.io/${{ needs.version.outputs.owner }}/dle-control:${{ needs.version.outputs.version }}
+      DLE_DOMAIN: localhost
+      DLE_TLS: internal
+      DLE_HTTP_PORT: "8088"
+      DLE_HTTPS_PORT: "8443"
+      # `secrets` is not available in `if:`; it is in `env:`.
+      HAS_LOADTEST_TARGET: ${{ secrets.DLE_LOADTEST_CONTROL_URL != '' && secrets.DLE_LOADTEST_API_KEY != '' && secrets.DLE_LOADTEST_DOMAIN_ID != '' && secrets.DLE_LOADTEST_LINK_HOST != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Login to GHCR (the packages may be private on first publish)
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Throw-away secrets for this stack
+        run: |
+          pg="$(openssl rand -hex 24)"; ms="$(openssl rand -base64 48 | tr -d '\n')"
+          echo "::add-mask::$pg"; echo "::add-mask::$ms"
+          echo "POSTGRES_PASSWORD=$pg" >> "$GITHUB_ENV"
+          echo "DLE_MASTER_SECRET=$ms" >> "$GITHUB_ENV"
+
+      - name: Start the stack from the released images
+        run: |
+          docker compose $COMPOSE_FILES pull --quiet
+          docker compose $COMPOSE_FILES up -d --no-build --wait --wait-timeout 300
+          curl -fsS http://127.0.0.1:8080/healthz && echo " edge healthy"
+          curl -fsS http://127.0.0.1:8081/healthz && echo " control healthy"
+          curl -fsS http://127.0.0.1:8081/readyz  && echo " control ready"
+
+      - name: Smoke — edge stays up with PostgreSQL down, control reports not-ready
+        # The edge serves from cache and must not fall over with the database (§B.8, chaos tests
+        # in Dle.IntegrationTests); /readyz on control gates on the database and must say so.
+        run: |
+          docker compose $COMPOSE_FILES stop postgres
+          sleep 5
+          curl -fsS http://127.0.0.1:8080/healthz && echo " edge still healthy without postgres"
+          if curl -fsS http://127.0.0.1:8081/readyz; then echo "::error::control /readyz returned success with postgres stopped"; exit 1; fi
+          echo " control correctly not ready"
+          docker compose $COMPOSE_FILES start postgres
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8081/readyz && break; sleep 2; done
+          curl -fsS http://127.0.0.1:8081/readyz && echo " control ready again"
+
+      - name: ZAP baseline scan of the edge (hard gate)
+        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0
+        with:
+          target: http://localhost:8080
+          rules_file_name: .github/zap/edge-baseline.conf
+          allow_issue_writing: false
+          fail_action: true
+          artifact_name: zap-baseline-edge-release
+
+      - name: Set up k6
+        uses: grafana/setup-k6-action@db07bd9765aac508ef18982e52ab937fe633a065 # v1.2.1
+
+      - name: Set up Node 22 (seeder)
+        if: ${{ env.HAS_LOADTEST_TARGET == 'true' }}
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: k6 — §D.5 resolve profile against the staging target
+        id: k6
+        env:
+          DLE_CONTROL_URL: ${{ secrets.DLE_LOADTEST_CONTROL_URL }}
+          DLE_API_KEY: ${{ secrets.DLE_LOADTEST_API_KEY }}
+          DLE_DOMAIN_ID: ${{ secrets.DLE_LOADTEST_DOMAIN_ID }}
+          DLE_LINK_HOST: ${{ secrets.DLE_LOADTEST_LINK_HOST }}
+        run: |
+          if [ "$HAS_LOADTEST_TARGET" != "true" ]; then
+            echo "::warning title=k6 load profile skipped::DLE_LOADTEST_* secrets are not configured; no §D.5 evidence for this tag. The GitHub release will be marked pre-release."
+            echo "result=skipped" >> "$GITHUB_OUTPUT"
+            { echo "### k6 load profile"; echo; echo "**SKIPPED** — no staging target configured (DLE_LOADTEST_CONTROL_URL / API_KEY / DOMAIN_ID / LINK_HOST). Release is marked pre-release."; } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # Seed the corpus (idempotent: Idempotency-Key per link, prefix k6load), then run.
+          node tests/load/seed.js --total 10000 --hot 100
+          k6 run -e BASE_URL="https://${DLE_LINK_HOST}" --summary-export k6-summary.json tests/load/resolve.js
+          echo "result=ran" >> "$GITHUB_OUTPUT"
+          { echo "### k6 load profile"; echo; echo "Ran against https://${DLE_LINK_HOST}; thresholds in tests/load/resolve.js held."; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload k6 summary
+        if: ${{ always() && steps.k6.outputs.result == 'ran' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: k6-summary
+          path: k6-summary.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: Stack logs (on failure)
+        if: ${{ failure() }}
+        run: docker compose $COMPOSE_FILES logs --no-color --tail 300
+
+      - name: Tear down
+        if: ${{ always() }}
+        run: docker compose $COMPOSE_FILES down --volumes --remove-orphans
+
+  # ---------------------------------------------------------------------------------------------
+  release:
+    name: GitHub release
+    needs: [version, ci, sbom, images, helm, gates]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # create the release and upload its assets
+      id-token: write # cosign sign-blob (keyless)
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - name: Download SBOM/CBOM
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: sbom
+          path: assets/sbom
+
+      - name: Download Helm chart
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: helm-chart
+          path: assets/chart
+
+      - name: Download image digests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: image-digest-*
+          merge-multiple: true
+          path: assets/digests
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Sign SBOM, CBOM and chart (keyless blob signatures, Sigstore bundles)
+        run: |
+          for f in assets/sbom/*.cdx.json assets/chart/*.tgz; do
+            cosign sign-blob --yes --bundle "$f.sigstore.json" "$f"
+          done
+          ls -l assets/sbom assets/chart
+
+      - name: Release notes header
+        env:
+          LOADTEST: ${{ needs.gates.outputs.loadtest }}
+          REPO: ${{ github.repository }}
+        run: |
+          {
+            echo "## Artefacts"
+            echo
+            echo "| Image | Digest |"; echo "|---|---|"
+            for f in assets/digests/*.txt; do n="$(basename "$f" .txt)"; echo "| $n | \`$(cat "$f")\` |"; done
+            echo
+            echo "Helm chart: \`oci://ghcr.io/${{ needs.version.outputs.owner }}/charts/dle\` version \`${VERSION}\` (also attached)."
+            echo
+            echo "Attached: CycloneDX SBOMs (.NET, web SDK, admin console), the CBOM, the chart, and a \`.sigstore.json\` bundle for each."
+            echo
+            echo "## Verify"
+            echo
+            echo '```sh'
+            echo "cosign verify ghcr.io/${{ needs.version.outputs.owner }}/dle-edge:${VERSION} \\"
+            echo "  --certificate-oidc-issuer https://token.actions.githubusercontent.com \\"
+            echo "  --certificate-identity-regexp '^https://github.com/${REPO}/.github/workflows/release.yml@refs/tags/v'"
+            echo "cosign verify-blob --bundle dle-cbom.cdx.json.sigstore.json dle-cbom.cdx.json \\"
+            echo "  --certificate-oidc-issuer https://token.actions.githubusercontent.com \\"
+            echo "  --certificate-identity-regexp '^https://github.com/${REPO}/.github/workflows/release.yml@refs/tags/v'"
+            echo '```'
+            echo
+            echo "## Gates"
+            echo
+            echo "- CI (build, format, unit, contract, security, integration suites, coverage gate): passed"
+            echo "- Images scanned at build time by security.yml on the source commit; SLSA provenance and per-image SBOM attached to each index"
+            echo "- Compose smoke and OWASP ZAP baseline against the released images: passed"
+            if [ "$LOADTEST" = "ran" ]; then
+              echo "- k6 §D.5 resolve profile: passed (thresholds in tests/load/resolve.js)"
+            else
+              echo "- k6 §D.5 resolve profile: **NOT RUN** (no staging target configured) — this release is marked pre-release for that reason"
+            fi
+            echo
+          } > notes.md
+          cat notes.md
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: DLE ${{ needs.version.outputs.version }}
+          body_path: notes.md
+          generate_release_notes: true
+          prerelease: ${{ needs.version.outputs.prerelease == 'true' || needs.gates.outputs.loadtest != 'ran' }}
+          fail_on_unmatched_files: true
+          files: |
+            assets/sbom/*.cdx.json
+            assets/sbom/*.sigstore.json
+            assets/chart/*.tgz
+            assets/chart/*.sigstore.json
+            assets/digests/*.txt

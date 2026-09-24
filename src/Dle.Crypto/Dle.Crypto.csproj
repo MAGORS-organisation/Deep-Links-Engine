@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Implementations of the Dle.Domain.Crypto abstractions: ISigner/IVerifier,
+    the keyed Feistel slug permutation (ADR-007), click-id codec, IP hashing,
+    JWKS and key rotation. ADR-013 / docs/zadanie.md §E.4, §E.5.
+  -->
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>Dle.Crypto</PackageId>
+    <Description>Deep Link Engine cryptography: crypto-agile signing (HS256, Ed25519, ML-DSA-65, SLH-DSA), JWKS, key rotation, keyed slug permutation and click-id codec.</Description>
+
+    <!--
+      docs/zadanie.md §E.5.2: the post-quantum primitives (ML-KEM, ML-DSA,
+      SLH-DSA, Composite ML-DSA) ship in .NET 10 behind the [Experimental]
+      attribute with diagnostic id SYSLIB5006, which is emitted as an error.
+      Using them is an explicit architectural decision (ADR-013), so the
+      diagnostic is suppressed here and only here.
+    -->
+    <NoWarn>$(NoWarn);SYSLIB5006</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dle.Domain\Dle.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" />
+    <PackageReference Include="Konscious.Security.Cryptography.Argon2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+  </ItemGroup>
+
+</Project>

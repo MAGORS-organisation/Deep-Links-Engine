@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dle.edge.fullname" . }}
+  labels:
+    {{- include "dle.edge.labels" . | nindent 4 }}
+  {{- $annotations := mergeOverwrite (dict) .Values.commonAnnotations .Values.edge.service.annotations }}
+  {{- with $annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.edge.service.type }}
+  ports:
+    # Named `http`: the Ingress backends, the ServiceMonitor and the probes refer to it by name.
+    - name: http
+      port: {{ .Values.edge.service.port }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "dle.edge.selectorLabels" . | nindent 4 }}

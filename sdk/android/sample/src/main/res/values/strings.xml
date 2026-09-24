@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DLE Sample</string>
+    <string name="status_initialising">Initialising the Deep Link Engine SDK…</string>
+    <string name="status_resolving">Resolving the install…</string>
+    <string name="status_resolve_failed">Resolve failed: %1$s</string>
+    <string name="heading_deferred">Deferred link</string>
+    <string name="heading_open">App Link open</string>
+    <string name="open_rejected">Rejected by the allowlist: %1$s</string>
+    <string name="open_accepted">Accepted: host=%1$s path=%2$s params=%3$s</string>
+</resources>

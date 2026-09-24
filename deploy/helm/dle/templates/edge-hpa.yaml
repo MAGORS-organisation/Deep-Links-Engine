@@ -1,0 +1,45 @@
+{{- /*
+HPA for the edge (§B.8 profile B: 3–20 pods). CPU utilisation is relative to
+edge.resources.requests.cpu; the optional per-pod requests-per-second signal needs a metrics
+adapter that serves edge.autoscaling.rps.metricName as a Pods metric. §D.6: a 10× traffic step
+must not push p99 above 200 ms — the behaviour block scales up without a stabilisation window.
+*/ -}}
+{{- if .Values.edge.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "dle.edge.fullname" . }}
+  labels:
+    {{- include "dle.edge.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "dle.edge.fullname" . }}
+  minReplicas: {{ .Values.edge.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.edge.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.edge.autoscaling.targetCPUUtilizationPercentage }}
+    {{- if .Values.edge.autoscaling.rps.enabled }}
+    - type: Pods
+      pods:
+        metric:
+          name: {{ .Values.edge.autoscaling.rps.metricName }}
+        target:
+          type: AverageValue
+          averageValue: {{ .Values.edge.autoscaling.rps.targetAverageValue | quote }}
+    {{- end }}
+  {{- with .Values.edge.autoscaling.behavior }}
+  behavior:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,6243 @@
+{
+  "openapi": "3.1.1",
+  "operations": {
+    "GET /.well-known/jwks.json": {
+      "operationId": "GetJwks",
+      "parameters": {},
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/jwk-set\u002Bjson": {
+              "$ref": "#/components/schemas/JwksDocument"
+            }
+          }
+        }
+      }
+    },
+    "POST /abuse-reports": {
+      "operationId": "SubmitAbuseReport",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/CreateAbuseReportRequest"
+          }
+        }
+      },
+      "responses": {
+        "202": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/AbuseReportResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "429": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/abuse-reports": {
+      "operationId": "ListTenantAbuseReports",
+      "parameters": {
+        "limit@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "status@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/PagedResponseOfAbuseReportDetailResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/admin/abuse-reports": {
+      "operationId": "ListAbuseTriageQueue",
+      "parameters": {
+        "limit@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "status@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/PagedResponseOfAbuseReportDetailResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/admin/abuse-reports/{reportId}/decision": {
+      "operationId": "TriageAbuseReport",
+      "parameters": {
+        "reportId@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/TriageDecisionRequest"
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/admin/links/{linkId}/quarantine": {
+      "operationId": "QuarantineLink",
+      "parameters": {
+        "linkId@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/QuarantineDecisionRequest"
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/admin/links/{linkId}/quarantine/release": {
+      "operationId": "ReleaseLinkFromQuarantine",
+      "parameters": {
+        "linkId@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/QuarantineDecisionRequest"
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/analytics/attribution-quality": {
+      "operationId": "GetAttributionQuality",
+      "parameters": {},
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/AttributionQualityResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/analytics/breakdown": {
+      "operationId": "GetAnalyticsBreakdown",
+      "parameters": {
+        "dimension@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/BreakdownResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/analytics/clicks": {
+      "operationId": "GetClickAnalytics",
+      "parameters": {},
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/TimeSeriesResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/analytics/export": {
+      "operationId": "ExportAnalytics",
+      "parameters": {
+        "dimension@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "format@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "report@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {}
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/analytics/funnels": {
+      "operationId": "GetAnalyticsFunnel",
+      "parameters": {},
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/FunnelSummary"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/analytics/installs": {
+      "operationId": "GetInstallAnalytics",
+      "parameters": {},
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/TimeSeriesResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/analytics/stream": {
+      "operationId": "StreamAnalytics",
+      "parameters": {
+        "intervalSeconds@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {}
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/api-keys": {
+      "operationId": "ListApiKeys",
+      "parameters": {
+        "includeRevoked@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "boolean"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/PagedResponseOfApiKeyResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/api-keys": {
+      "operationId": "CreateApiKey",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/CreateApiKeyRequest"
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/ApiKeyCreatedResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "DELETE /api/v1/api-keys/{id}": {
+      "operationId": "RevokeApiKey",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/apps": {
+      "operationId": "ListApps",
+      "parameters": {},
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/PagedResponseOfAppResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/apps": {
+      "operationId": "CreateApp",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/CreateAppRequest"
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/AppResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "409": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/apps/{id}": {
+      "operationId": "GetApp",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/AppResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "DELETE /api/v1/apps/{id}": {
+      "operationId": "DeleteApp",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "PATCH /api/v1/apps/{id}": {
+      "operationId": "UpdateApp",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/UpdateAppRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/AppResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/apps/{id}/sdk-keys": {
+      "operationId": "ListSdkKeys",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/PagedResponseOfSdkKeyResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/apps/{id}/sdk-keys": {
+      "operationId": "CreateSdkKey",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "201": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/SdkKeyCreatedResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "DELETE /api/v1/apps/{id}/sdk-keys/{keyId}": {
+      "operationId": "RevokeSdkKey",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "keyId@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/domains": {
+      "operationId": "ListDomains",
+      "parameters": {},
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/PagedResponseOfDomainResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/domains": {
+      "operationId": "CreateDomain",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/CreateDomainRequest"
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/DomainResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "409": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/domains/{id}": {
+      "operationId": "GetDomain",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/DomainResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "DELETE /api/v1/domains/{id}": {
+      "operationId": "DeleteDomain",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "409": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "PATCH /api/v1/domains/{id}": {
+      "operationId": "UpdateDomain",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/UpdateDomainRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/DomainResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/domains/{id}/verifications": {
+      "operationId": "ListDomainVerifications",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/PagedResponseOfDomainVerificationRecord"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/domains/{id}/verify": {
+      "operationId": "VerifyDomain",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/DomainVerificationResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/exports/tenant": {
+      "operationId": "ExportTenantData",
+      "parameters": {},
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {}
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/links": {
+      "operationId": "ListLinks",
+      "parameters": {
+        "campaignId@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "cursor@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "domainId@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "includeArchived@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "boolean"
+            ]
+          }
+        },
+        "isActive@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "boolean"
+            ]
+          }
+        },
+        "limit@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "search@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "tags@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/PagedResponseOfLinkResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "429": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/links": {
+      "operationId": "CreateLink",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/CreateLinkRequest"
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/LinkResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "409": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "422": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "429": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/links/bulk": {
+      "operationId": "BulkCreateLinks",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/x-ndjson": {
+            "$ref": "#/components/schemas/BulkLinkItem"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/x-ndjson": {
+              "$ref": "#/components/schemas/BulkLinkResult"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "409": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "429": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/links/templates": {
+      "operationId": "ListLinkTemplates",
+      "parameters": {},
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/PagedResponseOfLinkTemplateResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/links/templates": {
+      "operationId": "CreateLinkTemplate",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/LinkTemplateRequest"
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/LinkTemplateResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "409": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/links/templates/{id}": {
+      "operationId": "GetLinkTemplate",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/LinkTemplateResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "DELETE /api/v1/links/templates/{id}": {
+      "operationId": "DeleteLinkTemplate",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "PATCH /api/v1/links/templates/{id}": {
+      "operationId": "UpdateLinkTemplate",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/LinkTemplateRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/LinkTemplateResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/links/{id}": {
+      "operationId": "GetLink",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/LinkResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "DELETE /api/v1/links/{id}": {
+      "operationId": "DeleteLink",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "PATCH /api/v1/links/{id}": {
+      "operationId": "UpdateLink",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/UpdateLinkRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/LinkResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "409": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "422": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/links/{id}/archive": {
+      "operationId": "ArchiveLink",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/LinkResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/links/{id}/simulate": {
+      "operationId": "SimulateLink",
+      "parameters": {
+        "Accept-Language@header": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "app_version@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "at@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "channel@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "click_id@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "country@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "language@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "os_version@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "platform@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "region@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "ua@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/SimulateResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/links/{id}/simulate": {
+      "operationId": "SimulateLinkFromBody",
+      "parameters": {
+        "Accept-Language@header": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/SimulateRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/SimulateResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/links/{id}/versions": {
+      "operationId": "ListLinkVersions",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "limit@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/PagedResponseOfLinkVersionSummary"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/tenants": {
+      "operationId": "ListTenants",
+      "parameters": {
+        "includeDeleted@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "boolean"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/PagedResponseOfTenantResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/tenants": {
+      "operationId": "CreateTenant",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/CreateTenantRequest"
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/TenantResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "409": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/tenants/me": {
+      "operationId": "GetOwnTenant",
+      "parameters": {},
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/TenantResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/tenants/{id}": {
+      "operationId": "GetTenant",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/TenantResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "DELETE /api/v1/tenants/{id}": {
+      "operationId": "DeleteTenant",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "PATCH /api/v1/tenants/{id}": {
+      "operationId": "UpdateTenant",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/UpdateTenantRequest"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/TenantResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/webhooks": {
+      "operationId": "ListWebhooks",
+      "parameters": {
+        "onlyActive@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "boolean"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "type": [
+                "array"
+              ],
+              "items": {
+                "$ref": "#/components/schemas/WebhookResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/webhooks": {
+      "operationId": "CreateWebhook",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/CreateWebhookRequest"
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/WebhookCreatedResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "409": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "GET /api/v1/webhooks/deliveries": {
+      "operationId": "ListWebhookDeliveries",
+      "parameters": {
+        "includePayload@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "boolean"
+            ]
+          }
+        },
+        "limit@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "subscriptionId@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "type": [
+                "array"
+              ],
+              "items": {
+                "$ref": "#/components/schemas/WebhookDeliveryResponse"
+              }
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "DELETE /api/v1/webhooks/{id}": {
+      "operationId": "DeleteWebhook",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/webhooks/{id}/test": {
+      "operationId": "TestWebhook",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/TestWebhookResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /v1/claim-codes": {
+      "operationId": "IssueClaimCode",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/IssueClaimCodeRequest"
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/ClaimCodeResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "429": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "503": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /v1/events": {
+      "operationId": "RecordSdkEvents",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/EventBatchDto"
+          }
+        }
+      },
+      "responses": {
+        "202": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/EventBatchAcceptedDto"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "413": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "429": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /v1/resolve": {
+      "operationId": "ResolveInstall",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/ResolveRequestDto"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/ResolveResponseDto"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "413": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "429": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    }
+  },
+  "schemas": {
+    "AbVariant": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "percent",
+        "variant"
+      ],
+      "properties": {
+        "percent": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
+        },
+        "variant": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "AbuseReportDetailResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "created_at",
+        "has_reporter_contact",
+        "id",
+        "link_id",
+        "reason",
+        "status",
+        "tenant_id"
+      ],
+      "properties": {
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "details": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "has_reporter_contact": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "link_id": {
+          "type": [
+            "string"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string"
+          ]
+        },
+        "resolution_note": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "resolved_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "status": {
+          "type": [
+            "string"
+          ]
+        },
+        "tenant_id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        }
+      }
+    },
+    "AbuseReportResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "created_at",
+        "id",
+        "status"
+      ],
+      "properties": {
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "status": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "ApiKeyCreatedResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "id",
+        "name",
+        "prefix",
+        "role",
+        "secret"
+      ],
+      "properties": {
+        "expires_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "name": {
+          "type": [
+            "string"
+          ]
+        },
+        "prefix": {
+          "type": [
+            "string"
+          ]
+        },
+        "role": {
+          "type": [
+            "string"
+          ]
+        },
+        "secret": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "ApiKeyResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "created_at",
+        "id",
+        "name",
+        "prefix",
+        "role"
+      ],
+      "properties": {
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "last_used_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "name": {
+          "type": [
+            "string"
+          ]
+        },
+        "prefix": {
+          "type": [
+            "string"
+          ]
+        },
+        "revoked_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "role": {
+          "type": [
+            "string"
+          ]
+        },
+        "scopes": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "AppResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "bundle_id",
+        "created_at",
+        "id",
+        "platform",
+        "tenant_id"
+      ],
+      "properties": {
+        "app_clip_bundle_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "bundle_id": {
+          "type": [
+            "string"
+          ]
+        },
+        "cert_fingerprints": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "custom_scheme": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "domain_ids": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "platform": {
+          "type": [
+            "string"
+          ]
+        },
+        "store_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "store_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "team_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "tenant_id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "warnings": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "AttributionQualityResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "average_probabilistic_confidence",
+        "deterministic",
+        "probabilistic",
+        "unmatched"
+      ],
+      "properties": {
+        "average_probabilistic_confidence": {
+          "type": [
+            "number"
+          ],
+          "format": "double"
+        },
+        "by_match_type": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/MatchTypeSummary"
+          }
+        },
+        "deterministic": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        },
+        "probabilistic": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        },
+        "unmatched": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "BreakdownResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "dimension"
+      ],
+      "properties": {
+        "dimension": {
+          "type": [
+            "string"
+          ]
+        },
+        "rows": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/BreakdownRow"
+          }
+        }
+      }
+    },
+    "BreakdownRow": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "clicks",
+        "installs",
+        "key",
+        "value"
+      ],
+      "properties": {
+        "clicks": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        },
+        "installs": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        },
+        "key": {
+          "type": [
+            "string"
+          ]
+        },
+        "value": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "format": "double"
+        }
+      }
+    },
+    "BulkLinkItem": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "link"
+      ],
+      "properties": {
+        "link": {
+          "$ref": "#/components/schemas/CreateLinkRequest"
+        },
+        "ref": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "BulkLinkResult": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "ok"
+      ],
+      "properties": {
+        "detail": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "error": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "ok": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "ref": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "short_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "ClaimCodeResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "code",
+        "expires_at",
+        "expires_in"
+      ],
+      "properties": {
+        "code": {
+          "type": [
+            "string"
+          ]
+        },
+        "expires_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "expires_in": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
+        }
+      }
+    },
+    "ConsentDto": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "analytics": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "attribution": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "ts": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "CreateAbuseReportRequest": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "reason",
+        "url"
+      ],
+      "properties": {
+        "details": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string"
+          ]
+        },
+        "reporter_email": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "url": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "CreateApiKeyRequest": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "name",
+        "role"
+      ],
+      "properties": {
+        "expires_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "name": {
+          "type": [
+            "string"
+          ]
+        },
+        "role": {
+          "type": [
+            "string"
+          ]
+        },
+        "scopes": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "CreateAppRequest": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "bundle_id",
+        "platform"
+      ],
+      "properties": {
+        "app_clip_bundle_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "bundle_id": {
+          "type": [
+            "string"
+          ]
+        },
+        "cert_fingerprints": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "custom_scheme": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "domain_ids": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "min_app_version": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "platform": {
+          "type": [
+            "string"
+          ]
+        },
+        "store_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "store_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "team_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "CreateDomainRequest": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "host"
+      ],
+      "properties": {
+        "consent_mode_override": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "default_language": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "default_og": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/OgMeta"
+            }
+          ]
+        },
+        "host": {
+          "type": [
+            "string"
+          ]
+        },
+        "is_default": {
+          "type": [
+            "boolean"
+          ]
+        }
+      }
+    },
+    "CreateLinkRequest": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "domain_id",
+        "target_url"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "deeplink_path": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "description": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "domain_id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "expired_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "expires_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "is_active": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "og": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/OgMeta"
+            }
+          ]
+        },
+        "routing_rules": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/RoutingRule"
+          }
+        },
+        "slug": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "starts_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "tags": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "target_url": {
+          "type": [
+            "string"
+          ]
+        },
+        "title": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "utm": {
+          "type": [
+            "object"
+          ],
+          "additionalProperties": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "CreateTenantRequest": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "name",
+        "slug"
+      ],
+      "properties": {
+        "consent_mode": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "name": {
+          "type": [
+            "string"
+          ]
+        },
+        "slug": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "CreateWebhookRequest": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "event_types",
+        "url"
+      ],
+      "properties": {
+        "event_types": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "is_active": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "url": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "DeviceSignalsDto": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "device_model": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "language": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "screen": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "tz_offset": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        }
+      }
+    },
+    "DomainResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "aasa_status",
+        "assetlinks_status",
+        "created_at",
+        "host",
+        "id",
+        "is_active",
+        "is_default",
+        "tenant_id",
+        "tls_status"
+      ],
+      "properties": {
+        "aasa_status": {
+          "type": [
+            "string"
+          ]
+        },
+        "assetlinks_status": {
+          "type": [
+            "string"
+          ]
+        },
+        "consent_mode_override": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "host": {
+          "type": [
+            "string"
+          ]
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "is_active": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "is_default": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "last_verified_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "tenant_id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "tls_status": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "DomainVerificationRecord": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "checked_at",
+        "kind",
+        "redirect_count",
+        "status"
+      ],
+      "properties": {
+        "checked_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "http_status": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "kind": {
+          "type": [
+            "string"
+          ]
+        },
+        "redirect_count": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
+        },
+        "status": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "DomainVerificationResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "checked_at",
+        "domain_id",
+        "host",
+        "ok"
+      ],
+      "properties": {
+        "checked_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "checks": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/VerificationCheckResult"
+          }
+        },
+        "domain_id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "host": {
+          "type": [
+            "string"
+          ]
+        },
+        "ok": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "propagation_notice": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "EventBatchAcceptedDto": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "accepted"
+      ],
+      "properties": {
+        "accepted": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
+        },
+        "rejected": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
+        }
+      }
+    },
+    "EventBatchDto": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "events",
+        "install_id"
+      ],
+      "properties": {
+        "app_version": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "events": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/EventDto"
+          }
+        },
+        "install_id": {
+          "type": [
+            "string"
+          ]
+        },
+        "platform": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "EventDto": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "currency": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "name": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "properties": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "additionalProperties": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "ts": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "type": {
+          "type": [
+            "string"
+          ]
+        },
+        "url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "value": {
+          "type": [
+            "null",
+            "number"
+          ],
+          "format": "double"
+        }
+      }
+    },
+    "FunnelSummary": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "attributed",
+        "clicks",
+        "conversion_rate",
+        "conversions",
+        "installs"
+      ],
+      "properties": {
+        "attributed": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        },
+        "clicks": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        },
+        "conversion_rate": {
+          "type": [
+            "number"
+          ],
+          "format": "double"
+        },
+        "conversions": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        },
+        "installs": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "InterstitialMode": {
+      "enum": [
+        "always",
+        "auto",
+        "never"
+      ]
+    },
+    "IssueClaimCodeRequest": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "click_id"
+      ],
+      "properties": {
+        "click_id": {
+          "type": [
+            "string"
+          ]
+        },
+        "link_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "JsonElement": {},
+    "JsonWebKey": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "alg",
+        "kid",
+        "kty",
+        "use"
+      ],
+      "properties": {
+        "alg": {
+          "type": [
+            "string"
+          ]
+        },
+        "crv": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "kid": {
+          "type": [
+            "string"
+          ]
+        },
+        "kty": {
+          "type": [
+            "string"
+          ]
+        },
+        "not_after": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "not_before": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "public_key": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "use": {
+          "type": [
+            "string"
+          ]
+        },
+        "x": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "JwksDocument": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "keys"
+      ],
+      "properties": {
+        "keys": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/JsonWebKey"
+          }
+        }
+      }
+    },
+    "LinkResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "created_at",
+        "domain_id",
+        "host",
+        "id",
+        "is_active",
+        "qr_url",
+        "short_url",
+        "slug",
+        "target_url",
+        "tenant_id",
+        "updated_at",
+        "version"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "deeplink_path": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "description": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "domain_id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "expired_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "expires_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "host": {
+          "type": [
+            "string"
+          ]
+        },
+        "id": {
+          "type": [
+            "string"
+          ]
+        },
+        "is_active": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "og": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/OgMeta"
+            }
+          ]
+        },
+        "qr_url": {
+          "type": [
+            "string"
+          ]
+        },
+        "quarantined_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "routing_rules": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/RoutingRule"
+          }
+        },
+        "short_url": {
+          "type": [
+            "string"
+          ]
+        },
+        "slug": {
+          "type": [
+            "string"
+          ]
+        },
+        "starts_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "tags": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "target_url": {
+          "type": [
+            "string"
+          ]
+        },
+        "tenant_id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "title": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "updated_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "utm": {
+          "type": [
+            "object"
+          ],
+          "additionalProperties": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "version": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
+        }
+      }
+    },
+    "LinkTemplateRequest": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "deeplink_path": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "name": {
+          "type": [
+            "string"
+          ]
+        },
+        "og": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/OgMeta"
+            }
+          ]
+        },
+        "routing_rules": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/RoutingRule"
+          }
+        },
+        "tags": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "target_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "utm": {
+          "type": [
+            "object"
+          ],
+          "additionalProperties": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "LinkTemplateResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "created_at",
+        "id",
+        "name"
+      ],
+      "properties": {
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "deeplink_path": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "name": {
+          "type": [
+            "string"
+          ]
+        },
+        "og": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/OgMeta"
+            }
+          ]
+        },
+        "routing_rules": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/RoutingRule"
+          }
+        },
+        "tags": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "target_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "utm": {
+          "type": [
+            "object"
+          ],
+          "additionalProperties": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "LinkVersionSummary": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "changed_at",
+        "snapshot",
+        "version"
+      ],
+      "properties": {
+        "change_note": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "changed_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "changed_by": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "snapshot": {
+          "$ref": "#/components/schemas/JsonElement"
+        },
+        "version": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
+        }
+      }
+    },
+    "MatchTypeSummary": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "average_confidence",
+        "count",
+        "match_type"
+      ],
+      "properties": {
+        "average_confidence": {
+          "type": [
+            "number"
+          ],
+          "format": "double"
+        },
+        "count": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        },
+        "match_type": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "OgMeta": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "description": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "image_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "site_name": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "title": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "twitter_card": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "PagedResponseOfAbuseReportDetailResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/AbuseReportDetailResponse"
+          }
+        },
+        "next_cursor": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "total": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "PagedResponseOfApiKeyResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/ApiKeyResponse"
+          }
+        },
+        "next_cursor": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "total": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "PagedResponseOfAppResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/AppResponse"
+          }
+        },
+        "next_cursor": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "total": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "PagedResponseOfDomainResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/DomainResponse"
+          }
+        },
+        "next_cursor": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "total": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "PagedResponseOfDomainVerificationRecord": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/DomainVerificationRecord"
+          }
+        },
+        "next_cursor": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "total": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "PagedResponseOfLinkResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/LinkResponse"
+          }
+        },
+        "next_cursor": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "total": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "PagedResponseOfLinkTemplateResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/LinkTemplateResponse"
+          }
+        },
+        "next_cursor": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "total": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "PagedResponseOfLinkVersionSummary": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/LinkVersionSummary"
+          }
+        },
+        "next_cursor": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "total": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "PagedResponseOfSdkKeyResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/SdkKeyResponse"
+          }
+        },
+        "next_cursor": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "total": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "PagedResponseOfTenantResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/TenantResponse"
+          }
+        },
+        "next_cursor": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "total": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "ProblemDetails": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "detail": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "instance": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "status": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "title": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "type": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "QuarantineDecisionRequest": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "reason"
+      ],
+      "properties": {
+        "reason": {
+          "type": [
+            "string"
+          ],
+          "minLength": 1,
+          "maxLength": 1000
+        }
+      }
+    },
+    "ResolveLinkDto": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "campaign": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "deeplink_path": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "id": {
+          "type": [
+            "string"
+          ]
+        },
+        "title": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "ResolveRequestDto": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "install_id",
+        "platform"
+      ],
+      "properties": {
+        "app_version": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "claim_code": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "consent": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/ConsentDto"
+            }
+          ]
+        },
+        "install_id": {
+          "type": [
+            "string"
+          ]
+        },
+        "login_key": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "os_version": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "platform": {
+          "type": [
+            "string"
+          ]
+        },
+        "referrer": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "signals": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/DeviceSignalsDto"
+            }
+          ]
+        }
+      }
+    },
+    "ResolveResponseDto": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "confidence",
+        "match_type",
+        "matched"
+      ],
+      "properties": {
+        "click_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "confidence": {
+          "type": [
+            "number"
+          ],
+          "format": "double"
+        },
+        "expires_in": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
+        },
+        "link": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/ResolveLinkDto"
+            }
+          ]
+        },
+        "match_type": {
+          "type": [
+            "string"
+          ]
+        },
+        "matched": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "params": {
+          "type": [
+            "object"
+          ],
+          "additionalProperties": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "RoutingActionKind": {
+      "enum": [
+        "app_only",
+        "app_or_store",
+        "block",
+        "store_only",
+        "web"
+      ]
+    },
+    "RoutingRule": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "id",
+        "then"
+      ],
+      "properties": {
+        "id": {
+          "type": [
+            "string"
+          ]
+        },
+        "then": {
+          "$ref": "#/components/schemas/RuleAction"
+        },
+        "when": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/RuleCondition"
+            }
+          ]
+        }
+      }
+    },
+    "RuleAction": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "action"
+      ],
+      "properties": {
+        "action": {
+          "$ref": "#/components/schemas/RoutingActionKind"
+        },
+        "deeplink_path": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "interstitial": {
+          "$ref": "#/components/schemas/InterstitialMode"
+        },
+        "referrer_template": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "store_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "RuleCondition": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "ab": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/AbVariant"
+          }
+        },
+        "app_version": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/VersionPredicate"
+            }
+          ]
+        },
+        "channel": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "country": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "language": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "os_version": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/VersionPredicate"
+            }
+          ]
+        },
+        "platform": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "region": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "time_window": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/TimeWindowPredicate"
+            }
+          ]
+        }
+      }
+    },
+    "SdkKeyCreatedResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "app_id",
+        "created_at",
+        "id",
+        "prefix",
+        "secret"
+      ],
+      "properties": {
+        "app_id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "prefix": {
+          "type": [
+            "string"
+          ]
+        },
+        "secret": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "SdkKeyResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "app_id",
+        "created_at",
+        "id",
+        "is_active",
+        "prefix"
+      ],
+      "properties": {
+        "app_id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "is_active": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "prefix": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "SimulateRequest": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "app_version": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "channel": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "click_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "country": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "language": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "os_version": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "platform": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "region": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "user_agent": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "SimulateResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "consent_mode",
+        "decision",
+        "matched_rule_id"
+      ],
+      "properties": {
+        "ab_bucket": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int16"
+        },
+        "ab_variant": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "consent_mode": {
+          "type": [
+            "string"
+          ]
+        },
+        "decision": {
+          "type": [
+            "string"
+          ]
+        },
+        "deeplink_path": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "matched_rule_id": {
+          "type": [
+            "string"
+          ]
+        },
+        "store_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "trace": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "TenantResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "consent_mode",
+        "created_at",
+        "id",
+        "name",
+        "slug",
+        "status"
+      ],
+      "properties": {
+        "consent_mode": {
+          "type": [
+            "string"
+          ]
+        },
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "name": {
+          "type": [
+            "string"
+          ]
+        },
+        "slug": {
+          "type": [
+            "string"
+          ]
+        },
+        "status": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "TestWebhookResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "delivered",
+        "elapsed_ms",
+        "outcome",
+        "payload"
+      ],
+      "properties": {
+        "delivered": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "elapsed_ms": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
+        },
+        "error": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "outcome": {
+          "type": [
+            "string"
+          ]
+        },
+        "payload": {
+          "type": [
+            "string"
+          ]
+        },
+        "response_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "signing_key_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "TimeSeriesPoint": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "bucket",
+        "clicks",
+        "conversions",
+        "installs"
+      ],
+      "properties": {
+        "bucket": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "clicks": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        },
+        "conversions": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        },
+        "installs": {
+          "type": [
+            "integer"
+          ],
+          "format": "int64"
+        }
+      }
+    },
+    "TimeSeriesResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "grain"
+      ],
+      "properties": {
+        "grain": {
+          "type": [
+            "string"
+          ]
+        },
+        "points": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/TimeSeriesPoint"
+          }
+        },
+        "totals": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/FunnelSummary"
+            }
+          ]
+        }
+      }
+    },
+    "TimeWindowPredicate": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "days_of_week_utc": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "from": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "hours_utc": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "to": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "TriageDecisionRequest": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "resolution_note",
+        "status"
+      ],
+      "properties": {
+        "resolution_note": {
+          "type": [
+            "string"
+          ],
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "status": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "UpdateAppRequest": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "app_clip_bundle_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "cert_fingerprints": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "custom_scheme": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "domain_ids": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "min_app_version": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "play_signing_fingerprints": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "store_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "store_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "team_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "UpdateDomainRequest": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "consent_mode_override": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "default_og": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/OgMeta"
+            }
+          ]
+        },
+        "is_active": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "is_default": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "UpdateLinkRequest": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "campaign_id": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "change_note": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "deeplink_path": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "description": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "expired_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "expires_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "is_active": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "og": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/OgMeta"
+            }
+          ]
+        },
+        "routing_rules": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/components/schemas/RoutingRule"
+          }
+        },
+        "starts_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "tags": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "target_url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "title": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "utm": {
+          "type": [
+            "null",
+            "object"
+          ],
+          "additionalProperties": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      }
+    },
+    "UpdateTenantRequest": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "consent_mode": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "name": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "status": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "VerificationCheckResult": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "kind",
+        "status"
+      ],
+      "properties": {
+        "codes": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "detail": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "kind": {
+          "type": [
+            "string"
+          ]
+        },
+        "status": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "VersionPredicate": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "eq": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "gt": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "gte": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "lt": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "lte": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "WebhookCreatedResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "created_at",
+        "id",
+        "is_active",
+        "secret",
+        "url"
+      ],
+      "properties": {
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "event_types": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "is_active": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "secret": {
+          "type": [
+            "string"
+          ]
+        },
+        "signing_key_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "url": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    },
+    "WebhookDeliveryResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "attempt",
+        "created_at",
+        "event_type",
+        "id",
+        "status",
+        "subscription_id"
+      ],
+      "properties": {
+        "attempt": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
+        },
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "delivered_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "event_type": {
+          "type": [
+            "string"
+          ]
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "last_error": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "next_attempt_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "payload": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "response_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int32"
+        },
+        "status": {
+          "type": [
+            "string"
+          ]
+        },
+        "subscription_id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        }
+      }
+    },
+    "WebhookResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "created_at",
+        "id",
+        "is_active",
+        "url"
+      ],
+      "properties": {
+        "created_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        },
+        "event_types": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
+        },
+        "id": {
+          "type": [
+            "string"
+          ],
+          "format": "uuid"
+        },
+        "is_active": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "url": {
+          "type": [
+            "string"
+          ]
+        }
+      }
+    }
+  },
+  "securitySchemes": {
+    "ApiKey": {
+      "type": "http",
+      "scheme": "bearer"
+    },
+    "SdkKey": {
+      "type": "apiKey",
+      "name": "X-Dle-Sdk-Key",
+      "in": "header"
+    }
+  }
+}

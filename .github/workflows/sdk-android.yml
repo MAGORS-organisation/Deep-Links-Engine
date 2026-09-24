@@ -1,0 +1,105 @@
+# =============================================================================
+# Android SDK (sdk/android) — :dle-sdk release AAR, its unit tests, and the :sample app.
+#
+# FIRST COMPILATION: the Android SDK has never been compiled. The machine it was written on had
+# no JDK, no Android SDK and no Gradle, so this workflow is the first time
+# `:dle-sdk:assembleRelease` runs anywhere. Expect the first run to surface compile errors that
+# a local build would have caught; that is the job doing its work, not a CI problem.
+#
+# Gradle: sdk/android/gradle/wrapper/gradle-wrapper.properties exists but there is NO gradlew
+# script and NO gradle-wrapper.jar in the repository (a committed wrapper JAR is also a
+# supply-chain question, T-14). The version is read from the properties file and installed with
+# gradle/actions/setup-gradle, so the properties file stays the single source of truth.
+#
+# Toolchain (from sdk/android/gradle/libs.versions.toml and the module build files):
+#   AGP 8.7.3, Kotlin 2.0.21, compileSdk 35, JDK 17 (JavaVersion.VERSION_17).
+# =============================================================================
+name: Android SDK
+
+on:
+  pull_request:
+    paths:
+      - "sdk/android/**"
+      - ".github/workflows/sdk-android.yml"
+  push:
+    branches: [develop, master]
+    paths:
+      - "sdk/android/**"
+      - ".github/workflows/sdk-android.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sdk-android-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Build and unit-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      GRADLE_OPTS: -Dorg.gradle.daemon=false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 17 (Temurin)
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699 # v4.0.1
+        with:
+          # AGP downloads anything else it needs once the licences are accepted; these are the
+          # components the modules declare (compileSdk 35).
+          packages: platform-tools platforms;android-35 build-tools;35.0.0
+          accept-android-sdk-licenses: true
+          log-accepted-android-sdk-licenses: false
+
+      - name: Read Gradle version from the wrapper properties
+        id: wrapper
+        run: |
+          version="$(sed -n 's#.*gradle-\([0-9][0-9.]*\)-\(bin\|all\)\.zip.*#\1#p' sdk/android/gradle/wrapper/gradle-wrapper.properties)"
+          if [ -z "$version" ]; then
+            echo "::error file=sdk/android/gradle/wrapper/gradle-wrapper.properties::could not read distributionUrl"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Gradle $version"
+
+      - name: Set up Gradle ${{ steps.wrapper.outputs.version }}
+        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          gradle-version: ${{ steps.wrapper.outputs.version }}
+          # Only develop/master write the dependency cache; PRs read it.
+          cache-read-only: ${{ github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/master' }}
+
+      - name: Build SDK (release), run unit tests, build sample (debug)
+        working-directory: sdk/android
+        run: gradle --no-daemon --stacktrace --warning-mode all :dle-sdk:assembleRelease :dle-sdk:testReleaseUnitTest :sample:assembleDebug
+
+      - name: Upload AAR
+        if: ${{ success() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dle-sdk-android-aar-${{ github.sha }}
+          path: sdk/android/dle-sdk/build/outputs/aar/*.aar
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload unit-test reports
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dle-sdk-android-test-reports-${{ github.sha }}
+          path: |
+            sdk/android/dle-sdk/build/reports/tests/
+            sdk/android/dle-sdk/build/test-results/
+          if-no-files-found: ignore
+          retention-days: 14

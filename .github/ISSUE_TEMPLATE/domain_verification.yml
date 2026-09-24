@@ -1,0 +1,76 @@
+name: Domain verification problem
+description: A domain will not verify, or Universal Links / App Links do not open the app although the console says the domain is verified.
+title: "[domain] "
+labels: [domain-verification, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Verification has two halves: DLE serving the right `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`, and Apple's / Google's CDNs fetching them. Most failures are on the second half and show up as "verified in the console, but the app still does not open". The fields below separate the two.
+
+        Everything asked for here is public (it is what Apple and Google fetch), so nothing sensitive is needed. Do not include API keys.
+  - type: input
+    id: domain
+    attributes:
+      label: Domain
+      placeholder: go.example.com
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - iOS (Universal Links / AASA)
+        - Android (App Links / assetlinks.json)
+        - Both
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: DLE version
+      placeholder: v0.1.0 / commit SHA
+    validations:
+      required: true
+  - type: textarea
+    id: wellknown
+    attributes:
+      label: What the well-known files return
+      description: |
+        Paste the output of the relevant command(s). Headers matter (status, content-type, no redirect).
+        ```
+        curl -si https://go.example.com/.well-known/apple-app-site-association
+        curl -si https://go.example.com/.well-known/assetlinks.json
+        ```
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: What the console / API says
+      description: The domain's verification status and the last verifier message (`GET /api/v1/domains/{id}`), with the `id` if you like — no key.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: platform_check
+    attributes:
+      label: Platform-side check
+      description: |
+        iOS: `curl -s https://app-site-association.cdn-apple.com/a/v1/<domain>` (what Apple's CDN has cached) and, on a device, Settings → Developer → Universal Links → Diagnostics.
+        Android: `adb shell pm get-app-links <package>` and the output of the Statement List Generator/Tester, or `https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://<domain>&relation=delegate_permission/common.handle_all_urls`.
+      render: text
+  - type: input
+    id: device
+    attributes:
+      label: Device and OS version used to test
+      placeholder: Pixel 8, Android 15 / iPhone 15, iOS 18.5
+    validations:
+      required: true
+  - type: textarea
+    id: dns_tls
+    attributes:
+      label: DNS / TLS / proxy in front of DLE
+      description: CDN, WAF, or reverse proxy in front of Caddy? Certificate issuer? Apple requires a valid public certificate and no redirects for the AASA fetch.

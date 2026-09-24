@@ -1,0 +1,121 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Control plane. ASP.NET Core minimal API in vertical slices: link and domain
+    management, attribution, analytics reporting, abuse handling, webhooks and
+    the background workers. docs/zadanie.md §B.7.3, §C.1.
+
+    Program.cs must call exactly (SHARED-KERNEL §15):
+      AddDleControlCore, AddDleTelemetry, AddDlePersistence, AddDleCrypto,
+      AddDleAnalytics, AddDleAttribution, AddDleAbuse, AddDleWebhooks,
+      AddDleIdentity, AddDleWorkers, AddDleControlRateLimiting
+      -> MapLinks, MapDomains, MapApps, MapTenants, MapApiKeys, MapAnalytics,
+         MapAttribution, MapAbuse, MapWebhooks, MapJwks, MapHealth
+  -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+    <UserSecretsId>dle-control-3b81d47e-6c25-4f19-8a30-5d7c9e2b4f16</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+
+    <!--
+      The OpenAPI document is written to openapi/dle-control.json as a convenience copy for
+      anyone who wants to read the surface without running the host. It is NOT what guards the
+      contract: the contract tests render the document from the running application and diff it
+      against tests/Dle.ContractTests/Contracts/openapi-v1.contract.json, which is the reviewed
+      baseline and the file to regenerate when the surface changes deliberately.
+
+      It is opt-in rather than automatic because the generator starts the application host in
+      order to enumerate the endpoints: it therefore needs a configuration the host will accept,
+      including Dle:Crypto:MasterSecret, and an ordinary developer build must not be made to
+      depend on secrets. Regenerate with:
+
+        dotnet build src/Dle.Control -p:DleGenerateOpenApi=true
+
+      with ASPNETCORE_ENVIRONMENT=Development, or with the deployment's own configuration. The
+      same document is always available from a running instance at /openapi/v1.json, which is
+      what an integration-test-based contract check reads.
+    -->
+    <OpenApiGenerateDocuments>$([System.String]::Equals('$(DleGenerateOpenApi)', 'true'))</OpenApiGenerateDocuments>
+    <OpenApiGenerateDocumentsOnBuild>$(OpenApiGenerateDocuments)</OpenApiGenerateDocumentsOnBuild>
+    <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/openapi</OpenApiDocumentsDirectory>
+    <OpenApiGenerateDocumentsOptions>--file-name dle-control</OpenApiGenerateDocumentsOptions>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dle.Domain\Dle.Domain.csproj" />
+    <ProjectReference Include="..\Dle.Crypto\Dle.Crypto.csproj" />
+    <ProjectReference Include="..\Dle.Persistence\Dle.Persistence.csproj" />
+    <ProjectReference Include="..\Dle.Persistence.Fast\Dle.Persistence.Fast.csproj" />
+    <ProjectReference Include="..\Dle.Analytics.Postgres\Dle.Analytics.Postgres.csproj" />
+    <ProjectReference Include="..\Dle.Analytics.ClickHouse\Dle.Analytics.ClickHouse.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="API surface">
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Scalar.AspNetCore" />
+    <PackageReference Include="Microsoft.Extensions.ApiDescription.Server">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="FluentValidation" />
+    <PackageReference Include="QRCoder" />
+  </ItemGroup>
+
+  <ItemGroup Label="Identity">
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+  </ItemGroup>
+
+  <ItemGroup Label="Hosting">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup Label="Observability">
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dle.UnitTests" />
+    <InternalsVisibleTo Include="Dle.IntegrationTests" />
+    <InternalsVisibleTo Include="Dle.ContractTests" />
+    <InternalsVisibleTo Include="Dle.SecurityTests" />
+  </ItemGroup>
+
+  <!--
+    The Admin SPA (src/Dle.Admin.Web, React + Vite) builds to its own dist/ folder and is copied
+    into wwwroot/admin/ here, where the host serves it with SPA fallback under /admin/.
+
+    The copy is conditional on the SPA having been built, so a .NET-only build — CI without Node,
+    a contributor without npm, the Docker build stage that runs before the SPA stage — still
+    succeeds and still serves the committed wwwroot/index.html fallback console. wwwroot/admin/
+    is build output and is git-ignored; the committed index.html is never touched by this target.
+  -->
+  <PropertyGroup>
+    <AdminSpaDist>$(MSBuildProjectDirectory)\..\Dle.Admin.Web\dist\</AdminSpaDist>
+    <AdminSpaTarget>$(MSBuildProjectDirectory)\wwwroot\admin\</AdminSpaTarget>
+  </PropertyGroup>
+
+  <Target Name="CopyAdminSpa" AfterTargets="Build" Condition="Exists('$(AdminSpaDist)index.html')">
+    <ItemGroup>
+      <AdminSpaFiles Include="$(AdminSpaDist)**\*" />
+    </ItemGroup>
+    <RemoveDir Directories="$(AdminSpaTarget)" />
+    <Copy SourceFiles="@(AdminSpaFiles)"
+          DestinationFiles="@(AdminSpaFiles->'$(AdminSpaTarget)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="CopyAdminSpa: copied @(AdminSpaFiles->Count()) file(s) to wwwroot/admin/" />
+  </Target>
+
+</Project>

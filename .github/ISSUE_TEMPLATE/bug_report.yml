@@ -1,0 +1,84 @@
+name: Bug report
+description: Something behaves differently from what the documentation or the spec says.
+title: "[bug] "
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Before filing: a security vulnerability goes through **private vulnerability reporting** (see SECURITY.md), not here.
+
+        **Do not paste secrets or personal data.** No API keys, master secrets, connection strings, install IDs, IP addresses or end-user identifiers. Logs at `Information` and below contain no PII by design (S-08); if yours do, that is a separate bug — report it privately.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - Edge (resolve, interstitial, /.well-known, QR)
+        - Control plane (API, OpenAPI, domains, keys)
+        - Admin console (src/Dle.Admin.Web)
+        - Web SDK (sdk/web)
+        - Android SDK (sdk/android)
+        - iOS SDK (sdk/ios)
+        - Deployment (docker compose, Helm, Caddy, Postgres)
+        - CI / build
+        - Documentation
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release tag, image digest, or commit SHA. `GET /healthz` on the edge/control reports the build.
+      placeholder: v0.1.0 / ghcr.io/…/dle-edge@sha256:… / 1a2b3c4
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact requests (curl), configuration keys (Dle__…), and the order things were done in.
+      placeholder: |
+        1. docker compose up with DLE_CONSENT_MODE=aggregate_only
+        2. curl -i https://go.example.com/abc123 -A "Mozilla/5.0 (iPhone …)"
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What the docs, the OpenAPI description or docs/zadanie.md say should happen (cite the section if you can).
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: Status codes, headers, response bodies, log lines — with secrets and PII removed.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device / OS / browser (routing and well-known bugs)
+      description: Deep-link routing depends on the real device. iOS and Android version, browser, whether the app was installed, and whether the link was tapped from a browser, a messaging app or a QR scan.
+      placeholder: iPhone 15, iOS 18.5, Safari, app installed, link opened from Messages
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant configuration
+      description: Environment variables / appsettings keys that differ from the defaults (values redacted where sensitive).
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: This is not a security vulnerability (those go through SECURITY.md).
+          required: true
+        - label: The report contains no secrets and no personal data.
+          required: true

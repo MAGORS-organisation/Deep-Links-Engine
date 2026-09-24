@@ -1,0 +1,40 @@
+<Project>
+
+  <!--
+    Settings shared by every test project. MSBuild stops at the first
+    Directory.Build.props it finds walking upwards, so the repository root file
+    has to be imported explicitly.
+  -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup Label="Test host">
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+
+    <!--
+      xunit.v3 v4 runs on Microsoft.Testing.Platform: the test assembly is its
+      own entry point. `dotnet test` is bridged by
+      TestingPlatformDotnetTestSupport. The VSTest runner
+      (Microsoft.NET.Test.Sdk / xunit.runner.visualstudio) must NOT be
+      referenced as well — the two hosts are mutually exclusive.
+    -->
+    <OutputType>Exe</OutputType>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <EnableMSTestRunner>false</EnableMSTestRunner>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Test-only analyzer relaxations">
+    <!--
+      CA1707  Test method names use underscores (Method_Condition_Expectation).
+      CA1861  Inline arrays as arguments are the normal shape of [InlineData].
+      CS1591  Test types are not public API, so XML doc comments are not required.
+    -->
+    <NoWarn>$(NoWarn);CA1707;CA1861;CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup Label="Shared test dependencies">
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="NSubstitute" />
+  </ItemGroup>
+
+</Project>

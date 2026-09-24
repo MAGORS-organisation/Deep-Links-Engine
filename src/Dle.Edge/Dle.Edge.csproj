@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Data plane. ASP.NET Core minimal API that serves the resolve hot path,
+    the interstitial, /.well-known/* and QR codes.
+    docs/zadanie.md §B.6.1, §C.1, §C.3.1.
+
+    Program.cs must call exactly (SHARED-KERNEL §15):
+      AddDleEdgeCore, AddDleTelemetry, AddDleFastPersistence, AddDleCrypto,
+      AddDleEdgeRateLimiting
+      -> MapResolve, MapWellKnown, MapQr, MapHealth
+  -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+    <UserSecretsId>dle-edge-9f2a6c31-4f0b-4a2e-9c47-2f6b8d1e7a53</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dle.Domain\Dle.Domain.csproj" />
+    <ProjectReference Include="..\Dle.Crypto\Dle.Crypto.csproj" />
+    <ProjectReference Include="..\Dle.Persistence.Fast\Dle.Persistence.Fast.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Label="Client classification and rendering">
+    <PackageReference Include="UAParser" />
+    <PackageReference Include="MaxMind.GeoIP2" />
+    <PackageReference Include="QRCoder" />
+  </ItemGroup>
+
+  <ItemGroup Label="Hosting">
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup Label="Observability">
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dle.UnitTests" />
+    <InternalsVisibleTo Include="Dle.IntegrationTests" />
+    <InternalsVisibleTo Include="Dle.ContractTests" />
+    <InternalsVisibleTo Include="Dle.SecurityTests" />
+  </ItemGroup>
+
+</Project>

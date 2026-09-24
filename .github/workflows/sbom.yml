@@ -1,0 +1,141 @@
+# =============================================================================
+# SBOM + CBOM — docs/zadanie.md §C.8 (main: SBOM CycloneDX → CBOM), §E.8 S-06, NFR-13.
+#
+#   dle-dotnet.cdx.json      CycloneDX .NET tool over Dle.sln (test projects excluded)
+#   dle-web-sdk.cdx.json     `npm sbom` of sdk/web (production tree)
+#   dle-admin-web.cdx.json   `npm sbom` of src/Dle.Admin.Web (production tree)
+#   dle-cbom.cdx.json        .github/scripts/cbom.py — cryptographic inventory (§E.4.1 K1..K9)
+#
+# Every document is validated against the CycloneDX JSON schema (.github/scripts/validate-cdx.py)
+# before it is uploaded. Container-image SBOMs are produced separately by BuildKit at release
+# (docker/build-push-action `sbom: true`) and attached to the image index.
+#
+# Reusable: release.yml calls it with the release version and attaches the artefact to the release.
+# =============================================================================
+name: SBOM
+
+on:
+  push:
+    branches: [develop, master]
+  pull_request:
+    paths:
+      - "**/packages.lock.json"
+      - "Directory.Packages.props"
+      - "**/package-lock.json"
+      - ".github/scripts/cbom.py"
+      - ".github/scripts/validate-cdx.py"
+      - ".github/workflows/sbom.yml"
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      version:
+        description: Product version to stamp into the documents (a leading "v" is stripped).
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sbom-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  NUGET_XMLDOC_MODE: skip
+  CI: "true"
+
+jobs:
+  sbom:
+    name: Generate and validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          v="${INPUT_VERSION#v}"
+          if [ -z "$v" ]; then v="0.0.0-ci.${GITHUB_RUN_NUMBER}+${GITHUB_SHA::7}"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "Stamping version $v"
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Restore (locked mode)
+        run: dotnet restore Dle.sln --locked-mode
+
+      - name: Install CycloneDX .NET tool
+        run: dotnet tool install --global CycloneDX --version 6.2.0
+
+      - name: .NET SBOM (CycloneDX 1.6 JSON)
+        run: |
+          mkdir -p sbom
+          dotnet-CycloneDX Dle.sln \
+            --output sbom --filename dle-dotnet.cdx.json \
+            --output-format Json --spec-version 1.6 \
+            --exclude-test-projects --disable-package-restore \
+            --set-name dle --set-version "${{ steps.version.outputs.version }}" --set-type Application
+
+      - name: Set up Node 22
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: npm SBOMs (sdk/web, src/Dle.Admin.Web)
+        # `npm sbom` reads the lock file (--package-lock-only), so no install is needed. The
+        # production tree is what ships; dev tooling is covered by the licence and audit jobs.
+        run: |
+          ( cd sdk/web           && npm sbom --sbom-format cyclonedx --sbom-type library     --omit dev --package-lock-only ) > sbom/dle-web-sdk.cdx.json
+          ( cd src/Dle.Admin.Web && npm sbom --sbom-format cyclonedx --sbom-type application --omit dev --package-lock-only ) > sbom/dle-admin-web.cdx.json
+
+      - name: CBOM (cryptographic bill of materials)
+        run: python3 .github/scripts/cbom.py --repo-root . --version "${{ steps.version.outputs.version }}" --output sbom/dle-cbom.cdx.json
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Validate every document against the CycloneDX schema
+        run: |
+          python -m pip install --quiet "cyclonedx-python-lib[json-validation]==11.12.0"
+          python .github/scripts/validate-cdx.py sbom/*.cdx.json
+
+      - name: Summary
+        run: |
+          {
+            echo "### SBOM / CBOM (${{ steps.version.outputs.version }})"
+            echo
+            echo "| Document | specVersion | components |"
+            echo "|---|---|---|"
+            for f in sbom/*.cdx.json; do
+              python - "$f" <<'PY'
+          import json, sys
+          p = sys.argv[1]; d = json.load(open(p, encoding="utf-8"))
+          print(f"| `{p}` | {d.get('specVersion')} | {len(d.get('components') or [])} |")
+          PY
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sbom
+          path: sbom/*.cdx.json
+          if-no-files-found: error
+          retention-days: 90

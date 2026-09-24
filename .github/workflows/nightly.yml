@@ -1,0 +1,130 @@
+# =============================================================================
+# Nightly — docs/zadanie.md §C.8 "nightly: overenie všetkých registrovaných domén (AASA/assetlinks)
+# + upstream CVE feed", §D.4 fuzzing.
+#
+#   verify-domains   .github/scripts/verify-domains.py against a running control plane. Needs the
+#                    repository secrets DLE_URL (control-plane base URL) and DLE_API_KEY (key with
+#                    rights on the instance tenant). Skips cleanly — green, with a notice — when
+#                    they are not configured; there is no instance to check yet.
+#   cve-recheck      security.yml with sca-only=true: NuGet / npm / Trivy fs against today's feeds,
+#                    on an unchanged tree. Catches CVEs published after the last push.
+#   fuzz-harness     SharpFuzz is NOT wired up: tests/Dle.SecurityTests/Fuzzing/FuzzTargets.cs
+#                    documents that it needs a console driver project, an instrumentation pass
+#                    and libFuzzer, none of which exist in this repository yet. Until they do,
+#                    the nightly runs the deterministic property-based driver of the same three
+#                    targets (FuzzHarnessTests, CsCheck) with a much larger budget than a PR run.
+# =============================================================================
+name: Nightly
+
+on:
+  schedule:
+    - cron: "17 3 * * *" # 03:17 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+  NUGET_XMLDOC_MODE: skip
+  CI: "true"
+
+jobs:
+  # ---------------------------------------------------------------------------------------------
+  verify-domains:
+    name: Re-verify registered domains (AASA / assetlinks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # verify-domains.py reads DLE_CONTROL_URL / DLE_API_KEY; the secrets are named DLE_URL /
+      # DLE_API_KEY. `secrets` cannot be used in `if:`, hence the CONFIGURED flag in env.
+      DLE_CONTROL_URL: ${{ secrets.DLE_URL }}
+      DLE_API_KEY: ${{ secrets.DLE_API_KEY }}
+      CONFIGURED: ${{ secrets.DLE_URL != '' && secrets.DLE_API_KEY != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Verify every domain
+        run: |
+          if [ "$CONFIGURED" != "true" ]; then
+            echo "::notice title=Domain re-verification skipped::DLE_URL and/or DLE_API_KEY are not configured as repository secrets."
+            { echo "### Domain re-verification"; echo; echo "Skipped: DLE_URL / DLE_API_KEY not configured."; } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python3 .github/scripts/verify-domains.py
+
+  # ---------------------------------------------------------------------------------------------
+  cve-recheck:
+    name: CVE feed recheck
+    uses: ./.github/workflows/security.yml
+    with:
+      sca-only: true
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+  # ---------------------------------------------------------------------------------------------
+  helm-install:
+    name: Helm chart install (kind)
+    # The chart installs the images built from src/, so a change that never touches deploy/ can
+    # still break an install. helm.yml runs on its own paths; this runs it against develop daily.
+    uses: ./.github/workflows/helm.yml
+
+  # ---------------------------------------------------------------------------------------------
+  fuzz-harness:
+    name: Fuzz targets (property-based driver, extended budget)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # CsCheck reads these from the environment: give every property 45 s instead of the default
+      # iteration count. Failures are reproducible from the seed printed in the TRX.
+      CsCheck_Time: "45"
+      RESULTS_DIR: ${{ github.workspace }}/TestResults
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Restore (locked mode, solution level)
+        run: dotnet restore Dle.sln --locked-mode
+
+      - name: Build Dle.SecurityTests
+        run: dotnet build tests/Dle.SecurityTests --configuration Release --no-restore -warnaserror
+
+      - name: Run FuzzHarnessTests
+        run: |
+          mkdir -p "$RESULTS_DIR"
+          dotnet run --project tests/Dle.SecurityTests --configuration Release --no-build -- \
+            -class "Dle.SecurityTests.Fuzzing.FuzzHarnessTests" \
+            -result-trx "$RESULTS_DIR/Dle.SecurityTests.Fuzzing.trx"
+
+      - name: Summary
+        if: ${{ always() }}
+        run: python3 .github/scripts/trx-summary.py "$RESULTS_DIR/Dle.SecurityTests.Fuzzing.trx" --name "FuzzHarnessTests (nightly)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fuzz-harness-${{ github.run_id }}
+          path: TestResults/
+          if-no-files-found: warn
+          retention-days: 14

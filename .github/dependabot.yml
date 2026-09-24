@@ -1,0 +1,125 @@
+# =============================================================================
+# Dependabot — docs/zadanie.md T-14 (compromised dependency: locked versions + Dependabot + review).
+#
+# Every ecosystem the repository actually contains. Pull requests target `develop` (the
+# integration branch; `master` is reserved for releases). Minor and patch updates are grouped
+# per ecosystem so a week's worth of bumps is one reviewable PR; majors stay individual.
+#
+# NuGet uses Central Package Management (Directory.Packages.props) with per-project
+# packages.lock.json — Dependabot updates both. GitHub Actions are pinned to commit SHAs with a
+# version comment; Dependabot keeps the SHA and the comment in step.
+# =============================================================================
+version: 2
+
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Bratislava
+    target-branch: develop
+    open-pull-requests-limit: 10
+    labels: [dependencies, nuget]
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      nuget-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /sdk/web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Bratislava
+    target-branch: develop
+    open-pull-requests-limit: 5
+    labels: [dependencies, sdk-web]
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      web-sdk-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /src/Dle.Admin.Web
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Bratislava
+    target-branch: develop
+    open-pull-requests-limit: 5
+    labels: [dependencies, admin-ui]
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      admin-ui-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: gradle
+    directory: /sdk/android
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Bratislava
+    target-branch: develop
+    open-pull-requests-limit: 5
+    labels: [dependencies, sdk-android]
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      android-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: swift
+    directory: /sdk/ios
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Bratislava
+    target-branch: develop
+    open-pull-requests-limit: 5
+    labels: [dependencies, sdk-ios]
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      ios-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Bratislava
+    target-branch: develop
+    open-pull-requests-limit: 5
+    labels: [dependencies, ci]
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      actions-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker
+    directory: /deploy/docker
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Bratislava
+    target-branch: develop
+    open-pull-requests-limit: 5
+    labels: [dependencies, docker]
+    commit-message:
+      prefix: "build(deps)"
+    groups:
+      base-images-minor-patch:
+        update-types: [minor, patch]

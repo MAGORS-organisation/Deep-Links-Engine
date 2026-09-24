@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docs.dle.dev/schemas/routing-rules.schema.json",
+  "title": "DLE routing rules",
+  "description": "The value of links.routing_rules (docs/zadanie.md B.5.4). Rules are data, not code: they are evaluated in order, the first match wins, and the last rule must be the default one. The default rule is the rule that omits \"when\" - a rule set without it would answer 404 to any client that matched nothing, for a link its owner believes is live (TC-105, FR-127).",
+  "type": "array",
+  "minItems": 1,
+  "maxItems": 50,
+  "items": { "$ref": "#/$defs/rule" },
+  "contains": { "$ref": "#/$defs/defaultRule" },
+  "minContains": 1,
+  "maxContains": 1,
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "then"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Stable identifier of the rule. It is written to the click stream, so a report can say which rule decided a click."
+        },
+        "when": { "$ref": "#/$defs/condition" },
+        "then": { "$ref": "#/$defs/action" }
+      }
+    },
+    "defaultRule": {
+      "type": "object",
+      "required": ["id", "then"],
+      "not": { "required": ["when"] },
+      "description": "A rule with no predicate. Exactly one must be present, and it must be last."
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "description": "Predicates are conjunctive: every declared predicate must hold.",
+      "properties": {
+        "platform": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["ios", "android", "desktop", "other", "unknown"] }
+        },
+        "os_version": { "$ref": "#/$defs/versionPredicate" },
+        "app_version": { "$ref": "#/$defs/versionPredicate" },
+        "country": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z]{2}$" },
+          "description": "ISO 3166-1 alpha-2 codes."
+        },
+        "region": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+        "language": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string" } },
+        "channel": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "unknown", "browser", "crawler", "app",
+              "in_app_fb", "in_app_ig", "in_app_tiktok", "in_app_linkedin", "in_app_snapchat",
+              "in_app_x", "in_app_whatsapp", "in_app_telegram", "in_app_pinterest", "in_app_other"
+            ]
+          }
+        },
+        "time_window": { "$ref": "#/$defs/timeWindow" },
+        "ab": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/abVariant" },
+          "description": "Percentage split with deterministic bucketing on hash(click_id) % 100."
+        }
+      }
+    },
+    "versionPredicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "eq": { "type": "string" },
+        "gt": { "type": "string" },
+        "gte": { "type": "string" },
+        "lt": { "type": "string" },
+        "lte": { "type": "string" }
+      }
+    },
+    "timeWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "from": { "type": "string", "format": "date-time" },
+        "to": { "type": "string", "format": "date-time" },
+        "hours_utc": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 0, "maximum": 23 }
+        },
+        "days_of_week_utc": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 0, "maximum": 6 }
+        }
+      }
+    },
+    "abVariant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["variant", "percent"],
+      "properties": {
+        "variant": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "percent": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action"],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": ["web", "app_or_store", "store_only", "app_only", "block"]
+        },
+        "url": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^https?://",
+          "description": "Web target. Only http and https; a javascript:, data:, file: or intent: target is refused (E.3 step 1)."
+        },
+        "deeplink_path": { "type": "string", "maxLength": 2048 },
+        "store_url": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^https?://",
+          "description": "Store listing, carrying pt/ct on iOS."
+        },
+        "referrer_template": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Play Install Referrer template; {click_id} and the UTM placeholders are substituted."
+        },
+        "interstitial": { "type": "string", "enum": ["auto", "always", "never"] }
+      }
+    }
+  }
+}

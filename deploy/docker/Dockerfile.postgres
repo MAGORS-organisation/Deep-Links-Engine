@@ -1,0 +1,38 @@
+# syntax=docker/dockerfile:1.7
+# =============================================================================
+# Deep Link Engine (DLE) — optional PostgreSQL 18 image WITH pg_partman.
+#
+# The official postgres image ships citext (contrib) but not pg_partman, which DLE uses for the
+# daily click_events partitions and their 180-day retention (docs/zadanie.md §B.5.2/§B.5.3).
+# The schema migration copes without it (deploy/postgres/init/01-extensions.sql explains how),
+# but a real installation wants the extension. This file installs the PGDG package
+# postgresql-<major>-partman on top of the official Debian-based image; PG_MAJOR is an
+# environment variable the official image defines.
+#
+#   docker build -t dle-postgres:18 -f deploy/docker/Dockerfile.postgres deploy/docker
+#   # then in deploy/.env:  POSTGRES_IMAGE=dle-postgres:18
+#
+# Alternatives that already contain pg_partman: ghcr.io/dbsystel/postgresql-partman (check the
+# tag for your major version) or the CrunchyData images. Managed services: Amazon RDS, Aurora,
+# Azure Flexible Server and Google Cloud SQL all offer pg_partman — create the extension there
+# and the migration picks it up.
+# =============================================================================
+ARG POSTGRES_IMAGE=postgres:18
+FROM ${POSTGRES_IMAGE}
+
+# The Debian variants of the official image already carry the PGDG apt repository, which is
+# where postgresql-<major>-partman lives. Alpine variants (postgres:18-alpine) do not; use a
+# Debian tag as the base.
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends "postgresql-${PG_MAJOR}-partman"; \
+    rm -rf /var/lib/apt/lists/*
+
+LABEL org.opencontainers.image.title="dle-postgres" \
+      org.opencontainers.image.description="PostgreSQL with pg_partman for the Deep Link Engine" \
+      org.opencontainers.image.source="https://github.com/MAGORS-organisation/Deep-Links-Engine" \
+      org.opencontainers.image.licenses="MIT"
+
+# The pg_partman background worker (pg_partman_bgw) runs partition maintenance without pg_cron.
+# It needs shared_preload_libraries; postgresql.tuning.conf has the commented settings — enable
+# them only with this image, a server without the library refuses to start.

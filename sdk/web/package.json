@@ -1,0 +1,74 @@
+{
+  "name": "@magors/dle-web",
+  "version": "0.1.0",
+  "description": "Web SDK for the Deep Link Engine (DLE): smart app banner, web fallback, click-context resolve and event reporting. Self-hosted, EU-first, consent-first. No fingerprinting, no clipboard reads, no third-party calls.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "./dist/dle.global.js"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./global": {
+      "types": "./dist/dle.global.d.ts",
+      "default": "./dist/dle.global.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src test",
+    "size": "node scripts/size-check.mjs",
+    "prepublishOnly": "npm run lint && npm run typecheck && npm run test && npm run build && npm run size"
+  },
+  "keywords": [
+    "deep-linking",
+    "deeplink",
+    "attribution",
+    "universal-links",
+    "app-links",
+    "smart-banner",
+    "gdpr",
+    "self-hosted"
+  ],
+  "homepage": "https://github.com/MAGORS-organisation/Deep-Links-Engine/tree/main/sdk/web#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MAGORS-organisation/Deep-Links-Engine.git",
+    "directory": "sdk/web"
+  },
+  "bugs": {
+    "url": "https://github.com/MAGORS-organisation/Deep-Links-Engine/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "eslint": "^9.20.0",
+    "jsdom": "^26.0.0",
+    "terser": "^5.51.2",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.24.0",
+    "vitest": "^3.0.0"
+  }
+}
