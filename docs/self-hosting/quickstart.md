@@ -21,7 +21,7 @@ The 30-minute budget assumes the DNS record already exists and the OIDC client i
 Follow [deploy/README.md — Profile A](../../deploy/README.md#profile-a--one-server-five-commands) exactly; do not duplicate it here. The short form:
 
 ```bash
-git clone --branch develop https://github.com/MAGORS-organisation/Deep-Links-Engine.git   # the default branch holds no code yet
+git clone https://github.com/MAGORS-organisation/Deep-Links-Engine.git
 cd Deep-Links-Engine/deploy
 cp .env.example .env      # DLE_DOMAIN, DLE_TLS, POSTGRES_PASSWORD, DLE_MASTER_SECRET (openssl rand -base64 48)
                           # DLE_OIDC_* and DLE_ALLOW_TENANT_SELF_SERVICE do not help yet — see step 2

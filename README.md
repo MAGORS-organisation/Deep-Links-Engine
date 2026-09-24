@@ -4,7 +4,7 @@
 open the right screen in your app, deferred deep linking through the app-store install, and attribution
 that tells you honestly how sure it is. One compose stack, your PostgreSQL, your data.
 
-> Status: pre-release, on the `develop` branch. Nothing is tagged, no image or SDK is published. The
+> Status: pre-release. Nothing is tagged, no image or SDK is published. The
 > .NET services, the web SDK, the admin console and both mobile SDKs build and pass their tests in CI,
 > against PostgreSQL 18 and Valkey 8 for the integration suite — but **the product's core flows do not
 > work end to end yet**: an installed app opened by a link is not told which screen to open, deferred
@@ -48,7 +48,7 @@ attribution.
 Requirements: Docker with Compose, and a domain you can point at the box.
 
 ```bash
-git clone --branch develop https://github.com/MAGORS-organisation/Deep-Links-Engine.git
+git clone https://github.com/MAGORS-organisation/Deep-Links-Engine.git
 cd Deep-Links-Engine/deploy
 cp .env.example .env            # set POSTGRES_PASSWORD and DLE_MASTER_SECRET at minimum
 docker compose -f docker-compose.yml up -d --build
@@ -173,8 +173,6 @@ earlier version of these documents promised.
   tenant may choose.
 - **Profile A** serves TLS for one host only, ships no alert rules or dashboards (metrics leave only via
   OTLP), and has no WAL archiving.
-- **The nightly workflow, scheduled CodeQL and Dependabot have never run**: GitHub reads them from the
-  default branch, which is still `master` with only the initial commit.
 
 **Security and privacy claims not yet backed by code**
 
