@@ -2,7 +2,7 @@
 
 **Self-hosted, EU-first deep linking and install attribution for mobile apps.** Branded short links that
 open the right screen in your app, deferred deep linking through the app-store install, and attribution
-that tells you honestly how sure it is. One `docker compose up`, your PostgreSQL, your data.
+that tells you honestly how sure it is. One compose stack, your PostgreSQL, your data.
 
 > Status: pre-release, on the `develop` branch. Nothing is tagged, no image or SDK is published. The
 > .NET services, the web SDK, the admin console and both mobile SDKs build and pass their tests in CI,
@@ -39,7 +39,7 @@ attribution.
 | **Platform integration** | `apple-app-site-association` and `assetlinks.json` generated per domain; a verifier that catches redirects on `/.well-known` and association files that do not match the registered apps. (Android 15+ `dynamic_app_link_components` and a working Play App Signing warning are designed but not emitted yet — see [Known gaps](#known-gaps).) |
 | **Deferred deep linking** | Designed as: Android deterministic via the Play Install Referrer; iOS claim code, login reconciliation and direct-open reporting — because iOS has no referrer equivalent and nothing else is honest. Today Android works only in `full` consent mode with a consent signal on the link, and the iOS paths are not wired — see [Known gaps](#known-gaps). |
 | **Attribution** | `match_type` ∈ `install_referrer` · `login` · `claim_code` · `direct_open` · `probabilistic` · `none`, each with a confidence. Probabilistic is opt-in, consent-gated, and windowed to 60 minutes, not 7 days. |
-| **Analytics** | Partitioned click stream in PostgreSQL, rollups, a dashboard that reports the deterministic / probabilistic / unmatched split, optional ClickHouse for large volumes. |
+| **Analytics** | Partitioned click stream in PostgreSQL, rollups, a dashboard that reports the deterministic / probabilistic / unmatched split. A ClickHouse sink for large volumes is experimental and not wired end to end. |
 | **Privacy** | Three consent modes per tenant (`off`, `aggregate_only`, `full`); IP hashed with a daily-rotated salt or not stored at all; no third-party call on the resolve path, including GeoIP. |
 | **Operations** | Signed webhooks (HMAC + Ed25519), rate limits with a separate budget for 404s so scanners cannot enumerate slugs, abuse reporting with quarantine rather than deletion, immutable audit log. |
 
@@ -168,6 +168,9 @@ earlier version of these documents promised.
   fails and the target is treated as safe.
 - **The ClickHouse provider is not wired end to end** and switches PostgreSQL retention off. Do not enable
   it.
+- **`DLE_CONSENT_MODE` / `Dle:Privacy:ConsentMode` does nothing**: neither host reads it. A new tenant
+  starts in `aggregate_only` whatever it says, and there is no deployment-wide ceiling on the mode a
+  tenant may choose.
 - **Profile A** serves TLS for one host only, ships no alert rules or dashboards (metrics leave only via
   OTLP), and has no WAL archiving.
 - **The nightly workflow, scheduled CodeQL and Dependabot have never run**: GitHub reads them from the
