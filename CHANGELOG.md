@@ -23,9 +23,8 @@ end-to-end flow is among those gaps.
   Job completed, the eight tables the product writes to exist in the database, the edge and the
   control plane answer, and each reports by name that it reached the store the chart wired it to.
   It then upgrades the release in place, which runs the migration hook a second time against an
-  already-migrated database. The nightly is wired to run the same workflow, because the images come
-  from `src/` and a change there can break an install without touching `deploy/` — it has not run
-  yet: GitHub reads schedules from the default branch, which is still `master`.
+  already-migrated database. The nightly runs the same workflow, because the images come from
+  `src/` and a change there can break an install without touching `deploy/`.
 - **Edge (data plane)** — slug resolve with L1/L2 caching (HybridCache over Valkey), client
   classification, routing rules, 302 redirect or interstitial (CSP without `unsafe-inline`), Open
   Graph documents for verified crawlers (302-not-301, ADR-009), `/.well-known/apple-app-site-association`
@@ -73,9 +72,8 @@ end-to-end flow is among those gaps.
   SBOM + CBOM with schema validation, CodeQL (C#, JavaScript/TypeScript), Release (multi-arch images
   to GHCR with SLSA provenance and cosign keyless signatures, signed Helm chart, compose smoke, ZAP
   and k6 gates, SBOM/CBOM attached; it has never run, as no tag exists), Nightly (domain
-  re-verification, CVE feed recheck, extended fuzz-harness run), Dependabot for every ecosystem —
-  neither of these two has run yet, because GitHub reads both from the default branch, still
-  `master` — issue and PR templates, CODEOWNERS. Helper
+  re-verification, CVE feed recheck, extended fuzz-harness run), Dependabot for every ecosystem
+  (weekly, grouped, into `develop`), issue and PR templates, CODEOWNERS. Helper
   scripts under `.github/scripts/` for the TRX summary, the coverage gate, the NuGet vulnerability
   gate, the CBOM, CycloneDX validation and domain verification.
 - **Project files** — `SECURITY.md` (private reporting, 90-day disclosure, scope, safe harbour,
@@ -84,6 +82,11 @@ end-to-end flow is among those gaps.
 
 ### Changed
 
+- **`master` carries the code.** The default branch held only the initial commit until `develop` was
+  merged into it (PR #9, not a release: no tag, nothing published). GitHub reads workflow schedules
+  and `dependabot.yml` from the default branch, so the nightly workflow, the weekly CodeQL run and
+  Dependabot are active from that merge on; the documents no longer describe them as dormant, and the
+  quick start clones the default branch again.
 - **The documentation says what does not work yet.** An end-to-end audit of `develop` found that the
   core flows break at the hand-offs between components that no test crosses — the slug is never
   expanded for an installed app, the click id never reaches the Play referrer under the default
