@@ -17,10 +17,10 @@ Types: `bool`, `int`, `double`, `string`, `enum` (allowed values listed), `list`
 
 | Key | Type | Default | Effect | Change when |
 |---|---|---|---|---|
-| `ConnectionStrings:Postgres` | string | edge: empty (required); control: local dev string | Primary database. The edge only reads through it, and only on a cache miss | Always, in production |
+| `ConnectionStrings:Postgres` | string | edge: empty (required); control: local dev string | Primary database. The edge reads links through it only on a cache miss, and writes click events to it in batches | Always, in production |
 | `ConnectionStrings:PostgresRead` | string | empty | Optional read replica for the edge (Profile B). Empty → use `Postgres` | Profile B with replicas |
 | `ConnectionStrings:Valkey` | string | empty | Shared L2 cache. Empty → HybridCache runs L1-only per instance | More than one edge instance (needed for coherent invalidation) |
-| `ConnectionStrings:ClickHouse` | string | empty | Analytics sink when `Dle:Analytics:Provider=clickhouse` | Large volumes (ADR-006) |
+| `ConnectionStrings:ClickHouse` | string | empty | Analytics sink when `Dle:Analytics:Provider=clickhouse` — an experimental provider that is not wired end to end (see `Analytics:Provider` below) | Not yet; do not enable ([README — Known gaps](../../README.md#known-gaps)) |
 
 ## Edge (`src/Dle.Edge/appsettings.json`)
 
@@ -35,14 +35,14 @@ Types: `bool`, `int`, `double`, `string`, `enum` (allowed values listed), `list`
 | `Interstitial:Branding` | enum `None` \| `Instance` \| `Tenant` | `Tenant` | Whose name/logo the page shows | Single-tenant instance → `Instance` |
 | `Interstitial:ProductName`, `LogoUrl`, `SupportUrl`, `PrivacyUrl` | string | empty | Instance branding and the links every interstitial shows | Set for production |
 | `Interstitial:AppealUrl`, `AppealEmail` | string | empty | Shown on the `410` page of a quarantined link ([§E.3](../zadanie.md#e3-ochrana-proti-zneužitiu-redirektora), TC-103) | Set for production — DSA art. 16 expects a contact |
-| `Interstitial:ShowClaimCode` | bool | true | Show the six-character claim code on iOS interstitials (deterministic deferred path, ADR-008) | Off only if your iOS app does not implement claim codes |
+| `Interstitial:ShowClaimCode` | bool | true | Show the six-character claim code on iOS interstitials (deterministic deferred path, ADR-008). Today the edge never issues a claim code, so there is nothing to show whatever this says ([README — Known gaps](../../README.md#known-gaps)) | Off only if your iOS app does not implement claim codes |
 | `Interstitial:DefaultLanguage` | enum `en` \| `sk` | `en` | Fallback language (NFR-15) | Slovak-first deployments |
 | `BotDetection:ReverseDnsVerify` | bool | true | Verify a claimed crawler by reverse DNS; off makes `is_bot` a claim, not a fact (FR-161, TC-107) | Closed test networks only |
 | `BotDetection:CacheTtlMinutes` / `CacheCapacity` / `VerificationTimeoutMs` | int | 60 / 20000 / 750 | Reverse-DNS result cache and timeout | DNS resolver latency issues |
 | `GeoIp:Provider` | enum `MaxMindMmap` \| `None` | `MaxMindMmap` | Offline country lookup; the file is never downloaded by the edge (NFR-14) | `None` if you do not need geo rules |
 | `GeoIp:Path` | string | empty | Path to the `.mmdb`. Empty → country stays null, geo rules fall through to the default rule, `dle_geoip_available=0` | Set when you have the file (`DLE_GEOIP_PATH` in compose) |
 | `GeoIp:AutoUpdate` / `RefreshMinutes` | bool / int | true / 60 | Re-open the file when it changes on disk | Your update job writes elsewhere |
-| `Cache:L1Seconds` / `L2Minutes` | int | 30 / 10 | In-process and Valkey TTLs for link snapshots | Trade freshness against DB load |
+| `Cache:L1Seconds` / `L2Minutes` | int | 30 / 10 | In-process and Valkey TTLs for link snapshots. Quarantine does not invalidate these caches: a quarantined link keeps redirecting to its old target for up to `L2Minutes + L1Seconds` (10 min 30 s by default) | Trade freshness against DB load |
 | `Cache:NegativeSeconds` | int | 15 | How long a miss is cached; must not outlive the creation of a link someone is about to publish | Shorten if operators create-and-share within seconds |
 | `Security:Enabled` | bool | true | Security headers (HSTS, CSP, frame options) on every edge response | Never off in production |
 | `Security:HstsMaxAgeSeconds` / `HstsIncludeSubDomains` | int / bool | 31536000 / true | HSTS policy | Sub-domains that must stay on plain HTTP (they should not) |
@@ -98,7 +98,7 @@ Defaults from [§E.9](../zadanie.md#e9-rate-limity-a-kvóty--konkrétne-hodnoty)
 | `MaxLinkVersions` | int | 50 | Revisions kept per link | Audit requirements |
 | `NodeId` | int | 0 | Node discriminator for slug sequences when several control instances allocate | Each control replica gets its own value (Helm does this) |
 | `InstanceTenantId` | GUID | null | The operating tenant that may create other tenants | Multi-tenant instances |
-| `AllowTenantSelfService` | bool | false | Any authenticated OIDC user may create a tenant. With neither this nor `InstanceTenantId` set, tenant routes deny everyone | Single-organisation first run — then turn it off ([deploy/README — First credential](../../deploy/README.md#first-credential)) |
+| `AllowTenantSelfService` | bool | false | Any authenticated caller that carries a tenant may create a tenant. With neither this nor `InstanceTenantId` set, tenant routes deny everyone | Single-organisation first run — then turn it off. The OIDC first run it was meant for does not work today ([deploy/README — First credential](../../deploy/README.md#first-credential)) |
 | `ServeAdminSpa` / `SpaIndexFile` | bool / string | true / `index.html` | Serve the admin console from the control host under `/admin/` | Console hosted elsewhere |
 
 ### `Dle:Persistence` (control)
@@ -119,21 +119,21 @@ Defaults from [§E.9](../zadanie.md#e9-rate-limity-a-kvóty--konkrétne-hodnoty)
 | `CredentialCacheSeconds` | int | 60 | How long a verified API key / SDK key is cached; revocation takes effect within this window | Stricter revocation latency |
 | `EnableSdkKeys` | bool | true | Accept SDK keys on `/v1/*` | Never off in production |
 | `SdkKeyName` | string | `dlk` | Prefix of SDK keys | Cosmetic |
-| `Oidc:Authority` / `ClientId` / `Audience` | string | empty | The OIDC provider the console and human callers authenticate against | Required for the first credential |
-| `Oidc:TenantClaim` / `RoleClaim` | string | `dle_tenant` / `dle_role` | Claim names read from the token | Your provider maps claims differently |
+| `Oidc:Authority` / `ClientId` / `Audience` | string | empty | The OIDC provider human callers authenticate against. The admin console has no OIDC sign-in; it takes a pasted API key | Meant for the first credential, which has no working path today ([deploy/README — First credential](../../deploy/README.md#first-credential)) |
+| `Oidc:TenantClaim` / `RoleClaim` | string | `dle_tenant` / `dle_role` | Claim names meant to be read from the token. Neither reaches the control plane today: it reads the tenant and the role from claims named `dle:tenant` and `dle:role`, and nothing maps the configured names to them | Your provider maps claims differently |
 | `Oidc:RequireHttpsMetadata` | bool | true | Refuse a plain-HTTP discovery document | `localhost` only |
 
 ### `Dle:Crypto` (both hosts — keep identical)
 
 | Key | Type | Default | Effect | Change when |
 |---|---|---|---|---|
-| `MasterSecret` | string | empty (**required**, ≥ 32 chars) | Derives the slug permutation key, the IP salt and the wrapping of stored signing keys. Supply as `Dle__Crypto__MasterSecret`; never commit | Set once; changing it changes every slug and invalidates every click token |
-| `SigningAlgorithm` | enum `HS256` \| `Ed25519` \| … | control `Ed25519`, edge `HS256` | Algorithm the signer uses (verifiers accept a set — [§E.4.2](../zadanie.md#e42-formát-podpísaného-tokenu)). The edge signs click tokens (HMAC); the control plane signs webhooks and tokens (Ed25519) | Phase 1 PQ migration |
+| `MasterSecret` | string | empty (**required**, ≥ 32 chars) | Derives the slug permutation key, the click-id key, the IP-hash salt key, the claim-code pepper, the webhook Ed25519 signing key and the key that encrypts stored webhook secrets. Both hosts receive it, the internet-facing edge included — so the edge does hold material from which the control plane's webhook signing key derives. Supply as `Dle__Crypto__MasterSecret`; never commit | Set once. Changing it changes the slug permutation (stored slugs keep resolving, but new ones may collide with them unless `Dle:Crypto:SlugSecret` pins the slug key), stops outstanding click ids from decoding, changes the webhook signing key and makes stored webhook secrets undecryptable |
+| `SigningAlgorithm` | enum `HS256` \| `Ed25519` \| … | control `Ed25519`, edge `HS256` | Algorithm of the token key ring whose public keys `/.well-known/jwks.json` publishes (verifiers accept a set — [§E.4.2](../zadanie.md#e42-formát-podpísaného-tokenu)). Nothing signs with that ring today: the edge's click id is a truncated HMAC that carries no `alg` or `kid`, and webhooks are signed with an Ed25519 key derived from the master secret whatever this says | Phase 1 PQ migration |
 | `HybridPqEnabled` | bool | false | Reserved: `Ed25519+MLDSA65` composite signing (v2) | Not before the platforms leave `SYSLIB5006` |
-| `KeyRotationDays` | int | 90 | Signing-key rotation cadence (K2, K4, T-15) | Policy |
+| `KeyRotationDays` | int | 90 | Meant as the signing-key rotation cadence (K2, K4, T-15). Read only by a rotation routine that nothing calls: signing keys do not rotate today, and the webhook key derived from the master secret never does ([README — Known gaps](../../README.md#known-gaps)) | No effect today |
 | `SlugFeistelRounds` | int | 4 | Rounds of the keyed permutation (ADR-007) | Never after go-live |
 | `ApiKeyPrefix` | string | `dle` | Prefix of API keys (control) | Cosmetic |
-| `IpSaltRotationHours` | int | 24 | Daily salt for IP hashing (K9) | Shorter for stricter unlinkability |
+| `IpSaltRotationHours` | int | 24 | Period of the IP-hash salt (K9). The salt is an HMAC of the period number under a key derived from the master secret, so anyone holding the master secret can recompute every past salt: rotation limits linking for others, not for the operator | Shorter narrows the window in which two hashes match; it does not make hashes unlinkable for whoever holds the master secret |
 
 ### `Dle:Attribution` (control)
 
@@ -144,7 +144,7 @@ Defaults from [§E.9](../zadanie.md#e9-rate-limity-a-kvóty--konkrétne-hodnoty)
 | `Probabilistic:WindowMinutes` | int | 60 | Match window — 60, not 7 days ([§A.2.5](../zadanie.md#a25-presnosť-probabilistického-párovania--čísla)) | Do not raise it |
 | `Probabilistic:MinConfidence` | double | 0.55 | Below this the result is `none` | Precision vs. recall |
 | `Probabilistic:RequireConsent` | bool | true | Refuse signals without `consent.attribution=true` | Never false in the EU |
-| `ClaimCode:Enabled` / `TtlMinutes` | bool / int | true / 15 | The iOS deterministic path (K3) | Longer TTL for slow store installs; the code is 30 random bits, so keep it short |
+| `ClaimCode:Enabled` / `TtlMinutes` | bool / int | true / 15 | Issuing and redeeming claim codes (`POST /v1/claim-codes`), the iOS deterministic path (K3). Nothing on the click path issues a code, so the path does not work end to end today ([README — Known gaps](../../README.md#known-gaps)) | Longer TTL for slow store installs; the code is 30 random bits, so keep it short |
 
 ### `Dle:Privacy` (both hosts — keep identical)
 
@@ -152,19 +152,21 @@ Defaults from [§E.9](../zadanie.md#e9-rate-limity-a-kvóty--konkrétne-hodnoty)
 |---|---|---|---|---|
 | `ConsentMode` | enum `off` \| `aggregate_only` \| `full` | `aggregate_only` | Tenant default and the ceiling a tenant may choose ([§E.6.2](../zadanie.md#e62-tri-režimy-prevádzky-produktová-funkcia-nie-prepínač-v-kóde)) | `full` only with a consent flow in place |
 | `IpStorage` | enum `none` \| `hash_only` \| `prefix` \| `full` | `hash_only` | Deployment ceiling on what may be derived from an address | `none` for the strictest posture; `prefix` only for the probabilistic module |
-| `IpSaltRotationHours` | int | 24 | Same as `Crypto:IpSaltRotationHours` | Keep equal |
-| `Retention:RawDays` | int | control 30, **edge 90** | Days of hashed raw events. The two shipped files differ — set both to your policy value | Policy |
+| `IpSaltRotationHours` | int | 24 | Not read by either host — only `Crypto:IpSaltRotationHours` takes effect | Never; set the `Crypto` key |
+| `Retention:RawDays` | int | 30 | Days raw click events are kept; the control plane's retention job drops older partitions. The edge's `appsettings.json` carries 90, but the edge does not read this key | Policy |
+| `Retention:IpPrefixDays` | int | none | Days after which `ip_prefix` is cleared from raw events still inside `RawDays`. Unset, there is no such pass and the prefix goes with its partition | You store prefixes (`IpStorage=prefix`) and want them gone sooner |
 | `Retention:AggregatedDays` | int | 730 | Days of aggregates | Policy |
 
 ### `Dle:Analytics`, `Dle:Abuse`, `Dle:Webhooks` (control)
 
 | Key | Type | Default | Effect | Change when |
 |---|---|---|---|---|
-| `Analytics:Provider` | enum `postgres` \| `clickhouse` | `postgres` | Where rollups and queries run (ADR-006) | > ~10⁸ events/month |
-| `Abuse:UrlHausEnabled` | bool | false | Check targets against URLhaus (outbound from control only) | On, for any public-facing instance |
+| `Analytics:Provider` | enum `postgres` \| `clickhouse` | `postgres` | Where rollups and queries run (ADR-006). `clickhouse` is experimental and not wired end to end: the edge still writes clicks to PostgreSQL, the ClickHouse schema script is never applied, and selecting it replaces PostgreSQL retention and partition maintenance with a no-op ([README — Known gaps](../../README.md#known-gaps)) | Not yet — keep `postgres` |
+| `Abuse:UrlHausEnabled` | bool | false | Check targets against URLhaus (outbound from control only). Off by default, and no blocklist ships, so no reputation check runs out of the box | On, together with `UrlHausAuthKey`, for any public-facing instance |
+| `Abuse:UrlHausAuthKey` | string | empty | abuse.ch Auth-Key sent with every URLhaus lookup. Without it the lookups fail, and a failed lookup counts as no opinion: the target is treated as safe (fails open) | Always, when `UrlHausEnabled` is on |
 | `Abuse:BlocklistPath` | string | empty | Local blocklist file (hosts / URLs) | Corporate blocklists |
 | `Abuse:RecheckIntervalHours` | int | 24 | Nightly re-check of active targets ([§E.3](../zadanie.md#e3-ochrana-proti-zneužitiu-redirektora) step 5) | — |
-| `Abuse:ReportsPerHourPerIp` | int | 5 | `POST /abuse-reports` limit | — |
+| `Abuse:ReportsPerHourPerIp` | int | 5 | `POST /abuse-reports` limit. The route is on the control plane, but Caddy and the Helm ingress send that path to the edge, so it is not reachable from outside today ([README — Known gaps](../../README.md#known-gaps)) | — |
 | `Webhooks:MaxAttempts` / `BaseDelaySeconds` / `TimeoutSeconds` | int | 8 / 5 / 10 | Retry policy ([webhooks.md](../integration/webhooks.md#retries-backoff-dead-letter-queue)); further keys (`MaxDelaySeconds` 3600, `JitterRatio` 0.2, `ConnectTimeoutSeconds` 5, `SignatureToleranceMinutes` 5, `BatchSize` 50, `PollIntervalSeconds` 5, `MaxSubscriptionsPerTenant` 20, `AllowPrivateDestinations` false) take their code defaults | Slow receivers |
 
 ### `Dle:RateLimits` (control)
@@ -201,8 +203,8 @@ Dle__Edge__Interstitial__ProductName=…  Dle__Edge__Interstitial__AppealEmail=a
 Dle__Privacy__ConsentMode=aggregate_only  Dle__Privacy__IpStorage=hash_only  Dle__Privacy__Retention__RawDays=30
 Dle__Identity__Oidc__Authority=https://id.example.com/realms/dle  Dle__Identity__Oidc__ClientId=dle-console  Dle__Identity__Oidc__Audience=dle
 Dle__Control__InstanceTenantId=<uuid>                       # or AllowTenantSelfService=true for the first run only
-Dle__Abuse__UrlHausEnabled=true
+Dle__Abuse__UrlHausEnabled=true  Dle__Abuse__UrlHausAuthKey=<your abuse.ch Auth-Key>   # without the key every lookup fails open
 Dle__Telemetry__OtlpEndpoint=http://otel-collector:4317
 ```
 
-Feature flags for the risky modules (probabilistic matching, ClickHouse sink, PQC signing) are ordinary options and take effect on restart; none requires a redeploy of a different image ([§C.4](../zadanie.md#c4-konfigurácia)).
+Feature flags for the risky modules (probabilistic matching, ClickHouse sink, PQC signing) are ordinary options and take effect on restart; none requires a redeploy of a different image ([§C.4](../zadanie.md#c4-konfigurácia)). The ClickHouse sink is not wired end to end — leave it off (`Analytics:Provider` above).

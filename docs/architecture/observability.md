@@ -3,7 +3,7 @@
 **What this is:** the metrics both hosts emit, how a resolve is traced, and which signals must page someone — [§C.6](../zadanie.md#c6-pozorovateľnosť) plus the alert column it implies.
 **Who it is for:** operators wiring Prometheus/Grafana/Tempo, and engineers adding a new signal.
 
-Everything is OpenTelemetry — traces, metrics and logs — with structured logs and one correlation id across SDK ↔ server ([NFR-12](../zadanie.md#a5-nefunkčné-požiadavky)). Metrics use the `dle_` prefix. Profile B ships an OTel collector; Profile A exposes the OTLP endpoint for whatever the operator points at it ([../../deploy/README.md](../../deploy/README.md)).
+Everything is OpenTelemetry — traces, metrics and logs — with structured logs and one correlation id across SDK ↔ server ([NFR-12](../zadanie.md#a5-nefunkčné-požiadavky)). Metrics use the `dle_` prefix. Neither profile ships a collector, dashboards or alert rules: both hosts export over OTLP only when an endpoint is configured (`DLE_OTLP_ENDPOINT` in Profile A, `config.telemetry.otlpEndpoint` in the Helm chart), to whatever the operator runs ([../../deploy/README.md](../../deploy/README.md)).
 
 ## Metrics
 
@@ -65,10 +65,10 @@ The attribution service has its own `resolve_install` span (`/v1/resolve`) whose
 
 Structured (JSON) through the .NET logging pipeline into OTel. Rules that matter for privacy:
 
-- No raw IP is ever logged on the resolve path; the click stream stores only `ip_hash` (HMAC with a daily-rotated salt) and, under `consent_mode = full`, an `ip_prefix`.
+- No raw IP is ever logged on the resolve path; the click stream stores only `ip_hash` (HMAC with a daily-rotated salt) and, under `consent_mode = full`, an `ip_prefix`. The salt is derived from a long-lived secret (the master secret by default), so whoever holds that secret can recompute past salts; rotation does not make the hashes unlinkable for the operator.
 - EF Core 10's default literal redaction is left on, so SQL parameters do not appear in logs.
 - Every log line on a request carries the trace id and, where known, the `tenant_id`; audit-relevant control-plane actions go additionally to the immutable `audit_log` table, not only to logs.
 
 ## What is verified
 
-Metric and span names are constants in the source and are exercised by the unit suite; the exporters start with both hosts. Dashboards and alert rules are the operator's to wire — the operations runbook in [../operations](../operations) lists the alerts above as the minimum. Latency histograms have not been populated by a real load run on the build machine.
+Metric and span names are constants in the source and are exercised by the unit suite; the exporters start with both hosts. Dashboards and alert rules are the operator's to wire — the operations runbook in [../operations](../operations) lists the alerts above as the minimum. Latency histograms have not been populated by a real load run.

@@ -7,6 +7,8 @@
 
 Accepted
 
+**Status note (2026-09-24).** The ClickHouse provider is not wired end to end: the edge still writes clicks to PostgreSQL, the ClickHouse schema script is never applied, and selecting the provider replaces the PostgreSQL retention and partition maintenance with a no-op. Moving to ClickHouse is therefore not yet "a provider switch"; the provider is experimental and should not be enabled. Separately, raw click events are dropped after **30 days** by default (`Dle:Privacy:Retention:RawDays` = 30, applied by the control plane's retention job), not the 180 days below. See [Known gaps](../../README.md#known-gaps).
+
 ## Date
 
 Decided: in the specification ([§B.4 ADR-006](../zadanie.md#adr-006--analytika-postgres-partície-ako-default-clickhouse-ako-opt-in)) · Recorded: 2026-09-11

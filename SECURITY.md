@@ -82,7 +82,7 @@ Of particular interest, because they are the acceptance criteria in §E.8:
 **Out of scope**
 
 - Vulnerabilities in third-party dependencies with no DLE-specific exploit path — report those
-  upstream; we track them through the Security workflow and Dependabot.
+  upstream; we track them through the Security workflow.
 - Misconfiguration of a particular self-hosted instance (weak `DLE_MASTER_SECRET`, an exposed
   Postgres port, a Caddy running with a custom, weaker TLS policy). Configuration guidance is a
   documentation issue, not a vulnerability.
@@ -114,26 +114,31 @@ maintainers neither host links nor can see or remove anybody's.
 What the software gives operators to act on a notice, in the sense of Regulation (EU) 2022/2065
 (Digital Services Act) **Article 16** — notice-and-action mechanisms:
 
-- `POST /abuse-reports` on the edge, reachable from every interstitial and 404 page, rate-limited
-  per §E.9, so that a notice can be submitted for any slug without an account;
-- a quarantine state for links and a reputation check on targets, so that a notified link can be
-  taken down immediately and the decision recorded;
+- `POST /abuse-reports`, rate-limited per §E.9 (no captcha), so that a notice can be submitted for
+  any slug without an account. It is served by the control plane, but the shipped Caddy and Helm
+  routing send that path to the edge, which does not serve it, and no page links to it: it is not
+  reachable from outside today (see [Known gaps](README.md#known-gaps));
+- a quarantine state for links and a reputation check on targets (off until a source is
+  configured), so that a notified link can be taken down and the decision recorded. The edge keeps
+  serving a quarantined link from its cache for up to 10 min 30 s with the default settings;
 - an audit trail of who did what to which link, for the statement of reasons the DSA requires.
 
-If you have found a harmful link served by a DLE instance: use that instance's abuse form (the
-"report this link" path on its interstitial), or contact its operator — the domain's WHOIS,
-`security.txt` or hosting provider is the way to find them. If the link is served from a domain
-this project operates, report it through the vulnerability channel above and mark it *abuse*.
+If you have found a harmful link served by a DLE instance: contact its operator — the domain's
+WHOIS, `security.txt` or hosting provider is the way to find them. If the link is served from a
+domain this project operates, report it through the vulnerability channel above and mark it *abuse*.
 
 ## Hardening the build
 
 Things that are in place, so that a report can say "this should have caught it":
 
 - All dependencies are version-locked (`packages.lock.json`, `package-lock.json`, central package
-  management) and restored with `--locked-mode`; Dependabot proposes updates, humans merge them.
+  management) and restored with `--locked-mode`. Dependabot is configured to propose updates for
+  humans to merge (`.github/dependabot.yml`), but has not run yet: GitHub reads that file from the
+  default branch, which is still `master` with only the initial commit.
 - GitHub Actions are pinned to commit SHAs. Workflows run with least-privilege tokens.
 - Every push runs CodeQL, `dotnet list package --vulnerable`, `npm audit`, Trivy over lock files
   and both container images, and a licence policy check (`.github/workflows/security.yml`).
-- Releases publish a CycloneDX SBOM for each ecosystem, a cryptographic bill of materials (CBOM),
-  SLSA provenance for the images, and Sigstore/cosign keyless signatures for images, chart, SBOMs
-  and CBOM (`.github/workflows/release.yml`). Verification commands are in every release's notes.
+- The release workflow (`.github/workflows/release.yml`) publishes a CycloneDX SBOM for each
+  ecosystem, a cryptographic bill of materials (CBOM), SLSA provenance for the images, and
+  Sigstore/cosign keyless signatures for images, chart, SBOMs and CBOM, with verification commands
+  in the release notes. It runs on a version tag and has not run yet: no release has been tagged.

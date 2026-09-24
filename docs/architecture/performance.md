@@ -5,15 +5,15 @@
 
 ## Targets ([§A.5](../zadanie.md#a5-nefunkčné-požiadavky), NFR-01…NFR-08)
 
-| ID | Category | Requirement | Measured by | Status on the build machine |
+| ID | Category | Requirement | Measured by | Status (2026-09-24) |
 |---|---|---|---|---|
 | NFR-01 | Latency | Resolve **p50 ≤ 8 ms, p95 ≤ 25 ms, p99 ≤ 50 ms** server-side (no network) at cache hit | k6 / NBomber, OTel histogram | designed to ~5.5 ms p50; **not measured under load** |
 | NFR-02 | Latency | Cache miss (PostgreSQL lookup) **p99 ≤ 120 ms** | as above | not measured; depends on the covering index being index-only ([data-model.md](data-model.md#the-covering-index)) |
 | NFR-03 | Throughput | **≥ 5 000 req/s per instance** (4 vCPU, 8 GB) at ≥ 95 % cache hit rate | load test | not measured |
 | NFR-04 | Scaling | Horizontal, stateless; adding an instance needs no restart of the others | test | by construction (edge holds no state); HPA in Helm, not exercised here |
 | NFR-05 | Availability | **99.9 %** for the resolve path; **99.5 %** for the control plane | SLO, error budget | operational — nothing to verify before production |
-| NFR-06 | Degradation | PostgreSQL down → resolve from cache; cache down → resolve from PostgreSQL; analytics down → events dropped, response never blocked | chaos test | unit-tested at the component level; chaos matrix below not run |
-| NFR-07 | RPO / RTO | RPO ≤ 5 min (control plane), RTO ≤ 30 min | DR exercise | operator's backup procedure ([../self-hosting](../self-hosting)) |
+| NFR-06 | Degradation | PostgreSQL down → resolve from cache; cache down → resolve from PostgreSQL; analytics down → events dropped, response never blocked | chaos test | PostgreSQL-down and Valkey-down scenarios in the integration suite (CI); the rest of the chaos matrix below not run |
+| NFR-07 | RPO / RTO | RPO ≤ 5 min (control plane), RTO ≤ 30 min | DR exercise | operator's backup procedure ([../self-hosting](../self-hosting)); Profile A's backup is a volume copy with no WAL archiving, so the 5-minute RPO does not hold there |
 | NFR-08 | Volume | 10⁹ links, 10¹⁰ click events at 180 days retention | capacity model | schema designed for it (Snowflake ids, partitions, BRIN); not loaded to that scale |
 
 Sizing from [§B.8](../zadanie.md#b8-topológia-nasadenia): Profile A (2 vCPU / 4 GB / 20 GB, 2 edge replicas) handles about **1 000 req/s**; NFR-10 says the base instance must run on exactly that. Profile B scales the edge 3–20 pods.
@@ -34,7 +34,7 @@ Two rules protect the budget: **no outbound call to anything on the hot path** (
 
 ## Load profile ([§D.5](../zadanie.md#d5-záťažový-profil))
 
-The k6 script in `tests/load/resolve.js` is **written and has never been run** on the build machine. It encodes:
+The k6 script in `tests/load/resolve.js` is **written and has never been run**, and as written it **cannot pass**: k6 counts the expected 404s of the 5 % miss stream as failed requests against a 0.1 % threshold, the default edge rate limits and the 404 shadow ban throttle a load generator on one network long before 2 000 req/s, and the seeder stops at the control plane's link-create limit. Details in [../../tests/load/README.md](../../tests/load/README.md#status-it-cannot-pass-as-written). It encodes:
 
 ```javascript
 export const options = {
@@ -67,8 +67,8 @@ Run it against a Profile A instance first; the numbers that come back are the fi
 
 | Scenario | Expected behaviour | Run here |
 |---|---|---|
-| PostgreSQL unavailable | resolve works from cache (L1 + L2) for cached links; uncached links return `503`; control plane returns `503`; **no `500`** | no |
-| Valkey unavailable | resolve works from L1 + PostgreSQL with higher latency; `cache_l2_down` metric | no |
+| PostgreSQL unavailable | resolve works from cache (L1 + L2) for cached links; uncached links return `503`; control plane returns `503`; **no `500`** | yes — `PostgresUnavailableTests` in the integration suite (CI) |
+| Valkey unavailable | resolve works from L1 + PostgreSQL with higher latency; `cache_l2_down` metric | yes — `ValkeyUnavailableTests` in the integration suite (CI) |
 | Analytics layer unavailable | events are dropped once the buffer fills; resolve unaffected; alert | component-level unit test of the channel; not as chaos |
 | Disk full | event writes fail; resolve works; alert | no |
 | GeoIP file missing or corrupt | `country = null`; geo-dependent rules fall through to `default`; alert | rule fall-through unit-tested |
@@ -82,10 +82,10 @@ Performance on the server is only half of "does the link work". The eight mandat
 
 | Claim | Evidence today |
 |---|---|
-| The hot path has no EF Core, no reflection, no outbound calls | project references and code review; 850 security tests confirm no egress on the resolve path at the HTTP level |
+| The hot path has no EF Core, no reflection, no outbound calls | project references and code review; no test asserts the absence of egress (in Helm, the edge NetworkPolicy restricts it) |
 | Each pipeline step is cheap | unit tests per step in the domain tier (≥ 90 % coverage) |
-| The budget holds end to end | **none yet** — the k6 profile has not run |
-| The degraded modes behave as specified | unit tests for fall-through; **no chaos run** |
-| The covering index is used index-only | **none yet** — needs `EXPLAIN (ANALYZE, BUFFERS)` against a live PostgreSQL after `autovacuum_vacuum_scale_factor = 0.02` |
+| The budget holds end to end | **none yet** — the k6 profile has not run, and cannot pass as written |
+| The degraded modes behave as specified | unit tests for fall-through; the PostgreSQL-down and Valkey-down scenarios in the integration suite (CI); the other chaos scenarios not run |
+| The covering index is used index-only | `CoveringIndexTests` in the integration suite checks the plan of the real resolve statement with `EXPLAIN (ANALYZE, BUFFERS)` against PostgreSQL 18 (CI) — a seeded test table, not production-sized data |
 
 The specification's own verdict in [§F.3](../zadanie.md#f3-gono-go-odporúčanie) applies: the design is sound; the numbers are targets until the load run says otherwise.

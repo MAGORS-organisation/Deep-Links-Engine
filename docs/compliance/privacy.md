@@ -31,14 +31,17 @@ A mode is set per tenant (`consent_mode` on `POST /api/v1/tenants`), can be over
 
 | Mode | What happens | Legal basis | What you can measure |
 |---|---|---|---|
-| **`off`** | No identifiers stored. A click counter per link; no IP, no user-agent detail, no `click_id` binding | Legitimate interest / operational statistics (Art. 6(1)(f) GDPR); nothing read from or stored on the terminal beyond what serving the redirect requires | Volume only |
-| **`aggregate_only`** *(default)* | IP hashed immediately with a **daily-rotated salt** (K9) and never stored raw; country, device class and OS family stored; **no cross-session linkage**, no deferred matching | Legitimate interest — document the balancing test (LIA) in the DPIA | Campaign level |
+| **`off`** | No identifiers stored from clicks (but see the `install_id` note below the table). A click counter per link; no IP, no user-agent detail, no `click_id` binding | Legitimate interest / operational statistics (Art. 6(1)(f) GDPR); nothing read from or stored on the terminal beyond what serving the redirect requires | Volume only |
+| **`aggregate_only`** *(default)* | IP hashed immediately with a **daily-rotated salt** (K9) and never stored raw; country, device class and OS family stored; **no click-to-install linkage**, no deferred matching (but see the `install_id` note below the table) | Legitimate interest — document the balancing test (LIA) in the DPIA | Campaign level |
 | **`full`** | `click_id` bindings, deferred deep linking, the probabilistic module (if enabled), IP prefix | **Consent** under ePrivacy Art. 5(3), recorded with a timestamp and auditable | Individual-level attribution |
+
+**`install_id` in every mode.** The Android and iOS SDKs create `install_id` at initialisation and send it with every resolve and event regardless of consent, and the server stores the install and event rows in every consent mode, `off` included. The web SDK keeps it in memory only until attribution consent is given. See [README — Known gaps](../../README.md#known-gaps).
 
 How consent reaches the engine:
 
-- **SDKs** send `consent: { analytics, attribution, ts }` with `POST /v1/resolve` and `/v1/events`. The web SDK reads a TC string or a custom CMP signal.
-- **Without a recorded consent the signals are not processed and not written** — they are dropped before storage, which is a different guarantee from "written, then deleted later" (TC-145, TC-146). `Dle.Domain.Privacy.ConsentGate` is the single decision point and is covered by tests.
+- **SDKs** send `consent: { analytics, attribution, ts }` with `POST /v1/resolve` and `/v1/events`. The web SDK takes consent from the host page (the `consent` option, then `setConsent()`); it does not read a TCF string.
+- **Clicks** carry no structured consent. The only click-time signals the edge reads are on the request itself: `dl_consent=all|analytics|none` or TCF-style `gdpr=0` on the short URL — consent asserted by whoever built the link — and a `Sec-GPC: 1` opt-out. The interstitial collects none.
+- **Without a recorded consent the signals are not processed and not written** — they are dropped before storage, which is a different guarantee from "written, then deleted later" (TC-145, TC-146). The exception is `install_id` (above). `Dle.Domain.Privacy.ConsentGate` is the single decision point and is covered by tests.
 - The probabilistic module is off by default (`Dle:Attribution:Probabilistic:Enabled=false`), requires consent even when on (`RequireConsent=true`), and matches within **60 minutes**, not 7 days, because beyond a day a fingerprint match is more likely wrong than right ([§A.2.5](../zadanie.md#a25-presnosť-probabilistického-párovania--čísla)).
 
 ```mermaid
@@ -56,14 +59,14 @@ flowchart TD
 | Data | `off` | `aggregate_only` | `full` | Retention |
 |---|---|---|---|---|
 | Click count per link | yes | yes | yes | aggregates: 730 days (`Dle:Privacy:Retention:AggregatedDays`) |
-| IP address | no | HMAC-SHA-256 hash, salt rotated every 24 h — a hash from yesterday cannot be joined with one from today | prefix (per `IpStorage` ceiling) | raw/hashed events: 30 days (`RawDays`; edge default 90 — align the two) |
+| IP address | no | HMAC-SHA-256 hash under a salt that changes every 24 h. Hashes from different days do not match, but each day's salt is derived from the master secret, so the operator (whoever holds that secret) can recompute any past salt and link them | prefix (per `IpStorage` ceiling) | raw/hashed events: 30 days (`Dle:Privacy:Retention:RawDays`, read by the control plane's retention job; the `90` in the edge's `appsettings.json` is not read) |
 | User-agent | no | parsed families only (browser, OS, device class) — never the full string | same | as events |
 | Referrer | no | host only | host only | as events |
 | Query parameters | no | allowlist only | allowlist only | as events |
 | Country | no | yes, from an **offline** GeoIP file — no third-party call on the resolve path (NFR-14) | yes | as events |
-| `click_id` ↔ install binding | no | no | yes | as events |
+| `click_id` ↔ install binding | no | no | yes | not deleted automatically: the retention job does not cover `attributions` |
 | Device signals (`language`, `screen`, `tz_offset`) | no | no | only with consent, only while the probabilistic module is on | 60-minute matching window, then as events |
-| `install_id` | no | no | yes | as events |
+| `install_id` | yes (see the note under the modes table) | yes (same) | yes | SDK events: as events. The `installs` row: not deleted automatically — the retention job does not cover it |
 | Consent record (`analytics`, `attribution`, `ts`) | — | — | yes, as evidence | as long as the data it justifies |
 
 The retention job runs automatically and its runs are audited ([§E.6.3](../zadanie.md#e63-ďalšie-opatrenia)); on PostgreSQL the click stream is partitioned by day and old partitions are dropped, not row-deleted ([deploy/README — pg_partman](../../deploy/README.md#pg_partman-and-click_events-retention)).
@@ -79,9 +82,9 @@ The retention job runs automatically and its runs are audited ([§E.6.3](../zada
 
 | Right | How |
 |---|---|
-| Erasure (Art. 17) | Delete by `install_id`, or by IP hash for the salt period in which re-identification is still possible; the audit log is unaffected by design |
-| Access / portability (Art. 15, 20) | `GET /api/v1/exports/tenant` for the tenant's data; per-subject extraction by `install_id` through the analytics export |
-| Objection (Art. 21) | Switch the tenant or domain to `aggregate_only`/`off`; revoke consent through the SDK (`consent.attribution=false`) — subsequent signals are dropped |
+| Erasure (Art. 17) | Planned ([§E.6.3](../zadanie.md#e63-ďalšie-opatrenia)), not implemented: there is no erasure endpoint by `install_id` or by IP hash. Until there is, erasure by `install_id` is SQL work: delete the matching rows of `installs` and `sdk_events` (column `install_id`, scoped by `app_id`); the install's `attributions` rows go with it (`ON DELETE CASCADE`), and their `click_id` identifies the matched row in `click_events` if that must go too. No tool computes a subject's `ip_hash` for a given day; raw events, `ip_hash` included, are dropped after `RawDays` anyway. The audit log is unaffected by design |
+| Access / portability (Art. 15, 20) | `GET /api/v1/exports/tenant` for the tenant's data (it includes `installs` and `attributions`, not the click or SDK event streams). There is no per-subject export; extract a subject's rows by `install_id` in SQL |
+| Objection (Art. 21) | Switch the tenant or domain to `aggregate_only`/`off`; revoke consent through the SDK (`consent.attribution=false`) — subsequent attribution signals are dropped; `install_id` and the install row are not (see above) |
 
 ## Controller and processor — self-hosted versus hosted
 

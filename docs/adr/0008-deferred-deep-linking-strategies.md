@@ -7,6 +7,15 @@
 
 Accepted
 
+**Status note (2026-09-24).** The server implements the strategies, but on the click path most of them do not work end to end yet:
+
+- **S1 (Install Referrer) is off by default.** `dl_cid` is written into the Play referrer only when the tenant's `consent_mode` is `full` **and** the click itself carries attribution consent; the only click-time signal the edge reads is a query parameter on the short URL (`dl_consent=all`, or TCF-style `gdpr=0`), i.e. consent asserted by whoever built the link. Under the default `aggregate_only`, `/v1/resolve` answers `none` with reason `consent_missing`.
+- **S3 (claim code) and S2 (login) have no working path.** The edge never issues or shows a claim code, and login matching reads a click field nothing writes.
+- **S0 (direct open) is reported, but the app gets no link context.** It receives only the short URL; nothing on the SDK plane expands a slug into its `deeplink_path`.
+- A deferred match returns the link-level `deeplink_path`, not the one of the routing rule that matched the click.
+
+See [Known gaps](../../README.md#known-gaps) in the root README.
+
 ## Date
 
 Decided: in the specification ([§B.4 ADR-008](../zadanie.md#adr-008--stratégia-deferred-deep-linkingu)) · Recorded: 2026-09-11
@@ -36,7 +45,7 @@ Every attribution record carries `match_type` ∈ `install_referrer` · `login` 
 - Positive: with the module off, the resolve path stores no fingerprint-grade signal at all; consent mode `aggregate_only` (the default) needs no consent dialogue ([§E.6.2](../zadanie.md#e62-tri-režimy-prevádzky-produktová-funkcia-nie-prepínač-v-kóde)).
 - Negative: on iOS, without login or a claim code, the honest answer is often `match_type: "none"`. The product says so rather than inventing a match.
 - Negative: an operator turning S4 on takes on the consent obligation; the engine records the consent but cannot obtain it.
-- Verification: the attribution matcher is in the domain tier (≥ 90 % coverage); the `/v1/resolve` and `/v1/events` endpoints are covered by contract and security tests. The mobile SDKs that report S0/S1/S3 are **written but not compiled** — CI is their first build.
+- Verification: the attribution matcher is in the domain tier (≥ 90 % coverage); the `/v1/resolve` and `/v1/events` endpoints are covered by contract and security tests. The Android and iOS SDKs that report S0/S1/S3 compile and pass their unit tests in CI (`sdk-android.yml`, `sdk-ios.yml`, as of 2026-09-24); the end-to-end gaps are in the status note above.
 
 ## Alternatives considered
 

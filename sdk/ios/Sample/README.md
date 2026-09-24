@@ -6,10 +6,10 @@ can be dropped into any app target.
 
 ## Add them to an Xcode project
 
-1. **Add the package.** File → Add Package Dependencies… → enter the repository URL
-   (`https://github.com/MAGORS-organisation/Deep-Links-Engine`), or for local development
-   File → Add Package Dependencies… → Add Local… → select `sdk/ios`. Add the `DleSDK` product
-   to your app target.
+1. **Add the package.** File → Add Package Dependencies… → Add Local… → select `sdk/ios` of a
+   checkout, and add the `DleSDK` product to your app target. Adding it by repository URL does
+   not work yet: SwiftPM needs `Package.swift` at the repository root and a version tag, and
+   neither exists ([Known gaps](../../../README.md#known-gaps)).
 2. **Add the sources.** Drag `DleSampleApp.swift`, `ContentView.swift` and
    `DeepLinkRouter.swift` into the app target (or copy their contents into your own files —
    `DleSampleApp.swift` declares `@main`, so remove your own `@main` App or merge the two).
@@ -52,10 +52,10 @@ can be dropped into any app target.
 | `DleSampleApp.init` | `Dle.configure(_:)` with endpoint, key, `linkHosts`, denied consent, deterministic strategies. |
 | `.task` on the root view | `DeepLinkRouter.resolveDeferredLinkIfNeeded()` → `Dle.shared.resolve()`. The first call after install posts `POST /v1/resolve`; every later call returns the persisted answer without a request. Safe to run on every launch. |
 | `.onOpenURL` | `Dle.shared.handle(url:)` reports `link_open` for a Universal Link (a direct open reaches no server, so this is the only record of the click) and returns the URL, which the router validates and routes. |
-| `DeepLinkRouter.route` | The allowlist. Only `/promo/<slug>` and `/p/<id>` with `[A-Za-z0-9_-]{1,64}` become screens; anything else goes home. The path is never interpolated into a query, a file path or a web view. |
+| `DeepLinkRouter.route` | The allowlist. Only `/promo/<slug>` and `/p/<id>` with `[A-Za-z0-9_-]{1,64}` become screens; anything else goes home. The path is never interpolated into a query, a file path or a web view. A generated short link such as `/aB3xK9pQ` therefore goes home: a direct open hands the app only the short URL, and nothing on the SDK plane expands it ([Known gaps](../../../README.md#known-gaps)). |
 | `DeepLinkRouter.apply` | A deterministic result (`isDeterministic`) navigates. A probabilistic one (`isProbabilisticHint`) becomes a suggestion the user can dismiss — never an automatic navigation and never a reward. |
 | `ContentView` consent toggles | `Dle.shared.updateConsent(_:)`. Withdrawing analytics consent also discards queued behavioural events. |
-| Claim-code field | `DleClaimCode.normalize` + `isWellFormed` gate the button locally; `Dle.shared.submitClaimCode(_:)` sends it. `claimCodeRejected(reason:canReissue:)` tells the UI whether showing a fresh code would help. |
+| Claim-code field | `DleClaimCode.normalize` + `isWellFormed` gate the button locally; `Dle.shared.submitClaimCode(_:)` sends it. `claimCodeRejected(reason:canReissue:)` tells the UI whether showing a fresh code would help. The engine does not issue or show claim codes yet, so there is no real code to type today ([Known gaps](../../../README.md#known-gaps)). |
 
 ## UIKit instead of SwiftUI
 

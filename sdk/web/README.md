@@ -13,23 +13,30 @@ identifier without attribution consent. The only identifier it ever creates is a
 `localStorage`; clear storage and you are a new user. That is the intended behaviour.
 
 - Zero runtime dependencies. No CDN references — ship the file yourself.
-- ESM + CJS + a plain `<script>` (IIFE) build. ES2020. < 8 kB min+gzip for the IIFE.
+- ESM + CJS + a plain `<script>` (IIFE) build. ES2020. About 9 kB min+gzip for the IIFE; `npm run size`
+  fails the build above 10 kB.
 - Wire format is the engine's snake_case contract (`Dle.Domain.Contracts.SdkContracts`), asserted
   byte-for-byte in the tests against `tests/Dle.ContractTests`.
 - UI strings ship in English and Slovak.
 
 ## Install
 
+The package is not published on npm yet ([Known gaps](../../README.md#known-gaps)). Build it from a
+checkout of the repository and install the tarball:
+
 ```sh
-npm install @magors/dle-web
+cd Deep-Links-Engine/sdk/web
+npm ci && npm run build        # dist/: ESM, CJS and dle.global.js
+npm pack                       # → magors-dle-web-0.1.0.tgz
+cd your-site && npm install /path/to/Deep-Links-Engine/sdk/web/magors-dle-web-0.1.0.tgz
 ```
 
 ```ts
 import { createDle } from '@magors/dle-web';
 
 const dle = createDle({
-  endpoint: 'https://links.example.sk',   // your dle-control SDK plane
-  sdkKey: 'dle_…',                        // publishable SDK key
+  endpoint: 'https://links.example.sk',   // your dle-control SDK plane, on this page's origin (no CORS)
+  sdkKey: 'dlk_…',                        // publishable SDK key
   smartBanner: {
     appName: 'Example',
     openUrl: 'https://links.example.sk/aB3xK9pQ', // an http(s) DLE link — never a custom scheme
@@ -42,7 +49,7 @@ Without a bundler, copy `dist/dle.global.js` next to your site and configure it 
 ```html
 <script src="/vendor/dle.global.js"
         data-endpoint="https://links.example.sk"
-        data-sdk-key="dle_…"
+        data-sdk-key="dlk_…"
         data-banner='{"appName":"Example","openUrl":"https://links.example.sk/aB3xK9pQ"}'
         data-language="auto"></script>
 ```
@@ -146,8 +153,12 @@ caused belong to one trace. The SDK never logs the key, the request body or a pr
 
 ## Server prerequisites
 
-The SDK plane must be reachable from the browser: serve it on the site's origin or configure CORS
-on `dle-control` for the `Authorization`, `Content-Type` and `traceparent` request headers.
+The SDK plane must be reachable from the browser, and `dle-control` has no CORS support: it does
+not handle preflight requests, sends no `Access-Control-*` headers, and has no setting to turn them
+on. A request from a page on another origin (it carries `Authorization`, so it is always
+preflighted) therefore fails, and `resolve()` and event delivery work only when the SDK plane is
+served on the page's own origin ([Known gaps](../../README.md#known-gaps)). The smart banner makes
+no request and works either way.
 
 ## Development
 

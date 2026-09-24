@@ -43,7 +43,7 @@ Why PostgreSQL wins, in the specification's own order:
 - Positive: one system to back up, monitor and upgrade; transactions and foreign keys where the domain needs them; `jsonb` where it needs flexibility (`routing_rules`, `og_meta`, `settings`, `evidence`).
 - Negative: an installation above ~50 M events/month will want ClickHouse for reports; that path is designed in ([ADR-0006](0006-analytics-postgres-partitions-clickhouse-optional.md)) but is a second system.
 - Negative: PG 16/17 lack `uuidv7()`, so the migration carries a shim function for older servers.
-- Verification: the EF Core migration (extensions, uuidv7 shim, partitions, `pg_partman`) is **generated and reviewed but has never been applied to a live PostgreSQL** on the build machine; the 97 Testcontainers integration tests that would prove it need Docker and have not run here.
+- Verification (as of 2026-09-24): the integration suite applies the EF Core migration (extensions, uuidv7 shim, partitions) to PostgreSQL 18 in Testcontainers in CI, and rolls it back. The test image is the stock one, which has no `pg_partman`, so it is the migration's fallback partition maintenance that runs there, not the `pg_partman` handover. CI sets `DLE_TESTS_REQUIRE_DOCKER=1`, so a missing Docker fails the job instead of skipping the suite; the current result is in the CI summary.
 
 ## Alternatives considered
 

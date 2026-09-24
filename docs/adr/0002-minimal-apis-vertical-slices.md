@@ -28,8 +28,8 @@ ASP.NET Core **Minimal APIs** in both hosts, organised as **vertical slices by f
 
 - Positive: the lowest per-request overhead ASP.NET Core offers; no MVC pipeline, no reflection-driven model binding on the hot path — which also keeps the edge AOT-ready ([ADR-0012](0012-native-aot-deferred-to-v2.md)).
 - Positive: one file per operation means one place to read when a behaviour is in question.
-- Negative: no filters/attributes ecosystem from MVC; cross-cutting concerns (auth, rate limits, tenancy) are endpoint filters and route groups, and they must be applied deliberately — the 75 contract tests exist partly to catch a group that forgot one.
-- Verification: both hosts start and serve their OpenAPI documents; the contract suite (75 tests) checks the documented shapes; 850 security tests cover the 404/410/302 paths through `WebApplicationFactory`.
+- Negative: no filters/attributes ecosystem from MVC; cross-cutting concerns (auth, rate limits, tenancy) are endpoint filters and route groups, and they must be applied deliberately — the contract suite exists partly to catch a group that forgot one.
+- Verification: both hosts start and serve their OpenAPI documents; the contract suite checks the documented shapes; the security suite covers the 404/410/302 paths through `WebApplicationFactory`. The current test counts are in the CI summary.
 
 ## Alternatives considered
 

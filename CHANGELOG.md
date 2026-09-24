@@ -11,7 +11,9 @@ Entries under *Unreleased* are written by the pull request that makes the change
 
 No release has been tagged. Everything below is the state of `develop`, and the *Not yet
 verified* section is as important as the rest: it lists what exists in the repository but has
-not been executed anywhere.
+not been executed anywhere. What exists but does not work end to end is listed in the README,
+[Known gaps](README.md#known-gaps); several entries under *Added* describe components whose
+end-to-end flow is among those gaps.
 
 ### Added
 
@@ -21,23 +23,30 @@ not been executed anywhere.
   Job completed, the eight tables the product writes to exist in the database, the edge and the
   control plane answer, and each reports by name that it reached the store the chart wired it to.
   It then upgrades the release in place, which runs the migration hook a second time against an
-  already-migrated database. The nightly runs the same workflow, because the images come from
-  `src/` and a change there can break an install without touching `deploy/`.
+  already-migrated database. The nightly is wired to run the same workflow, because the images come
+  from `src/` and a change there can break an install without touching `deploy/` — it has not run
+  yet: GitHub reads schedules from the default branch, which is still `master`.
 - **Edge (data plane)** — slug resolve with L1/L2 caching (HybridCache over Valkey), client
   classification, routing rules, 302 redirect or interstitial (CSP without `unsafe-inline`), Open
   Graph documents for verified crawlers (302-not-301, ADR-009), `/.well-known/apple-app-site-association`
   and `/.well-known/assetlinks.json`, QR codes, per-endpoint rate limiting with a separate 404
-  budget against slug enumeration (§E.9), abuse reports, GeoIP from an operator-supplied MaxMind
-  database. Serves from cache with PostgreSQL unavailable.
+  budget against slug enumeration (§E.9), GeoIP from an operator-supplied MaxMind database. Serves
+  from cache with PostgreSQL unavailable.
 - **Control plane** — tenants, applications, domains with background AASA/assetlinks verification,
-  links (single and bulk with idempotency keys), API keys and OIDC bearer authentication, RBAC,
-  webhooks, OpenAPI with Scalar UI, `/healthz` and `/readyz` (the latter gated on the database).
+  links (single and bulk with idempotency keys), API keys and OIDC bearer authentication (the OIDC
+  tenant claim is not mapped yet), RBAC, webhooks, abuse reports with quarantine (the public report
+  form is not routed by the shipped Caddy or Helm configuration), OpenAPI with Scalar UI, `/healthz`
+  and `/readyz` (the latter gated on the database).
 - **Attribution** — `/v1/resolve`, install-referrer and claim-code matching, deferred deep links,
-  consent modes (`aggregate_only` default) and IP storage policy (`hash_only` default).
+  consent modes (`aggregate_only` default) and IP storage policy (`hash_only` default). The edge
+  does not issue claim codes yet, and under the default consent mode the click id never reaches
+  the Play referrer.
 - **Click stream** — partitioned `click_events` with retention (pg_partman when available, a plain
-  SQL fallback otherwise), a PostgreSQL analytics sink and a ClickHouse sink.
+  SQL fallback otherwise), a PostgreSQL analytics sink, and an experimental ClickHouse sink that is
+  not wired end to end.
 - **Crypto** — master-secret derivation for every keyed primitive, slug permutation, HMAC-SHA-256
-  and Ed25519 signatures with constant-time verification, key wrapping and rotation.
+  and Ed25519 signatures with constant-time verification, key wrapping. A key-ring rotation routine
+  exists in `Dle.Crypto` but nothing in either host calls it, so no key rotates today.
 - **Admin console** (`src/Dle.Admin.Web`) — React 19 / TypeScript / Vite, no component library,
   no CDN; links, domains, dashboard, rules simulator. Built into `Dle.Control/wwwroot/admin`.
 - **Web SDK** (`sdk/web`, `@magors/dle-web`) — smart app banner, web fallback, click-context
@@ -50,7 +59,7 @@ not been executed anywhere.
 - **Tests** — `Dle.UnitTests`, `Dle.ContractTests`, `Dle.SecurityTests` (including a
   property-based driver for the three §D.4 fuzz targets) and `Dle.IntegrationTests`
   (Testcontainers postgres:18 + valkey:8, two-tenant isolation and chaos cases). The counts are in
-  *Verified in CI on this pull request* below, which is the one place they are kept current.
+  the CI summary of each run; *Verified in CI* below records the last figures read from it.
 - **Deployment** — Profile A compose stack (Caddy → edge ×2 + control → postgres:18 + valkey:8)
   with hardened service defaults, Dockerfiles for edge and control (multi-arch, chiseled runtime
   variant, EF Core migration bundle in the control image), a pg_partman-enabled Postgres image,
@@ -58,18 +67,35 @@ not been executed anywhere.
   development.
 - **Build** — .NET 10 solution with central package management and per-project lock files
   (`--locked-mode` restore), `TreatWarningsAsErrors` with `latest-Recommended` analyzers.
-- **CI/CD** (`.github/`) — CI (build, format, four suites, coverage gate: domain tier ≥ 90 % hard,
-  overall 70 % warning), admin UI, web SDK, Android SDK and iOS SDK workflows, Security (NuGet /
+- **CI/CD** (`.github/`) — CI (build, format, four suites, coverage gate: domain tier ≥ 90 % and
+  overall ≥ 70 %, both failing the build), admin UI, web SDK, Android SDK and iOS SDK workflows, Security (NuGet /
   npm / Trivy fs and image scans, licence policy, OWASP ZAP baseline against the compose stack),
   SBOM + CBOM with schema validation, CodeQL (C#, JavaScript/TypeScript), Release (multi-arch images
   to GHCR with SLSA provenance and cosign keyless signatures, signed Helm chart, compose smoke, ZAP
-  and k6 gates, SBOM/CBOM attached), Nightly (domain re-verification, CVE feed recheck, extended
-  fuzz-harness run), Dependabot for every ecosystem, issue and PR templates, CODEOWNERS. Helper
+  and k6 gates, SBOM/CBOM attached; it has never run, as no tag exists), Nightly (domain
+  re-verification, CVE feed recheck, extended fuzz-harness run), Dependabot for every ecosystem —
+  neither of these two has run yet, because GitHub reads both from the default branch, still
+  `master` — issue and PR templates, CODEOWNERS. Helper
   scripts under `.github/scripts/` for the TRX summary, the coverage gate, the NuGet vulnerability
   gate, the CBOM, CycloneDX validation and domain verification.
 - **Project files** — `SECURITY.md` (private reporting, 90-day disclosure, scope, safe harbour,
   DSA Art. 16 abuse path), `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1),
   this changelog, root `.dockerignore` (identical to `deploy/docker/.dockerignore`).
+
+### Changed
+
+- **The documentation says what does not work yet.** An end-to-end audit of `develop` found that the
+  core flows break at the hand-offs between components that no test crosses — the slug is never
+  expanded for an installed app, the click id never reaches the Play referrer under the default
+  consent mode, the edge never issues a claim code, and a fresh install cannot obtain its first
+  credential — and that several documents described designed controls as working ones: PostgreSQL
+  row-level security, 90-day key rotation, daily-unlinkable IP hashes, data-subject erasure
+  endpoints, a reachable abuse form, an active nightly and Dependabot, a Play App Signing warning
+  that fires. The README gains a *Known gaps* section, and the self-hosting, integration,
+  compliance, operations and architecture documents, the ADRs and the SDK READMEs now state the
+  behaviour of the code as it is. The quick start and the upgrade guide name
+  `docker compose -f docker-compose.yml` explicitly, because a plain `docker compose` also loads
+  the development override. Documentation only; no code changed.
 
 ### Fixed
 
@@ -236,21 +262,24 @@ not been executed anywhere.
     check now also compares lengths, and the covering-index check requires an index-only scan on
     `ix_links_resolve` itself with zero heap fetches.
 
-### Verified in CI on this pull request
+### Verified in CI
 
-- 1 430 unit, 75 contract, 850 security and 219 integration tests pass; the integration suite runs
-  against PostgreSQL 18 and Valkey 8 in Testcontainers, applies and rolls back the migration, and
-  covers the chaos scenarios of §D.6 (PostgreSQL stopped, Valkey unreachable).
+- On `develop` at `8032ecd` the unit, contract and security suites and 224 integration tests pass;
+  the integration suite runs against PostgreSQL 18 and Valkey 8 in Testcontainers, applies and
+  rolls back the migration, and covers the chaos scenarios of §D.6 (PostgreSQL stopped, Valkey
+  unreachable).
 - The Android SDK compiles and passes its unit tests (JDK 17, Gradle 8.11); the iOS SDK builds and
   passes its tests on the iOS Simulator (Swift 6).
-- Both container images build, pass Trivy, and the compose stack starts for an OWASP ZAP baseline
-  against the edge. CodeQL (C#, JavaScript/TypeScript), the SBOM/CBOM, the NuGet vulnerability
-  gate, the licence policy (four packages carry a licence override to MIT, verified upstream) and
-  the format gate are green.
-- Overall line coverage is 83.8 % against a 70 % target; the domain tier is at 97.4 %
+- Both container images build, pass Trivy, and the development compose profile starts for an OWASP
+  ZAP baseline against the edge — with an empty database and straight at `:8080`, so ZAP sees the
+  404 page and `robots.txt`, not Caddy, TLS, a redirect, an interstitial or `/.well-known`. CodeQL
+  (C#, JavaScript/TypeScript), the SBOM/CBOM, the NuGet vulnerability gate, the licence policy
+  (four packages carry a licence override to MIT, verified upstream) and the format gate are green.
+- Overall line coverage is 83.9 % against a 70 % gate; the domain tier is at 97.4 %
   (`Dle.Domain`) and 94.7 % (`Dle.Crypto`) against a 90 % gate. The HTTP integration suite
-  of the control plane took `Dle.Control` from 39.2 % to 78.7 % and
-  `Dle.Analytics.Postgres` from 4.6 % to 79.9 %.
+  of the control plane took `Dle.Control` from 39.2 % to 78.9 % and
+  `Dle.Analytics.Postgres` from 4.6 % to 80.3 %. `Dle.Analytics.ClickHouse` has no tests and is
+  not in the figures.
 
 ### Not yet verified — read before relying on anything above
 
@@ -260,18 +289,24 @@ not been executed anywhere.
   which is rendered and linted but not installed — a gate that depends on another project's
   registry policy teaches a team to ignore the gate — and every profile on a multi-node cluster
   with an ingress controller, a metrics server and enforced NetworkPolicy.
-- **The k6 load profile (`tests/load`) has never been run.** It needs a deployed, seeded instance
-  and a control-plane API key; the release workflow runs it only when a staging target is
-  configured and otherwise marks the release as pre-release.
+- **No end-to-end flow has been exercised on a real device**, and the audit that produced the README's
+  [Known gaps](README.md#known-gaps) says several of them would fail today.
+- **The k6 load profile (`tests/load`) has never been run, and cannot pass as written**: the 5 % of
+  requests it sends to missing slugs count as failures, the default edge rate limits and 404 shadow
+  ban throttle a single load generator, and the seeder stops at the control plane's link-create
+  limit. It also needs a deployed, seeded instance and a control-plane API key; the release workflow
+  runs it only when a staging target is configured and otherwise marks the release as pre-release.
 - **SharpFuzz is not wired up.** The fuzz targets exist and are driven by a property-based test;
   coverage-guided fuzzing needs a driver project and instrumentation that do not exist yet.
 - **The eight-device manual matrix (§D.2)** has not been run.
 - **No external penetration test (S-10) and no staging key-rotation exercise (S-12)** have taken
-  place; both are release-blocking for 1.0.
+  place; both are release-blocking for 1.0. The key-rotation exercise cannot take place until key
+  rotation is implemented.
 
 ### Security
 
 - Dependencies are locked and restored in locked mode; GitHub Actions are pinned to commit SHAs;
-  releases are signed keyless with Sigstore and ship SBOM, CBOM and SLSA provenance (T-14, S-06).
+  the release workflow signs keyless with Sigstore and ships SBOM, CBOM and SLSA provenance (T-14,
+  S-06) — it has not produced a release yet.
 
 [Unreleased]: https://github.com/MAGORS-organisation/Deep-Links-Engine/compare/master...develop

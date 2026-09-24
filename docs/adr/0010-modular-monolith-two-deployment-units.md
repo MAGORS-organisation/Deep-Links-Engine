@@ -34,7 +34,7 @@ Background workers (domain verifier, event ingest, rollup, webhook dispatcher, a
 - Positive: the edge has a minimal dependency set (`Dle.Persistence.Fast`, no EF Core) and is the AOT candidate ([ADR-0012](0012-native-aot-deferred-to-v2.md)).
 - Negative: module boundaries inside a solution are enforced by project references and review, not by a network. The [SHARED-KERNEL.md](../dev/SHARED-KERNEL.md) contract exists for that reason.
 - Negative: a control-plane deployment restarts the workers; leader election makes that safe but not free.
-- Verification: the solution is 14 projects; both hosts start on the build machine; the edge host references only the fast persistence path. The leader-election behaviour under concurrent control replicas is in the integration suite, which has not run here.
+- Verification (as of 2026-09-24): the solution is 14 projects; both hosts start; the edge host references only the fast persistence path. No test exercises leader election under concurrent control replicas. Of the workers listed above, key management does not exist: signing-key rotation is not implemented ([ADR-0013](0013-crypto-agility-from-day-one.md), status note).
 
 ## Alternatives considered
 

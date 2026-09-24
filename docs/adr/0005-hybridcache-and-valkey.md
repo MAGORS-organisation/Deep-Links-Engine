@@ -7,6 +7,8 @@
 
 Accepted
 
+**Status note (2026-09-24).** Abuse quarantine does not invalidate the edge cache: a quarantined link keeps redirecting to its old target for up to `L2Minutes + L1Seconds` (10 min 30 s by default). See [Known gaps](../../README.md#known-gaps).
+
 ## Date
 
 Decided: in the specification ([§B.4 ADR-005](../zadanie.md#adr-005--cache-hybridcache--valkey)) · Recorded: 2026-09-11
@@ -28,7 +30,7 @@ Only 1–5 % of resolves should reach PostgreSQL ([ADR-0003](0003-postgresql-as-
 - Positive: the L2 is an `IDistributedCache`; any RESP-compatible server works.
 - Negative: one more process in the Compose bundle (Profile A runs `valkey:8`); the L1 is per-replica, so invalidation latency across replicas is the L2's job.
 - **On the licence argument after ADR-0011.** This repository is MIT ([ADR-0011](0011-license-mit.md)), not AGPL, so the question "would AGPL Redis contaminate our licence?" is moot — and the specification is careful to say it never was a contamination question: an application that merely connects to an AGPL Redis over the network does not change its own licence. The two real problems remain and are why Valkey stays: (a) many companies have a blanket "no AGPL in the stack" rule and will not discuss it, and (b) **we distribute the L2 as part of our `docker compose` and Helm bundle**, where the boundary is much less clear-cut. Valkey is about not shipping AGPL software in the bundle and removing that conversation entirely; it is not a claim about contamination.
-- Verification: the cache path is exercised by the unit and contract suites against in-memory implementations; the Valkey-backed behaviour is in the integration suite, which has not run on the build machine.
+- Verification: the cache path is exercised by the unit and contract suites against in-memory implementations; the Valkey-backed behaviour, including Valkey becoming unreachable, is in the integration suite, which CI runs against Valkey 8 in Testcontainers (as of 2026-09-24; the current result is in the CI summary).
 
 ## Alternatives considered
 

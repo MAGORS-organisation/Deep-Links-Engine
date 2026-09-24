@@ -18,16 +18,20 @@ It does three things:
 
 ## Install
 
+The package cannot be added by URL yet: SwiftPM expects `Package.swift` at the repository root and a
+version tag, and this package lives in `sdk/ios` and the repository has no tags
+([Known gaps](../../README.md#known-gaps)). Use a local checkout:
+
 ```swift
-// Package.swift
-.package(url: "https://github.com/MAGORS-organisation/Deep-Links-Engine", from: "0.1.0"),
+// Package.swift — a path dependency's identity is its directory name, here "ios"
+.package(path: "../Deep-Links-Engine/sdk/ios"),
 // target
-.product(name: "DleSDK", package: "Deep-Links-Engine"),
+.product(name: "DleSDK", package: "ios"),
 ```
 
-or in Xcode: File → Add Package Dependencies… For a local checkout, add `sdk/ios` as a local
-package. The package ships its own `PrivacyInfo.xcprivacy`; Xcode aggregates it into your
-app's privacy report automatically.
+or in Xcode: File → Add Package Dependencies… → Add Local… → select `sdk/ios`, and add the
+`DleSDK` product to your target. The package ships its own `PrivacyInfo.xcprivacy`; Xcode
+aggregates it into your app's privacy report automatically.
 
 ## Configure
 
@@ -69,6 +73,10 @@ try await Dle.shared.submitClaimCode(typed)               // S3: the code shown 
 try await Dle.shared.reconcileLogin(loginKey: hashedId)   // S2: after sign-in; opaque, already hashed
 ```
 
+Neither matches anything today: the engine never issues or shows a claim code on the link page, and
+its login matching reads a click field nothing writes ([Known gaps](../../README.md#known-gaps)). Only
+the SDK side is implemented.
+
 `DleClaimCode.normalize` and `DleClaimCode.isWellFormed` mirror the engine's rules exactly,
 so a code can be validated locally before the request. A refusal surfaces as
 `DleError.claimCodeRejected(reason:canReissue:)`.
@@ -89,6 +97,11 @@ UIKit: `Dle.shared.handle(userActivity)` in `application(_:continue:restorationH
 `scene(_:willConnectTo:options:)`. Every variant reports the `link_open` (if the URL is one of
 yours) and returns the URL for you to route. Custom-scheme URLs are returned unreported and
 never logged in full.
+
+The URL is the short link as tapped (`https://link.example.com/aB3xK9pQ`), not the link's
+`deeplink_path`: nothing on the SDK plane expands a slug, and an SDK key cannot read the link API.
+Your app can open the right screen only when the operator uses readable slugs your router parses,
+like the sample's `/promo/…` and `/p/…` ([Known gaps](../../README.md#known-gaps)).
 
 ## Events and consent
 
@@ -128,7 +141,9 @@ Be honest with your stakeholders about deferred deep linking on iOS (spec §A.2.
 Hence the defaults: **claim code** (the user types six characters from the link page),
 **login reconciliation** (an opaque account key sent after sign-in) and **direct open** (the
 app is installed; the Universal Link opens it and the SDK reports it). All three are
-deterministic. Probabilistic matching is available, off by default.
+deterministic. Probabilistic matching is available, off by default. On the engine side only direct
+open works today, and it is not deferred: claim codes are never issued and login matching has
+nothing to match (see [Resolve the deferred link](#resolve-the-deferred-link)).
 
 ## Universal Links checklist
 

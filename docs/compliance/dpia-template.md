@@ -31,7 +31,7 @@ attribute app installs to the click that led to them; report aggregate campaign 
 | IP address | ❌ | HMAC with a salt rotated daily; never stored raw | hash as before, plus /24 (IPv4) or /48 (IPv6) prefix |
 | Click id linking a click to an install | ❌ | ❌ | ✅ with recorded consent |
 | Device signals for probabilistic matching (language, screen, timezone) | ❌ | ❌ | ✅ only if the module is enabled **and** consent recorded |
-| Installation id (SDK-generated UUID, not a device id) | ❌ | ❌ | ✅ |
+| Installation id (SDK-generated UUID, not a device id) | ✅ | ✅ | ✅ — the Android and iOS SDKs send it regardless of consent and the server stores it in every mode ([README — Known gaps](../../README.md#known-gaps)) |
 | Full user agent, full referrer, full query string | never | never | never |
 
 **Retention.** Raw click events `[30]` days, aggregates `[730]` days, attributions `[…]`. The retention
@@ -48,17 +48,17 @@ vendor. No transfer outside the EU unless the operator configures one: `[none | 
 | Legal basis | `off`, `aggregate_only`: legitimate interest — attach the LIA. `full`: consent under ePrivacy art. 5(3) as read by EDPB Guidelines 2/2023, recorded with timestamp |
 | Data minimisation measures already in the system | User agent reduced to families; referrer reduced to host; query parameters allow-listed; IP hashed or dropped; audit log structurally unable to hold an end-user identifier |
 | Transparency | `[link to privacy notice]` naming recipients and the consent mode |
-| Rights | Erasure by `install_id` and by IP hash; export of a tenant's data; objection honoured by switching the subject's consent to `attribution = false`, after which no signals are stored |
+| Rights | No erasure endpoint yet (planned in §E.6.3) and no per-subject access endpoint: erasure and per-subject access by `install_id` are SQL work — see [privacy.md — Data-subject rights](privacy.md#data-subject-rights); export of a tenant's data (`GET /api/v1/exports/tenant`); objection honoured by switching the subject's consent to `attribution = false`, after which no attribution signals are stored (`install_id` still is) |
 
 ## 4. Risks and mitigations
 
 | # | Risk | Likelihood | Severity | Mitigation in the system | Residual |
 |---|---|---|---|---|---|
-| R1 | Re-identification from hashed IP | Low — salt rotates daily, hash is keyed | Medium | Salt rotation; no raw IP; prefix only in `full` | `[…]` |
-| R2 | Cross-tenant data leak | Low | High | Tenant filter enforced in the persistence layer; cross-tenant ids answer 404; tested | `[…]` |
+| R1 | Re-identification from hashed IP | Low for anyone without the master secret — hash is keyed. Not low for the operator: every daily salt is derived from the master secret and can be recomputed | Medium | Daily salt change; no raw IP; prefix only in `full`; raw events dropped after `RawDays` (30 by default) | `[…]` |
+| R2 | Cross-tenant data leak | Low with one tenant or mutually trusted tenants; see the known defect | High | Tenant filter enforced in the persistence layer (no PostgreSQL row-level security); cross-tenant ids answer 404; tested. Known defect: a request carrying an SDK key of one tenant and an API key of another is scoped to the first and authorised as the second — do not host mutually untrusted tenants on one instance ([README — Known gaps](../../README.md#known-gaps)) | `[…]` |
 | R3 | Probabilistic match attributes the wrong person | Medium if enabled | Medium | Off by default; consent-gated; 60-minute window; confidence recorded and shown; evidence stored per attribution | `[…]` |
 | R4 | Retention exceeded | Low | Medium | Automated partition drop; job logs its execution | `[…]` |
-| R5 | Link used for phishing exposes subjects to harm | Medium | High | Target URL policy, reputation checks at creation and nightly, rate limits, abuse reporting, quarantine | `[…]` |
+| R5 | Link used for phishing exposes subjects to harm | Medium | High | Target URL policy at creation and nightly; reputation checks only once a source is configured (off by default); rate limits; quarantine (effective at the edge after its cache expires, up to 10 min 30 s by default). The public abuse form is not reachable with the shipped routing ([README — Known gaps](../../README.md#known-gaps)) | `[…]` |
 | R6 | Loss of confidentiality of the database | Low | High | `[operator's encryption at rest, access control, backup encryption]` | `[…]` |
 | R7 | Consent recorded incorrectly by the app | Medium | High | Consent object carries a timestamp and source; server refuses signals without it — but the app's consent UI is the operator's responsibility | `[…]` |
 

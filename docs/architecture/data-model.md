@@ -3,7 +3,7 @@
 **What this is:** the entities, the control-plane tables that matter, the partitioned click stream, and where the routing rules live — [§B.5](../zadanie.md#b5-dátový-model) in English, with the two notes that decide production performance.
 **Who it is for:** anyone writing a migration, a Dapper query or a report; DBAs sizing and tuning the instance.
 
-The **EF Core migration in `src/Dle.Persistence` is the single source of truth** for the schema ([ADR-0004](../adr/0004-split-data-access-efcore-and-dapper.md)). The DDL below is the specification's sketch that the migration implements; where the two differ, the migration wins and this page is out of date. Honest status: the migration is generated and reviewed, and has **not** been applied to a live PostgreSQL on the build machine; the raw SQL in it (the `uuidv7()` shim for PG 16/17, the partitions, `pg_partman`) has been read, not executed.
+The **EF Core migration in `src/Dle.Persistence` is the single source of truth** for the schema ([ADR-0004](../adr/0004-split-data-access-efcore-and-dapper.md)). The DDL below is the specification's sketch that the migration implements; where the two differ, the migration wins and this page is out of date. Status (2026-09-24): the integration suite applies the migration to PostgreSQL 18 in CI and rolls it back, including its raw SQL (the `uuidv7()` shim, the partitions). The test image has no `pg_partman`, so the migration's fallback partition maintenance is what runs there, not the `pg_partman` handover. There are no row-level security policies in the schema: tenant isolation is the EF Core global query filter plus explicit `tenant_id` predicates in the Dapper, analytics and raw SQL paths ([ADR index](../adr/README.md#departures-not-recorded-as-decisions), T-09).
 
 ## Entities ([§B.5.1](../zadanie.md#b51-prehľad-entít))
 
@@ -103,10 +103,10 @@ CREATE TABLE links (
 
 Notes on the columns that carry design decisions:
 
-- `links.id` is a 64-bit Snowflake; the public `slug` is generated separately by a keyed Feistel permutation and is exactly 8 characters when generated ([ADR-0007](../adr/0007-slug-generation-keyed-feistel-base62.md)). `citext` makes it case-insensitive; NFKC normalisation happens before it is stored (the homoglyph defence the test suite found switched off under `InvariantGlobalization`, since fixed).
-- `apps.cert_fingerprints` must hold the **Play App Signing** certificate's SHA-256, not the upload key's. Getting this wrong breaks App Links silently; the domain verifier (C-07) exists to catch it.
+- `links.id` is a 64-bit Snowflake; the public `slug` is generated separately by a keyed Feistel permutation and is exactly 8 characters when generated ([ADR-0007](../adr/0007-slug-generation-keyed-feistel-base62.md)). `citext` makes it case-insensitive; a custom slug is NFKC-normalised and lower-cased before it is stored (the homoglyph defence the test suite found switched off under `InvariantGlobalization`, since fixed). A generated slug is stored as generated, in mixed-case base62, so two generated slugs that differ only in letter case collide on `uq_links_domain_slug` ([ADR-0007](../adr/0007-slug-generation-keyed-feistel-base62.md), status note).
+- `apps.cert_fingerprints` must hold the **Play App Signing** certificate's SHA-256, not the upload key's. Getting this wrong breaks App Links silently. The domain verifier (C-07) does not check it today; the upload-certificate warning fires only when an app declares both `cert_fingerprints` and `play_signing_fingerprints` and they differ.
 - `tenants.consent_mode` is the product-level privacy switch of [§E.6.2](../zadanie.md#e62-tri-režimy-prevádzky-produktová-funkcia-nie-prepínač-v-kóde); `aggregate_only` is the default.
-- `quarantined_at` is why a quarantined link answers `410 Gone`, not `404` — abuse handling quarantines rather than deletes.
+- `quarantined_at` is why a quarantined link answers `410 Gone`, not `404` — abuse handling quarantines rather than deletes. Quarantine does not invalidate the edge cache, so the link keeps redirecting to its old target for up to `L2Minutes + L1Seconds` (10 min 30 s by default) first.
 
 ### The covering index
 
@@ -131,7 +131,7 @@ The five trailing columns are not in the specification's definition. The edge bu
 ALTER TABLE links SET (autovacuum_vacuum_scale_factor = 0.02);
 ```
 
-and verify in a test with `EXPLAIN (ANALYZE, BUFFERS)` that the index-only scan is actually chosen — otherwise the latency budget of [request-flows.md](request-flows.md#latency-budget-cache-hit) does not hold. That `EXPLAIN` check belongs in the integration suite, which has not run on the build machine.
+and verify in a test with `EXPLAIN (ANALYZE, BUFFERS)` that the index-only scan is actually chosen — otherwise the latency budget of [request-flows.md](request-flows.md#latency-budget-cache-hit) does not hold. The migration sets it, and `CoveringIndexTests` makes that check in the integration suite, which runs in CI.
 
 ## The partitioned click stream ([§B.5.3](../zadanie.md#b53-data-plane--eventy-partitionované))
 
@@ -171,7 +171,7 @@ CREATE INDEX ix_click_events_link    ON click_events (link_id, occurred_at DESC)
 - Written in batches with `COPY` (`NpgsqlBinaryImporter`) from the edge's bounded channel, never row by row ([ADR-0003](../adr/0003-postgresql-as-primary-store.md)).
 - `uuidv7()` keeps inserts sequential in the B-tree and makes the BRIN index on `occurred_at` tiny; on PG 16/17 the migration installs a shim function.
 - **Lookups by `click_id` must carry a time predicate** or they scan every partition's index. The `click_id` embeds its own timestamp for exactly this reason — see [request-flows.md](request-flows.md#partition-pruning-click_id-embeds-its-timestamp).
-- Retention is a `pg_partman` setting; when the data grows past what PostgreSQL reports over comfortably (~50 M events/month), the same stream can be mirrored to ClickHouse ([ADR-0006](../adr/0006-analytics-postgres-partitions-clickhouse-optional.md)).
+- Retention is applied by the control plane's retention job: raw click events are dropped after **30 days** by default (`Dle:Privacy:Retention:RawDays`), not the 180 of the sketch above. Mirroring the stream to ClickHouse past ~50 M events/month is the design ([ADR-0006](../adr/0006-analytics-postgres-partitions-clickhouse-optional.md)), but the ClickHouse provider is not wired end to end and should not be enabled (ADR-0006, status note).
 
 ```sql
 CREATE TABLE installs (
@@ -250,4 +250,4 @@ Validation is **application-side**, at write time in the control plane (`Routing
 
 ## Tables not sketched here
 
-`api_keys`, `webhooks` (with delivery log and DLQ), `signing_keys` (the key ring behind `/.well-known/jwks.json`), `link_versions`, `abuse_reports`, the immutable `audit_log`, are defined only in the EF Core model and migration. Read `src/Dle.Persistence` for them. The rollup tables the dashboard reads (`click_rollup_hourly` and `_daily`, `install_rollup_*`, `attribution_quality_daily`), the `analytics_rollup_state` and `analytics_retention_runs` ledgers and the `dle_platform_of` function are the exception: they belong to the PostgreSQL analytics provider, live in `src/Dle.Analytics.Postgres/Sql/001_analytics_rollups.sql`, and are applied by the control plane when it starts ([ADR-0006](../adr/0006-analytics-postgres-partitions-clickhouse-optional.md)).
+`api_keys`, `webhooks` (with delivery log and DLQ), `signing_keys` (meant for the key ring behind `/.well-known/jwks.json`, but never used today — [ADR-0013](../adr/0013-crypto-agility-from-day-one.md), status note), `link_versions`, `abuse_reports`, the immutable `audit_log`, are defined only in the EF Core model and migration. Read `src/Dle.Persistence` for them. The rollup tables the dashboard reads (`click_rollup_hourly` and `_daily`, `install_rollup_*`, `attribution_quality_daily`), the `analytics_rollup_state` and `analytics_retention_runs` ledgers and the `dle_platform_of` function are the exception: they belong to the PostgreSQL analytics provider, live in `src/Dle.Analytics.Postgres/Sql/001_analytics_rollups.sql`, and are applied by the control plane when it starts ([ADR-0006](../adr/0006-analytics-postgres-partitions-clickhouse-optional.md)).

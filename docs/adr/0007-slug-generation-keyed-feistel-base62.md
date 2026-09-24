@@ -7,6 +7,8 @@
 
 Accepted
 
+**Status note (2026-09-24).** "A collision is impossible by construction" holds for sequence values, not for slugs as the database compares them. Base62 uses both letter cases (`0-9A-Za-z`, [`Base62.cs`](../../src/Dle.Domain/Primitives/Base62.cs)) and a generated slug is stored exactly as generated, but `links.slug` is `citext`, so `uq_links_domain_slug (domain_id, slug)` is case-insensitive (the edge also lower-cases the requested slug before the lookup). Two sequence values whose slugs differ only in letter case are the same key to PostgreSQL. The 2⁴⁷ sequence values fold onto at most 36⁸ ≈ 2.8 × 10¹² case-insensitive strings, so such pairs exist; taking the permutation's output as random, the chance that one domain's generated slugs contain at least one such pair is about one in four at a million slugs and about even at 1.5 million. When it happens, creating a link without a `slug` fails on the unique index and answers `409 slug-taken`; there is no retry.
+
 ## Date
 
 Decided: in the specification ([§B.4 ADR-007](../zadanie.md#adr-007--generovanie-slugov-kľúčovaná-permutácia-sekvencie--base62-8-znakov)) · Recorded: 2026-09-11
@@ -29,7 +31,7 @@ Start with the arithmetic, because this is where the usual mistake is made. Eigh
 - Positive: the permutation is keyed, so a slug reveals neither the next slug nor the number of links created.
 - Negative: the key (`DLE_MASTER_SECRET`-derived) is now part of the URL format. Losing it does not break existing links (they are stored), but rotating it changes the mapping for new ones; there is no way to "re-derive" a slug from the sequence without it.
 - Negative: the format is fixed by public URLs. The specification's own warning applies: decide at M1, not later.
-- Verification: the Feistel bijection is **proven exhaustively at narrow widths** in the unit suite (part of the 1 419 passing tests). One related defect is worth knowing: the NFKC normalisation of custom slugs was a silent no-op under `InvariantGlobalization`, so the homoglyph defence never ran; the suite found it and it is fixed in the commit history.
+- Verification: the Feistel bijection is **proven exhaustively at narrow widths** in the unit suite (the current test counts are in the CI summary). One related defect is worth knowing: the NFKC normalisation of custom slugs was a silent no-op under `InvariantGlobalization`, so the homoglyph defence never ran; the suite found it and it is fixed in the commit history.
 
 ## Alternatives considered
 

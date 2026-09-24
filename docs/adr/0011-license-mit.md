@@ -1,6 +1,6 @@
 # ADR-0011 — Licence: MIT
 
-**What this is:** the one place where this repository departs from its specification, and the trade-off that was accepted in doing so.
+**What this is:** the one deviation from the specification that is recorded as a decision, and the trade-off that was accepted in doing so. It is not the only departure; the others are listed in [the ADR index](README.md#departures-not-recorded-as-decisions).
 **Who it is for:** contributors, potential adopters with licence policies, and anyone who later wants to build a business on this code.
 
 ## Status

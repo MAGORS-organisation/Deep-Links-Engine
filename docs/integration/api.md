@@ -32,7 +32,7 @@ Spec: [§B.7.1](../zadanie.md#b71-verejné-data-plane). No authentication; rate-
 
 | Method | Path | Answers |
 |---|---|---|
-| GET | `/{slug}` | `302` to the routed target, `200` interstitial for in-app webviews and app-not-installed cases, `200` OG page for crawlers, `404` unknown / foreign slug (same body and timing for both, T-07), `410` quarantined or expired |
+| GET | `/{slug}` | `302` to the routed target, `200` interstitial when an `app_or_store` rule matches on a phone or in an in-app webview (a `web` rule is a `302` there too), `200` OG page for crawlers, `404` unknown / foreign slug (same body and timing for both, T-07), `410` quarantined or expired |
 | GET | `/{slug}/qr?format=svg&size=512` | `200 image/svg+xml` (or `png`) |
 | GET | `/.well-known/apple-app-site-association` | `200 application/json`, generated per host, no redirect |
 | GET | `/.well-known/assetlinks.json` | `200 application/json`, generated per host, no redirect |
@@ -53,9 +53,11 @@ The edge never calls a third party while answering — no GeoIP service, no repu
 
 Spec: [§B.7.2](../zadanie.md#b72-sdk-api). Authentication: `Authorization: Bearer <sdk_key>` — the SDK key is a public identifier bound to a bundle id / package name / web origin (K6), issued with `POST /api/v1/apps/{id}/sdk-keys`.
 
+These three endpoints are the whole SDK plane. None of them expands a slug into its `deeplink_path` and parameters, and an SDK key cannot call `/api/v1/links`: an app opened directly by a Universal Link / App Link gets only the short URL (`https://go.example.com/aB3xK9pQ`) and cannot tell which screen it points to, unless the operator uses readable slugs the app parses itself. `dle-control` has no CORS support either, so a browser page on another origin cannot call these endpoints (the preflight fails; see [sdk-web.md](sdk-web.md)). Both are listed under [Known gaps](../../README.md#known-gaps).
+
 ### `POST /v1/resolve`
 
-Called once per installation, on first launch. Returns the deferred context, or an honest `none`.
+Called once per installation, on first launch. Returns the deferred context, or an honest `none`. The Android `install_referrer` match below needs the tenant in consent mode `full`, a click that carried attribution consent (`dl_consent=all` or `gdpr=0` on the short URL, i.e. asserted by whoever built the link; the interstitial collects none) and `consent.attribution: true` in this request. In the default mode `aggregate_only` the click id is left out of the Play referrer and the answer is `none` ([Known gaps](../../README.md#known-gaps)).
 
 ```bash
 curl -s -X POST https://go.example.com/v1/resolve \
@@ -110,11 +112,11 @@ Events dated more than 5 minutes in the future or more than 30 days in the past 
 
 ### `POST /v1/claim-codes`
 
-The deterministic iOS path (ADR-008, [§B.6.3](../zadanie.md#b63-deferred-deep-link--ios-bez-determinizmu-z-platformy)): exchanges a fresh click for a six-character, single-use code the interstitial shows and the user types into the app. Only the keyed hash is stored; TTL `Dle:Attribution:ClaimCode:TtlMinutes` (default 15). The edge calls it; an SDK normally does not.
+The deterministic iOS path (ADR-008, [§B.6.3](../zadanie.md#b63-deferred-deep-link--ios-bez-determinizmu-z-platformy)): exchanges a fresh click for a six-character, single-use code meant to be shown on the interstitial and typed into the app. Only the keyed hash is stored; TTL `Dle:Attribution:ClaimCode:TtlMinutes` (15 in the shipped configuration). Nothing on the click path calls it today: the edge renders the interstitial without a code, so the claim-code path does not work end to end ([Known gaps](../../README.md#known-gaps)). An SDK does not call it either: unlike the other two, it takes an API key with `links:read`, not an SDK key.
 
 ## Control — management API (`/api/v1`)
 
-Spec: [§B.7.3](../zadanie.md#b73-control-plane-api-apiv1). Authentication: `Authorization: Bearer <api_key>` (secret shown once at creation, stored as Argon2id — K5) or an OIDC bearer token carrying the `dle_tenant` and `dle_role` claims.
+Spec: [§B.7.3](../zadanie.md#b73-control-plane-api-apiv1). Authentication: `Authorization: Bearer <api_key>` (secret shown once at creation, stored as Argon2id — K5). An OIDC bearer token carrying `dle_tenant` and `dle_role` is validated when `Dle:Identity:Oidc` is configured, but its tenant claim (`Dle:Identity:Oidc:TenantClaim`) is never mapped to the claim the control plane reads, so it establishes no tenant and does not work today ([Known gaps](../../README.md#known-gaps)).
 
 ### Authentication and scopes
 
@@ -133,7 +135,7 @@ An API key has a `role` and optional `scopes`. Scopes observed in the implementa
 | | PATCH / DELETE | `/domains/{id}` | |
 | | POST | `/domains/{id}/verify` | Runs the 8-point check ([domains.md](../self-hosting/domains.md)) |
 | | GET | `/domains/{id}/verifications` | History, incl. the nightly runs |
-| Apps | GET / POST | `/apps`, `/apps/{id}` | `POST` response carries `warnings` (e.g. a fingerprint that looks like a debug keystore) |
+| Apps | GET / POST | `/apps`, `/apps/{id}` | `POST` response carries `warnings` for an Android app: no signing fingerprint at all, or a `cert_fingerprints` entry missing from the declared `play_signing_fingerprints`. An app that declares only its upload key gets no warning ([Known gaps](../../README.md#known-gaps)) |
 | | PATCH / DELETE | `/apps/{id}` | |
 | | GET / POST | `/apps/{id}/sdk-keys` | |
 | | DELETE | `/apps/{id}/sdk-keys/{key_id}` | |
@@ -156,7 +158,7 @@ An API key has a `role` and optional `scopes`. Scopes observed in the implementa
 | | DELETE | `/webhooks/{id}` | |
 | | POST | `/webhooks/{id}/test` | Sends a signed `webhook.test` and reports the outcome |
 | | GET | `/webhooks/deliveries` | Delivery log with attempt, status, `next_attempt_at` |
-| Abuse | POST | `/abuse-reports` *(root path on the control host, anonymous, 5/h per IP)* | DSA art. 16 notice-and-action (FR-245) |
+| Abuse | POST | `/abuse-reports` *(root path on the control plane, anonymous, 5/h per IP)* | DSA art. 16 notice-and-action (FR-245). The shipped Caddy and Helm routes send this path to the edge, which has no such route, so it is unreachable from outside today; no page links to it ([Known gaps](../../README.md#known-gaps)) |
 | | GET | `/abuse-reports` | Reports about the caller's links |
 | | GET | `/admin/abuse-reports`, POST `/admin/abuse-reports/{id}/decision` | Instance triage |
 | | POST | `/admin/links/{link_id}/quarantine`, `…/quarantine/release` | `410` with an explanation page, not deletion ([§E.3](../zadanie.md#e3-ochrana-proti-zneužitiu-redirektora)) |
@@ -167,26 +169,44 @@ An API key has a `role` and optional `scopes`. Scopes observed in the implementa
 ```bash
 export DLE=https://go.example.com; export KEY=dle_…
 
-# Create a link, safely retryable
+# Create a link, safely retryable. An empty (or omitted) routing_rules becomes a single `web` default
+# rule: a 302 to target_url for everyone, in-app webviews included; never the store, never an interstitial
 curl -s -X POST $DLE/api/v1/links -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
   -H "Idempotency-Key: 2026-09-11-autumn-001" \
   -d '{"domain_id":"…","target_url":"https://www.example.com/promo/autumn","deeplink_path":"/promo/autumn",
        "routing_rules":[],"utm":{"utm_campaign":"autumn26"},"tags":["autumn"],"is_active":true}'
 
-# Routing rules: iOS below 17 goes to the web, everyone else to the app
+# Routing rules, platform-aware: iOS below 17 goes to a web page, other iOS and Android to the app or
+# their store, everyone else to the web. Every rule needs an `id`; `platform` is an array; the default
+# rule is the one WITHOUT `when` and comes last. `app_or_store` and `store_only` need their own
+# `store_url` (the app's store_url is not a fallback). On Android `{click_id}` reaches the Play referrer
+# only in consent mode `full` with click-time consent (README — Known gaps).
 curl -s -X PATCH $DLE/api/v1/links/<ID> -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
   -d '{"routing_rules":[
-        {"when":{"platform":"ios","os_version":{"lt":"17"}},"then":{"action":"web","url":"https://www.example.com/legacy"}},
-        {"when":{},"then":{"action":"app"}}
+        {"id":"ios-legacy","when":{"platform":["ios"],"os_version":{"lt":"17"}},
+         "then":{"action":"web","url":"https://www.example.com/legacy"}},
+        {"id":"ios","when":{"platform":["ios"]},
+         "then":{"action":"app_or_store","store_url":"https://apps.apple.com/app/id123456789"}},
+        {"id":"android","when":{"platform":["android"]},
+         "then":{"action":"app_or_store","store_url":"https://play.google.com/store/apps/details?id=com.example.app",
+                 "referrer_template":"dl_cid={click_id}&utm_source={utm_source}&utm_campaign={utm_campaign}"}},
+        {"id":"default","then":{"action":"web","url":"https://www.example.com/promo/autumn"}}
       ]}'
 
-# Bulk, NDJSON: one CreateLinkRequest per line
-printf '%s\n' '{"domain_id":"…","target_url":"https://example.com/a"}' '{"domain_id":"…","target_url":"https://example.com/b"}' \
+# Bulk, NDJSON: one {"ref": …, "link": {…CreateLinkRequest…}} object per line; `ref` is echoed in the
+# result line. A bare CreateLinkRequest per line is refused (validation-failed for that row).
+# The Idempotency-Key is not bound to the body: use a new key for every different file, or a corrected
+# file sent under the old key gets the first batch's summary back for 24 h instead of being imported.
+printf '%s\n' \
+  '{"ref":"a","link":{"domain_id":"…","target_url":"https://example.com/a"}}' \
+  '{"ref":"b","link":{"domain_id":"…","target_url":"https://example.com/b"}}' \
   | curl -s -X POST $DLE/api/v1/links/bulk -H "Authorization: Bearer $KEY" -H "Content-Type: application/x-ndjson" \
          -H "Idempotency-Key: import-2026-09-11" --data-binary @-
+# → one line per row: {"ref":"a","ok":true,"id":"…","short_url":"https://…"}
+#   or {"ref":"b","ok":false,"error":"https://docs.dle.dev/problems/…","detail":"…"}
 
 # Simulate
-curl -s "$DLE/api/v1/links/<ID>/simulate?platform=android&os_version=15&country=SK&channel=in_app_facebook" -H "Authorization: Bearer $KEY"
+curl -s "$DLE/api/v1/links/<ID>/simulate?platform=android&os_version=15&country=SK&channel=in_app_fb" -H "Authorization: Bearer $KEY"
 
 # Verify a domain, read the history
 curl -s -X POST $DLE/api/v1/domains/<DOMAIN_ID>/verify -H "Authorization: Bearer $KEY"
@@ -204,8 +224,10 @@ curl -s -X POST $DLE/api/v1/webhooks -H "Authorization: Bearer $KEY" -H "Content
   -d '{"url":"https://hooks.example.com/dle","event_types":["attribution.created","link.quarantined"],"is_active":true}'
 curl -s -X POST $DLE/api/v1/webhooks/<WH_ID>/test -H "Authorization: Bearer $KEY"
 
-# Public abuse report (no auth)
-curl -s -X POST $DLE/abuse-reports -H "Content-Type: application/json" \
+# Public abuse report (no auth). Only dle-control answers it, and the shipped Caddy / Helm routes send
+# /abuse-reports to the edge, so it is unreachable from outside today (README — Known gaps).
+# From inside the deployment, straight to the control plane:
+curl -s -X POST http://dle-control:8081/abuse-reports -H "Content-Type: application/json" \
   -d '{"url":"https://go.example.com/aB3xK9pQ","reason":"phishing","details":"…","reporter_email":"…"}'
 
 # JWKS
@@ -259,11 +281,11 @@ Writes under `/api/v1` accept an `Idempotency-Key` header (any string ≤ 255 ch
 |---|---|
 | First request with the key | Executed; the response (status < 500) is stored for `Dle:Persistence:IdempotencyRetentionHours` (default 24 h) |
 | Same key, same method + route + body | The stored response is replayed — nothing runs again |
-| Same key, **different** body, or the same key on a different endpoint | `409 idempotency-conflict` — two different requests sharing a key is a client bug, and replaying the first answer would hide it |
+| Same key, **different** body, or the same key on a different endpoint | `409 idempotency-conflict` — two different requests sharing a key is a client bug, and replaying the first answer would hide it. Bulk imports are the exception, below |
 | Same key while the first request is still running | `409 idempotency-conflict` with a "still being handled" detail — retry shortly |
 | First request failed with a 5xx (`dependency-unavailable`) | The reservation is released; the next attempt with the same key runs normally |
 
-Bulk imports reserve their key for the whole stream and replay the batch summary on retry.
+Bulk imports reserve their key for the whole stream and replay the batch summary on retry. Their key is **not bound to the body** (hashing it would mean buffering the whole stream): a different batch sent under a key already used — including the same file after you fixed it — is not imported and not refused, it gets the first batch's summary (`{"created":…,"failed":…}`) for as long as the key is retained (24 h by default). Use a fresh key for every different file.
 
 ## Rate limits and quotas
 
@@ -278,7 +300,7 @@ Defaults from [§E.9](../zadanie.md#e9-rate-limity-a-kvóty--konkrétne-hodnoty)
 | `POST /api/v1/links` | concurrency + sliding window | API key | 60 / min (new tenant: 10 / min for the first 7 days) | 429 |
 | `POST /api/v1/links/bulk` | concurrency | tenant | 2 concurrent batches, ≤ 10 000 rows each | 429 |
 | `GET /{slug}/qr` | sliding window | IP | 30 / min | 429 |
-| `POST /abuse-reports` | fixed window (+ captcha where configured) | IP | 5 / h | 429 |
+| `POST /abuse-reports` | fixed window (no captcha exists) | IP | 5 / h | 429 |
 | Authentication (API key, claim code) | token bucket | IP + identifier | 10 / min | 429, constant-time verification |
 | `/api/v1` reads / writes (general) | sliding window | API key | 600 / min read, 120 / min write | 429 |
 
