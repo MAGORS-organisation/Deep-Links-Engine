@@ -82,7 +82,7 @@ Of particular interest, because they are the acceptance criteria in §E.8:
 **Out of scope**
 
 - Vulnerabilities in third-party dependencies with no DLE-specific exploit path — report those
-  upstream; we track them through the Security workflow.
+  upstream; we track them through the Security workflow and Dependabot.
 - Misconfiguration of a particular self-hosted instance (weak `DLE_MASTER_SECRET`, an exposed
   Postgres port, a Caddy running with a custom, weaker TLS policy). Configuration guidance is a
   documentation issue, not a vulnerability.
@@ -132,9 +132,8 @@ domain this project operates, report it through the vulnerability channel above 
 Things that are in place, so that a report can say "this should have caught it":
 
 - All dependencies are version-locked (`packages.lock.json`, `package-lock.json`, central package
-  management) and restored with `--locked-mode`. Dependabot is configured to propose updates for
-  humans to merge (`.github/dependabot.yml`), but has not run yet: GitHub reads that file from the
-  default branch, which is still `master` with only the initial commit.
+  management) and restored with `--locked-mode`; Dependabot proposes updates weekly into `develop`
+  (`.github/dependabot.yml`), humans merge them.
 - GitHub Actions are pinned to commit SHAs. Workflows run with least-privilege tokens.
 - Every push runs CodeQL, `dotnet list package --vulnerable`, `npm audit`, Trivy over lock files
   and both container images, and a licence policy check (`.github/workflows/security.yml`).

@@ -159,4 +159,4 @@ curl -sI http://go.example.com/.well-known/apple-app-site-association  | head -1
 curl -sI https://go.example.com/.well-known/apple-app-site-association | head -1
 ```
 
-`.github/scripts/verify-domains.py` is the nightly complement: it asks the control plane (`POST /api/v1/domains/{id}/verify`) to re-verify every registered domain's association files (§D.7 item 7). The repository's nightly workflow that runs it has never run — GitHub reads schedules from the default branch, which is `master` ([Known gaps](../README.md#known-gaps)) — so schedule it yourself or rely on the control plane's own domain-verification worker.
+`.github/scripts/verify-domains.py` is the nightly complement: it asks the control plane (`POST /api/v1/domains/{id}/verify`) to re-verify every registered domain's association files (§D.7 item 7). The repository's nightly workflow runs it against one instance once the `DLE_URL` and `DLE_API_KEY` repository secrets are set, and skips it otherwise; for your own instance, schedule it yourself or rely on the control plane's own domain-verification worker.
