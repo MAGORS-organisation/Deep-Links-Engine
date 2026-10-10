@@ -29,7 +29,7 @@ Release: `v[x.y.z]`   Date: `[…]`   Release owner: `[…]`
 | 11 | CHANGELOG updated; anything never compiled or never run is still stated plainly | `[commit]` |
 | 12 | Device matrix below completed with photographs or screen recordings | see below |
 
-## Device matrix (§D.2.1) — every row needs evidence
+## Device matrix (§D.2.1) — every row needs evidence (see [device-test-protocol.md](device-test-protocol.md))
 
 | # | Device / OS | Opening context | What must happen | Result | Evidence |
 |---|---|---|---|---|---|

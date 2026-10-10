@@ -37,7 +37,11 @@ export function Layout() {
       <aside className={styles.sidebar}>
         <Link to="/" className={styles.brand}>
           <span className={styles.brandMark} aria-hidden="true">
-            DLE
+            <svg viewBox="0 0 32 32" width="22" height="22" fill="none" aria-hidden="true">
+              <path d="M 13.5 10 H 10.5 A 4 4 0 0 0 6.5 14 V 18 A 4 4 0 0 0 10.5 22 H 13.5 A 4 4 0 0 0 17.5 18 H 15 A 1.5 1.5 0 0 1 13.5 19.5 H 10.5 A 1.5 1.5 0 0 1 9 18 V 14 A 1.5 1.5 0 0 1 10.5 12.5 H 13.5 A 1.5 1.5 0 0 1 15 14 H 17.5 A 4 4 0 0 0 13.5 10 Z" fill="currentColor" opacity="0.9" />
+              <path d="M 18.5 22 H 21.5 A 4 4 0 0 0 25.5 18 V 14 A 4 4 0 0 0 21.5 10 H 18.5 A 4 4 0 0 0 14.5 14 H 17 A 1.5 1.5 0 0 1 18.5 12.5 H 21.5 A 1.5 1.5 0 0 1 23 14 V 18 A 1.5 1.5 0 0 1 21.5 19.5 H 18.5 A 1.5 1.5 0 0 1 17 18 H 14.5 A 4 4 0 0 0 18.5 22 Z" fill="#38bdf8" />
+              <circle cx="21.5" cy="16" r="1.3" fill="#ffffff" />
+            </svg>
           </span>
           <span className={styles.brandText}>
             <span>{t('app.name')}</span>

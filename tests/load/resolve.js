@@ -30,6 +30,11 @@ import { check } from 'k6';
 import { Counter, Rate, Trend } from 'k6/metrics';
 import { SharedArray } from 'k6/data';
 
+// Tell k6 that 200, 302, 404, and 429 are valid expected outcomes in this profile.
+// The 5 % miss stream deliberately tests the negative cache and 404/429 paths.
+// dle_correct_outcome independently asserts the strict expected status per request.
+http.setResponseCallback(http.expectedStatuses(200, 302, 404, 429));
+
 // Inlined rather than imported from jslib.k6.io. A remote import means the load test cannot run
 // without internet access and pulls an unpinned third-party module into the process on every run,
 // which is the supply-chain shape T-14 is about — for three lines of arithmetic.

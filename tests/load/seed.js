@@ -35,6 +35,7 @@ const HOST = required('host', 'DLE_LINK_HOST');
 const TOTAL = Number(args['total'] ?? 10000);
 const HOT = Number(args['hot'] ?? 100);
 const CONCURRENCY = Number(args['concurrency'] ?? 16);
+const USE_BULK = args['bulk'] !== 'false' && args['bulk'] !== false;
 const OUTPUT = args['out'] ?? new URL('./corpus.json', import.meta.url).pathname;
 
 if (!Number.isInteger(TOTAL) || TOTAL < HOT || HOT < 1) {
@@ -98,36 +99,92 @@ function linkRequest(index) {
 async function createLink(index) {
   const body = linkRequest(index);
 
-  const response = await fetch(`${CONTROL}/api/v1/links`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${API_KEY}`,
-      'Content-Type': 'application/json',
-      // The same key with the same body replays the stored response, so re-running the seeder
-      // against a partially seeded instance is idempotent rather than a wall of 409s (§B.7.3).
-      'Idempotency-Key': `${PREFIX}-${index}`,
-    },
-    body: JSON.stringify(body),
-  });
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const response = await fetch(`${CONTROL}/api/v1/links`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
+        // The same key with the same body replays the stored response, so re-running the seeder
+        // against a partially seeded instance is idempotent rather than a wall of 409s (§B.7.3).
+        'Idempotency-Key': `${PREFIX}-${index}`,
+      },
+      body: JSON.stringify(body),
+    });
 
-  if (response.status === 201 || response.status === 200) {
-    return body.slug;
+    if (response.status === 201 || response.status === 200 || response.status === 409) {
+      return body.slug;
+    }
+
+    if (response.status === 429) {
+      const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+      await new Promise((r) => setTimeout(r, delay));
+      continue;
+    }
+
+    const detail = await response.text();
+    throw new Error(
+      `Creating ${body.slug} failed with ${response.status}: ${detail.slice(0, 400)}`,
+    );
   }
 
-  if (response.status === 409) {
-    // Already there from an earlier run under a different idempotency key. Still usable.
-    return body.slug;
+  throw new Error(`Creating ${body.slug} failed: rate limited after 5 attempts.`);
+}
+
+/** Seeds links via bulk NDJSON endpoint (POST /api/v1/links/bulk). */
+async function seedBulk() {
+  const slugs = [];
+  const BATCH_SIZE = Math.min(TOTAL, 2000);
+
+  for (let start = 0; start < TOTAL; start += BATCH_SIZE) {
+    const end = Math.min(start + BATCH_SIZE, TOTAL);
+    let ndjson = '';
+
+    for (let i = start; i < end; i++) {
+      const req = linkRequest(i);
+      ndjson += JSON.stringify({ ref: String(i), link: req }) + '\n';
+    }
+
+    const response = await fetch(`${CONTROL}/api/v1/links/bulk`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${API_KEY}`,
+        'Content-Type': 'application/x-ndjson',
+        'Idempotency-Key': `${PREFIX}-bulk-${start}`,
+      },
+      body: ndjson,
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`Bulk seeding failed with ${response.status}: ${detail.slice(0, 400)}`);
+    }
+
+    const text = await response.text();
+    const lines = text.split('\n').filter(Boolean);
+
+    for (const line of lines) {
+      try {
+        const res = JSON.parse(line);
+        if (res.ok && res.short_url) {
+          const parts = res.short_url.split('/');
+          slugs.push(parts[parts.length - 1]);
+        } else if (res.ref !== undefined) {
+          slugs.push(`${PREFIX}${Number(res.ref).toString(36).padStart(5, '0')}`);
+        }
+      } catch {
+        // skip non-json line
+      }
+    }
+
+    process.stderr.write(`  bulk seeded ${Math.min(end, TOTAL)}/${TOTAL}\n`);
   }
 
-  const detail = await response.text();
-
-  throw new Error(
-    `Creating ${body.slug} failed with ${response.status}: ${detail.slice(0, 400)}`,
-  );
+  return slugs;
 }
 
 /** Runs the creations with a bounded number in flight. */
-async function seed() {
+async function seedIndividual() {
   const slugs = new Array(TOTAL);
   let next = 0;
   let done = 0;
@@ -156,7 +213,7 @@ async function seed() {
 
 process.stderr.write(`Seeding ${TOTAL} links (${HOT} hot) on ${HOST} via ${CONTROL}\n`);
 
-const slugs = await seed();
+const slugs = USE_BULK ? await seedBulk() : await seedIndividual();
 
 const corpus = {
   host: HOST,

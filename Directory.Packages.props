@@ -139,6 +139,7 @@
     <PackageVersion Include="Testcontainers.Redis" Version="4.14.0" />
     <PackageVersion Include="NSubstitute" Version="6.2.0" />
     <PackageVersion Include="CsCheck" Version="4.8.0" />
+    <PackageVersion Include="SharpFuzz" Version="2.3.0" />
   </ItemGroup>
 
   <!-- ====================================================================

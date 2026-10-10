@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dle.AppHost", "deploy\aspir
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dle.ServiceDefaults", "deploy\aspire\Dle.ServiceDefaults\Dle.ServiceDefaults.csproj", "{23D4E100-97C7-4D2D-B893-1C644730890E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dle.FuzzDriver", "tests\Dle.FuzzDriver\Dle.FuzzDriver.csproj", "{8C84B6FB-A203-44A1-856A-D3C726E0D481}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -215,6 +217,18 @@ Global
 		{23D4E100-97C7-4D2D-B893-1C644730890E}.Release|x64.Build.0 = Release|Any CPU
 		{23D4E100-97C7-4D2D-B893-1C644730890E}.Release|x86.ActiveCfg = Release|Any CPU
 		{23D4E100-97C7-4D2D-B893-1C644730890E}.Release|x86.Build.0 = Release|Any CPU
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481}.Debug|x64.Build.0 = Debug|Any CPU
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481}.Debug|x86.Build.0 = Debug|Any CPU
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481}.Release|x64.ActiveCfg = Release|Any CPU
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481}.Release|x64.Build.0 = Release|Any CPU
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481}.Release|x86.ActiveCfg = Release|Any CPU
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -234,5 +248,6 @@ Global
 		{5E5C46A3-BD97-44F6-AF31-B52C32A8DDE3} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{509E0C02-1B40-441E-954B-DE09E7334836} = {6DEC682D-5F0D-1973-951C-0B9630672490}
 		{23D4E100-97C7-4D2D-B893-1C644730890E} = {6DEC682D-5F0D-1973-951C-0B9630672490}
+		{8C84B6FB-A203-44A1-856A-D3C726E0D481} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/banner.svg" alt="Deep Link Engine" width="100%" />
+</p>
+
 # Deep Link Engine
 
 **Self-hosted, EU-first deep linking and install attribution for mobile apps.** Branded short links that

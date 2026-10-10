@@ -65,7 +65,7 @@ public sealed class ClientClassifier : IClientClassifier
         _parser = Parser.GetDefault(new ParserOptions
         {
             UseCompiledRegex = true,
-            MatchTimeOut = TimeSpan.FromMilliseconds(100),
+            MatchTimeOut = TimeSpan.FromMilliseconds(5),
         });
     }
 
@@ -148,7 +148,8 @@ public sealed class ClientClassifier : IClientClassifier
             };
         }
 
-        ClientInfo parsed = _parser.Parse(userAgent);
+        string parseableUa = userAgent.Length > 1024 ? userAgent[..1024] : userAgent;
+        ClientInfo parsed = _parser.Parse(parseableUa);
         Platform platform = ReadPlatform(parsed.OS.Family);
         ClientChannel channel = WebViewCatalog.Classify(userAgent);
 

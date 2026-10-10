@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%" role="img" aria-label="Deep Link Engine Mark">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1120" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e1b4b" />
+    </linearGradient>
+
+    <!-- Core Brand Gradients -->
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="40%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+
+    <linearGradient id="secondaryGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="60%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#818cf8" />
+    </linearGradient>
+
+    <linearGradient id="beamGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#67e8f9" />
+      <stop offset="50%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#c084fc" />
+    </linearGradient>
+
+    <!-- Glow & Shadow Filters -->
+    <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#0284c7" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Container Base Plate (squircle) -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+  <rect width="508" height="508" x="2" y="2" rx="126" fill="none" stroke="url(#beamGrad)" stroke-width="3" stroke-opacity="0.25" />
+
+  <!-- Subtle Ambient Glow in Center -->
+  <circle cx="256" cy="256" r="160" fill="url(#primaryGrad)" opacity="0.12" filter="url(#softGlow)" />
+
+  <!-- Main Interlocking Deep Link Node Geometry -->
+  <g filter="url(#dropShadow)">
+    <!-- Left Loop (Source / Link Anchor) -->
+    <path d="M 220 160
+             H 170
+             A 66 66 0 0 0 104 226
+             V 286
+             A 66 66 0 0 0 170 352
+             H 220
+             A 66 66 0 0 0 286 286
+             H 240
+             A 20 20 0 0 1 220 306
+             H 170
+             A 20 20 0 0 1 150 286
+             V 226
+             A 20 20 0 0 1 170 206
+             H 220
+             A 20 20 0 0 1 240 226
+             H 286
+             A 66 66 0 0 0 220 160 Z"
+          fill="url(#primaryGrad)" />
+
+    <!-- Right Loop (Target App / Destination Anchor) -->
+    <path d="M 292 352
+             H 342
+             A 66 66 0 0 0 408 286
+             V 226
+             A 66 66 0 0 0 342 160
+             H 292
+             A 66 66 0 0 0 226 226
+             H 272
+             A 20 20 0 0 1 292 206
+             H 342
+             A 20 20 0 0 1 362 226
+             V 286
+             A 20 20 0 0 1 342 306
+             H 292
+             A 20 20 0 0 1 272 286
+             H 226
+             A 66 66 0 0 0 292 352 Z"
+          fill="url(#secondaryGrad)" />
+
+    <!-- Central Routing Lightning Core / Link Bridge -->
+    <path d="M 198 274
+             L 282 190
+             A 18 18 0 0 1 314 222
+             L 230 306
+             A 18 18 0 0 1 198 274 Z"
+          fill="url(#beamGrad)"
+          filter="url(#softGlow)" />
+
+    <!-- Spark / Precision Dot (The direct deep-link target point) -->
+    <circle cx="342" cy="256" r="14" fill="#ffffff" filter="url(#softGlow)" />
+    <circle cx="170" cy="256" r="10" fill="#38bdf8" />
+  </g>
+</svg>
