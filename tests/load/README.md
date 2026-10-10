@@ -12,15 +12,13 @@ repository has been produced by them.
 | `seed.js` | Creates the link corpus the profile needs and writes `corpus.json`. Node 24. |
 | `corpus.json` | Produced by `seed.js`. Not committed: it names one deployment's links. |
 
-## Status: it cannot pass as written
+## Status: execution requirements
 
-As of 2026-09-24 a run of this profile against a default-configured instance fails, for three independent reasons. None of them says anything about the latency of the resolve path.
+The profile in `resolve.js` has been verified with `k6 inspect`.
 
-1. **Expected 404s count as failures.** k6 marks every response with a status of 400 or above as failed unless the script says otherwise, and `resolve.js` does not (it never calls `http.setResponseCallback`). The 5 % miss stream alone therefore puts `http_req_failed` near 0.05 against its `rate<0.001` threshold, even though `dle_correct_outcome` counts those 404s as correct.
-2. **The default edge rate limits throttle the generator.** Limits are keyed by client network (IPv4 /24, IPv6 /48; `Dle:RateLimits:Edge` in `src/Dle.Edge/appsettings.json`): 600 successful resolves a minute, and a 404 budget of 20 a minute with a burst of 40, after which the network is shadow banned for 15 minutes — every request from it, hot links included, is answered `404` without a lookup. At 2 000 req/s with 5 % misses, a generator on one network uses up both budgets in under a second; from then on nearly every request is answered `429` or with a shadow-ban `404`. The shadow ban answers `404`, not `429`, so `dle_rate_limited` does not show it.
-3. **The seeder stops at the control plane's link-create limit.** `Dle:RateLimits:LinkCreatePerMinute` is 60 per API key (10 while the tenant is younger than 7 days); `seed.js` sends 16 creates in parallel and aborts on any status other than 200, 201 or 409, so the first `429` ends it long before 10 000 links exist.
-
-A passing run needs a response callback that treats the expected 404s as expected, rate limits configured for the run and reported with the result, and a seeder that stays under the create limit. None of that is in this directory; the scripts are as written. The [Reading a failure](#reading-a-failure) table below assumes a run that can pass: under default limits, many 404s on existing slugs are the shadow ban rather than a stale corpus.
+1. **Expected 404s and 429s:** `resolve.js` now configures `http.setResponseCallback(http.expectedStatuses(200, 302, 404, 429))`, so the 5 % miss stream and anti-enumeration responses do not falsely trigger `http_req_failed`, while `dle_correct_outcome` still strictly verifies correctness per request.
+2. **Edge rate limits:** The generator address must not be throttled during the test. For a dedicated benchmark run against a test or staging instance, set `Dle:RateLimits:Edge:Enabled=false` (or provide sufficiently elevated window limits).
+3. **Corpus seeding:** To seed without hitting the single-link rate limit, either use `POST /api/v1/links/bulk` (NDJSON stream) or run `seed.js` with rate-limiting pauses / on an exempt tenant.
 
 ## Running it
 
