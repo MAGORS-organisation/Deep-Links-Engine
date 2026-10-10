@@ -2,7 +2,8 @@
 
 **What this is:** the manual, real-device regression that must pass before every release, and why it
 cannot be automated away. **Who it is for:** QA and the release owner. Source:
-[docs/zadanie.md §D.2](../zadanie.md). The checklist form with evidence fields is in
+[docs/zadanie.md §D.2](../zadanie.md). The step-by-step execution protocol is in
+[device-test-protocol.md](device-test-protocol.md), and the checklist form with evidence fields is in
 [release-checklist.md](release-checklist.md).
 
 ## Why this exists
