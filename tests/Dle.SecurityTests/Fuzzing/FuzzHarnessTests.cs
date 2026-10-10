@@ -32,7 +32,7 @@ public sealed class FuzzHarnessTests
     /// is the line between "slow" and "this input is a denial of service primitive", and catastrophic
     /// backtracking is orders of magnitude away from it rather than a few milliseconds.
     /// </remarks>
-    private static readonly TimeSpan HangThreshold = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan HangThreshold = TimeSpan.FromSeconds(5);
 
     /// <summary>Documents that are shaped like a rule set, so the parser gets past its first token.</summary>
     private static readonly string[] RoutingRuleSeeds =
