@@ -1,0 +1,21 @@
+{
+  "host": "link.example.com",
+  "generatedAt": "2026-10-10T12:00:00.000Z",
+  "hot": [
+    "hot-slug-001",
+    "hot-slug-002",
+    "hot-slug-003",
+    "hot-slug-004",
+    "hot-slug-005"
+  ],
+  "all": [
+    "hot-slug-001",
+    "hot-slug-002",
+    "hot-slug-003",
+    "hot-slug-004",
+    "hot-slug-005",
+    "random-slug-001",
+    "random-slug-002",
+    "random-slug-003"
+  ]
+}
