@@ -102,6 +102,12 @@ end-to-end flow is among those gaps.
 
 ### Fixed
 
+- **Nightly CI / npm audit — resolved transitive vulnerabilities in admin console and web SDK.**
+  Newly published advisories on `brace-expansion` and `source-map-js` broke the daily `cve-recheck`
+  SCA gate on `npm audit --audit-level=high` in `src/Dle.Admin.Web` and `sdk/web`.
+  Lockfiles were updated with zero high/critical vulnerabilities, `vitest` was updated to 5.0.1
+  (eliminating vulnerable `tinypool` and `@vitest/mocker`), and all test, typecheck, lint and bundle
+  size gates pass.
 - **Helm chart — the migration never ran on a first install.** The first time the chart was
   installed rather than rendered, `helm install` failed with `Job/dle-migrate not ready ...
   failed: 0/1`: no pod had failed because no pod had ever been created. The Job named the
