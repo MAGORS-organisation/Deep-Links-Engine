@@ -57,6 +57,11 @@ public static class ControlCoreServiceCollectionExtensions
                 "Dle:Control:MaxPageSize must be at least Dle:Control:DefaultPageSize.")
             .ValidateOnStart();
 
+        services.AddOptions<ControlPrivacyOptions>()
+            .Bind(configuration.GetSection(ControlPrivacyOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.TryAddSingleton(TimeProvider.System);
 
         services.AddCors(options =>

@@ -1,4 +1,5 @@
 using Dle.Control.Configuration;
+using Dle.Control.Features.Auth;
 using Dle.Control.Features.Shared;
 using Dle.Control.Identity;
 
@@ -71,6 +72,7 @@ app.MapAbuse();
 app.MapWebhooks();
 app.MapJwks();
 app.MapHealth();
+app.MapAuthConfig();
 
 // The document and its reader are anonymous. A published API surface is not a secret — the same
 // document is generated at build time and committed for the contract tests to diff — and requiring a

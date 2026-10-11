@@ -114,7 +114,12 @@ its own changes.
 2. Re-download and restart the update worker; the edge reloads without a restart.
 3. Campaigns with country rules ran with the default rule during the gap — tell the marketer.
 
+## Release and Staging Operations
+
+For automated load performance verification against staging during release pipelines, see [staging-loadtest-guide.md](staging-loadtest-guide.md).
+
 ## Escalation
 
 Security issues: [SECURITY.md](../../SECURITY.md). Anything that looks like cross-tenant data exposure
 is a security incident first and an operations issue second.
+
