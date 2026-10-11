@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   apiKeys,
   CONSENT_MODES,
+  getAuthConfig,
+  handleOidcCallback,
+  initiateOidcLogin,
   isApiError,
   ROLES,
   setConnection,
   tenants,
   type ApiKeyCreatedResponse,
   type ApiKeyResponse,
+  type AuthConfig,
   type Connection,
   type ConsentMode,
   type Role,
@@ -75,9 +79,46 @@ export default function SettingsPage() {
 
 function ConnectionSection({ connection, me }: { connection: Connection | null; me: AsyncState<TenantResponse> }) {
   const { t } = useI18n();
+  const toast = useToast();
   const [baseUrl, setBaseUrl] = useState(connection?.baseUrl ?? '');
   const [apiKey, setApiKey] = useState(connection?.apiKey ?? '');
   const [remember, setRemember] = useState(connection?.remember ?? false);
+  const [authConfig, setAuthConfig] = useState<AuthConfig | null>(null);
+  const [showCustomOidc, setShowCustomOidc] = useState(false);
+  const [customAuthority, setCustomAuthority] = useState('');
+  const [customClientId, setCustomClientId] = useState('');
+  const [isExchangingOidc, setIsExchangingOidc] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    handleOidcCallback()
+      .then((res) => {
+        if (!cancelled && res) {
+          setConnection({ baseUrl: res.baseUrl, apiKey: res.token, remember: false });
+          toast.success(t('connection.oidcSuccess'));
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          toast.error(t('connection.oidcFailed', { error: String(err?.message ?? err) }));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [t, toast]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getAuthConfig(baseUrl).then((cfg) => {
+      if (!cancelled) {
+        setAuthConfig(cfg);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [baseUrl]);
 
   const connect = () => {
     setConnection({ baseUrl: baseUrl.trim(), apiKey: apiKey.trim(), remember });
@@ -86,6 +127,14 @@ function ConnectionSection({ connection, me }: { connection: Connection | null; 
   const disconnect = () => {
     setConnection(null);
     setApiKey('');
+  };
+
+  const startOidc = (authority: string, clientId: string, scopes: string[] = ['openid', 'profile', 'email']) => {
+    setIsExchangingOidc(true);
+    initiateOidcLogin(baseUrl, authority, clientId, scopes).catch((err) => {
+      setIsExchangingOidc(false);
+      toast.error(t('connection.oidcFailed', { error: String(err?.message ?? err) }));
+    });
   };
 
   return (
@@ -128,6 +177,61 @@ function ConnectionSection({ connection, me }: { connection: Connection | null; 
           )}
         </div>
       </form>
+
+      {/* OIDC Single Sign-On */}
+      <div className="stack" style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+        <h3 className="card-title" style={{ fontSize: '1rem' }}>
+          {t('connection.oidc.title')}
+        </h3>
+        <p className="small muted">{t('connection.oidc.description')}</p>
+
+        {authConfig?.oidc_enabled && authConfig.authority && authConfig.client_id ? (
+          <div className="row">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={isExchangingOidc}
+              onClick={() => startOidc(authConfig.authority!, authConfig.client_id!, authConfig.scopes)}
+            >
+              {t('connection.oidc.signIn')}
+            </button>
+          </div>
+        ) : (
+          <div className="stack">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              style={{ alignSelf: 'flex-start' }}
+              onClick={() => setShowCustomOidc(!showCustomOidc)}
+            >
+              {showCustomOidc ? '− ' : '+ '}
+              {t('connection.oidc.customToggle')}
+            </button>
+            {showCustomOidc && (
+              <div className="stack" style={{ paddingLeft: '0.5rem' }}>
+                <div className="form-grid">
+                  <Field label={t('connection.oidc.authority')} hint={t('connection.oidc.authorityHint')}>
+                    {(p) => <input {...p} className="input mono" type="url" value={customAuthority} onChange={(e) => setCustomAuthority(e.target.value)} placeholder="https://auth.example.com/realms/dle" spellCheck={false} />}
+                  </Field>
+                  <Field label={t('connection.oidc.clientId')}>
+                    {(p) => <input {...p} className="input mono" type="text" value={customClientId} onChange={(e) => setCustomClientId(e.target.value)} placeholder="dle-admin" spellCheck={false} />}
+                  </Field>
+                </div>
+                <div className="row">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={!customAuthority.trim() || !customClientId.trim() || isExchangingOidc}
+                    onClick={() => startOidc(customAuthority.trim(), customClientId.trim())}
+                  >
+                    {t('connection.oidc.signIn')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {connection && me.loading && <p className="small muted">{t('connection.checking')}</p>}
       {connection && me.data && (

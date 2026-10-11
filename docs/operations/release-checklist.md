@@ -16,7 +16,7 @@ Release: `v[x.y.z]`   Date: `[…]`   Release owner: `[…]`
 | 3 | `security.yml` green: no vulnerable NuGet packages, npm audit, Trivy, licence policy, ZAP baseline | `[run URL]` |
 | 4 | `sbom.yml`: SBOM (.NET + npm) and CBOM generated and validated, attached to the release | `[artefact URL]` |
 | 5 | `release.yml`: images built multi-arch, signed with cosign, Helm chart pushed | `[run URL]` |
-| 6 | Load profile (§D.5) passed: p95 < 25 ms, p99 < 50 ms, failure rate < 0.1 %, cache hit ≥ 95 %, `dle_click_events_dropped_total` = 0 | `[k6 summary]` |
+| 6 | Load profile (§D.5) passed: p95 < 25 ms, p99 < 50 ms, failure rate < 0.1 %, cache hit ≥ 95 %, `dle_click_events_dropped_total` = 0 (see [staging-loadtest-guide.md](staging-loadtest-guide.md)) | `[k6 summary]` |
 | 7 | Migration applied and rolled back on a copy of a production-shaped database | `[who, when, notes]` |
 
 ## Manual gates

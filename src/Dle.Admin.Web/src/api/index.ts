@@ -11,3 +11,5 @@ export { apiKeys } from './apiKeys';
 export { analytics } from './analytics';
 export { webhooks } from './webhooks';
 export { abuse } from './abuse';
+export { getAuthConfig, initiateOidcLogin, handleOidcCallback } from './auth';
+export type { AuthConfig } from './auth';

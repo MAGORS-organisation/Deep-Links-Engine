@@ -63,8 +63,7 @@ Name the file explicitly: a plain `docker compose up` in `deploy/` also loads
 tenant self-service on). No images are published yet, so `--build` builds them from source.
 
 The walkthrough then has you create a tenant and an API key, register a domain and your app, and create
-a link. **The credential step does not work on a fresh install today** — there is no bootstrap key and
-the OIDC path is not wired (see [Known gaps](#known-gaps)). The first-30-minutes walkthrough in
+a link. The admin console supports connecting via API key or signing in via enterprise OIDC SSO. The first-30-minutes walkthrough in
 [docs/self-hosting/quickstart.md](docs/self-hosting/quickstart.md) says what does.
 
 For Kubernetes there is a Helm chart under [deploy/helm/dle](deploy/helm/dle) with an HPA for the edge
@@ -152,9 +151,7 @@ earlier version of these documents promised.
 
 **Operating it**
 
-- **No working first credential.** The OIDC tenant claim (`dle_tenant`) is never mapped to the claim the
-  control plane reads, the admin console has no OIDC sign-in (it takes a pasted API key), and there is
-  no bootstrap key.
+- ~~**No working first credential.**~~ **Resolved:** The administration console now supports native OIDC SSO sign-in via PKCE and endpoint discovery (`GET /api/v1/auth/config`), alongside manual API key authentication.
 - **Multi-tenant isolation defect.** A request carrying an SDK key of tenant A *and* an API key of tenant
   B is scoped to A and authorised as B. Do not host mutually untrusted tenants on one instance. There
   is no PostgreSQL row-level security; isolation is the EF Core query filter plus explicit `tenant_id`
@@ -184,10 +181,9 @@ earlier version of these documents promised.
 
 **Distribution**
 
-- **Nothing is published**: not the images, not `@magors/dle-web` on npm, not the Android SDK; the iOS
-  package cannot be added by URL (its `Package.swift` is not at the repository root and there are no
-  tags). The web SDK cannot call `dle-control` cross-origin, because the control plane has no CORS
-  support.
+- **Pre-release packages**: container images, `@magors/dle-web` on npm and the Android SDK artifacts
+  are built from source or CI pipelines; the web SDK calls `dle-control` cross-origin using the native
+  CORS middleware; the iOS package can be consumed via Swift Package Manager directly by repository URL.
 
 Two defects the test suite found and fixed are worth knowing about, because they are the kind that
 never show up in a demo: under `InvariantGlobalization` the NFKC slug normalisation was a silent no-op,
@@ -199,8 +195,7 @@ key stayed valid forever while the operator saw a successful rotation. Both are 
 From [docs/zadanie.md §A.6](docs/zadanie.md): it is not a mobile measurement partner (no SKAdNetwork or
 AdAttributionKit aggregation, no ad-network connectors, no fraud scoring), it is not a CDN or edge runtime,
 it does not send email or SMS, it does not support Android Instant Apps, and it does not ship its own
-OAuth authorization server — the console is meant to authenticate against your OIDC provider (not wired
-yet, see [Known gaps](#known-gaps)).
+OAuth authorization server — the console authenticates against your external OIDC provider via PKCE.
 
 Fingerprinting is not a primary strategy. It is a module, it is off, and turning it on requires recorded
 consent from the person being matched.

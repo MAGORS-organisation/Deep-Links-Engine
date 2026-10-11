@@ -1,7 +1,9 @@
+using Dle.Control.Configuration;
 using Dle.Control.Features.Domains;
 using Dle.Control.Features.Shared;
 using Dle.Control.Identity;
 using Dle.Control.Infrastructure;
+using Microsoft.Extensions.Options;
 
 namespace Dle.Control.Features.Tenants;
 
@@ -96,6 +98,7 @@ public static class ManageTenants
     /// <param name="tenants">Tenant storage.</param>
     /// <param name="administration">Cross-tenant tenant storage, for the slug uniqueness check.</param>
     /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="privacyOptions">The privacy options, for default consent mode configuration.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>201 with the tenant, or a problem document.</returns>
     /// <remarks>
@@ -109,6 +112,7 @@ public static class ManageTenants
         TenantRepository tenants,
         TenantAdministration administration,
         AuditLogWriter audit,
+        IOptions<ControlPrivacyOptions> privacyOptions,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -116,6 +120,7 @@ public static class ManageTenants
         ArgumentNullException.ThrowIfNull(tenants);
         ArgumentNullException.ThrowIfNull(administration);
         ArgumentNullException.ThrowIfNull(audit);
+        ArgumentNullException.ThrowIfNull(privacyOptions);
 
         DleCaller caller = http.RequireDleCaller();
         Dictionary<string, string[]> errors = new(StringComparer.Ordinal);
@@ -140,7 +145,10 @@ public static class ManageTenants
             ];
         }
 
-        string consentMode = "aggregate_only";
+        string configuredDefault = privacyOptions.Value.ConsentMode;
+        string consentMode = ManageDomains.TryParseConsentMode(configuredDefault, out ConsentMode defaultParsed)
+            ? ConsentModeName(defaultParsed)
+            : "aggregate_only";
 
         if (!string.IsNullOrWhiteSpace(request.ConsentMode))
         {
