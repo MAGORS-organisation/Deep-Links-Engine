@@ -183,6 +183,7 @@ public sealed partial class EfAttributionStore : IAttributionStore
                 l.DeeplinkPath,
                 l.Title,
                 l.Utm,
+                l.RoutingRules,
                 Campaign = _db.Campaigns
                     .Where(c => c.Id == l.CampaignId)
                     .Select(c => c.Name)
@@ -198,7 +199,8 @@ public sealed partial class EfAttributionStore : IAttributionStore
                 row.DeeplinkPath,
                 row.Campaign,
                 row.Title,
-                ReadParameters(row.Utm));
+                ReadParameters(row.Utm),
+                ReadRoutingRules(row.RoutingRules));
     }
 
     /// <inheritdoc />
@@ -228,7 +230,25 @@ public sealed partial class EfAttributionStore : IAttributionStore
             snapshot.DeeplinkPath,
             campaign,
             snapshot.Title,
-            snapshot.Utm);
+            snapshot.Utm,
+            snapshot.RoutingRules);
+    }
+
+    private static Dle.Domain.Routing.RoutingRule[] ReadRoutingRules(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return [];
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize(json, DleDomainJsonContext.Default.RoutingRuleArray) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
     }
 
     /// <summary>Maps the stored consent mode text onto the enumeration, failing closed.</summary>

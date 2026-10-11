@@ -26,6 +26,7 @@ internal sealed class FakeAttributionStore : IAttributionStore
     private readonly List<AttributionRecord> _attributions = [];
     private readonly List<ClaimCodeRecord> _claimCodes = [];
     private readonly Dictionary<long, AttributedLink> _links = [];
+    private readonly Dictionary<string, AttributedLink> _linksByHostAndSlug = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Consent mode the tenant is configured with.</summary>
     internal ConsentMode TenantConsentMode { get; set; } = ConsentMode.Full;
@@ -42,10 +43,14 @@ internal sealed class FakeAttributionStore : IAttributionStore
     /// <summary>Login key hashes that were recorded against an installation.</summary>
     internal List<(Guid InstallRowId, byte[] Hash)> LoginKeys { get; } = [];
 
-    internal void AddLink(AttributedLink link)
+    internal void AddLink(AttributedLink link, string? host = null, string? slug = null)
     {
         ArgumentNullException.ThrowIfNull(link);
         _links[link.Id] = link;
+        if (!string.IsNullOrEmpty(host) && !string.IsNullOrEmpty(slug))
+        {
+            _linksByHostAndSlug[$"{host}/{slug}"] = link;
+        }
     }
 
     internal void AddClaimCode(ClaimCodeRecord record)
@@ -178,5 +183,5 @@ internal sealed class FakeAttributionStore : IAttributionStore
         Task.FromResult(_links.GetValueOrDefault(linkId));
 
     public Task<AttributedLink?> FindLinkByHostAndSlugAsync(string host, string slug, CancellationToken cancellationToken) =>
-        Task.FromResult<AttributedLink?>(null);
+        Task.FromResult(_linksByHostAndSlug.GetValueOrDefault($"{host}/{slug}"));
 }

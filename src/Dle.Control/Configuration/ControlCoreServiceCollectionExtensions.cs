@@ -59,6 +59,16 @@ public static class ControlCoreServiceCollectionExtensions
 
         services.TryAddSingleton(TimeProvider.System);
 
+        services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            });
+        });
+
         AddWireFormat(services);
         AddSharedServices(services, configuration);
         AddOutboundHttp(services);

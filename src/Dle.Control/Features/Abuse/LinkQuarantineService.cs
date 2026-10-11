@@ -46,6 +46,7 @@ public sealed class LinkQuarantineService
     private readonly AbuseMetrics _metrics;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<LinkQuarantineService> _logger;
+    private readonly ILinkCacheInvalidator? _cacheInvalidator;
 
     /// <summary>Creates the service.</summary>
     /// <param name="reports">Report and quarantine storage.</param>
@@ -55,6 +56,7 @@ public sealed class LinkQuarantineService
     /// <param name="metrics">Instruments.</param>
     /// <param name="timeProvider">Clock.</param>
     /// <param name="logger">Logger.</param>
+    /// <param name="cacheInvalidator">Cache invalidator seam.</param>
     public LinkQuarantineService(
         AbuseRepository reports,
         AuditLogWriter audit,
@@ -62,7 +64,8 @@ public sealed class LinkQuarantineService
         ITenantContext tenantContext,
         AbuseMetrics metrics,
         TimeProvider timeProvider,
-        ILogger<LinkQuarantineService> logger)
+        ILogger<LinkQuarantineService> logger,
+        ILinkCacheInvalidator? cacheInvalidator = null)
     {
         ArgumentNullException.ThrowIfNull(reports);
         ArgumentNullException.ThrowIfNull(audit);
@@ -79,6 +82,7 @@ public sealed class LinkQuarantineService
         _metrics = metrics;
         _timeProvider = timeProvider;
         _logger = logger;
+        _cacheInvalidator = cacheInvalidator;
     }
 
     /// <summary>Withdraws a link from service.</summary>
@@ -114,6 +118,16 @@ public sealed class LinkQuarantineService
             reason,
             actor,
             cancellationToken);
+
+        if (_cacheInvalidator is not null)
+        {
+            if (!string.IsNullOrEmpty(link.Host) && !string.IsNullOrEmpty(link.Slug))
+            {
+                await _cacheInvalidator.InvalidateLinkAsync(link.Host, link.Slug, cancellationToken);
+            }
+
+            await _cacheInvalidator.InvalidateTenantAsync(link.TenantId, cancellationToken);
+        }
 
         _metrics.QuarantineDecision("quarantine", actor.ActorId is null ? "system" : "operator");
         _metrics.Blocked("manual", "blocked");
@@ -155,6 +169,16 @@ public sealed class LinkQuarantineService
             reason,
             actor,
             cancellationToken);
+
+        if (_cacheInvalidator is not null)
+        {
+            if (!string.IsNullOrEmpty(link.Host) && !string.IsNullOrEmpty(link.Slug))
+            {
+                await _cacheInvalidator.InvalidateLinkAsync(link.Host, link.Slug, cancellationToken);
+            }
+
+            await _cacheInvalidator.InvalidateTenantAsync(link.TenantId, cancellationToken);
+        }
 
         _metrics.QuarantineDecision("release", actor.ActorId is null ? "system" : "operator");
 

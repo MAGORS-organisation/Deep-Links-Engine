@@ -19,4 +19,5 @@ namespace Dle.Persistence.Fast.Caching;
     UseStringEnumConverter = true)]
 [JsonSerializable(typeof(WellKnownDocument))]
 [JsonSerializable(typeof(DomainRuntimeConfig))]
-internal sealed partial class FastPersistenceJsonContext : JsonSerializerContext;
+[JsonSerializable(typeof(CacheInvalidationMessage))]
+public sealed partial class FastPersistenceJsonContext : JsonSerializerContext;

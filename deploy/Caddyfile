@@ -102,7 +102,7 @@
 (dle_routes) {
 	import well_known_routes
 
-	@control path /api/* /v1/* /admin /admin/* /scalar /scalar/* /openapi/*
+	@control path /api/* /v1/* /admin /admin/* /scalar /scalar/* /openapi/* /abuse-reports /abuse-reports/*
 	handle @control {
 		import to_control
 	}

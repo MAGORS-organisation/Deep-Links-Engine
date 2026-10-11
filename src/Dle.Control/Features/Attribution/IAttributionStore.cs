@@ -1,5 +1,6 @@
 using Dle.Domain.Entities;
 using Dle.Domain.Privacy;
+using Dle.Domain.Routing;
 using Dle.Persistence.Repositories;
 
 namespace Dle.Control.Features.Attribution;
@@ -14,13 +15,15 @@ namespace Dle.Control.Features.Attribution;
 /// <param name="Campaign">Campaign name, when the link belongs to one.</param>
 /// <param name="Title">Human readable link title.</param>
 /// <param name="Parameters">Parameters handed to the application, typically the UTM set.</param>
+/// <param name="RoutingRules">The link's rule set, evaluated for device targeting.</param>
 public sealed record AttributedLink(
     long Id,
     Guid TenantId,
     string? DeeplinkPath,
     string? Campaign,
     string? Title,
-    IReadOnlyDictionary<string, string> Parameters);
+    IReadOnlyDictionary<string, string> Parameters,
+    IReadOnlyList<RoutingRule>? RoutingRules = null);
 
 /// <summary>
 /// Everything the attribution use cases persist or read, behind one seam.
