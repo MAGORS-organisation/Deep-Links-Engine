@@ -614,7 +614,14 @@ public sealed class LinkResolver
                 ExpiresAt = now.AddHours(1),
                 CreatedAt = now,
             };
-            await _claimCodeWriter.WriteAsync(record, cancellationToken);
+            try
+            {
+                await _claimCodeWriter.WriteAsync(record, cancellationToken);
+            }
+            catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Failed to persist claim code for click {ClickId}", clickId);
+            }
         }
 
         return new ResolveOutcome(

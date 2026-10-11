@@ -38,6 +38,7 @@ app.UseExceptionHandler();
 app.UseStatusCodePages();
 
 app.UseRouting();
+app.UseCors();
 
 // Buffering has to be switched on before minimal APIs bind the body, which happens before endpoint
 // filters run. It applies only to writes that actually carry an Idempotency-Key (§B.7.3).

@@ -63,6 +63,7 @@ public static class EdgeCoreServiceCollectionExtensions
 
         services.TryAddSingleton<IRoutingEngine, RoutingEngine>();
         services.TryAddSingleton<LinkResolver>();
+        services.AddHostedService<CacheInvalidationSubscriber>();
 
         services.AddHealthChecks()
             .AddCheck<ResolvePipelineHealthCheck>(

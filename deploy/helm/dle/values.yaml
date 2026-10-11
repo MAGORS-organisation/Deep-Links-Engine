@@ -545,6 +545,7 @@ ingress:
     - /admin
     - /scalar
     - /openapi
+    - /abuse-reports
   # Set to false to keep the admin console, API reference and API off the link host entirely
   # (then set controlHost, or reach the control Service another way). jwks.json stays on `host`.
   exposeControlOnHost: true

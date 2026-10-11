@@ -70,7 +70,7 @@ public sealed class AbuseLinkLocator
             .AcrossTenants()
             .IncludeSoftDeleted()
             .Where(l => l.DomainId == domainId && l.Slug == slug)
-            .Select(l => new LocatedLink(l.Id, l.TenantId, l.QuarantinedAt != null))
+            .Select(l => new LocatedLink(l.Id, l.TenantId, l.QuarantinedAt != null, host, l.Slug))
             .FirstOrDefaultAsync(cancellationToken);
 
         return located;
@@ -87,12 +87,11 @@ public sealed class AbuseLinkLocator
         using CrossTenantScope scope = _db.BeginCrossTenantScope(
             "abuse enforcement acts on a link regardless of which tenant owns it");
 
-        return await _db.Links
-            .AsNoTracking()
-            .AcrossTenants()
-            .IncludeSoftDeleted()
-            .Where(l => l.Id == linkId)
-            .Select(l => new LocatedLink(l.Id, l.TenantId, l.QuarantinedAt != null))
+        return await (from l in _db.Links.AsNoTracking().AcrossTenants().IncludeSoftDeleted()
+                      where l.Id == linkId
+                      join d in _db.Domains.AsNoTracking().AcrossTenants() on l.DomainId equals d.Id into domains
+                      from d in domains.DefaultIfEmpty()
+                      select new LocatedLink(l.Id, l.TenantId, l.QuarantinedAt != null, d != null ? d.Host : null, l.Slug))
             .FirstOrDefaultAsync(cancellationToken);
     }
 
@@ -171,4 +170,11 @@ public sealed class AbuseLinkLocator
 /// <param name="LinkId">The link identifier.</param>
 /// <param name="TenantId">The tenant that owns it.</param>
 /// <param name="IsQuarantined">Whether it is already withdrawn from service.</param>
-public sealed record LocatedLink(long LinkId, Guid TenantId, bool IsQuarantined);
+/// <param name="Host">The host domain of the link, if resolved.</param>
+/// <param name="Slug">The slug of the link, if resolved.</param>
+public sealed record LocatedLink(
+    long LinkId,
+    Guid TenantId,
+    bool IsQuarantined,
+    string? Host = null,
+    string? Slug = null);

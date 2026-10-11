@@ -132,24 +132,19 @@ earlier version of these documents promised.
 
 **Core flows**
 
-- **Direct open has no link context.** An installed app opened by a Universal Link or App Link receives
-  only the short URL (`https://go.example.com/aB3xK9pQ`). The SDK plane has `POST /v1/resolve`,
-  `/v1/events` and `/v1/claim-codes` only; nothing turns a slug into its `deeplink_path` and params, so
-  the app cannot open the target screen unless it parses human-readable slugs itself.
+- ~~**Direct open has no link context.**~~ **Resolved:** Added `POST /v1/resolve-link`, evaluating routing rules and returning full navigation target and parameters for installed apps opening short links.
 - **Android deferred deep linking is off by default.** `dl_cid` goes into the Play referrer only when the
   tenant's `consent_mode` is `full` **and** the click carries attribution consent — and the only
   click-time signal the edge reads is `dl_consent=all` (or `gdpr=0`) on the short URL, i.e. consent
   asserted by whoever built the link. Under the default `aggregate_only` mode `/v1/resolve` answers
   `none` with `consent_missing`. Whether deep-link context may be delivered without consent is the
   open legal question Q4 of [§F.2](docs/zadanie.md).
-- **iOS deferred deep linking has no working deterministic path.** The edge never issues or shows a
-  claim code, and login matching reads a click field nothing writes.
-- **The interstitial's "open in app" button** is a custom-scheme URL, never a Universal Link or App Link,
-  or it is missing when the app has no custom scheme.
+- ~~**iOS deferred deep linking has no working deterministic path.**~~ **Resolved:** Edge issues and stores deterministic 6-character claim codes on iOS store-bound interstitials and renders them for SDK redemption.
+- ~~**The interstitial's "open in app" button"**~~ **Resolved:** When no custom scheme is configured, the interstitial generates a Universal Link/App Link fallback using the target host authority.
 - **A link without `routing_rules` is web-only**: always a 302 to `target_url`, never the store and never
   an interstitial, in-app browsers included. Store and interstitial behaviour needs an explicit
   `app_or_store` or `store_only` rule with its own `store_url`.
-- **Deferred resolve returns the link-level `deeplink_path`**, not the one of the rule that matched.
+- ~~**Deferred resolve returns the link-level `deeplink_path`**~~ **Resolved:** Deferred install resolution now returns the matching rule's `deeplink_path` recorded in click evidence.
 - **Generated slugs can collide.** They are mixed-case base62, but the slug column is `citext`, so two
   generated slugs that differ only in case count as the same; the create without a slug then answers
   `409 slug-taken`. At a million generated slugs on one domain the odds of at least one such pair are
@@ -164,10 +159,8 @@ earlier version of these documents promised.
   B is scoped to A and authorised as B. Do not host mutually untrusted tenants on one instance. There
   is no PostgreSQL row-level security; isolation is the EF Core query filter plus explicit `tenant_id`
   predicates.
-- **The public abuse form** (`POST /abuse-reports`, DSA Art. 16) is unreachable: Caddy and the Helm
-  ingress route that path to the edge, which does not serve it.
-- **Quarantine does not invalidate the edge cache**: a quarantined link keeps redirecting for up to
-  10 min 30 s with the default cache settings.
+- ~~**The public abuse form** (`POST /abuse-reports`, DSA Art. 16) is unreachable~~ **Resolved:** Caddy and Helm Ingress route `/abuse-reports` directly to the Control plane.
+- ~~**Quarantine does not invalidate the edge cache**~~ **Resolved:** Quarantine immediately invalidates L1/L2 cache and broadcasts invalidations to all Edge nodes via Valkey Pub/Sub channel `dle:cache:invalidation`.
 - **URL reputation checking is off by default**, and with URLhaus enabled but no Auth-Key every lookup
   fails and the target is treated as safe.
 - **The ClickHouse provider is not wired end to end** and switches PostgreSQL retention off. Do not enable

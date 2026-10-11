@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -157,6 +158,13 @@ public static class FastPersistenceServiceCollectionExtensions
 
         if (cacheConnectionString is not null)
         {
+            services.TryAddSingleton<IConnectionMultiplexer>(_ =>
+            {
+                ConfigurationOptions redisOptions = ConfigurationOptions.Parse(cacheConnectionString);
+                redisOptions.AbortOnConnectFail = false;
+                return ConnectionMultiplexer.Connect(redisOptions);
+            });
+
             // Valkey speaks the Redis protocol, so the StackExchange.Redis backed IDistributedCache is
             // the L2 implementation; HybridCache picks it up simply by it being registered.
             services.AddStackExchangeRedisCache(redis =>
