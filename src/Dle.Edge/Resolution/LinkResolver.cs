@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
+using Dle.Crypto;
+using Dle.Domain.Entities;
 using Dle.Edge.Configuration;
 using Dle.Edge.RateLimiting;
 using Dle.Edge.Rendering;
@@ -64,6 +66,8 @@ public sealed class LinkResolver
     private readonly EdgePrivacyOptions _privacy;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<LinkResolver> _logger;
+    private readonly ClaimCodeGenerator? _claimCodes;
+    private readonly IClaimCodeWriter? _claimCodeWriter;
 
     /// <summary>Creates the pipeline.</summary>
     /// <param name="cache">The two-level link cache.</param>
@@ -82,6 +86,8 @@ public sealed class LinkResolver
     /// <param name="privacy">Deployment-wide ceiling on what may be derived from an address.</param>
     /// <param name="timeProvider">Clock (SHARED-KERNEL §17.2).</param>
     /// <param name="logger">Logger.</param>
+    /// <param name="claimCodes">Generator for deterministic iOS claim codes.</param>
+    /// <param name="claimCodeWriter">Storage writer for issued claim codes.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public LinkResolver(
         HybridCache cache,
@@ -99,7 +105,9 @@ public sealed class LinkResolver
         IOptions<EdgeOptions> options,
         IOptions<EdgePrivacyOptions> privacy,
         TimeProvider timeProvider,
-        ILogger<LinkResolver> logger)
+        ILogger<LinkResolver> logger,
+        ClaimCodeGenerator? claimCodes = null,
+        IClaimCodeWriter? claimCodeWriter = null)
     {
         ArgumentNullException.ThrowIfNull(cache);
         ArgumentNullException.ThrowIfNull(links);
@@ -134,6 +142,8 @@ public sealed class LinkResolver
         _privacy = privacy.Value;
         _timeProvider = timeProvider;
         _logger = logger;
+        _claimCodes = claimCodes;
+        _claimCodeWriter = claimCodeWriter;
     }
 
     /// <summary>
@@ -588,6 +598,25 @@ public sealed class LinkResolver
             ? RoutingUrlBuilder.BuildStoreUrl(decision, link, client, clickId, consent)
             : RoutingUrlBuilder.BuildWebUrl(decision, link, client, clickId, consent);
 
+        string? claimCode = null;
+        if (client.Platform == Platform.Ios && storeBound && _claimCodes is not null && _claimCodeWriter is not null)
+        {
+            ClaimCodeCredential credential = _claimCodes.Create();
+            claimCode = credential.Code;
+            DateTimeOffset now = _timeProvider.GetUtcNow();
+            var record = new ClaimCodeRecord
+            {
+                Id = Guid.CreateVersion7(),
+                TenantId = link.TenantId,
+                CodeHash = credential.Hash,
+                ClickId = string.IsNullOrEmpty(clickId) ? null : clickId,
+                LinkId = link.Id,
+                ExpiresAt = now.AddHours(1),
+                CreatedAt = now,
+            };
+            await _claimCodeWriter.WriteAsync(record, cancellationToken);
+        }
+
         return new ResolveOutcome(
             InterstitialResults.Page(
                 link,
@@ -595,7 +624,8 @@ public sealed class LinkResolver
                 client,
                 fallback,
                 RoutingUrlBuilder.BuildDeeplinkUrl(decision, link, CustomScheme(link, client), clickId, consent),
-                await LoadDomainAsync(host, cancellationToken)),
+                await LoadDomainAsync(host, cancellationToken),
+                claimCode),
             ResolveOutcomes.Interstitial,
             DecisionNames.Interstitial,
             Reason: null);

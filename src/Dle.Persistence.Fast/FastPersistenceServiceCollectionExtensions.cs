@@ -121,6 +121,7 @@ public static class FastPersistenceServiceCollectionExtensions
         services.TryAddSingleton<ILinkStore, DapperLinkStore>();
         services.TryAddSingleton<IDomainConfigStore, DapperDomainConfigStore>();
         services.TryAddSingleton<IClickLookup, DapperClickLookup>();
+        services.TryAddSingleton<IClaimCodeWriter, DapperClaimCodeWriter>();
     }
 
     /// <summary>

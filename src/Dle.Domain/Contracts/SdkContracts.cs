@@ -44,6 +44,25 @@ public sealed record ResolveRequestDto
 }
 
 /// <summary>
+/// Body of <c>POST /v1/resolve-link</c>, called when an installed application is opened directly
+/// by an operating system Universal Link or App Link.
+/// </summary>
+public sealed record ResolveLinkRequestDto
+{
+    /// <summary>The short URL delivered by the operating system, e.g. <c>https://go.example.com/aB3xK9pQ</c>.</summary>
+    public required string Url { get; init; }
+
+    /// <summary>Identifier the SDK generated and persisted for this installation, if available.</summary>
+    public string? InstallId { get; init; }
+
+    /// <summary>Client platform: <c>ios</c>, <c>android</c>, <c>desktop</c> or <c>other</c>.</summary>
+    public string? Platform { get; init; }
+
+    /// <summary>Host application version, for version scoped routing rules.</summary>
+    public string? AppVersion { get; init; }
+}
+
+/// <summary>
 /// Device signals offered for probabilistic matching. Deliberately coarse: nothing here is a
 /// stable device identifier, and the server drops the whole object when consent is missing.
 /// </summary>

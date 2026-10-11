@@ -5,7 +5,10 @@ using System.Threading.RateLimiting;
 using Dle.Control.Features.Attribution;
 using Dle.Control.Identity;
 using Dle.Domain.Attribution;
+using Dle.Domain.Clients;
 using Dle.Domain.Contracts;
+using Dle.Domain.Privacy;
+using Dle.Domain.Routing;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
@@ -73,6 +76,22 @@ public static class AttributionEndpointExtensions
                 + "produced the match and how much to trust it; an unmatched install is a 200 with "
                 + "matched=false, not an error. Limited to five calls an hour per install_id (§E.9).")
             .Accepts<ResolveRequestDto>("application/json")
+            .Produces<ResolveResponseDto>(StatusCodes.Status200OK, "application/json")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status413PayloadTooLarge)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests);
+
+        sdk.MapPost("/resolve-link", ResolveLinkAsync)
+            .RequireAuthorization(DlePolicies.SdkIngest)
+            .WithName("ResolveLinkContext")
+            .WithSummary("Resolves the destination context of a short link opened directly by an installed app.")
+            .WithDescription(
+                "Called when an installed application is opened via a Universal Link or App Link. "
+                + "Accepts the short URL delivered by the operating system, looks up the link, "
+                + "evaluates routing rules for the platform, and answers with the target deeplink_path "
+                + "and link parameters.")
+            .Accepts<ResolveLinkRequestDto>("application/json")
             .Produces<ResolveResponseDto>(StatusCodes.Status200OK, "application/json")
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
@@ -514,4 +533,192 @@ public static class AttributionEndpointExtensions
             "No such claim code was issued for this tenant, or it has expired.",
             canReissue: true),
     };
+
+    /// <summary>Handles <c>POST /v1/resolve-link</c>.</summary>
+    private static async Task<IResult> ResolveLinkAsync(
+        HttpContext context,
+        IAttributionStore store,
+        IRoutingEngine routing,
+        RecordEvents events,
+        AttributionRateLimiters limiters,
+        AttributionMetrics metrics,
+        IOptionsMonitor<AttributionOptions> options,
+        IOptionsMonitor<AttributionRateLimitOptions> limits,
+        CancellationToken cancellationToken)
+    {
+        if (!context.TryGetSdkCaller(out SdkCaller caller))
+        {
+            metrics.Rejected("unauthenticated");
+            return AttributionProblem.Unauthenticated();
+        }
+
+        AttributionOptions current = options.CurrentValue;
+
+        BodyResult<ResolveLinkRequestDto> body = await ReadBodyAsync(
+            context,
+            current.MaxRequestBytes,
+            AttributionJsonContext.Default.ResolveLinkRequestDto,
+            cancellationToken);
+
+        if (body.Problem is { } problem)
+        {
+            return problem;
+        }
+
+        ResolveLinkRequestDto request = body.Value!;
+
+        if (string.IsNullOrWhiteSpace(request.Url) || request.Url.Length > TargetUrlPolicy.MaxUrlLength)
+        {
+            return AttributionProblem.Validation("url is required and must not exceed the maximum URL length.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.InstallId))
+        {
+            if (!TryValidateInstallId(request.InstallId, current.MaxInstallIdLength, out IResult? invalid))
+            {
+                return invalid;
+            }
+
+            using RateLimitLease lease = await limiters.AcquireResolveAsync(request.InstallId, cancellationToken);
+
+            if (!lease.IsAcquired)
+            {
+                metrics.Rejected("rate_limited");
+                AttributionRateLimitOptions configured = limits.CurrentValue;
+
+                return AttributionProblem.RateLimited(
+                    AttributionRateLimiters.RetryAfter(lease),
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"An installation may resolve {configured.ResolvePermitLimit} times per {configured.ResolveWindowMinutes} minutes (§E.9)."));
+            }
+        }
+
+        if (!LinkUrlParser.TryParse(request.Url, out ReportedLink reported))
+        {
+            return TypedResults.Json(
+                new ResolveResponseDto
+                {
+                    Matched = false,
+                    MatchType = MatchTypeNames.None,
+                    Confidence = 0m,
+                    ExpiresIn = 0,
+                },
+                AttributionJsonContext.Default.ResolveResponseDto);
+        }
+
+        AttributedLink? link = await store.FindLinkByHostAndSlugAsync(
+            reported.Host,
+            reported.Slug,
+            cancellationToken);
+
+        if (link is null || link.TenantId != caller.TenantId)
+        {
+            return TypedResults.Json(
+                new ResolveResponseDto
+                {
+                    Matched = false,
+                    MatchType = MatchTypeNames.None,
+                    Confidence = 0m,
+                    ExpiresIn = 0,
+                },
+                AttributionJsonContext.Default.ResolveResponseDto);
+        }
+
+        string? deeplinkPath = link.DeeplinkPath;
+
+        if (link.RoutingRules is { Count: > 0 } rules)
+        {
+            Platform platform = ParsePlatform(request.Platform);
+            ClientContext client = ClientContext.Empty with
+            {
+                Platform = platform,
+                DeviceClass = platform is Platform.Ios or Platform.Android ? DeviceClass.Phone : DeviceClass.Desktop,
+                Channel = ClientChannel.NativeApp,
+                AppVersion = request.AppVersion,
+                ReceivedAt = DateTimeOffset.UtcNow,
+            };
+
+            ConsentDecision consent = ConsentGate.Evaluate(
+                ConsentMode.Full,
+                domainOverride: null,
+                new ConsentSignal
+                {
+                    Analytics = true,
+                    Attribution = true,
+                    Source = "direct_open",
+                    Timestamp = client.ReceivedAt,
+                });
+
+            RoutingDecision decision = routing.Evaluate(
+                rules,
+                client,
+                consent,
+                clickId: string.Empty);
+
+            if (!string.IsNullOrWhiteSpace(decision.DeeplinkPath))
+            {
+                deeplinkPath = decision.DeeplinkPath;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.InstallId))
+        {
+            _ = await events.ExecuteAsync(
+                new EventBatchDto
+                {
+                    InstallId = request.InstallId,
+                    Platform = request.Platform,
+                    AppVersion = request.AppVersion,
+                    Events =
+                    [
+                        new EventDto
+                        {
+                            Type = SdkEventNames.LinkOpen,
+                            Url = request.Url,
+                        },
+                    ],
+                },
+                caller,
+                cancellationToken);
+        }
+
+        metrics.Decision(MatchTypeNames.DirectOpen, 1.00m);
+
+        return TypedResults.Json(
+            new ResolveResponseDto
+            {
+                Matched = true,
+                MatchType = MatchTypeNames.DirectOpen,
+                Confidence = 1.00m,
+                ClickId = null,
+                Link = new ResolveLinkDto
+                {
+                    Id = link.Id.ToString(CultureInfo.InvariantCulture),
+                    DeeplinkPath = deeplinkPath,
+                    Campaign = link.Campaign,
+                    Title = link.Title,
+                },
+                Params = link.Parameters,
+                ExpiresIn = 0,
+            },
+            AttributionJsonContext.Default.ResolveResponseDto);
+    }
+
+    private static Platform ParsePlatform(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return Platform.Unknown;
+        }
+
+        return value.Trim().ToLowerInvariant() switch
+        {
+            "ios" => Platform.Ios,
+            "android" => Platform.Android,
+            "desktop" => Platform.Desktop,
+            "other" => Platform.Other,
+            _ => Platform.Unknown,
+        };
+    }
 }

@@ -106,6 +106,29 @@ public sealed class ResolveInstallTests : IDisposable
     }
 
     [Fact]
+    public async Task Resolve_DeferredDeeplink_PrefersRuleDeeplinkPathOverLinkDefault()
+    {
+        DateTimeOffset clickedAt = Now.AddMinutes(-12);
+        string clickId = _clickIds.New(clickedAt);
+
+        _clicks.Add(Click(clickId, clickedAt, deeplinkPath: "/rule-promo"));
+        _store.AddLink(new AttributedLink(
+            77,
+            Tenant,
+            "/default-home",
+            "summer-2026",
+            "Summer sale",
+            new ReadOnlyDictionary<string, string>(new Dictionary<string, string>(StringComparer.Ordinal))));
+
+        ResolveOutcome outcome = await ResolveAsync(Request(referrer: Referrer(clickId)));
+
+        ResolveResponseDto response = Assert.IsType<ResolveResponseDto>(outcome.Response);
+
+        Assert.True(response.Matched);
+        Assert.Equal("/rule-promo", response.Link?.DeeplinkPath);
+    }
+
+    [Fact]
     [Trait("TestCase", "TC-141")]
     public async Task Resolve_InstallReferrer_LooksTheClickUpInsideABoundedWindow()
     {
@@ -619,14 +642,14 @@ public sealed class ResolveInstallTests : IDisposable
     private static string Referrer(string clickId) =>
         "utm_source=google-play&utm_medium=cpc&" + InstallReferrerParser.ClickIdKey + "=" + clickId;
 
-    private static ClickRecord Click(string clickId, DateTimeOffset occurredAt) => new()
+    private static ClickRecord Click(string clickId, DateTimeOffset occurredAt, string deeplinkPath = "/summer") => new()
     {
         Id = Guid.NewGuid(),
         OccurredAt = occurredAt,
         TenantId = Tenant,
         LinkId = 77,
         ClickId = clickId,
-        DeeplinkPath = "/summer",
+        DeeplinkPath = deeplinkPath,
     };
 
     private static DeviceSignalsDto Signals() => new()

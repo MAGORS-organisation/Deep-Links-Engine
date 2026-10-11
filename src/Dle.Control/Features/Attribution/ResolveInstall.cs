@@ -887,6 +887,11 @@ public sealed partial class ResolveInstall
         AttributionEvidence evidence,
         int? windowSeconds)
     {
+        if (!string.IsNullOrWhiteSpace(click.DeeplinkPath))
+        {
+            evidence.With(ClickExtraKeys.DeeplinkPath, click.DeeplinkPath);
+        }
+
         var result = new AttributionResult
         {
             Matched = true,
@@ -1011,8 +1016,31 @@ public sealed partial class ResolveInstall
     }
 
     /// <summary>Prefers the path resolved for the click, falling back to the link's own.</summary>
-    private static string? DeeplinkPathOf(AttributionRecord record, AttributedLink link) =>
-        link.DeeplinkPath ?? (record.LinkId == link.Id ? null : null);
+    private static string? DeeplinkPathOf(AttributionRecord record, AttributedLink link)
+    {
+        if (!string.IsNullOrWhiteSpace(record.Evidence))
+        {
+            try
+            {
+                Dictionary<string, string>? evidence = JsonSerializer.Deserialize(
+                    record.Evidence,
+                    DleDomainJsonContext.Default.DictionaryStringString);
+
+                if (evidence is not null &&
+                    evidence.TryGetValue(ClickExtraKeys.DeeplinkPath, out string? rulePath) &&
+                    !string.IsNullOrWhiteSpace(rulePath))
+                {
+                    return rulePath;
+                }
+            }
+            catch (JsonException)
+            {
+                // Fall back to link's own deeplink path
+            }
+        }
+
+        return link.DeeplinkPath;
+    }
 
     private static bool Same(string? left, string? right) =>
         !string.IsNullOrWhiteSpace(left) &&

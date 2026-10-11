@@ -25,6 +25,7 @@ namespace Dle.Control.Features.Attribution;
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     UseStringEnumConverter = true)]
 [JsonSerializable(typeof(ResolveRequestDto))]
+[JsonSerializable(typeof(ResolveLinkRequestDto))]
 [JsonSerializable(typeof(ResolveResponseDto))]
 [JsonSerializable(typeof(EventBatchDto))]
 [JsonSerializable(typeof(EventBatchAcceptedDto))]
