@@ -46,8 +46,8 @@ graph TB
 |---|---|---|
 | End user | `GET /{slug}` on the edge | a `302`, an interstitial, or — when the app is installed — nothing from us at all, because the OS opens the app directly ([request-flows.md](request-flows.md#4-direct-open--the-most-common-case-and-the-one-that-gets-forgotten-b64)) |
 | Social crawler | the same URL | `200` HTML with Open Graph tags, never a redirect |
-| Customer's app + SDK | `/v1/resolve`, `/v1/events` on the control host, with an SDK key | the deferred context, `match_type`, `confidence` — no link context on a direct open, and deferred matching is limited today ([request-flows.md](request-flows.md)) |
-| Marketer / operator | the console at `/admin/` (a pasted API key; it has no OIDC sign-in) or `/api/v1` (tenant API key). The OIDC tenant claim is not mapped and there is no bootstrap key, so a fresh install has no working first credential ([Known gaps](../../README.md#known-gaps)) | CRUD, reports, the honest attribution split |
+| Customer's app + SDK | `/v1/resolve`, `/v1/resolve-link`, `/v1/events` on the control host, with an SDK key | the deferred and direct-open context (`deeplink_path`), `match_type`, `confidence` ([request-flows.md](request-flows.md)) |
+| Marketer / operator | the console at `/admin/` (native OIDC SSO or pasted API key) or `/api/v1` (tenant API key). The initial owner key is seeded via automatic bootstrap ([deploy/README](../../deploy/README.md#first-credential-and-onboarding)) | CRUD, reports, the honest attribution split |
 | External system | a webhook URL it registered | signed postbacks (`DLE-Signature` with HMAC + Ed25519 and a `kid`, [ADR-0013](../adr/0013-crypto-agility-from-day-one.md)) |
 | App Store / Google Play | the store URL in a `302`, with `ct`/`pt` (Apple) or `referrer` (Play) | the click context that the SDK reads back after install |
 

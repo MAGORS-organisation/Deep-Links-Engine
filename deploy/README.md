@@ -39,22 +39,37 @@ Then: admin console `https://<host>/admin/`, API reference `https://<host>/scala
 3. **pg_partman.** The official `postgres:18` image has no `pg_partman`. Build `docker build -t dle-postgres:18 -f docker/Dockerfile.postgres docker` and set `POSTGRES_IMAGE=dle-postgres:18` **before the first start** (extensions are created by `postgres/init/*.sql` on an empty data directory only). See [pg_partman](#pg_partman-and-click_events-retention).
 4. **Trust boundary.** The edge honours `X-Forwarded-*` only from `DLE_NETWORK_SUBNET` (the compose network, where Caddy lives). If you put a CDN/WAF in front of Caddy, raise `Dle__Edge__Network__ForwardLimit` in `docker-compose.yml` by one per appending layer — never widen `KnownNetworks` to the internet: the client address is the rate-limit key, the click identifier and the GeoIP key.
 5. **GeoIP.** Put the MaxMind mmdb in `DLE_GEOIP_DIR` (mounted read-only at `/geoip`) and set `DLE_GEOIP_PATH=/geoip/GeoLite2-Country.mmdb`. The edge never downloads it (NFR-14).
-6. **Identity.** Set `DLE_INSTANCE_TENANT_ID` (multi-tenant) or `DLE_ALLOW_TENANT_SELF_SERVICE=true` (single organisation) — with neither, the tenant routes deny everyone, deliberately — and the OIDC triple `DLE_OIDC_AUTHORITY / CLIENT_ID / AUDIENCE`. None of this yields a first credential today; see [First credential](#first-credential).
+6. **Identity and Credentials.** Automatic bootstrap on first start provisions a root tenant (`default`) and an owner API key, printed in the container log (`docker compose logs dle-control`). For SSO, configure the OIDC triple `DLE_OIDC_AUTHORITY / CLIENT_ID / AUDIENCE`. See [First credential and onboarding](#first-credential-and-onboarding).
 7. **Backups.** Volume `postgres_data` (PGDATA under `/var/lib/postgresql`) plus the master secret; `caddy_data` holds certificates and the ACME account (losing it costs Let's Encrypt rate-limit budget). Valkey is cache only and needs no backup. This is a volume copy: nothing configures WAL archiving, so Profile A as shipped does not meet the 5-minute RPO of NFR-07 ([backup-restore.md](../docs/self-hosting/backup-restore.md)).
 8. **Upgrades.** Update the checkout, then `docker compose -f docker-compose.yml build && docker compose -f docker-compose.yml up -d` — there are no published images for `pull` to fetch. The `migrate` service runs the EF Core bundle (idempotent) before edge and control restart ([upgrading.md](../docs/self-hosting/upgrading.md)).
 9. **Metrics.** They leave the services only over OTLP, when `DLE_OTLP_ENDPOINT` is set; no alert rules or dashboards ship. [operations/runbook.md](../docs/operations/runbook.md) lists what to alert on.
 
-### First credential
+### First credential and onboarding
 
-There is **no seeded API key** in the control plane, no bootstrap key, and no anonymous route that creates one: every request to `/api/v1/*` must carry an API key or an OIDC bearer token, tenants are created with `POST /api/v1/tenants` (FR-241) by an *instance operator* — an **authenticated** caller that carries a tenant and for whom either `Dle:Control:AllowTenantSelfService` is on or whose tenant is `Dle:Control:InstanceTenantId` — and API keys with `POST /api/v1/api-keys` (FR-242) inside a tenant.
+Fresh installations provide two working ways to obtain the first credential:
 
-The first credential was meant to be a **human signed in through OIDC**. **That path does not work today, and there is no other**: a fresh install cannot be administered through the API or the console ([Known gaps](../README.md#known-gaps)).
+1. **Automatic Root Bootstrap (Default):**
+   When `dle-control` starts against an empty database with `Dle:Bootstrap:Enabled=true` (the default), it automatically provisions a root tenant (slug `default`, or configured `DLE_BOOTSTRAP_TENANT_SLUG`) and mints an `owner` API key (`root-bootstrap`). The key is displayed in a prominent ASCII banner in the container logs:
+   ```bash
+   docker compose logs dle-control | grep -A 8 "BOOTSTRAP"
+   # on Windows:
+   docker compose logs dle-control | findstr /i BOOTSTRAP
+   ```
+   Paste this key into the Admin Console (`http://localhost:8081/admin/` or `https://<host>/admin/`) or present it as `Authorization: Bearer <key>` to begin creating domains, apps, links, and further scoped keys.
 
-- The OIDC handler validates the token, but the control plane reads the tenant from a claim named `dle:tenant` (and the role from `dle:role`); nothing maps the configured `Dle:Identity:Oidc:TenantClaim` / `RoleClaim` (`dle_tenant`, `dle_role` by default) to them, so an OIDC caller carries no tenant and is refused — with or without self-service.
-- The admin console has no OIDC sign-in; it accepts a pasted API key only.
-- There is no bootstrap key.
+2. **Enterprise OIDC SSO:**
+   Configure `Dle:Identity:Oidc` (`DLE_OIDC_AUTHORITY`, `DLE_OIDC_CLIENT_ID`, `DLE_OIDC_AUDIENCE`). The Admin Console at `/admin/` provides native PKCE sign-in with endpoint discovery (`GET /api/v1/auth/config`). Incoming token claims (`Dle:Identity:Oidc:TenantClaim`, default `dle_tenant`, and `RoleClaim`, default `dle_role`) are automatically mapped by `DleOidcClaimMapper` to internal principal claims (`dle:tenant` and `dle:role`). If the token specifies a tenant slug, it is resolved against the database; if unassigned, it defaults to `Dle:Control:InstanceTenantId`.
 
-The settings the intended path uses, for reference: `Dle:Identity:Oidc` (`DLE_OIDC_AUTHORITY`, `DLE_OIDC_CLIENT_ID`, `DLE_OIDC_AUDIENCE`; in Helm `control.config.oidc.*`); `Dle:Control:AllowTenantSelfService=true` for a single-organisation deployment (turn it off again afterwards, or every authenticated caller may create tenants); `Dle:Control:InstanceTenantId` for a multi-tenant deployment, whose operating tenant's owners create the other tenants.
+3. **Developer Setup Helper Scripts:**
+   For local development on Windows or Linux/macOS, helper scripts validate prerequisites and generate a ready `.env` file with secure HKDF master secrets and passwords:
+   ```powershell
+   # Windows PowerShell
+   .\setup-dev.ps1 -Build
+   ```
+   ```bash
+   # Linux / macOS / WSL
+   ./setup-dev.sh --build
+   ```
 
 `Dle:Identity:Oidc:RequireHttpsMetadata` stays `true` in production (the compose override switches it off for `localhost` only).
 
@@ -105,7 +120,7 @@ Every pod runs as uid 1654 with `readOnlyRootFilesystem`, `allowPrivilegeEscalat
 - **Autoscaling** — CPU at 60–65 % of `edge.resources.requests.cpu`; enable `edge.autoscaling.rps` once a metrics adapter serves the per-pod request rate (~400 req/s per 0.75-CPU pod). The behaviour block scales up without a stabilisation window (§D.6: 10× traffic, p99 ≤ 200 ms while scaling).
 - **Connections** — `edge.config.dbPool.maxPoolSize × maxReplicas + control` must fit `max_connections` (or put PgBouncer in front).
 - **GeoIP** — a PVC you fill yourself (`edge.config.geoIp.existingClaim` + `path`).
-- **Identity** — `control.config.instanceTenantId` or `allowTenantSelfService`, and `control.config.oidc.*` — none of which yields a first credential today; see [First credential](#first-credential).
+- **Identity** — `control.config.instanceTenantId` or `allowTenantSelfService`, and `control.config.oidc.*`; automatic bootstrap seeds the first owner key on a fresh install (see [First credential and onboarding](#first-credential-and-onboarding)).
 
 Upgrades: `helm upgrade dle deploy/helm/dle -n dle -f … ` runs the migration hook, then rolls control (`maxSurge 1, maxUnavailable 0`) and edge (`maxSurge 25 %, maxUnavailable 0`) with a 5 s pre-stop pause so the controller drains endpoints without 502s. Rollback: `helm rollback dle` (migrations are not rolled back — test them on a copy of production first, §D.7).
 

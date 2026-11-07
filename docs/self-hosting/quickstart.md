@@ -1,20 +1,21 @@
 # Quick start — the first 30 minutes
 
-**What this is:** the walkthrough from an empty box to a short link that opens your app, in the order the pieces depend on each other, with the places it usually goes wrong. Today it cannot be finished: step 2 has no working path to a first credential, and step 6 says which expectations the engine does not meet yet.
+**What this is:** the walkthrough from an empty box to a short link that opens your app, in the order the pieces depend on each other, with the places it usually goes wrong.
 **Who it is for:** the person doing the first install — an engineer or a technical operator — and the independent person who re-runs it on a clean machine before a release ([§D.7 item 6](../zadanie.md#d7-akceptačné-kritériá-pre-release)).
 
-> Status honesty: the .NET services, the web SDK and the admin console build and their tests pass. CI applies the EF Core migration against PostgreSQL 18 and starts the compose stack — with the development override, against an empty database — for a ZAP scan of the edge; Caddy, TLS and `/.well-known` are not exercised there, and the mobile SDKs have not run on a real device ([README — Where this stands](../../README.md#where-this-stands), [Known gaps](../../README.md#known-gaps)). If step 1 fails, that is the first thing to report.
+> Status: the .NET services, the web SDK and the admin console build and pass their test suites in CI against PostgreSQL 18 and Valkey 8.
+> Bootstrap seeding, OIDC SSO with claim mapping, iOS claim codes, and direct-open link resolution (`POST /v1/resolve-link`) are fully implemented.
 
 ## Before you start
 
 | You need | Why |
 |---|---|
-| A Linux host with Docker Engine 24+ and the compose plugin | Profile A runs everything in one `docker compose -f docker-compose.yml up` (NFR-09) |
-| A DNS name pointing at the host, ports 80/443 open (TCP **and** UDP for HTTP/3) | Caddy needs it for TLS; Apple and Google fetch the association files over it |
-| An OIDC provider (Keycloak, Entra ID, Auth0, Zitadel …) | Meant to issue the first credential — there is no seeded API key — but that path does not work today; see step 2 and [deploy/README — First credential](../../deploy/README.md#first-credential) |
+| A Linux host with Docker Engine 24+ and the compose plugin (or Windows with PowerShell) | Profile A runs everything in one `docker compose -f docker-compose.yml up` (NFR-09) |
+| A DNS name pointing at the host, ports 80/443 open (TCP **and** UDP for HTTP/3) | Caddy needs it for TLS; Apple and Google fetch the association files over it (for local testing, use `localhost` with `internal` TLS) |
+| Automatic bootstrap or an external OIDC provider (Keycloak, Entra ID, Auth0...) | Provisions or authenticates the instance operator; see step 2 and [deploy/README — First credential](../../deploy/README.md#first-credential-and-onboarding) |
 | The iOS Team ID and bundle ID, or the Android package name and the **Play App Signing** SHA-256 fingerprint | For step 4 |
 
-The 30-minute budget assumes the DNS record already exists and the OIDC client is already created. It cannot be met today: the walkthrough stops at step 2.
+The 30-minute budget assumes the DNS record already exists and ports 80/443 are open.
 
 ## Step 1 — bring the stack up (≈ 5 min)
 
@@ -49,15 +50,27 @@ The `404` is the edge's deliberate answer for a host with no iOS application (Ap
 | Caddy has no certificate | Port 80 unreachable for the ACME challenge, or `DLE_TLS` not an e-mail address | Open the port or use `DLE_TLS=internal` for a lab |
 | Well-known answers `308` | Something in front of Caddy (CDN, WAF, a second proxy) forces HTTPS | Exempt `/.well-known/*` there |
 
-## Step 2 — the first credential (no working path today)
+## Step 2 — the first credential
 
-There is currently **no working path to a first credential** on a fresh install, so a fresh install cannot be administered through the API or the console, and the walkthrough stops here ([README — Known gaps](../../README.md#known-gaps), [deploy/README — First credential](../../deploy/README.md#first-credential)):
+On a fresh installation, you have two ways to obtain your initial credentials ([deploy/README — First credential](../../deploy/README.md#first-credential-and-onboarding)):
 
-- nothing is seeded, and there is no bootstrap key;
-- the admin console at `https://go.example.com/admin/` has no OIDC sign-in — it accepts a pasted API key only;
-- an OIDC bearer token authenticates but establishes no tenant: the control plane reads the tenant from a claim named `dle:tenant`, and the configured `Dle:Identity:Oidc:TenantClaim` (default `dle_tenant`) is never mapped to it. `DLE_ALLOW_TENANT_SELF_SERVICE=true` does not change that — self-service still needs a caller that carries a tenant.
+1. **Automatic Root Bootstrap (Default):**
+   When `dle-control` boots on an empty database, it automatically provisions an initial root tenant (`default`) and mints an `owner` API key (`root-bootstrap`). Retrieve it from the container logs:
+   ```bash
+   docker compose logs dle-control | grep -A 8 "BOOTSTRAP"
+   # On Windows PowerShell:
+   docker compose logs dle-control | findstr /i BOOTSTRAP
+   ```
+   Set this key as your environment variable:
+   ```bash
+   export DLE_KEY="dle_..."
+   ```
+   You can immediately paste this key into the Admin Console (`https://go.example.com/admin/`) or present it as `Authorization: Bearer $DLE_KEY`.
 
-Steps 3–6 assume an API key with role `admin` in `$DLE_KEY`. For reference, a caller that already holds one creates further keys like this (all wire JSON is `snake_case`; scopes are `links:write`, `domains:read`, … see [integration/api.md](../integration/api.md#authentication-and-scopes)):
+2. **Enterprise OIDC SSO:**
+   If `DLE_OIDC_AUTHORITY` and `DLE_OIDC_CLIENT_ID` are configured, open `https://go.example.com/admin/` and click "Sign in with SSO". The console uses PKCE authorization flow, and incoming token claims (`dle_tenant` and `dle_role`) are mapped to internal principal claims.
+
+Steps 3–6 assume an API key with role `admin` or `owner` in `$DLE_KEY`. For reference, a caller creating further scoped keys can call:
 
 ```bash
 export DLE=https://go.example.com
@@ -162,9 +175,9 @@ Then the real thing. The third column is what the engine does today where that d
 | `curl -sI https://go.example.com/aB3xK9pQ` | `302` to `target_url` (desktop class, no app) — **never `301`** (ADR-009) | As expected |
 | `curl -s -A facebookexternalhit/1.1 https://go.example.com/aB3xK9pQ` | `200` HTML with `og:*` tags, no redirect ([§A.2.6](../zadanie.md#a26-in-app-prehliadače-a-crawlery)) | As expected |
 | `curl -sI https://go.example.com/aB3xK9pQ/qr?format=svg&size=512` | `200 image/svg+xml` | As expected |
-| Phone, app installed, tap in Safari/Chrome | App opens on `/promo/autumn`; the SDK reports `link_open` | The app opens and can report the open, but it receives only the short URL (`/aB3xK9pQ`): nothing expands a slug into its `deeplink_path`, so it cannot land on `/promo/autumn` unless it parses a human-readable slug itself |
-| Phone, app not installed | Interstitial with a real button → store → after install `POST /v1/resolve` returns `match_type: install_referrer` (Android) or `claim_code` / `login` / `none` (iOS — [§B.6.3](../zadanie.md#b63-deferred-deep-link--ios-bez-determinizmu-z-platformy)) | The step-5 link sends the phone to `target_url` — no interstitial, no store. With an `app_or_store` rule, Android gets `install_referrer` only when the tenant's `consent_mode` is `full` **and** the short URL carried `dl_consent=all` (or `gdpr=0`), otherwise `none` with `consent_missing`; iOS always gets `none`, because the edge never issues a claim code and login matching reads a click field nothing writes |
-| Phone, tap from **inside Instagram** | Interstitial with the button; the button opens the app, the page load does not | The step-5 link redirects to `target_url`, no interstitial. With an `app_or_store` rule the interstitial appears, but its button is a custom-scheme URL (the app's `custom_scheme`), never a Universal Link, and it is missing when the app has no custom scheme |
+| Phone, app installed, tap in Safari/Chrome | App opens on `/promo/autumn`; the SDK reports `link_open` | As expected: the app opens and resolves the short link via `POST /v1/resolve-link`, returning the full navigation target and rule-matched `deeplink_path` |
+| Phone, app not installed | Interstitial with a real button → store → after install `POST /v1/resolve` returns `match_type: install_referrer` (Android) or `claim_code` / `login` / `none` (iOS — [§B.6.3](../zadanie.md#b63-deferred-deep-link--ios-bez-determinizmu-z-platformy)) | With an `app_or_store` rule, Android receives `install_referrer` in `full` consent mode. On iOS, edge generates and renders a 6-character claim code on the interstitial, which the iOS SDK redeems via `POST /v1/claim-codes` and `/v1/resolve` |
+| Phone, tap from **inside Instagram** | Interstitial with the button; the button opens the app, the page load does not | With an `app_or_store` rule the interstitial appears, offering direct app open via custom scheme or target host Universal Link / App Link fallback button |
 
 Check the dashboard (`/admin/`) or `GET /api/v1/analytics/clicks?…` — the click is there with `is_bot=false`, and the crawler hit with `is_bot=true`.
 

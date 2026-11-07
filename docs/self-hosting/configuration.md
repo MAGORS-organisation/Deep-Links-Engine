@@ -119,9 +119,20 @@ Defaults from [§E.9](../zadanie.md#e9-rate-limity-a-kvóty--konkrétne-hodnoty)
 | `CredentialCacheSeconds` | int | 60 | How long a verified API key / SDK key is cached; revocation takes effect within this window | Stricter revocation latency |
 | `EnableSdkKeys` | bool | true | Accept SDK keys on `/v1/*` | Never off in production |
 | `SdkKeyName` | string | `dlk` | Prefix of SDK keys | Cosmetic |
-| `Oidc:Authority` / `ClientId` / `Audience` | string | empty | The OIDC provider human callers authenticate against. The admin console has no OIDC sign-in; it takes a pasted API key | Meant for the first credential, which has no working path today ([deploy/README — First credential](../../deploy/README.md#first-credential)) |
-| `Oidc:TenantClaim` / `RoleClaim` | string | `dle_tenant` / `dle_role` | Claim names meant to be read from the token. Neither reaches the control plane today: it reads the tenant and the role from claims named `dle:tenant` and `dle:role`, and nothing maps the configured names to them | Your provider maps claims differently |
+| `Oidc:Authority` / `ClientId` / `Audience` | string | empty | The OIDC provider human callers authenticate against. The admin console supports native PKCE SSO login and pasted API keys | Meant for enterprise single sign-on ([deploy/README — First credential](../../deploy/README.md#first-credential-and-onboarding)) |
+| `Oidc:TenantClaim` / `RoleClaim` | string | `dle_tenant` / `dle_role` | Claim names read from the token. Mapped automatically by `DleOidcClaimMapper` into internal claims (`dle:tenant` and `dle:role`) | Your provider maps claims differently |
 | `Oidc:RequireHttpsMetadata` | bool | true | Refuse a plain-HTTP discovery document | `localhost` only |
+
+### `Dle:Bootstrap` (control)
+
+| Key | Type | Default | Effect | Change when |
+|---|---|---|---|---|
+| `Enabled` | bool | true | Automatically provisions root tenant and Owner API key when the database contains no tenants | Set false if tenants are provisioned strictly via custom scripts |
+| `DefaultTenantSlug` | string | `default` | Slug of the bootstrapped root tenant | Custom initial tenant slug |
+| `DefaultTenantName` | string | `Default Tenant` | Display name of the bootstrapped root tenant | Custom organization name |
+| `InitialKeyName` | string | `root-bootstrap` | Name given to the initial owner API key | Custom credential description |
+| `InitialApiKey` | string | null | Optional predefined API key matching `dle_<8 chars>_<43 chars>` | CI/CD or automation requiring a pre-shared initial key |
+| `ExportKeyPath` | string | null | File path where the minted key is written on startup | Local development automation |
 
 ### `Dle:Crypto` (both hosts — keep identical)
 
@@ -144,7 +155,7 @@ Defaults from [§E.9](../zadanie.md#e9-rate-limity-a-kvóty--konkrétne-hodnoty)
 | `Probabilistic:WindowMinutes` | int | 60 | Match window — 60, not 7 days ([§A.2.5](../zadanie.md#a25-presnosť-probabilistického-párovania--čísla)) | Do not raise it |
 | `Probabilistic:MinConfidence` | double | 0.55 | Below this the result is `none` | Precision vs. recall |
 | `Probabilistic:RequireConsent` | bool | true | Refuse signals without `consent.attribution=true` | Never false in the EU |
-| `ClaimCode:Enabled` / `TtlMinutes` | bool / int | true / 15 | Issuing and redeeming claim codes (`POST /v1/claim-codes`), the iOS deterministic path (K3). Nothing on the click path issues a code, so the path does not work end to end today ([README — Known gaps](../../README.md#known-gaps)) | Longer TTL for slow store installs; the code is 30 random bits, so keep it short |
+| `ClaimCode:Enabled` / `TtlMinutes` | bool / int | true / 15 | Issuing and redeeming claim codes (`POST /v1/claim-codes`), the iOS deterministic path (K3). Codes are issued on the store interstitial and redeemed by the iOS SDK on first launch via `/v1/resolve` | Longer TTL for slow store installs; the code is 30 random bits, so keep it short |
 
 ### `Dle:Privacy` (both hosts — keep identical)
 

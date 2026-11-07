@@ -7,6 +7,7 @@
 
 | Directory | What is in it | Start with |
 |---|---|---|
+| [user-guide](user-guide) | Marketing and operator guide for the web administration console (SK) | [admin-console.md](user-guide/admin-console.md) |
 | [self-hosting](self-hosting) | Quick start, configuration, domains, upgrading, backup, troubleshooting | [quickstart.md](self-hosting/quickstart.md) — the first 30 minutes |
 | [integration](integration) | HTTP API, the three SDKs, webhooks, migrating from Firebase Dynamic Links | the API reference; the live one is served at `/scalar/v1` on the control host |
 | [compliance](compliance) | Privacy model, DPIA and RoPA templates, regulatory map, security overview | the privacy model — it explains the three consent modes |
@@ -28,6 +29,7 @@ Outside `docs/` but part of the same set:
 
 | I want to… | Read, in this order |
 |---|---|
+| manage links & campaigns | [user-guide/admin-console.md](user-guide/admin-console.md) |
 | run it | [self-hosting/quickstart.md](self-hosting/quickstart.md) → [../deploy/README.md](../deploy/README.md) → self-hosting configuration and domains |
 | integrate an app | integration (API, then the SDK for your platform, then webhooks) → [architecture/request-flows.md](architecture/request-flows.md) so you know what happens on a click |
 | write routing rules | [architecture/routing-rules.md](architecture/routing-rules.md) |

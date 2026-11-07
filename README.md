@@ -10,12 +10,10 @@ that tells you honestly how sure it is. One compose stack, your PostgreSQL, your
 
 > Status: pre-release. Nothing is tagged, no image or SDK is published. The
 > .NET services, the web SDK, the admin console and both mobile SDKs build and pass their tests in CI,
-> against PostgreSQL 18 and Valkey 8 for the integration suite — but **the product's core flows do not
-> work end to end yet**: an installed app opened by a link is not told which screen to open, deferred
-> deep linking is off by default on Android and has no working path on iOS, and a fresh install has no
-> way to obtain its first credential. Nothing has been tried on a real device, the k6 load profile has
-> never run, and there has been no external penetration test. Read [Known gaps](#known-gaps) before
-> relying on any of it.
+> against PostgreSQL 18 and Valkey 8 for the integration suite. Core flows (direct open context, iOS claim codes,
+> automatic bootstrap credentials, OIDC SSO and claim mapping) are implemented and verified across unit, contract,
+> security and integration test suites; physical real-device matrix validation and external penetration testing remain pending.
+> Read [Known gaps](#known-gaps) before relying on any of it.
 
 ## Why this exists
 
@@ -151,7 +149,7 @@ earlier version of these documents promised.
 
 **Operating it**
 
-- ~~**No working first credential.**~~ **Resolved:** The administration console now supports native OIDC SSO sign-in via PKCE and endpoint discovery (`GET /api/v1/auth/config`), alongside manual API key authentication.
+- ~~**No working first credential.**~~ **Resolved:** Automatic bootstrap now provisions a root tenant and Owner API key on an empty database (`Dle:Bootstrap`). The administration console supports native OIDC SSO sign-in via PKCE with automatic JWT claim mapping and endpoint discovery (`GET /api/v1/auth/config`), alongside manual API key authentication.
 - **Multi-tenant isolation defect.** A request carrying an SDK key of tenant A *and* an API key of tenant
   B is scoped to A and authorised as B. Do not host mutually untrusted tenants on one instance. There
   is no PostgreSQL row-level security; isolation is the EF Core query filter plus explicit `tenant_id`
@@ -162,9 +160,7 @@ earlier version of these documents promised.
   fails and the target is treated as safe.
 - **The ClickHouse provider is not wired end to end** and switches PostgreSQL retention off. Do not enable
   it.
-- **`DLE_CONSENT_MODE` / `Dle:Privacy:ConsentMode` does nothing**: neither host reads it. A new tenant
-  starts in `aggregate_only` whatever it says, and there is no deployment-wide ceiling on the mode a
-  tenant may choose.
+- ~~**`DLE_CONSENT_MODE` / `Dle:Privacy:ConsentMode` does nothing**~~ **Resolved:** `ControlPrivacyOptions` binds tenant provisioning default consent mode from `Dle:Privacy:ConsentMode`.
 - **Profile A** serves TLS for one host only, ships no alert rules or dashboards (metrics leave only via
   OTLP), and has no WAL archiving.
 

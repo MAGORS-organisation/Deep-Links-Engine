@@ -51,9 +51,38 @@ The edge never calls a third party while answering — no GeoIP service, no repu
 
 ## Control — SDK endpoints (`:8081`, `/v1`)
 
-Spec: [§B.7.2](../zadanie.md#b72-sdk-api). Authentication: `Authorization: Bearer <sdk_key>` — the SDK key is a public identifier bound to a bundle id / package name / web origin (K6), issued with `POST /api/v1/apps/{id}/sdk-keys`.
+Spec: [§B.7.2](../zadanie.md#b72-sdk-api). Authentication: `Authorization: Bearer <sdk_key>` — the SDK key is a public identifier bound to a bundle id / package name / web origin (K6), issued with `POST /api/v1/apps/{id}/sdk-keys`. Cross-origin calls from browsers are supported via native CORS middleware.
 
-These three endpoints are the whole SDK plane. None of them expands a slug into its `deeplink_path` and parameters, and an SDK key cannot call `/api/v1/links`: an app opened directly by a Universal Link / App Link gets only the short URL (`https://go.example.com/aB3xK9pQ`) and cannot tell which screen it points to, unless the operator uses readable slugs the app parses itself. `dle-control` has no CORS support either, so a browser page on another origin cannot call these endpoints (the preflight fails; see [sdk-web.md](sdk-web.md)). Both are listed under [Known gaps](../../README.md#known-gaps).
+The SDK plane comprises four endpoints:
+- `POST /v1/resolve-link`: Expands direct-open links into complete routing context (`deeplink_path`, parameters, campaign).
+- `POST /v1/resolve`: Evaluates install attribution and returns deferred deep link navigation.
+- `POST /v1/events`: Ingests batched telemetry and conversion events.
+- `POST /v1/claim-codes`: Issues or validates deterministic single-use claim codes for iOS store interstitials.
+
+### `POST /v1/resolve-link`
+
+Called when an installed app is directly opened by a Universal Link or App Link. Evaluates link routing rules against the caller's platform context and returns the destination `deeplink_path`, navigation target, and campaign parameters:
+
+```bash
+curl -s -X POST https://go.example.com/v1/resolve-link \
+  -H "Authorization: Bearer dlk_…" -H "Content-Type: application/json" \
+  -d '{
+    "short_url": "https://go.example.com/aB3xK9pQ",
+    "platform": "ios",
+    "app_version": "3.4.1",
+    "os_version": "18.0"
+  }'
+```
+
+```json
+{
+  "matched": true,
+  "action": "app_or_store",
+  "deeplink_path": "/promo/autumn",
+  "target_url": "https://www.example.com/promo/autumn",
+  "params": { "utm_source": "quickstart", "utm_campaign": "autumn26" }
+}
+```
 
 ### `POST /v1/resolve`
 
@@ -112,11 +141,11 @@ Events dated more than 5 minutes in the future or more than 30 days in the past 
 
 ### `POST /v1/claim-codes`
 
-The deterministic iOS path (ADR-008, [§B.6.3](../zadanie.md#b63-deferred-deep-link--ios-bez-determinizmu-z-platformy)): exchanges a fresh click for a six-character, single-use code meant to be shown on the interstitial and typed into the app. Only the keyed hash is stored; TTL `Dle:Attribution:ClaimCode:TtlMinutes` (15 in the shipped configuration). Nothing on the click path calls it today: the edge renders the interstitial without a code, so the claim-code path does not work end to end ([Known gaps](../../README.md#known-gaps)). An SDK does not call it either: unlike the other two, it takes an API key with `links:read`, not an SDK key.
+The deterministic iOS path (ADR-008, [§B.6.3](../zadanie.md#b63-deferred-deep-link--ios-bez-determinizmu-z-platformy)): exchanges a fresh click for a six-character, single-use code issued and displayed on the store interstitial. Only the keyed hash is stored; TTL `Dle:Attribution:ClaimCode:TtlMinutes` (15 in the default configuration). The code is rendered on the interstitial page and redeemed by the iOS SDK on first launch via `POST /v1/resolve`.
 
 ## Control — management API (`/api/v1`)
 
-Spec: [§B.7.3](../zadanie.md#b73-control-plane-api-apiv1). Authentication: `Authorization: Bearer <api_key>` (secret shown once at creation, stored as Argon2id — K5). An OIDC bearer token carrying `dle_tenant` and `dle_role` is validated when `Dle:Identity:Oidc` is configured, but its tenant claim (`Dle:Identity:Oidc:TenantClaim`) is never mapped to the claim the control plane reads, so it establishes no tenant and does not work today ([Known gaps](../../README.md#known-gaps)).
+Spec: [§B.7.3](../zadanie.md#b73-control-plane-api-apiv1). Authentication: `Authorization: Bearer <api_key>` (secret shown once at creation, stored as Argon2id — K5). An OIDC bearer token is validated when `Dle:Identity:Oidc` is configured; its configured `TenantClaim` (`dle_tenant`) and `RoleClaim` (`dle_role`) are automatically mapped by `DleOidcClaimMapper` into internal claims. Bootstrap seeding provides the initial root tenant and owner API key on first startup ([deploy/README — First credential](../../deploy/README.md#first-credential-and-onboarding)).
 
 ### Authentication and scopes
 
