@@ -47,7 +47,12 @@
       suppression of catch-all handlers) and CS1591 (missing XML doc comments
       on public members must stay a build error).
     -->
-    <NoWarn>$(NoWarn);CA1848;CA2007;CA1812;CA1515</NoWarn>
+    <!--
+      NuGet audit: Low (NU1901) and Moderate (NU1902) are suppressed from MSBuild
+      warnaserror so they don't break CI builds or locked restores; High and Critical
+      vulnerabilities remain enforced by the S-05 gate via .github/scripts/nuget-vulnerabilities.py.
+    -->
+    <NoWarn>$(NoWarn);CA1848;CA2007;CA1812;CA1515;NU1901;NU1902</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Label="Runtime behaviour">
