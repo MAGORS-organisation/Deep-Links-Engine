@@ -70,6 +70,25 @@ public sealed class ApiKeyHasher
     }
 
     /// <summary>
+    /// Creates a credential from an explicitly supplied token.
+    /// </summary>
+    /// <param name="token">The plaintext token.</param>
+    /// <param name="prefix">The public prefix field.</param>
+    /// <returns>The credential carrying the hash.</returns>
+    public ApiKeyCredential CreateWithToken(string token, string prefix)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(token);
+        ArgumentException.ThrowIfNullOrWhiteSpace(prefix);
+
+        return new ApiKeyCredential
+        {
+            Token = token,
+            Prefix = prefix,
+            Hash = Encoding.UTF8.GetBytes(_hasher.Hash(token)),
+        };
+    }
+
+    /// <summary>
     /// Verifies a presented key against a stored hash in constant time.
     /// </summary>
     /// <param name="presentedKey">The key as received. Untrusted.</param>

@@ -76,6 +76,18 @@ public sealed class ApiKeyHashingTests
     }
 
     [Fact]
+    public void CreateWithToken_CustomToken_HashesAndVerifiesSuccessfully()
+    {
+        ApiKeyHasher hasher = Hasher();
+        ApiKeyCredential created = hasher.Create();
+        ApiKeyCredential custom = hasher.CreateWithToken(created.Token, created.Prefix);
+
+        Assert.Equal(created.Token, custom.Token);
+        Assert.Equal(created.Prefix, custom.Prefix);
+        Assert.True(ApiKeyHasher.Verify(custom.Token, custom.Hash));
+    }
+
+    [Fact]
     public void Verify_AnotherKey_Fails()
     {
         ApiKeyHasher hasher = Hasher();

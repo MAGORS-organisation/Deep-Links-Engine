@@ -163,6 +163,15 @@ public static class DleIdentityServiceCollectionExtensions
                 options.TokenValidationParameters.RoleClaimType = identity.Oidc.RoleClaim;
                 options.TokenValidationParameters.ValidateIssuer = true;
                 options.TokenValidationParameters.ValidateLifetime = true;
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = context => DleOidcClaimMapper.MapClaimsAsync(
+                        context.Principal,
+                        context.HttpContext.RequestServices,
+                        identity.Oidc,
+                        context.HttpContext.RequestAborted),
+                };
             });
         }
     }

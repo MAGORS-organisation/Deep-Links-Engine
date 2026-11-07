@@ -1,5 +1,6 @@
 using Dle.Control.Configuration;
 using Dle.Control.Features.Auth;
+using Dle.Control.Features.Bootstrap;
 using Dle.Control.Features.Shared;
 using Dle.Control.Identity;
 
@@ -26,6 +27,7 @@ builder.Services
     .AddDleWebhooks(builder.Configuration)
     .AddDleIdentity(builder.Configuration)
     .AddDleWorkers(builder.Configuration)
+    .AddDleBootstrap(builder.Configuration)
     .AddDleControlRateLimiting(builder.Configuration);
 
 WebApplication app = builder.Build();
