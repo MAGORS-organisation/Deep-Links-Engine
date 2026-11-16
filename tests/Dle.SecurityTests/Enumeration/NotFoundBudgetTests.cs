@@ -36,8 +36,14 @@ public sealed class NotFoundBudgetTests : IAsyncLifetime
 
         // Only the resolve sliding window is lifted, and only so that a test making a few hundred
         // requests from one address does not trip the *other* limit and mask the one under test. The
-        // 404 budget keeps its §E.9 defaults, which is the whole subject here.
+        // 404 budget keeps its §E.9 burst and rate per period, which is the whole subject here.
         _edge.Overrides["Dle:RateLimits:Edge:Resolve:PermitsPerWindow"] = "100000";
+
+        // The partitioned token bucket refills continuously, one token every three seconds at the
+        // default period. A run slower than that (CI under coverage instrumentation) got a token back
+        // mid-test, so the "drain exactly the burst" steps below missed the ban. Stretching the period
+        // to an hour leaves the burst intact and refills one token every three minutes.
+        _edge.Overrides["Dle:RateLimits:Edge:NotFound:ReplenishmentPeriodSeconds"] = "3600";
 
         _edge.Links.Add(FakeDomainConfigStore.KnownHost, FakeLinkStore.WebLink(Slug, TargetUrl));
 
