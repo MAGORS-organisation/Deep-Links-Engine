@@ -281,7 +281,7 @@ $RECYCLE.BIN/
 # Admin SPA build output copied by the CopyAdminSpa MSBuild target (src/Dle.Admin.Web/dist -> here)
 src/Dle.Control/wwwroot/admin/
 
-# Mobile SDK build output (nothing here compiles in CI without the platform toolchains)
+# Mobile SDK build output
 sdk/android/.gradle/
 sdk/android/**/build/
 sdk/android/local.properties
@@ -293,6 +293,3 @@ sdk/ios/**/*.xcuserstate
 
 # The compose override under deploy/ is a committed development profile referenced by CI (security.yml), not a local scratch file.
 !deploy/docker-compose.override.yml
-
-# Local tool worktrees; never part of the repository.
-.claude/worktrees/

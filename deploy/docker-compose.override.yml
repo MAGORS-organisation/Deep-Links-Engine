@@ -2,8 +2,9 @@
 # Local development overrides — merged automatically by `docker compose up` when run in this
 # directory. Aspire-free: this is the plain compose stack, nothing here depends on deploy/aspire.
 #
-#   cp .env.example .env    # set POSTGRES_PASSWORD, VALKEY_PASSWORD, DLE_MASTER_SECRET, DLE_EDGE_SECRET and
-#                           # DLE_BOOTSTRAP_INITIAL_API_KEY (see .env.example) — or run setup-dev.sh / setup-dev.ps1
+#   cp .env.example .env    # set DLE_DOMAIN=localhost, DLE_TLS=internal, POSTGRES_PASSWORD, VALKEY_PASSWORD,
+#                           # DLE_MASTER_SECRET, DLE_EDGE_SECRET and DLE_BOOTSTRAP_INITIAL_API_KEY
+#                           # (see .env.example) — or run setup-dev.sh / setup-dev.ps1, which does all of it
 #   docker compose up --build
 #
 # What it changes:

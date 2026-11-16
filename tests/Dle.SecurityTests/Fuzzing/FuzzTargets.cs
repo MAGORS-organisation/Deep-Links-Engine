@@ -11,24 +11,20 @@ using Microsoft.Extensions.Options;
 namespace Dle.SecurityTests.Fuzzing;
 
 /// <summary>
-/// The three fuzz targets: the URL parser, the user-agent parser and the
-/// <c>routing_rules</c> deserializer.
+/// The four fuzz targets: the URL parser, the user-agent parser, the <c>routing_rules</c>
+/// deserializer and the Play install referrer parser.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>SharpFuzz is not installed and these were not run under it.</b> SharpFuzz is the intended tool
-/// for nightly fuzzing; it needs libFuzzer and an instrumentation pass over the assemblies under test,
-/// neither of which exists on this machine, and the package is not in the repository's central
-/// version list. Adding it is a change to the solution's dependency set and to CI, not to a test
-/// project, so what is here is the half that belongs in a test project: the targets themselves,
-/// written to the shape SharpFuzz drives, plus a deterministic property-based run of the same code in
-/// <see cref="FuzzHarnessTests"/> that does execute on every build.
+/// The targets are written to the shape SharpFuzz drives: each takes raw bytes. They run in two ways.
+/// <see cref="FuzzHarnessTests"/> runs the same code as a deterministic property-based test on every
+/// build, and the nightly workflow runs it with a much larger budget.
 /// </para>
 /// <para>
-/// To run them under SharpFuzz, add a small console project that references this one and calls
-/// <c>Fuzzer.LibFuzzer.Run(FuzzTargets.RoutingRules)</c> (or one of the others), instrument the
-/// assembly under test with <c>sharpfuzz</c>, and drive it with libFuzzer. Each target below takes
-/// raw bytes, so no adaptation is needed.
+/// Coverage-guided fuzzing goes through <c>tests/Dle.FuzzDriver</c>, a console project that calls
+/// <c>Fuzzer.LibFuzzer.Run</c> on the target named on its command line (SharpFuzz is pinned in the
+/// central package list). It also needs the assemblies under test instrumented with the
+/// <c>sharpfuzz</c> tool and libFuzzer to drive the driver; no workflow sets those up.
 /// </para>
 /// <para>
 /// <b>What a target asserts.</b> Nothing, deliberately. A fuzz target's contract is that it must not

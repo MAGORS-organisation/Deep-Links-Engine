@@ -67,6 +67,31 @@ jobs:
           echo "owner=${OWNER,,}" >> "$GITHUB_OUTPUT"
           echo "version=$version prerelease=$prerelease owner=${OWNER,,}"
 
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # deploy/docker-compose.yml and deploy/.env.example pin the image tag a plain `docker compose
+      # pull` gets, and they are bumped by hand. The gates below override DLE_VERSION, so without
+      # this check a release could ship a compose file that still pulls the previous version. The
+      # pin is the release core: v1.0.0-rc.1 and v1.0.0 both expect 1.0.0.
+      - name: Compose pins this release
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          core="${VERSION%%[-+]*}"
+          missing=0
+          count=$(grep -cF "\${DLE_VERSION:-$core}" deploy/docker-compose.yml || true)
+          images=$(grep -cF '${DLE_VERSION:-' deploy/docker-compose.yml || true)
+          if [ "$count" -eq 0 ] || [ "$count" -ne "$images" ]; then
+            echo "::error file=deploy/docker-compose.yml::every \${DLE_VERSION:-…} default must be $core ($count of $images are)"; missing=1
+          fi
+          if ! grep -qx "DLE_VERSION=$core" deploy/.env.example; then
+            echo "::error file=deploy/.env.example::DLE_VERSION must be $core"; missing=1
+          fi
+          exit "$missing"
+
   # ---------------------------------------------------------------------------------------------
   ci:
     name: CI

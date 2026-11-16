@@ -19,9 +19,11 @@
 #   secrets.edgeSecret                 the edge's own secret, at least 32 characters and different
 #                                      from masterSecret
 #   externalPostgres.connectionString  or postgresql.enabled=true with postgresql.auth.password
-# and one more whenever ingress.enabled is true (the default):
-#   ingress.host                       the public host name of your links; the go.example.com set
-#                                      below is a placeholder and must be replaced
+# Replace one more whenever ingress.enabled is true (the default):
+#   ingress.host                       the public host name of your links. The chart does not
+#                                      enforce it: the go.example.com placeholder below renders and
+#                                      installs, so a forgotten value shows up only as Ingresses
+#                                      (and certificates) for the wrong host
 #
 # !!! /.well-known RESPONSES MUST NEVER BE REDIRECTED — see the `ingress` section. !!!
 # =============================================================================

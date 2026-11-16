@@ -69,12 +69,14 @@ public static class AnalyticsSqlScripts
     /// <remarks>
     /// A list rather than "everything in the folder": the parameterised maintenance statements live
     /// in the same folder and must never be handed to an applier. <c>PostgresAnalyticsSchema</c>
-    /// runs these at start-up. An operator whose runtime role may not create tables runs the same
-    /// files by hand, in list order, against the analytics database with a role that may: today
-    /// that is <c>Sql/001_analytics_rollups.sql</c> alone, for example with
-    /// <c>psql -v ON_ERROR_STOP=1 -f 001_analytics_rollups.sql</c>. Every statement in it is
-    /// idempotent, so running it again is harmless. The runtime role then needs read and write
-    /// access to the tables it creates; the rollup and retention workers find them on their next run.
+    /// runs <see cref="Migration"/>, today the only entry, at start-up with the runtime role.
+    /// Where that role may not create tables, run the listed files by hand, in list order, against
+    /// the analytics database with a role that may, for example with
+    /// <c>psql -v ON_ERROR_STOP=1 -f 001_analytics_rollups.sql</c>, and grant the runtime role read
+    /// and write access to the tables; the rollup and retention workers find them on their next run.
+    /// Every statement is idempotent. The start-up run still fails on objects the runtime role does
+    /// not own and logs that failure on every start, so the simplest set-up is a runtime role that
+    /// owns the analytics tables.
     /// </remarks>
     public static IReadOnlyList<string> MigrationScripts { get; } = [Migration];
 

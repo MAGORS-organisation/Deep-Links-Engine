@@ -23,8 +23,9 @@ public sealed class EdgeRateLimitOptions
     public const string SectionName = "Dle:RateLimits:Edge";
 
     /// <summary>
-    /// Whether the limiters are installed. Off is only ever right for a load test that is measuring
-    /// something else.
+    /// Whether the resolve and QR limiters are installed. Off is only ever right for a load test that
+    /// is measuring something else. The 404 budget (<see cref="NotFound"/>) stays on either way; a
+    /// load test raises its limits instead.
     /// </summary>
     public bool Enabled { get; set; } = true;
 

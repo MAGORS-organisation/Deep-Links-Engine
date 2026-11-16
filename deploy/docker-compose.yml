@@ -8,7 +8,7 @@
 #   Sized for 2 vCPU / 4 GB RAM / 20 GB disk; ~1 000 req/s.
 #
 # Configuration comes from ./.env (copy .env.example, or let setup-dev.sh / setup-dev.ps1 generate
-# it). Five values are REQUIRED and compose refuses to start without them: DLE_DOMAIN,
+# it). Six values are REQUIRED and compose refuses to start without them: DLE_DOMAIN, DLE_TLS,
 # POSTGRES_PASSWORD, VALKEY_PASSWORD, DLE_MASTER_SECRET and DLE_EDGE_SECRET. Every other variable
 # has a default below. DLE_BOOTSTRAP_INITIAL_API_KEY is not enforced but is needed on the first
 # start: without it the stack runs healthy, provisions nothing and nobody can sign in.
@@ -68,7 +68,7 @@ services:
       - "${DLE_HTTPS_PORT:-443}:443/udp"   # HTTP/3 (QUIC)
     environment:
       DLE_DOMAIN: ${DLE_DOMAIN:?DLE_DOMAIN is required — the public host name of your links}
-      DLE_TLS: ${DLE_TLS:-internal}
+      DLE_TLS: ${DLE_TLS:?DLE_TLS is required — an ACME e-mail address, or internal for local use}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data        # certificates and ACME account — keep it, or you hit rate limits

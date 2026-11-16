@@ -24,11 +24,17 @@
 //   DLE_DOMAIN_ID=<domain id> DLE_LINK_HOST=link.example.com node seed.js
 //   k6 run -e BASE_URL=https://link.example.com resolve.js
 //
-// NOT RUN in this repository's development environment: k6 is not installed on the machine this file
-// was written on, and the profile needs a deployed edge with PostgreSQL and Valkey behind it. The
-// numbers only mean something when corpus.json was seeded against the instance under test and the
-// edge does not throttle the generator: on a test or staging instance set
-// Dle:RateLimits:Edge:Enabled to false for the run, or raise its limits well above the profile.
+// The profile needs a deployed edge with PostgreSQL and Valkey behind it; release.yml runs it against
+// staging as the k6 gate. The numbers only mean something when corpus.json was seeded against the
+// instance under test and the edge does not throttle the generator. On a test or staging instance:
+//
+//   - set Dle:RateLimits:Edge:Enabled to false, which removes the resolve and QR limiters only;
+//   - raise Dle:RateLimits:Edge:NotFound (TokensPerPeriod and Burst, per replenishment period)
+//     above the miss stream, or spread the generator across source networks. The 404 budget is
+//     always on: about 100 misses a second from one /24 (IPv4) or /48 (IPv6) drain the default
+//     bucket in under a second, and the prefix is then shadow banned for
+//     Dle:RateLimits:Edge:NotFound:ShadowBanMinutes. During the ban every request from it, hits
+//     included, is answered 404, and the run fails dle_correct_outcome.
 
 import http from 'k6/http';
 import exec from 'k6/execution';
@@ -247,10 +253,11 @@ function record(response, kind, isCrawler) {
   let expected;
 
   if (kind === 'miss') {
-    // 429 is a correct answer once a generator address has drained its 404 budget. It is counted
-    // separately rather than treated as a failure. The 404 budget is kept per network prefix (/24
-    // for IPv4, /48 for IPv6), so keep it rare by spreading the generator across enough source
-    // networks, or raise Dle:RateLimits:Edge:NotFound for the run and say so in the report.
+    // 429 is a correct answer to the one miss that drains a prefix's 404 budget (/24 for IPv4, /48
+    // for IPv6), so it is counted separately rather than treated as a failure. What follows is not:
+    // the prefix is then shadow banned, every request from it gets 404, hits included, and those
+    // count as incorrect. Raise Dle:RateLimits:Edge:NotFound or spread the generator across source
+    // networks before the run (see the header), and say so in the report.
     expected = status === 404 || status === 429;
 
     if (status === 404) {

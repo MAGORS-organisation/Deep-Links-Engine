@@ -77,7 +77,8 @@ jobs:
   helm-install:
     name: Helm chart install (kind)
     # The chart installs the images built from src/, so a change that never touches deploy/ can
-    # still break an install. helm.yml runs on its own paths; this runs it against develop daily.
+    # still break an install. helm.yml runs on its own paths; this runs it daily against the
+    # default branch, as GitHub runs every schedule.
     uses: ./.github/workflows/helm.yml
 
   # ---------------------------------------------------------------------------------------------
