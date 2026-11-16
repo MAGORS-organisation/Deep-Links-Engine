@@ -82,7 +82,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package metadata">
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/MAGORS-organisation/Deep-Links-Engine</PackageProjectUrl>
     <RepositoryUrl>https://github.com/MAGORS-organisation/Deep-Links-Engine</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

@@ -102,7 +102,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      # The project is MIT. Allowed: permissive licences compatible with redistributing under MIT.
+      # The engine is AGPL-3.0-only and the SDKs in sdk/ are MIT. Allowed: permissive licences only, so
+      # that both can be redistributed — the SDKs ship inside other people's applications.
       # Semicolon-separated because both tools below accept exactly that shape.
       ALLOWED_LICENCES: "MIT;MIT-0;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;MS-PL;PostgreSQL;Unlicense;CC0-1.0;Zlib;BSL-1.0;BlueOak-1.0.0;Python-2.0;CC-BY-4.0;W3C"
       # Copyleft / source-available / unknown: never acceptable, at any depth, dev tooling included.

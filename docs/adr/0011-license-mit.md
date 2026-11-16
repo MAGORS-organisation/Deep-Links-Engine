@@ -5,7 +5,9 @@
 
 ## Status
 
-**Accepted, deviation.** The specification ([§B.4 ADR-011](../zadanie.md#adr-011--licencia-agpl-30--cla)) recommended **AGPL-3.0 with a contributor licence agreement**. The project owner chose **MIT**. See [`LICENSE`](../../LICENSE).
+**Superseded by [ADR-0015](0015-license-agpl-engine-mit-sdks.md) on 2026-11-16:** the engine is now AGPL-3.0-only and the SDKs MIT. Kept as the record of the earlier decision.
+
+**Accepted, deviation (until 2026-11-16).** The specification ([§B.4 ADR-011](../zadanie.md#adr-011--licencia-agpl-30--cla)) recommended **AGPL-3.0 with a contributor licence agreement**. The project owner chose **MIT**.
 
 ## Date
 

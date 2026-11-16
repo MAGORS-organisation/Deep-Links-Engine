@@ -192,12 +192,12 @@ consent from the person being matched.
 | Deferred deep linking | Yes, with probabilistic matching | Yes | Deterministic first; probabilistic opt-in |
 | Attribution confidence exposed | Rarely | n/a | Always, per record |
 | Stack | — | TypeScript | .NET 11, PostgreSQL |
-| Licence | Commercial | AGPL-3.0 + commercial | MIT |
+| Licence | Commercial | AGPL-3.0 + commercial | AGPL-3.0 (SDKs MIT) |
 
 ### Cost
 
-Self-hosting is free. The engine is MIT, with no licence key, no licence-based limit, no feature held
-back, and nothing sent to us. The only limits are the anti-abuse defaults you can configure: rate limits
+Self-hosting is free. The engine is open source (AGPL-3.0), with no licence key, no licence-based
+limit, no feature held back, and nothing sent to us. The only limits are the anti-abuse defaults you can configure: rate limits
 and a per-tenant webhook cap. You pay only for your own infrastructure.
 
 ## SDKs
@@ -224,6 +224,8 @@ Run the test suites with `dotnet test --project tests/Dle.UnitTests` (likewise `
 
 ## Licence
 
-MIT, chosen over AGPL-3.0 with a contributor licence agreement for adoption and zero legal friction,
-at the cost of allowing a closed hosted fork. The trade-off is recorded in
-[ADR-0011](docs/adr/0011-license-mit.md).
+The engine — everything outside `sdk/` — is licensed under the GNU AGPL-3.0-only ([LICENSE](LICENSE)):
+anyone who runs a modified engine as a network service must offer its users the modified source. The
+SDKs in `sdk/` are MIT, so they can be embedded in any application, closed-source included. See
+[NOTICE](NOTICE) and [ADR-0015](docs/adr/0015-license-agpl-engine-mit-sdks.md), which replaced the earlier
+MIT decision ([ADR-0011](docs/adr/0011-license-mit.md)).

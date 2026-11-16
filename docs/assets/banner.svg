@@ -132,9 +132,9 @@
       <rect x="486" y="0" width="136" height="30" rx="6" fill="#1e2238" stroke="#38bdf8" stroke-width="1" stroke-opacity="0.5" />
       <text x="498" y="19" font-family="system-ui, sans-serif" font-size="12" font-weight="650" fill="#93c5fd">⚛️ React 19 SPA</text>
 
-      <!-- Badge 5: MIT -->
+      <!-- Badge 5: licence -->
       <rect x="632" y="0" width="100" height="30" rx="6" fill="#2d1c32" stroke="#f43f5e" stroke-width="1" stroke-opacity="0.5" />
-      <text x="644" y="19" font-family="system-ui, sans-serif" font-size="12" font-weight="650" fill="#fda4af">🛡️ MIT License</text>
+      <text x="644" y="19" font-family="system-ui, sans-serif" font-size="12" font-weight="650" fill="#fda4af">🛡️ AGPL-3.0</text>
     </g>
   </g>
 </svg>

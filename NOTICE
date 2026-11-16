@@ -1,0 +1,14 @@
+Deep Link Engine
+Copyright (c) 2026 MAGØRS, organisation.
+
+The engine — everything in this repository outside sdk/ — is free software: you can redistribute it
+and/or modify it under the terms of the GNU Affero General Public License, version 3 only
+(SPDX: AGPL-3.0-only), as published by the Free Software Foundation. See LICENSE.
+
+The SDKs in sdk/ — the web, Android and iOS client libraries an application embeds — are licensed
+under the MIT License (SPDX: MIT), so that they can be used in any application, including a
+closed-source one. See sdk/web/LICENSE, sdk/android/LICENSE and sdk/ios/LICENSE.
+
+The engine is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero
+General Public License for more details.

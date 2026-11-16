@@ -31,7 +31,7 @@ RUN set -eux; \
 LABEL org.opencontainers.image.title="dle-postgres" \
       org.opencontainers.image.description="PostgreSQL with pg_partman for the Deep Link Engine" \
       org.opencontainers.image.source="https://github.com/MAGORS-organisation/Deep-Links-Engine" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.licenses="PostgreSQL"
 
 # The pg_partman background worker (pg_partman_bgw) runs partition maintenance without pg_cron.
 # It needs shared_preload_libraries; postgresql.tuning.conf has the commented settings — enable
