@@ -64,7 +64,7 @@ public sealed class BootstrapServiceTests
     [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEFG_extra")]
     [InlineData("abc_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEFG")]
     [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDE+/")]
-    [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEF€")]
+    [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEF\u00E9")]
     [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDE F")]
     public void FirstKeySource_WithAMalformedKey_IsMalformed_EvenWhenAGeneratedKeyCouldBeHandedOut(string key)
     {
