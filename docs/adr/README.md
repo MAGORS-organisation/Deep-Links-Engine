@@ -5,7 +5,7 @@
 
 ## Why these exist
 
-The specification, [docs/zadanie.md §B.4](../zadanie.md#b4-architektonické-rozhodnutia-adr) (summarised in [§0.3](../zadanie.md#03-kľúčové-technické-rozhodnutia-zhrnutie)), took thirteen decisions and gave the numbers behind them. The files here carry that substance into English, in a fixed format. One deviation is recorded as a decision: the specification recommended AGPL-3.0 + CLA and the owner chose MIT ([ADR-0011](0011-license-mit.md)). It is not the only place the repository departs from the specification — the others are listed below. Where the implementation does not match an ADR, the ADR carries a dated status note.
+The specification, [docs/zadanie.md §B.4](../zadanie.md#b4-architektonické-rozhodnutia-adr) (summarised in [§0.3](../zadanie.md#03-kľúčové-technické-rozhodnutia-zhrnutie)), took thirteen decisions and gave the numbers behind them. The files here carry that substance into English, in a fixed format. One deviation was recorded as a decision: the specification recommended AGPL-3.0 + CLA and the owner chose MIT ([ADR-0011](0011-license-mit.md)); [ADR-0015](0015-license-agpl-engine-mit-sdks.md) later moved the engine to AGPL-3.0-only and kept the SDKs MIT. It is not the only place the repository departs from the specification — the others are listed below. Where the implementation does not match an ADR, the ADR carries a dated status note.
 
 ### Departures not recorded as decisions
 
@@ -35,9 +35,10 @@ Numbering: the specification writes `ADR-001`; this directory writes `ADR-0001` 
 | [0008](0008-deferred-deep-linking-strategies.md) | Deterministic attribution first; probabilistic only opt-in with consent | Accepted; status note |
 | [0009](0009-http-response-shape-never-301.md) | Response shape by client class; never `301`; at most one hop | Accepted; status note |
 | [0010](0010-modular-monolith-two-deployment-units.md) | Modular monolith, two deployment units, one database | Accepted |
-| [0011](0011-license-mit.md) | Licence: MIT — **deviates from the specification** (AGPL-3.0 + CLA) | Accepted, deviation |
+| [0011](0011-license-mit.md) | Licence: MIT — **deviated from the specification** (AGPL-3.0 + CLA) | Superseded by 0015 |
 | [0012](0012-native-aot-deferred-to-v2.md) | Native AOT not in v1; edge kept AOT-ready | Accepted, deferred |
 | [0013](0013-crypto-agility-from-day-one.md) | Crypto agility from the first commit; `alg` + `kid` on every signed artefact | Accepted; status note |
+| [0015](0015-license-agpl-engine-mit-sdks.md) | Licence: AGPL-3.0-only for the engine, MIT for the SDKs in `sdk/` | Accepted |
 
 ## Format
 

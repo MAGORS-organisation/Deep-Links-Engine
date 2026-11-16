@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Administration console for the Deep Link Engine (DLE) control plane. React 19, TypeScript, Vite; no component library, no charting dependency, no CDN.",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
     "dev": "vite",

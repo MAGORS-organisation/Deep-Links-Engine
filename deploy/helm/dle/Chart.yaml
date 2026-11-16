@@ -21,7 +21,7 @@ maintainers:
   - name: MAGORS organisation
     url: https://github.com/MAGORS-organisation
 annotations:
-  artifacthub.io/license: MIT
+  artifacthub.io/license: AGPL-3.0-only
   artifacthub.io/prerelease: "false"
 
 # Optional bundled data stores — EVALUATION CONVENIENCE ONLY, both off by default.

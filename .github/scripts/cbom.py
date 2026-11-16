@@ -379,7 +379,7 @@ def main() -> int:
                 "bom-ref": product_ref,
                 "name": "Deep Link Engine",
                 "version": args.version,
-                "licenses": [{"license": {"id": "MIT"}}],
+                "licenses": [{"license": {"id": "AGPL-3.0-only"}}],
             },
             "properties": [
                 {"name": "dle:cbom-source",

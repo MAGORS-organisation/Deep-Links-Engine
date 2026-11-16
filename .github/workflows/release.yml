@@ -131,7 +131,7 @@ jobs:
           labels: |
             org.opencontainers.image.title=dle-${{ matrix.image }}
             org.opencontainers.image.vendor=MAGORS organisation
-            org.opencontainers.image.licenses=MIT
+            org.opencontainers.image.licenses=AGPL-3.0-only
 
       - name: Build date
         id: now

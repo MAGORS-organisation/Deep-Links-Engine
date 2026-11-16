@@ -1,10 +1,9 @@
 # Contributing to Deep Link Engine
 
-DLE is a self-hosted, EU-first deep-linking and attribution engine. It is MIT licensed and there is
-no CLA. Code comments and test traits cite requirement and threat IDs (`FR-`, `NFR-`, `S-`, `T-`)
-and `§` sections of the project's original specification, which is not published. The IDs a `Spec`
-trait may use are listed in `tests/Dle.ContractTests/Traceability/spec-ids.txt`; `§` references are
-informational only. A new contribution does not need either.
+DLE is a self-hosted, EU-first deep-linking and attribution engine. The engine is licensed under
+AGPL-3.0-only and the SDKs in `sdk/` under MIT (see [Licence](#licence)). Code comments state the
+rule and the reason directly; they do not cite the project's original specification, which is not
+published.
 
 ## Branches
 
@@ -130,11 +129,11 @@ logging of PII at `Information` or below, and a dependency without a lock-file u
 
 ## Licence
 
-MIT, see [LICENSE](LICENSE). There is no contributor licence agreement: by opening a pull request
-you agree that your contribution is licensed under the same MIT licence as the project
-(inbound = outbound). Do not contribute code you do not have the right to license that way, and
-do not add dependencies under licences incompatible with MIT — the Security workflow's licence
-policy will reject them.
+The engine — everything outside `sdk/` — is AGPL-3.0-only ([LICENSE](LICENSE)); the SDKs in `sdk/` are
+MIT. See [NOTICE](NOTICE). By opening a pull request you agree that your contribution is licensed
+under the licence of the part it changes (inbound = outbound). Do not contribute code you do not have
+the right to license that way, and do not add dependencies under copyleft licences: the SDKs must
+stay redistributable under MIT, and the Security workflow's licence policy will reject them.
 
 ## Code of conduct
 
