@@ -138,6 +138,14 @@ export const MAX_REFERRER_LENGTH = 1024;
 
 const MATCH_TYPES: readonly string[] = ['none', 'install_referrer', 'login', 'claim_code', 'probabilistic', 'direct_open'];
 
+/** The match types that identify the click exactly. An allowlist, so nothing unknown slips in. */
+const DETERMINISTIC_MATCH_TYPES: readonly string[] = ['install_referrer', 'login', 'claim_code', 'direct_open'];
+
+/** `true` for a `match_type` this SDK version knows. */
+export function isKnownMatchType(value: string): value is MatchType {
+  return MATCH_TYPES.includes(value);
+}
+
 // ---------------------------------------------------------------------------------------
 // Builders (pure)
 // ---------------------------------------------------------------------------------------
@@ -308,12 +316,26 @@ function currentView(): SignalsView {
  * The two members that carry the meaning of an attribution — `match_type` and `confidence`
  * — are mandatory. A body without them is refused rather than guessed at, because a guess
  * is exactly how a probabilistic hint ends up displayed as a certainty.
+ *
+ * A `match_type` this SDK version does not know — a strategy a newer engine added — is read as
+ * `none`: "not attributed", never "attributed somehow". The rest of the answer is kept, so an
+ * application built against this version keeps working, and `onUnknownMatchType` receives the
+ * raw value so it can be logged.
  */
-export function parseResolveResponse(value: unknown): ResolveResult {
+export function parseResolveResponse(
+  value: unknown,
+  onUnknownMatchType?: (raw: string) => void,
+): ResolveResult {
   if (!isRecord(value)) throw new DleError('malformed', 'resolve response is not a JSON object');
-  const matchType = value.match_type;
-  if (typeof matchType !== 'string' || !MATCH_TYPES.includes(matchType)) {
+  const rawMatchType = value.match_type;
+  if (typeof rawMatchType !== 'string') {
     throw new DleError('malformed', 'resolve response has no valid match_type');
+  }
+  let matchType: MatchType = 'none';
+  if (isKnownMatchType(rawMatchType)) {
+    matchType = rawMatchType;
+  } else {
+    onUnknownMatchType?.(rawMatchType);
   }
   const confidence = value.confidence;
   if (typeof confidence !== 'number' || !Number.isFinite(confidence)) {
@@ -324,7 +346,7 @@ export function parseResolveResponse(value: unknown): ResolveResult {
   const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined);
   return compact({
     matched: value.matched === true,
-    matchType: matchType as MatchType,
+    matchType,
     confidence: Math.min(1, Math.max(0, confidence)),
     clickId: str(value.click_id),
     link:
@@ -346,7 +368,7 @@ export function parseResolveResponse(value: unknown): ResolveResult {
  * Use it before treating a resolve result as fact; a `probabilistic` match is a hint.
  */
 export function isDeterministic(result: Pick<ResolveResult, 'matched' | 'matchType' | 'confidence'>): boolean {
-  return result.matched && result.matchType !== 'none' && result.matchType !== 'probabilistic' && result.confidence >= 1;
+  return result.matched && DETERMINISTIC_MATCH_TYPES.includes(result.matchType) && result.confidence >= 1;
 }
 
 // ---------------------------------------------------------------------------------------

@@ -100,13 +100,18 @@ class StateStoreTest {
     }
 
     @Test
-    fun cacheWithAnUnknownMatchType_isDiscarded() {
+    fun cacheWithAnUnknownMatchType_readsAsNone() {
+        // Only a cache written by a newer SDK can hold one. Reading it as "not attributed" keeps the
+        // once-per-installation answer instead of asking the engine again on every launch.
         prefs.edit()
             .putBoolean(StateStore.KEY_RESOLVE_DONE, true)
             .putString(StateStore.KEY_RESOLVE_LINK, """{"matched":true,"match_type":"telepathy","confidence":1.0}""")
             .commit()
 
-        assertNull(store.cachedResolve())
+        val cached = store.cachedResolve()
+
+        assertEquals(MatchType.NONE, cached?.link?.matchType)
+        assertFalse(cached!!.link.isDeterministic)
     }
 
     @Test

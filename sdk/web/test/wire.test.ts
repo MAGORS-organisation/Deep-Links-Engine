@@ -11,7 +11,7 @@ import {
   parseResolveResponse,
 } from '../src/api';
 import { VERSION, referrerFromSearch } from '../src/index';
-import type { DleEvent } from '../src/types';
+import type { DleEvent, MatchType } from '../src/types';
 import { WIRE } from './helpers';
 
 describe('wire contract (literals from SdkWireContractTests.cs)', () => {
@@ -132,8 +132,30 @@ describe('malformed resolve responses are refused, never guessed', () => {
     expect(() => parseResolveResponse({ matched: true, match_type: 'login' })).toThrow(DleError);
   });
 
-  it('rejects an unknown match_type', () => {
-    expect(() => parseResolveResponse({ matched: true, match_type: 'magic', confidence: 1 })).toThrow(/match_type/);
+  it('reads an unknown match_type as none, never as an attribution', () => {
+    // A strategy a newer engine added must not break an application built against this SDK.
+    const seen: string[] = [];
+    const result = parseResolveResponse(
+      { matched: true, match_type: 'magic', confidence: 1, link: { id: '7' }, params: { a: 'b' } },
+      (raw) => seen.push(raw),
+    );
+    expect(result.matchType).toBe('none');
+    expect(isDeterministic(result)).toBe(false);
+    expect(result.link?.id).toBe('7');
+    expect(result.params).toEqual({ a: 'b' });
+    expect(seen).toEqual(['magic']);
+  });
+
+  it('never calls an unknown match type deterministic, wherever it came from', () => {
+    // A cache written by a newer SDK on the same origin can still hold one.
+    const future = { matched: true, matchType: 'future' as MatchType, confidence: 1 };
+    expect(isDeterministic(future)).toBe(false);
+    expect(isDeterministic({ matched: true, matchType: 'login', confidence: 1 })).toBe(true);
+  });
+
+  it('still rejects a match_type that is not a string', () => {
+    expect(() => parseResolveResponse({ matched: true, match_type: 7, confidence: 1 })).toThrow(/match_type/);
+    expect(() => parseResolveResponse({ matched: true, match_type: null, confidence: 1 })).toThrow(/match_type/);
   });
 
   it('rejects non-objects', () => {

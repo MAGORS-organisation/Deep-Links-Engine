@@ -10,7 +10,8 @@
  * How an attribution was established. Mirrors `ResolveResponseDto.match_type`.
  *
  * `probabilistic` is NEVER presented as certain: it is opt-in, consent-gated, and always
- * carried together with a `confidence` below 1.0.
+ * carried together with a `confidence` below 1.0. A value from a newer engine that this SDK
+ * version does not know arrives as `none` — "not attributed", never "attributed somehow".
  */
 export type MatchType =
   | 'none'
