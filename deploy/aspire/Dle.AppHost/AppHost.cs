@@ -37,15 +37,36 @@ IResourceBuilder<RedisResource> valkey = builder
 //
 // The control plane owns the schema, the workers and the administrative API. It waits for the
 // database because its first action on a cold start is to check the migration state. On an empty
-// database it creates the first tenant with the owner key from DLE_BOOTSTRAP_INITIAL_API_KEY, which
-// setup-dev.ps1 / setup-dev.sh read from deploy/.env.
-builder
+// database it creates the first tenant with the owner key DLE_BOOTSTRAP_INITIAL_API_KEY: from the
+// environment, else from deploy/.env (which setup-dev.ps1 / setup-dev.sh write). With neither, the
+// variable is left unset, so a key in Dle.Control's own user secrets still applies.
+string? ownerKey = builder.Configuration["DLE_BOOTSTRAP_INITIAL_API_KEY"];
+
+if (string.IsNullOrWhiteSpace(ownerKey))
+{
+    const string Setting = "DLE_BOOTSTRAP_INITIAL_API_KEY=";
+    string envFile = Path.GetFullPath(Path.Combine(builder.AppHostDirectory, "..", "..", ".env"));
+
+    if (File.Exists(envFile))
+    {
+        ownerKey = File.ReadLines(envFile)
+            .Where(line => line.StartsWith(Setting, StringComparison.Ordinal))
+            .Select(line => line[Setting.Length..].Trim())
+            .LastOrDefault();
+    }
+}
+
+IResourceBuilder<ProjectResource> control = builder
     .AddProject<Projects.Dle_Control>("dle-control")
     .WithReference(database, connectionName: "Postgres")
-    .WithReference(valkey, connectionName: "Valkey")
-    .WithEnvironment(
-        "Dle__Bootstrap__InitialApiKey",
-        builder.Configuration["DLE_BOOTSTRAP_INITIAL_API_KEY"] ?? string.Empty)
+    .WithReference(valkey, connectionName: "Valkey");
+
+if (!string.IsNullOrWhiteSpace(ownerKey))
+{
+    control = control.WithEnvironment("Dle__Bootstrap__InitialApiKey", ownerKey);
+}
+
+control
     .WaitFor(database)
     .WaitFor(valkey)
     .WithHttpHealthCheck("/healthz")

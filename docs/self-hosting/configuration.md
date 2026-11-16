@@ -131,7 +131,7 @@ Defaults from [§E.9](../zadanie.md#e9-rate-limity-a-kvóty--konkrétne-hodnoty)
 
 | Key | Type | Default | Effect | Change when |
 |---|---|---|---|---|
-| `Enabled` | bool | true | Provisions a root tenant and an owner API key when the database contains no tenants, and on every start reports that tenant as the operator tenant (unless `Dle:Control:InstanceTenantId` is set). The owner key is the one in `InitialApiKey`; without it nothing is provisioned and an error says what to set. Of several replicas starting together exactly one provisions | Set false if tenants are provisioned strictly via custom scripts (then set `InstanceTenantId`) |
+| `Enabled` | bool | true | Provisions a root tenant and an owner API key when the database contains no tenants, and on every start reports that tenant as the operator tenant (unless `Dle:Control:InstanceTenantId` is set). The owner key is the one in `InitialApiKey`; when that is empty a key is minted only if `ExportKeyPath` or `AllowConsoleSecretOutput` gives it a way out, otherwise nothing is provisioned and an error says what to set. Of several replicas starting together exactly one provisions | Set false if tenants are provisioned strictly via custom scripts (then set `InstanceTenantId`) |
 | `DefaultTenantSlug` | string | `default` | Slug of the bootstrapped root tenant | Custom initial tenant slug |
 | `DefaultTenantName` | string | `Default Tenant` | Display name of the bootstrapped root tenant | Custom organization name |
 | `InitialKeyName` | string | `root-bootstrap` | Name given to the initial owner API key | Custom credential description |

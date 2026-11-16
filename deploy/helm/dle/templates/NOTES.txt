@@ -51,6 +51,12 @@ Ingress is disabled: expose the Services yourself and keep /.well-known/* free o
 
      key="$(printf 'dle_%s_%s' "$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8)" "$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 43)")"
      helm upgrade {{ .Release.Name }} <chart> -n {{ .Release.Namespace }} --reuse-values --set secrets.bootstrapOwnerKey="$key"
+{{- else if .Values.secrets.existingSecret }}
+
+   Secret "{{ .Values.secrets.existingSecret }}" must carry "{{ .Values.secrets.keys.bootstrapOwnerKey }}" on the first start, or nothing
+   is provisioned. A key added to it later takes effect only after:
+
+     kubectl -n {{ .Release.Namespace }} rollout restart deploy/{{ include "dle.control.fullname" . }}
 {{- end }}
 
    OIDC (control.config.oidc) does not create a tenant, so the key above is still needed on the

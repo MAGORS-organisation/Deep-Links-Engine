@@ -24,6 +24,8 @@ image:
 #   postgres-connection-string       Host=<primary>;Port=5432;Database=dle;Username=dle;Password=...;SSL Mode=Require
 #   postgres-read-connection-string  the same against the read-only service (edge only)
 #   valkey-connection-string         node-0:6379,node-1:6379,node-2:6379,ssl=true,password=...
+#   bootstrap-owner-key              the first owner API key, "dle_" + 8 + "_" + 43 characters from
+#                                    A-Z a-z 0-9, read once on an empty database (see values.yaml)
 secrets:
   existingSecret: dle-secrets   # CHANGE ME
 

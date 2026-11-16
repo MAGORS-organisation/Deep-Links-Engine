@@ -9,7 +9,8 @@
 #
 # Configuration comes from ./.env (copy .env.example, or let setup-dev.sh / setup-dev.ps1 generate
 # it). Three values are REQUIRED: POSTGRES_PASSWORD, DLE_MASTER_SECRET and DLE_EDGE_SECRET. Every
-# other variable has a default below.
+# other variable has a default below. DLE_BOOTSTRAP_INITIAL_API_KEY is not enforced but is needed on
+# the first start: without it the stack runs healthy, provisions nothing and nobody can sign in.
 #
 # Start-up order (all enforced with depends_on conditions):
 #   postgres, valkey  →  migrate (one-shot EF Core migration, exits 0)  →  dle-control, dle-edge

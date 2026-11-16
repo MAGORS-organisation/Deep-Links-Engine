@@ -124,9 +124,6 @@ fi
 
 if [ "$ASPIRE_MODE" = true ]; then
   echo "Starting local topology via .NET Aspire AppHost..."
-  # The app host hands this to dle-control; the rest of the stack comes from Aspire itself.
-  DLE_BOOTSTRAP_INITIAL_API_KEY="$(sed -n 's/^DLE_BOOTSTRAP_INITIAL_API_KEY=//p' "$ENV_FILE" | tail -1)"
-  export DLE_BOOTSTRAP_INITIAL_API_KEY
   cd "$ROOT_DIR/deploy/aspire/Dle.AppHost"
   exec dotnet run
 fi

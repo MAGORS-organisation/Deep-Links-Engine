@@ -63,6 +63,9 @@ public sealed class BootstrapServiceTests
     [InlineData("dle_Ab3d+f7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEFG")]
     [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEFG_extra")]
     [InlineData("abc_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEFG")]
+    [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDE+/")]
+    [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEF€")]
+    [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDE F")]
     public void FirstKeySource_WithAMalformedKey_IsMalformed_EvenWhenAGeneratedKeyCouldBeHandedOut(string key)
     {
         // A key the operator meant to supply must never be replaced silently by one they do not hold.

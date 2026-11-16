@@ -54,6 +54,7 @@ cd Deep-Links-Engine/deploy
 # for a public domain, set DLE_DOMAIN and DLE_TLS (your ACME e-mail) in .env now
 docker compose -f docker-compose.yml up -d --build
 grep '^DLE_BOOTSTRAP_INITIAL_API_KEY=' .env    # the first owner key
+# Windows: Select-String -Path .env -Pattern '^DLE_BOOTSTRAP_INITIAL_API_KEY='
 ```
 
 On an empty database the control plane provisions a tenant with the owner API key from

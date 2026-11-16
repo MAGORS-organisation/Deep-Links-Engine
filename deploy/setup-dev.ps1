@@ -155,9 +155,6 @@ if ($CheckOnly) {
 
 if ($Aspire) {
     Write-Host "Starting local topology via .NET Aspire AppHost..." -ForegroundColor Cyan
-    # The app host hands this to dle-control; the rest of the stack comes from Aspire itself.
-    $keyLine = Get-Content $EnvFile | Where-Object { $_ -match '^DLE_BOOTSTRAP_INITIAL_API_KEY=' } | Select-Object -Last 1
-    if ($keyLine) { $env:DLE_BOOTSTRAP_INITIAL_API_KEY = $keyLine.Substring('DLE_BOOTSTRAP_INITIAL_API_KEY='.Length) }
     Push-Location (Join-Path $RootDir "deploy\aspire\Dle.AppHost")
     try {
         dotnet run

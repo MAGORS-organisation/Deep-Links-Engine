@@ -58,6 +58,8 @@ On a fresh installation, you have two ways to obtain your initial credentials ([
    When `dle-control` boots on an empty database, it provisions an initial root tenant (`default`) with an `owner` API key (`root-bootstrap`): the one in `DLE_BOOTSTRAP_INITIAL_API_KEY` in `.env`, which `setup-dev` generated. It is never printed or logged. Set it as your environment variable:
    ```bash
    export DLE_KEY="$(sed -n 's/^DLE_BOOTSTRAP_INITIAL_API_KEY=//p' .env)"
+   # On Windows PowerShell:
+   $env:DLE_KEY = (Select-String -Path .env -Pattern '^DLE_BOOTSTRAP_INITIAL_API_KEY=(.*)$').Matches[0].Groups[1].Value
    ```
    You can immediately paste this key into the Admin Console (`https://go.example.com/admin/`) or present it as `Authorization: Bearer $DLE_KEY`. Once you have created a named owner key, revoke `root-bootstrap`. The `default` tenant is the operator tenant: its owners may create further tenants.
 
