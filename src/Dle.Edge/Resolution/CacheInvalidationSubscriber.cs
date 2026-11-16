@@ -102,8 +102,15 @@ public sealed class CacheInvalidationSubscriber : BackgroundService
             {
                 break;
             }
-            catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
+            catch (Exception ex)
             {
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    // Stopping while a (re)subscription was still in flight: Valkey answering late,
+                    // or not at all, is not a failure of the edge and must not fault the shutdown.
+                    break;
+                }
+
                 attempt++;
                 TimeSpan delay = TimeSpan.FromSeconds(Math.Min(30, 1 << Math.Min(attempt - 1, 5)));
                 _logger.LogWarning(
