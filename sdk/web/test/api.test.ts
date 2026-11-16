@@ -218,7 +218,7 @@ describe('api client', () => {
       const accepted = await dle.recordLoginHint({ loginKey: 'usr_1', deeplinkPath: '/vip' });
       expect(accepted).toEqual({ accepted: true, expiresAt: '2026-09-04T10:00:00+00:00' });
       expect(calls).toHaveLength(1);
-      expect(JSON.parse(calls[0]!.rawBody)).toMatchObject({
+      expect(calls[0]!.body).toMatchObject({
         login_key: 'usr_1',
         click_id: 'clk_url_99',
         deeplink_path: '/vip',

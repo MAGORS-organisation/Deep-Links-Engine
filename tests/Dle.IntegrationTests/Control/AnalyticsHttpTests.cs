@@ -358,13 +358,9 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
         await TestSeed.ClickEventAsync(Database, fixture.TenantId, linkId, expired, now.AddDays(-45), ipPrefix: "198.51.100.0/24", cancellationToken: Ct);
         IRetentionService retention = fixture.Host.Services.GetRequiredService<IRetentionService>();
 
-        // Raw events are the only copy of what the rollups have not read, so retention drops
-        // nothing until they have caught up. Both jobs run in production; here the rollup is run
-        // once so that the watermark exists and the drop below is the one under test.
-        _ = await fixture.Host.Services.GetRequiredService<IRollupService>().RunAsync(Ct);
-
-        // First run: nothing older than the raw window has a partition of its own yet, so nothing
-        // is dropped; the stranded days are given partitions, and prefixes older than a day go.
+        // First run, before any rollup: raw events are the only copy of what the rollups have not
+        // read, so with no watermark nothing is dropped. The run's partition maintenance gives the
+        // stranded days partitions of their own, and prefixes older than a day go.
         RetentionRunResult first = await retention.RunAsync(Ct);
         Assert.Equal(RetentionRunResult.StatusOk, first.Status);
         Assert.False(first.DryRun);
@@ -372,6 +368,11 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
         Assert.Equal(1, first.IpPrefixDays);
         Assert.True(first.RowsAnonymised >= 2, "both seeded prefixes are older than a day");
         Assert.Null(await Sql.ScalarAsync<string>(Database.DataSource, "SELECT host(ip_prefix) FROM click_events WHERE click_id = $1", [recent], Ct));
+
+        // The rollup now writes the watermark. It runs partition maintenance itself, so in
+        // production (rollup before retention) the expired day is already in its own partition
+        // when retention runs; here the order is kept apart so each run has one thing to prove.
+        _ = await fixture.Host.Services.GetRequiredService<IRollupService>().RunAsync(Ct);
 
         // Second run: the day the expired click was moved into is older than the raw window and
         // is detached and dropped; the recent day stays.

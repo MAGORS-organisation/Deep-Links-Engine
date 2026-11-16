@@ -27,7 +27,7 @@ public sealed class WebhookSubscriptionConfiguration : IEntityTypeConfiguration<
             .HasColumnName("secret_encrypted")
             .IsRequired();
 
-        builder.Property(s => s.EventTypes)
+        builder.PrimitiveCollection(s => s.EventTypes)
             .HasColumnName("event_types")
             .HasColumnType(PostgresConventions.TextArray)
             .HasDefaultValueSql(PostgresConventions.EmptyTextArrayDefault)

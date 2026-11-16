@@ -31,7 +31,7 @@ public sealed class AppConfiguration : IEntityTypeConfiguration<App>
         builder.Property(a => a.TeamId)
             .HasColumnName("team_id");
 
-        builder.Property(a => a.CertFingerprints)
+        builder.PrimitiveCollection(a => a.CertFingerprints)
             .HasColumnName("cert_fingerprints")
             .HasColumnType(PostgresConventions.TextArray)
             .HasDefaultValueSql(PostgresConventions.EmptyTextArrayDefault)
@@ -40,7 +40,7 @@ public sealed class AppConfiguration : IEntityTypeConfiguration<App>
         // Kept apart from cert_fingerprints so the validator can tell an upload certificate from a
         // Play App Signing certificate, which is the most common silent breakage of Android app
         // links (FR-144, TC-123).
-        builder.Property(a => a.PlaySigningFingerprints)
+        builder.PrimitiveCollection(a => a.PlaySigningFingerprints)
             .HasColumnName("play_signing_fingerprints")
             .HasColumnType(PostgresConventions.TextArray)
             .HasDefaultValueSql(PostgresConventions.EmptyTextArrayDefault)
