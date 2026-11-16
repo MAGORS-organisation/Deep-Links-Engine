@@ -5,7 +5,7 @@ using Xunit;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// ADR-009 and FR-162. The action a customer authored is not the HTTP shape the edge serves: an
+/// The action a customer authored is not the HTTP shape the edge serves: an
 /// in-app webview only surfaces a Universal or App Link on a real tap, so app_or_store inside a
 /// webview must always become an interstitial with a real anchor, and InterstitialMode.Never must
 /// not be able to switch that off.

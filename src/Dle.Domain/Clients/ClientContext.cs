@@ -7,7 +7,7 @@ namespace Dle.Domain.Clients;
 /// <remarks>
 /// Every field is already minimised: the parsed user agent families instead of the raw header, the
 /// referrer host instead of the full referrer, the primary language subtag instead of the whole
-/// <c>Accept-Language</c> list (specification §E.6.3).
+/// <c>Accept-Language</c> list.
 /// </remarks>
 public sealed record ClientContext
 {

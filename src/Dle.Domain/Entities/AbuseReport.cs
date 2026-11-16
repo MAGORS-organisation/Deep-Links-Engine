@@ -6,8 +6,7 @@ namespace Dle.Domain.Entities;
 /// <remarks>
 /// The form is not only hygiene. A link shortener carrying user supplied content is very likely a
 /// hosting service under the Digital Services Act, whose article 16 requires a notice and action
-/// mechanism with a traceable outcome — which is what the status and the resolution note provide
-///.
+/// mechanism with a traceable outcome — which is what the status and the resolution note provide.
 /// </remarks>
 public class AbuseReport
 {

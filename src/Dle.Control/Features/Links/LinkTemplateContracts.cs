@@ -5,9 +5,9 @@ namespace Dle.Control.Features.Links;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A template is a campaign. §B.5.2 gives <c>campaigns</c> one JSON column, so the template document
+/// A template is a campaign. The <c>campaigns</c> table has one JSON column, so the template document
 /// lives in it: the UTM map the column is named for, plus the routing rules and the target defaults
-/// that FR-108 asks a campaign to prefill. A row written by an older version that holds a flat string
+/// that a campaign prefills. A row written by an older version that holds a flat string
 /// map is still read correctly, as a template with UTM defaults and nothing else.
 /// </para>
 /// <para>

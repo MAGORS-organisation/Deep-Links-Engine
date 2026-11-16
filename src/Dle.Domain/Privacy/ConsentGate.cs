@@ -2,7 +2,7 @@ namespace Dle.Domain.Privacy;
 
 /// <summary>
 /// Turns a tenant configuration, an optional per domain override and an optional consent signal
-/// into the single decision that the whole request pipeline obeys (specification §E.6.2).
+/// into the single decision that the whole request pipeline obeys.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -12,7 +12,7 @@ namespace Dle.Domain.Privacy;
 /// identifiers it describes when the request carries <see cref="ConsentSignal.Attribution"/>;
 /// configuration alone is not a legal basis under ePrivacy article 5(3).
 /// </para>
-/// <para>The behaviour matrix, covered by TC-145 and TC-146:</para>
+/// <para>The behaviour matrix:</para>
 /// <list type="table">
 ///   <listheader>
 ///     <term>Effective mode</term>

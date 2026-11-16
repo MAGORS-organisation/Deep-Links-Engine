@@ -143,7 +143,7 @@ public enum DleUniversalLink {
 ///
 /// Why this matters: when the app is already installed, a tap on a Universal Link opens it
 /// **directly** — no request reaches the engine — so the click is invisible unless the app
-/// reports it. This is the `link_open` event of FR-223 and spec §B.6.4, and the most
+/// reports it. This is the `link_open` event, and the most
 /// successful campaigns are the ones most under-counted without it.
 ///
 /// Every method returns the URL for the host app to route and never routes itself. Only

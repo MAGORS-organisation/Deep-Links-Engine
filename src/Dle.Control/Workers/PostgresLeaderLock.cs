@@ -11,8 +11,8 @@ namespace Dle.Control.Workers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// §B.3 is explicit about the constraint: background services run inside the control plane process
-/// and elect a leader "through a Postgres advisory lock — no further system". That sentence is a
+/// The constraint is explicit: background services run inside the control plane process
+/// and elect a leader through a Postgres advisory lock, with no further system. That is a
 /// product decision, not an implementation detail. A self-hosted deployment that already has to
 /// run PostgreSQL must not also be told to run ZooKeeper, etcd, Redis Sentinel or a Kubernetes
 /// lease controller in order to have a nightly job run once instead of three times.

@@ -6,7 +6,7 @@ namespace Dle.Persistence.Fast.Data;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Profile A of §B.8 is a single Postgres instance, profile B puts two read replicas behind the edge.
+/// One deployment profile is a single Postgres instance, another puts two read replicas behind the edge.
 /// Both profiles run the same binary, so the difference has to be a configuration value rather than a
 /// code path: supplying <c>ConnectionStrings:PostgresRead</c> moves link lookups and well-known
 /// document generation off the primary, and omitting it leaves everything on one instance.

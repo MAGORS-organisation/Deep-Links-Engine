@@ -21,14 +21,14 @@ public sealed record ResolveRequestDto
     /// <summary>Operating system version reported by the device.</summary>
     public string? OsVersion { get; init; }
 
-    /// <summary>Raw Google Play Install Referrer string. The deterministic Android path (S1, FR-182).</summary>
+    /// <summary>Raw Google Play Install Referrer string. The deterministic Android path (S1).</summary>
     public string? Referrer { get; init; }
 
-    /// <summary>Code the user typed from the interstitial page. A deterministic iOS path (S3, FR-184).</summary>
+    /// <summary>Code the user typed from the interstitial page. A deterministic iOS path (S3).</summary>
     public string? ClaimCode { get; init; }
 
     /// <summary>Opaque, already hashed account identifier used to reconcile a web session with a
-    /// signed in user. A deterministic path on both platforms (S2, FR-185).</summary>
+    /// signed in user. A deterministic path on both platforms (S2).</summary>
     public string? LoginKey { get; init; }
 
     /// <summary>Device signals for probabilistic matching. Sent only when the module is enabled and
@@ -39,7 +39,7 @@ public sealed record ResolveRequestDto
     /// the deterministic install referrer included - happens only when <c>attribution</c> is true;
     /// absent or negative consent answers <c>match_type=none</c> with reason <c>consent_missing</c>
     /// and a non-zero <c>expires_in</c>, so the SDK asks again once consent is recorded
-    /// (ePrivacy art. 5(3), §E.6.2). Device signals are stored only with it too.</summary>
+    /// (ePrivacy art. 5(3)). Device signals are stored only with it too.</summary>
     public ConsentDto? Consent { get; init; }
 }
 

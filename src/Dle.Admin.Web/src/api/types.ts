@@ -489,7 +489,7 @@ export interface MatchTypeSummary {
   average_confidence: number;
 }
 
-/** ADR-008: the honest split. Never collapse these three numbers into one. */
+/** The honest split. Never collapse these three numbers into one. */
 export interface AttributionQualityResponse {
   deterministic: number;
   probabilistic: number;

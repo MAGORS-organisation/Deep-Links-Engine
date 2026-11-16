@@ -1,8 +1,7 @@
 namespace Dle.Persistence.Fast.Caching;
 
 /// <summary>
-/// The cache key and tag vocabulary shared by everything that reads or invalidates the link cache
-///.
+/// The cache key and tag vocabulary shared by everything that reads or invalidates the link cache.
 /// </summary>
 /// <remarks>
 /// <para>

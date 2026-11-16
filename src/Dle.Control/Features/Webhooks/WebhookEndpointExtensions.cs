@@ -266,8 +266,7 @@ public static class WebhookEndpointExtensions
         }
         catch (JsonException)
         {
-            // The parser's message quotes the offending input; it is not echoed back
-            //.
+            // The parser's message quotes the offending input; it is not echoed back.
             return (default, DleProblemResults.ValidationFailed("The request body is not valid JSON."));
         }
         catch (BadHttpRequestException)

@@ -1,7 +1,7 @@
 namespace Dle.Domain.Routing;
 
 /// <summary>
-/// The <c>when</c> half of a routing rule (§B.5.4, FR-121…FR-126).
+/// The <c>when</c> half of a routing rule.
 /// </summary>
 /// <remarks>
 /// <para>

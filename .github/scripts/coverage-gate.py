@@ -87,7 +87,7 @@ def main() -> int:
             ok = value >= args.domain_threshold
             gate = f"domain >= {args.domain_threshold:.0f}%"
             if not ok:
-                failures.append(f"{name}: {value:.1f}% < {args.domain_threshold:.0f}% (domain tier, section D.1)")
+                failures.append(f"{name}: {value:.1f}% < {args.domain_threshold:.0f}% (domain tier)")
         else:
             ok = True
             gate = "counts toward overall"
@@ -98,7 +98,7 @@ def main() -> int:
     overall = pct(total_covered, total_valid)
     overall_ok = overall >= args.overall_threshold
     if not overall_ok:
-        message = f"overall: {overall:.1f}% < {args.overall_threshold:.0f}% (section D.1)"
+        message = f"overall: {overall:.1f}% < {args.overall_threshold:.0f}%"
         (failures if args.overall_mode == "fail" else warnings).append(message)
 
     missing = sorted(domain - set(per_assembly))

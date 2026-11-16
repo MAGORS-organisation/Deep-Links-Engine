@@ -186,7 +186,7 @@ internal static class PageChrome
     /// <para>
     /// Only the button's fill is overridden, and its ink is computed from the fill rather than taken
     /// from configuration. A tenant that picks a pale accent gets dark text on it automatically, so the
-    /// contrast floor of NFR-16 holds for every branding value rather than for the ones an operator
+    /// contrast floor holds for every branding value rather than for the ones an operator
     /// happened to test. The link colour is never overridden for the same reason: it sits on the page
     /// background, where a tenant colour could not be corrected without also changing the background.
     /// </para>

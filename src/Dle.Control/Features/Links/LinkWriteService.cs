@@ -26,7 +26,7 @@ public enum LinkWriteError
     /// <summary>The slug is already taken on that domain.</summary>
     SlugTaken = 3,
 
-    /// <summary>The target failed the safety policy (T-01, T-02, TC-161 to TC-163).</summary>
+    /// <summary>The target failed the safety policy.</summary>
     UnsafeTarget = 4,
 
     /// <summary>The supplied rule set has no default rule.</summary>
@@ -107,8 +107,7 @@ public sealed record LinkWriteOutcome(
 /// Nothing here ever takes a redirect target from anywhere but the request body of an authenticated
 /// operator, and every such target is put through <see cref="TargetUrlPolicy"/> and
 /// <see cref="IUrlSafetyChecker"/> before it is stored. That is the whole of prohibition 4: by the
-/// time the edge reads a target, an operator has stored it and the safety pipeline has passed it
-///.
+/// time the edge reads a target, an operator has stored it and the safety pipeline has passed it.
 /// </para>
 /// </remarks>
 public sealed class LinkWriteService
@@ -196,7 +195,7 @@ public sealed class LinkWriteService
         }
 
         // A campaign is a template: it prefills what the request left out, and never overrides what
-        // the request stated. That direction is the whole contract of FR-108 — the template is a
+        // the request stated. That direction is the whole contract — the template is a
         // starting point, not a live inheritance that could rewrite a link from a distance.
         LinkTemplateDocument? template = null;
 
@@ -563,7 +562,7 @@ public sealed class LinkWriteService
 
         if (!hasDefault && supplied is { Count: > 0 })
         {
-            // TC-105: this is the rejection that keeps a link from being stored in a state where a
+            // This is the rejection that keeps a link from being stored in a state where a
             // client matching nothing silently receives 404 for a link the marketer believes is live.
             return LinkWriteOutcome.Failure(
                 LinkWriteError.MissingDefaultRule,
@@ -635,8 +634,7 @@ public sealed class LinkWriteService
 
     /// <summary>
     /// Refuses a target the safety policy would refuse on sight — a <c>javascript:</c>, <c>data:</c>
-    /// or relative URL, a forbidden host name — before the rule set is derived from it (§E.3 step 1,
-    /// TC-161).
+    /// or relative URL, a forbidden host name — before the rule set is derived from it.
     /// </summary>
     /// <param name="targetUrl">The web fallback target, or nothing when the rules supply every target.</param>
     /// <returns>A failure, or <see langword="null"/> when the target may go on to the rules and the full check.</returns>
@@ -676,7 +674,7 @@ public sealed class LinkWriteService
     }
 
     /// <summary>
-    /// Puts every redirect target through the safety policy (T-01, T-02, TC-161 to TC-163).
+    /// Puts every redirect target through the safety policy.
     /// </summary>
     /// <param name="targetUrl">The web fallback target.</param>
     /// <param name="expiredUrl">Where an expired link sends the visitor.</param>

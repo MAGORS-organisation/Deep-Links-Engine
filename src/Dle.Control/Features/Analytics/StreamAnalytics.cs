@@ -13,8 +13,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Analytics;
 
 /// <summary>
-/// <c>GET /api/v1/analytics/stream</c> — a live view of the current bucket over Server-Sent Events
-///.
+/// <c>GET /api/v1/analytics/stream</c> — a live view of the current bucket over Server-Sent Events.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -36,8 +35,7 @@ namespace Dle.Control.Features.Analytics;
 /// </para>
 /// <para>
 /// Payloads are pre-serialized through the module's source generated context and emitted as
-/// strings, so no reflection based serializer touches a connection that stays open for hours
-///.
+/// strings, so no reflection based serializer touches a connection that stays open for hours.
 /// </para>
 /// </remarks>
 public static class StreamAnalytics

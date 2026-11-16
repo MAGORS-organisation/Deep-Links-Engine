@@ -8,18 +8,18 @@ namespace Dle.IntegrationTests.Infrastructure;
 /// <remarks>
 /// <para>
 /// Used for exactly one thing: the click stream. A resolve returns before its click event is
-/// written, on purpose — FR-165 says the response must never wait on telemetry — so a test that
+/// written, on purpose — the response must never wait on telemetry — so a test that
 /// asserts on the row has to wait for the batch writer's flush interval to elapse.
 /// </para>
 /// <para>
-/// This is not a wall-clock dependency in the sense SHARED-KERNEL §17.2 forbids. Nothing under test
+/// This is not a forbidden wall-clock dependency. Nothing under test
 /// reads a clock here and no assertion depends on how long the wait took; the deadline exists only
 /// so that a hung background loop fails with a readable message instead of hanging the run.
 /// </para>
 /// </remarks>
 public static class Eventually
 {
-    /// <summary>Default deadline: an order of magnitude above the 250 ms flush interval of §C.3.2.</summary>
+    /// <summary>Default deadline: an order of magnitude above the batch writer's 250 ms flush interval.</summary>
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(10);
 
     /// <summary>How often the condition is re-evaluated.</summary>

@@ -28,8 +28,7 @@ public class DomainVerification
 
     /// <summary>
     /// Number of redirects followed. Any value above zero fails the check: both Apple and Google
-    /// refuse a redirected association file, and this is one of the most common silent breakages
-    ///.
+    /// refuse a redirected association file, and this is one of the most common silent breakages.
     /// </summary>
     public int RedirectCount { get; set; }
 

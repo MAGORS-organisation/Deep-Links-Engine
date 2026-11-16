@@ -92,7 +92,7 @@ public sealed class InterstitialRenderingTests
         RenderedPage page = await RenderedPage.RenderAsync(
             InterstitialResults.OgPreview(link, Crawler(), domain: null, canonicalUrl: "https://go.example/abc"));
 
-        // TC-106: the answer is a real Open Graph document, not an empty page.
+        // The answer is a real Open Graph document, not an empty page.
         Assert.Contains("<meta property=\"og:title\"", page.Html, StringComparison.Ordinal);
         Assert.Contains("<meta property=\"og:description\"", page.Html, StringComparison.Ordinal);
         Assert.Contains("<meta property=\"og:url\" content=\"https://go.example/abc\">", page.Html, StringComparison.Ordinal);
@@ -258,7 +258,7 @@ public sealed class InterstitialRenderingTests
     }
 
     /// <summary>
-    /// TC-102 and TC-166. A slug that never existed and a slug whose link belongs to somebody else
+    /// A slug that never existed and a slug whose link belongs to somebody else
     /// have to be indistinguishable, so the 404 document may not vary with anything about the link
     /// that was asked for.
     /// </summary>

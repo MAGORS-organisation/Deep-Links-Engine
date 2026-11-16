@@ -1,13 +1,12 @@
--- Deep Link Engine — PostgreSQL analytics rollup schema.
--- ADR-006 (Postgres partitions first), ADR-008 (honest attribution dashboard),
--- FR-202 (aggregations), FR-247 / §E.6.3 (retention and its audit trail).
+-- Deep Link Engine — PostgreSQL analytics rollup schema: Postgres partitions first, an honest
+-- attribution dashboard, aggregations, and retention with its audit trail.
 --
 -- Idempotent. This is the script the persistence migration applies; nothing in this file depends
 -- on the analytics module running, and nothing in the analytics module creates schema at startup.
 --
 -- Grain and dimensions. The click rollups aggregate the partitioned click_events table by link,
 -- campaign, country, platform and channel, hourly and daily. Bots are rolled up too, under
--- is_bot = true, rather than being dropped: FR-205 says crawler traffic must not be counted in a
+-- is_bot = true, rather than being dropped: the rule is that crawler traffic must not be counted in a
 -- campaign, not that it must be unobservable. The reporting store filters on is_bot, so
 -- AnalyticsQuery.IncludeBots keeps working against the rollups exactly as it does against raw
 -- events.
@@ -139,7 +138,7 @@ CREATE INDEX IF NOT EXISTS ix_install_rollup_daily_tenant
     ON install_rollup_daily (tenant_id, bucket);
 
 -- ---------------------------------------------------------------------------------------------
--- Attribution quality rollup — the data behind the ADR-008 dashboard panel.
+-- Attribution quality rollup — the data behind the attribution-quality dashboard panel.
 --
 -- One row per (day, tenant, link, match_type), carrying the number of matches and the sum of
 -- their confidence. The deterministic / probabilistic / unmatched split is a partition of
@@ -183,8 +182,8 @@ CREATE TABLE IF NOT EXISTS analytics_rollup_state (
 ALTER TABLE analytics_rollup_state ADD COLUMN IF NOT EXISTS covered_from timestamptz;
 
 -- ---------------------------------------------------------------------------------------------
--- Retention audit (FR-247, §E.6.3: "configurable retention with an automatic job and an audit of
--- its runs"). A retention job that cannot prove what it deleted and when is not auditable, so the
+-- Retention audit: configurable retention with an automatic job and an audit of
+-- its runs. A retention job that cannot prove what it deleted and when is not auditable, so the
 -- run is recorded even when it deleted nothing and even when it failed.
 -- ---------------------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS analytics_retention_runs (

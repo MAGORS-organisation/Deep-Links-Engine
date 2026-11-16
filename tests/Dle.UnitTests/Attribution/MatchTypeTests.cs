@@ -5,7 +5,7 @@ using MatchType = Dle.Domain.Attribution.MatchType;
 namespace Dle.UnitTests.Attribution;
 
 /// <summary>
-/// FR-186: every attribution carries a match type and a confidence, and the names are a wire
+/// Every attribution carries a match type and a confidence, and the names are a wire
 /// contract shared with the SDK response and the attribution_records table.
 /// </summary>
 public sealed class MatchTypeTests

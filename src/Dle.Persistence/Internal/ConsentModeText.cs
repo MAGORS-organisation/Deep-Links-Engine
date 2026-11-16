@@ -7,7 +7,7 @@ namespace Dle.Persistence.Internal;
 /// </summary>
 /// <remarks>
 /// Consent modes are stored as text rather than as an integer, so that the value is legible in the
-/// database and survives a reordering of the enum (shared kernel §12). Parsing is total and fails
+/// database and survives a reordering of the enum. Parsing is total and fails
 /// closed: an unrecognised value becomes <see cref="ConsentMode.Off"/>, because a row whose consent
 /// state cannot be read is not a row to collect against.
 /// </remarks>

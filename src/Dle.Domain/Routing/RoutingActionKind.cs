@@ -14,7 +14,7 @@ public enum RoutingActionKind
 
     /// <summary>
     /// Try the application first and fall back to the store. The concrete response shape
-    /// (interstitial, store redirect or web redirect) is resolved per client by ADR-009.
+    /// (interstitial, store redirect or web redirect) is resolved per client.
     /// <see cref="RuleAction.StoreUrl"/> is mandatory.
     /// </summary>
     AppOrStore = 1,

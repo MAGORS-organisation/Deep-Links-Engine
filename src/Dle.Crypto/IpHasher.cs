@@ -8,7 +8,7 @@ namespace Dle.Crypto;
 
 /// <summary>
 /// Turns a remote address into the only two forms the engine may store: a keyed hash under a
-/// rotating salt, and a truncated network prefix (§B.5.3, FR-247, K9).
+/// rotating salt, and a truncated network prefix.
 /// </summary>
 /// <remarks>
 /// <para>

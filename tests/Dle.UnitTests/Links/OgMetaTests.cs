@@ -4,7 +4,7 @@ using Xunit;
 namespace Dle.UnitTests.Links;
 
 /// <summary>
-/// Open Graph metadata is what a crawler sees (ADR-009 row 1, TC-106). A blank field must fall back
+/// Open Graph metadata is what a crawler sees. A blank field must fall back
 /// to the domain default rather than render an empty preview card.
 /// </summary>
 public sealed class OgMetaTests

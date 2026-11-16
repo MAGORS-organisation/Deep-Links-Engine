@@ -10,7 +10,7 @@ namespace Dle.Domain.Primitives;
 /// The product builds with <c>InvariantGlobalization</c>, and in globalization-invariant mode
 /// <see cref="string.Normalize(NormalizationForm)"/> is a silent no-op: it returns its input
 /// unchanged and <see cref="string.IsNormalized(NormalizationForm)"/> answers <see langword="true"/>
-/// for text that is not normalised at all. The NFKC step that SHARED-KERNEL section 1 requires of
+/// for text that is not normalised at all. The NFKC step required of
 /// <see cref="SlugPolicy.TryNormalize"/> therefore did not run, and compatibility spellings such as
 /// full width <c>PROMO</c> were refused instead of folded.
 /// </para>

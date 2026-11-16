@@ -7,8 +7,8 @@ namespace Dle.Domain.WellKnown;
 /// <para>
 /// The validator is deliberately strict about transport, because Apple and Google are. A redirect on
 /// the way to the file is fatal on both platforms even though the file itself is perfectly valid, and a
-/// content type other than <c>application/json</c> is enough for Apple to discard the association
-///. Reporting these as warnings would mean shipping a domain that the operator
+/// content type other than <c>application/json</c> is enough for Apple to discard the association.
+/// Reporting these as warnings would mean shipping a domain that the operator
 /// believes is verified and that no device will honour.
 /// </para>
 /// <para>
@@ -140,8 +140,7 @@ public static class WellKnownValidator
 
     /// <summary>
     /// Validates a fetched <c>assetlinks.json</c> file and, when the Play App Signing fingerprints for the
-    /// application are known, also warns about fingerprints that look like an upload certificate
-    ///.
+    /// application are known, also warns about fingerprints that look like an upload certificate.
     /// </summary>
     /// <param name="body">The response body, exactly as received.</param>
     /// <param name="contentType">The response <c>Content-Type</c> header; a charset parameter is ignored.</param>
@@ -245,8 +244,7 @@ public static class WellKnownValidator
 
     /// <summary>
     /// Heuristic for the most common Android App Links failure: the file declares the upload certificate
-    /// from the local keystore instead of the certificate Google signs the released artifact with
-    ///.
+    /// from the local keystore instead of the certificate Google signs the released artifact with.
     /// </summary>
     /// <param name="fingerprint">The fingerprint found in the file.</param>
     /// <param name="knownPlayFingerprints">

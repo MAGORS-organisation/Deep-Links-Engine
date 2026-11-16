@@ -96,7 +96,7 @@ public static class CryptoServiceCollectionExtensions
                 options.SlugFeistelRounds);
         });
 
-        // --- Privacy (§B.5.3, FR-247, K9) -----------------------------------------------------
+        // --- Privacy --------------------------------------------------------------------------
         services.TryAddSingleton<IIpHasher>(static sp =>
         {
             CryptoOptions options = sp.GetRequiredService<IOptions<CryptoOptions>>().Value;
@@ -106,7 +106,7 @@ public static class CryptoServiceCollectionExtensions
                 TimeSpan.FromHours(options.IpSaltRotationHours));
         });
 
-        // --- Credentials (K3, K5) -------------------------------------------------------------
+        // --- Credentials ----------------------------------------------------------------------
         services.TryAddSingleton(static sp =>
             new Argon2PasswordHasher(sp.GetRequiredService<IOptions<CryptoOptions>>().Value.Argon2));
 

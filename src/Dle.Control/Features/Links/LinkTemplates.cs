@@ -12,9 +12,9 @@ namespace Dle.Control.Features.Links;
 /// The stored form of a link template.
 /// </summary>
 /// <remarks>
-/// §B.5.2 gives <c>campaigns</c> one JSON column, named for the UTM map it was originally meant to
-/// hold. A template is a campaign — that is what "campaign prefills the UTM parameters and the
-/// rules" means — so the whole template document lives in that column rather than in a new table
+/// The <c>campaigns</c> table has one JSON column, named for the UTM map it was originally meant to
+/// hold. A template is a campaign — a campaign prefills the UTM parameters and the
+/// rules — so the whole template document lives in that column rather than in a new table
 /// nothing else references.
 /// </remarks>
 public sealed record LinkTemplateDocument
@@ -214,8 +214,7 @@ public sealed class LinkTemplateStore
 /// <remarks>
 /// Nothing here is validated as strictly as a link, because a template is not served. The rules are
 /// checked when a link is created from it, against the same validator every other link passes
-/// through: a half-finished template is a legitimate intermediate state, a half-finished link is not
-///.
+/// through: a half-finished template is a legitimate intermediate state, a half-finished link is not.
 /// </remarks>
 public static class LinkTemplates
 {

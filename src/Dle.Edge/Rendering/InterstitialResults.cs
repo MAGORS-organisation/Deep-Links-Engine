@@ -11,8 +11,8 @@ namespace Dle.Edge.Rendering;
 /// </para>
 /// <para>
 /// No page is rendered through a template engine. Razor would compile at first request on a path whose
-/// budget is measured in milliseconds and whose first request after a deployment is the one under load
-///, and its encoding rules would then be the thing standing between stored Open Graph metadata
+/// budget is measured in milliseconds and whose first request after a deployment is the one under load,
+/// and its encoding rules would then be the thing standing between stored Open Graph metadata
 /// and a script tag. The pages are written by hand through <see cref="HtmlBuilder"/>, where the encoding
 /// is visible at every call site.
 /// </para>
@@ -34,7 +34,7 @@ internal static class InterstitialResults
     /// <param name="client">The classified client.</param>
     /// <returns>A 200 HTML response, or the 404 page when nothing safe can be offered.</returns>
     /// <remarks>
-    /// This overload is the one in §C.3.1. It carries no consent decision, so
+    /// This overload carries no consent decision, so
     /// <see cref="RoutingUrlBuilder"/> treats consent as denied and no click id reaches any URL on the
     /// page. The resolve path uses the overload that takes the gate's decision.
     /// </remarks>
@@ -54,7 +54,7 @@ internal static class InterstitialResults
     /// <param name="client">The classified client.</param>
     /// <param name="consent">
     /// The consent gate's decision. <see langword="null"/> means denied, which is the safe reading of a
-    /// caller that has not run the gate (ePrivacy art. 5(3), §E.6.2).
+    /// caller that has not run the gate (ePrivacy art. 5(3)).
     /// </param>
     /// <param name="domain">The link domain's runtime configuration, for branding and language.</param>
     /// <param name="claimCode">The one-time code issued for this click, or <see langword="null"/>.</param>
@@ -67,8 +67,8 @@ internal static class InterstitialResults
     /// </para>
     /// <para>
     /// When neither the store nor the web URL survives <see cref="SafeUrl"/> the method answers 404
-    /// rather than rendering a page with a dead or dangerous anchor. That is the default-deny branch
-    /// SHARED-KERNEL §17.9 asks for, and in practice it is unreachable: the control plane validates
+    /// rather than rendering a page with a dead or dangerous anchor. That is the default-deny branch,
+    /// and in practice it is unreachable: the control plane validates
     /// <c>TargetUrl</c> on write.
     /// </para>
     /// </remarks>
@@ -238,8 +238,7 @@ internal static class InterstitialResults
         new GonePageResult(language, domain);
 
     /// <summary>
-    /// The 404 page. The same page, byte for byte, for every reason a slug does not resolve
-    ///.
+    /// The 404 page. The same page, byte for byte, for every reason a slug does not resolve.
     /// </summary>
     /// <param name="client">The classified client, supplying the language. May be <see langword="null"/>.</param>
     /// <param name="domain">The link domain's runtime configuration, when the host is known.</param>
@@ -248,15 +247,13 @@ internal static class InterstitialResults
     /// Neither overload accepts a link, a slug or a tenant, and neither ever will. A missing slug, a
     /// deactivated link and a link owned by another tenant reach this method with identical arguments,
     /// which is what makes the responses identical — including <c>Content-Length</c>, since the only
-    /// per-response difference is the fixed-width nonce. A <c>403</c> is never an option
-    ///.
+    /// per-response difference is the fixed-width nonce. A <c>403</c> is never an option.
     /// </remarks>
     internal static IResult NotFound(ClientContext? client, DomainRuntimeConfig? domain = null) =>
         NotFound(client?.Language, domain);
 
     /// <summary>
-    /// The 404 page. The same page, byte for byte, for every reason a slug does not resolve
-    ///.
+    /// The 404 page. The same page, byte for byte, for every reason a slug does not resolve.
     /// </summary>
     /// <param name="language">Primary language subtag from the request, or <see langword="null"/>.</param>
     /// <param name="domain">The link domain's runtime configuration, when the host is known.</param>

@@ -4,7 +4,7 @@ using Xunit;
 namespace Dle.UnitTests.Links;
 
 /// <summary>
-/// SHARED-KERNEL section 5: the order of the checks in GetServeState is the contract, not an
+/// The order of the checks in GetServeState is the contract, not an
 /// implementation detail. A quarantined link that also expired must answer 410 Gone, never
 /// a redirect to the expired URL, because the abuse decision outranks the schedule.
 /// </summary>

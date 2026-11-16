@@ -21,8 +21,8 @@ namespace Microsoft.AspNetCore.Builder;
 /// naming policy accepts on a domain this instance serves, whether or not a link with that slug exists.
 /// That is a security property, not a shortcut: the endpoint is unauthenticated and rate limited at
 /// thirty requests a minute, and answering 404 for an unknown slug would turn it into a slug
-/// oracle that enumerates a tenant's links far more cheaply than the resolve path allows (T-07, TC-102,
-/// TC-108). A code for a slug that does not resolve is harmless — it points at a 404 — and a code for a
+/// oracle that enumerates a tenant's links far more cheaply than the resolve path allows.
+/// A code for a slug that does not resolve is harmless — it points at a 404 — and a code for a
 /// link created a moment later works immediately.
 /// </para>
 /// <para>
@@ -38,7 +38,7 @@ public static class QrEndpointExtensions
     public const string RoutePattern = "/{slug}/qr";
 
     /// <summary>
-    /// Name of the rate limiting policy §E.9 defines for this endpoint: a sliding window of thirty
+    /// Name of the rate limiting policy for this endpoint: a sliding window of thirty
     /// requests a minute keyed by address.
     /// </summary>
     /// <remarks>

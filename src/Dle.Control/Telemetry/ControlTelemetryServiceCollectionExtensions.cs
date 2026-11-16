@@ -16,8 +16,7 @@ using OpenTelemetry.Trace;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// The single composition entry point of the control-plane observability module
-///.
+/// The single composition entry point of the control-plane observability module.
 /// </summary>
 public static class ControlTelemetryServiceCollectionExtensions
 {

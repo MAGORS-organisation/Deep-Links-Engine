@@ -3,8 +3,7 @@ using Dle.Domain.Analytics;
 namespace Dle.Control.Features.Attribution;
 
 /// <summary>
-/// Wire names of <see cref="SdkEventType"/>, as an SDK spells them on <c>POST /v1/events</c>
-///.
+/// Wire names of <see cref="SdkEventType"/>, as an SDK spells them on <c>POST /v1/events</c>.
 /// </summary>
 /// <remarks>
 /// <para>

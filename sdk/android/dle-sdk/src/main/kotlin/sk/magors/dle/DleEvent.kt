@@ -1,12 +1,12 @@
 package sk.magors.dle
 
 /**
- * Event kinds accepted by `POST /v1/events` (`SdkEventNames`, spec §B.7.2).
+ * Event kinds accepted by `POST /v1/events` (`SdkEventNames`).
  *
  * @property wireName the exact string sent as `type`.
  * @property requiresAnalyticsConsent whether [DleClient.track] drops the event without
  * [DleConsent.analytics]. `link_open` is exempt: the engine records a direct open as first party
- * measurement of the link itself, no identifier crosses a context, and FR-223 requires the report.
+ * measurement of the link itself, no identifier crosses a context, and the report is required.
  */
 public enum class DleEventType(
     public val wireName: String,

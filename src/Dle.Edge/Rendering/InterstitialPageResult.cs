@@ -6,8 +6,7 @@ using Dle.Edge.Resolution;
 namespace Dle.Edge.Rendering;
 
 /// <summary>
-/// The interstitial page: HTTP 200 HTML whose primary action is a real <c>&lt;a&gt;</c> element
-///.
+/// The interstitial page: HTTP 200 HTML whose primary action is a real <c>&lt;a&gt;</c> element.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -101,8 +100,7 @@ internal sealed class InterstitialPageResult : HtmlPageResult
     /// <remarks>
     /// <c>Dle:Edge:Interstitial:Enabled</c> is a kill switch, and honouring it here rather than in the
     /// resolve pipeline means it cannot be honoured in one code path and forgotten in another. The
-    /// redirect is <c>permanent: false</c>, as every link redirect is and must be (ADR-009,
-    /// SHARED-KERNEL §17.1).
+    /// redirect is <c>permanent: false</c>, as every link redirect is and must be.
     /// </remarks>
     public override Task ExecuteAsync(HttpContext httpContext)
     {

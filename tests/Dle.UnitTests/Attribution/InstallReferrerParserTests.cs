@@ -6,7 +6,7 @@ using Xunit;
 namespace Dle.UnitTests.Attribution;
 
 /// <summary>
-/// TC-141, TC-142, TC-167. The Play Install Referrer is the only deterministic attribution channel
+/// The Play Install Referrer is the only deterministic attribution channel
 /// Android has and it arrives from a source the engine does not control. The parser therefore has
 /// exactly one hard contract: it never throws, whatever it is handed.
 /// </summary>

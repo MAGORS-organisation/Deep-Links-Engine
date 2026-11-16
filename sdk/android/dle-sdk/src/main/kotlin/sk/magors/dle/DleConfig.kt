@@ -21,8 +21,7 @@ import okhttp3.OkHttpClient
  * [DleClient.handleIntent] from `onCreate` and `onNewIntent` yourself.
  * @property probabilisticSignals opt in to sending coarse device signals (language, screen size,
  * UTC offset, device model) so the engine may attempt a probabilistic match. Off by default,
- * and additionally gated on [DleConsent.attribution] at call time. Never a fingerprint hash
- *.
+ * and additionally gated on [DleConsent.attribution] at call time. Never a fingerprint hash.
  * @property requireAnalyticsConsentForEvents whether behavioural events are dropped without
  * [DleConsent.analytics]. Default `true`.
  * @property connectTimeoutMillis TCP connect timeout. Default 5000.
@@ -41,8 +40,8 @@ import okhttp3.OkHttpClient
  * the package manager.
  * @property okHttpClient an `OkHttpClient` to share with the host application. The SDK derives its
  * own instance from it with redirects disabled and its timeouts applied. Default: a private
- * client. Certificate pinning is the place to configure here, and it is deliberately optional
- * (spec §E.7 rule 6): pinning without a rotation plan is an outage fixed by an app release.
+ * client. Certificate pinning is the place to configure here, and it is deliberately optional:
+ * pinning without a rotation plan is an outage fixed by an app release.
  */
 public class DleConfig private constructor(builder: Builder) {
     public val endpoint: String = builder.normalisedEndpoint

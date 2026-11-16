@@ -27,7 +27,7 @@ let package = Package(
             dependencies: [],
             path: "Sources/DleSDK",
             resources: [
-                // Apple privacy manifest (spec §E.7 rule 4). SwiftPM ships it inside
+                // Apple privacy manifest. SwiftPM ships it inside
                 // the target's resource bundle, where Xcode aggregates it at build time.
                 .copy("PrivacyInfo.xcprivacy")
             ],

@@ -39,7 +39,7 @@ public static class AnalyticsSqlScripts
     /// <summary>Rolls hourly install buckets up into daily ones.</summary>
     public const string RefreshInstallRollupDaily = "005_refresh_install_rollup_daily.sql";
 
-    /// <summary>Recomputes the daily attribution-quality buckets behind the ADR-008 panel.</summary>
+    /// <summary>Recomputes the daily attribution-quality buckets behind the dashboard panel.</summary>
     public const string RefreshAttributionQualityDaily =
         "006_refresh_attribution_quality_daily.sql";
 

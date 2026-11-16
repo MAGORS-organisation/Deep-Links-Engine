@@ -4,13 +4,13 @@ namespace Dle.Edge.Telemetry;
 
 /// <summary>
 /// Hosts whose Apple or Android association file currently fails to build or validate, behind the
-/// <c>dle_domain_verification_failures</c> gauge of §C.6.
+/// <c>dle_domain_verification_failures</c> gauge.
 /// </summary>
 /// <remarks>
 /// <para>
 /// A broken association file is invisible from the outside: universal links silently stop opening
 /// the application and every click quietly degrades to the web fallback, which looks like a drop in
-/// conversion rather than an incident. §C.6 therefore puts an alert on this gauge, and the gauge
+/// conversion rather than an incident. An alert therefore belongs on this gauge, and the gauge
 /// needs something to count.
 /// </para>
 /// <para>

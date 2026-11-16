@@ -19,7 +19,7 @@ internal object TraceContext {
         val span = ByteArray(SPAN_ID_BYTES)
         random.nextBytes(trace)
         random.nextBytes(span)
-        // An all zero id is invalid per the specification and would be dropped by collectors.
+        // An all zero id is invalid per W3C Trace Context and would be dropped by collectors.
         if (trace.all { it == 0.toByte() }) trace[trace.lastIndex] = 1
         if (span.all { it == 0.toByte() }) span[span.lastIndex] = 1
         return "00-${hex(trace)}-${hex(span)}-01"

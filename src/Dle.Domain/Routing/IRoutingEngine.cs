@@ -21,7 +21,7 @@ public interface IRoutingEngine
     /// <param name="consent">
     /// The consent decision produced by the consent gate. Consent is an input to routing, not a filter
     /// applied afterwards: when it does not permit click-id linking, the resulting decision already has
-    /// every click-id-bearing part of the referrer template removed (§B.1/5, §E.6.2).
+    /// every click-id-bearing part of the referrer template removed.
     /// </param>
     /// <param name="clickId">
     /// The click identifier for this request. It seeds the deterministic A/B bucket

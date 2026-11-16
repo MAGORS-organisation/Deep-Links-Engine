@@ -11,14 +11,14 @@ using Dle.Persistence.Fast.Telemetry;
 namespace Dle.IntegrationTests.Chaos;
 
 /// <summary>
-/// §D.6, row two: with Valkey unavailable the resolve path keeps working from L1 and PostgreSQL at a
+/// With Valkey unavailable the resolve path keeps working from L1 and PostgreSQL at a
 /// higher latency, and a metric says the shared cache level is down.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The shared cache level is an optimisation, not a dependency. §B.8 profile A runs without one at
-/// all, so a deployment that has configured one and then lost it must degrade to profile A rather
-/// than to an outage — the database is still there, and every link the instance has seen recently is
+/// The shared cache level is an optimisation, not a dependency. A single-instance deployment runs
+/// without one at all, so a deployment that has configured one and then lost it must degrade to that
+/// rather than to an outage — the database is still there, and every link the instance has seen recently is
 /// still in its own memory.
 /// </para>
 /// <para>
@@ -82,8 +82,8 @@ public sealed class ValkeyUnavailableTests(DleInfrastructureFixture infrastructu
     [RequiresDockerFact]
     public async Task ValkeyUnreachable_AMetricReportsThatTheSharedCacheLevelIsDown()
     {
-        // §D.6 names the metric: "resolve works from L1 + Postgres with higher latency; metric
-        // cache_l2_down". Without it an operator sees a latency change and has nothing that says
+        // Resolve keeps working from L1 and PostgreSQL with higher latency, and the cache_l2_down
+        // metric says so. Without it an operator sees a latency change and has nothing that says
         // why, which is the difference between a five minute diagnosis and an afternoon.
         HashSet<string> published = new(StringComparer.Ordinal);
 
@@ -129,7 +129,7 @@ public sealed class ValkeyUnavailableTests(DleInfrastructureFixture infrastructu
                 && (name.Contains("down", StringComparison.OrdinalIgnoreCase)
                     || name.Contains("available", StringComparison.OrdinalIgnoreCase)
                     || name.Contains("up", StringComparison.OrdinalIgnoreCase))),
-            "§D.6 requires a metric that reports the shared cache level as down while Valkey is "
+            "A metric must report the shared cache level as down while Valkey is "
             + "unavailable (cache_l2_down). The edge published none. Instruments seen: "
             + string.Join(", ", names.Order(StringComparer.Ordinal)));
     }

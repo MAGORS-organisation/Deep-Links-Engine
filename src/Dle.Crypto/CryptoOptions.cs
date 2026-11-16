@@ -3,8 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Crypto;
 
 /// <summary>
-/// Configuration of the cryptography module, bound from the <c>Dle:Crypto</c> section (§C.4,
-/// SHARED-KERNEL §16).
+/// Configuration of the cryptography module, bound from the <c>Dle:Crypto</c> section.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -44,11 +43,11 @@ public sealed class CryptoOptions
     [MinLength(32)]
     public string? ClickIdSecret { get; set; }
 
-    /// <summary>Overrides the derived IP hash secret (K9). Minimum 32 characters.</summary>
+    /// <summary>Overrides the derived IP hash secret. Minimum 32 characters.</summary>
     [MinLength(32)]
     public string? IpHashSecret { get; set; }
 
-    /// <summary>Overrides the derived claim code pepper (K3). Minimum 32 characters.</summary>
+    /// <summary>Overrides the derived claim code pepper. Minimum 32 characters.</summary>
     [MinLength(32)]
     public string? ClaimCodeSecret { get; set; }
 
@@ -67,8 +66,8 @@ public sealed class CryptoOptions
     /// <summary>
     /// Enables the post-quantum algorithms (<see cref="SignatureAlgorithms.MlDsa65"/>,
     /// <see cref="SignatureAlgorithms.Ed25519MlDsa65"/> and
-    /// <see cref="SignatureAlgorithms.SlhDsa128s"/>). Off by default: §E.5.3 puts them in phase 1,
-    /// and phase 0 ships only the agility that makes adopting them cheap.
+    /// <see cref="SignatureAlgorithms.SlhDsa128s"/>). Off by default: for now the engine
+    /// ships only the agility that makes adopting them cheap.
     /// </summary>
     public bool HybridPqEnabled { get; set; }
 
@@ -85,11 +84,11 @@ public sealed class CryptoOptions
     public int KeyOverlapDays { get; set; } = 7;
 
     /// <summary>Number of Feistel rounds behind the slug and click identifier permutations
-    /// (ADR-007 specifies four).</summary>
+    /// (four by default).</summary>
     [Range(2, 32)]
     public int SlugFeistelRounds { get; set; } = FeistelPermutation.DefaultRounds;
 
-    /// <summary>How often the IP hash salt rotates, in hours. Daily by default (K9, FR-247):
+    /// <summary>How often the IP hash salt rotates, in hours. Daily by default:
     /// the rotation is what bounds how long two events stay correlatable.</summary>
     [Range(1, 8760)]
     public int IpSaltRotationHours { get; set; } = 24;

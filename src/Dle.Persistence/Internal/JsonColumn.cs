@@ -7,7 +7,7 @@ using Dle.Domain.Serialization;
 namespace Dle.Persistence.Internal;
 
 /// <summary>
-/// Reads the <c>jsonb</c> columns that hold shared-kernel shapes.
+/// Reads the <c>jsonb</c> columns that hold shared kernel shapes.
 /// </summary>
 /// <remarks>
 /// The entities keep these columns as strings on purpose: the control plane stores and returns them

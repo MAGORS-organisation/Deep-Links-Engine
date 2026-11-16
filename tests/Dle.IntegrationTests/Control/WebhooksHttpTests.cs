@@ -10,8 +10,8 @@ using Microsoft.AspNetCore.Http;
 namespace Dle.IntegrationTests.Control;
 
 /// <summary>
-/// The webhook routes of the control plane through HTTP against a real PostgreSQL (§B.7.5,
-/// FR-230 to FR-234): a subscription is registered with a public https destination and a set of
+/// The webhook routes of the control plane through HTTP against a real PostgreSQL: a subscription
+/// is registered with a public https destination and a set of
 /// known event types, its signing secret is shown once, a test delivery is attempted synchronously
 /// and reported honestly, an event a link produces lands in the outbox once per subscription that
 /// asked for it, and the deliveries are listed with their attempt state.
@@ -19,8 +19,8 @@ namespace Dle.IntegrationTests.Control;
 /// <remarks>
 /// Destinations are checked the way targets are: https only, a public address, a name that
 /// resolves. <c>example.com</c> qualifies and answers every POST with an error, which is exactly
-/// what the test delivery has to report; loopback, link-local and unresolvable hosts are the
-/// refusals of T-02.
+/// what the test delivery has to report; loopback, link-local and unresolvable hosts are refused,
+/// because a delivery to them would be server-side request forgery.
 /// </remarks>
 [SuppressMessage(
     "Reliability",

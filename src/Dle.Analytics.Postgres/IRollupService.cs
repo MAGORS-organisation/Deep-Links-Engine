@@ -1,7 +1,7 @@
 namespace Dle.Analytics.Postgres;
 
 /// <summary>
-/// Maintains the analytics rollup tables. Called by the rollup worker (component C-09); this
+/// Maintains the analytics rollup tables. Called by the rollup worker; this
 /// module registers no background service of its own, so the schedule stays where the rest of the
 /// engine's schedules are.
 /// </summary>

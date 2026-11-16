@@ -384,8 +384,7 @@ public sealed class LinkRepository
     /// <para>
     /// Quarantined links are deliberately included. The edge has to find one in order to answer 410
     /// Gone rather than 404, and <see cref="LinkSnapshot.GetServeState"/> makes that decision from
-    /// <see cref="LinkSnapshot.QuarantinedAt"/> — which it can only do if the row reaches it
-    ///.
+    /// <see cref="LinkSnapshot.QuarantinedAt"/> — which it can only do if the row reaches it.
     /// </para>
     /// </remarks>
     public async Task<LinkSnapshot?> GetSnapshotAsync(

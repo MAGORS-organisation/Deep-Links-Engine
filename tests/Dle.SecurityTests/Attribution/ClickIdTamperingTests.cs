@@ -6,15 +6,15 @@ using Dle.Domain.Attribution;
 namespace Dle.SecurityTests.Attribution;
 
 /// <summary>
-/// T-05 / TC-167: a click identifier edited in a Play referrer is never matched, and is recorded as
+/// A click identifier edited in a Play referrer is never matched, and is recorded as
 /// tampered.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The Play install referrer is a string an application on the device hands us, and §E.2.2 T-05 is
-/// specific about the consequence of trusting it: "distorted payouts to partners". A partner who can
+/// The Play install referrer is a string an application on the device hands us, and the consequence
+/// of trusting it is distorted payouts to partners. A partner who can
 /// edit <c>dl_cid</c> can attribute an organic install to their own campaign and get paid for it. The
-/// mitigation named there is that the identifier is "a signed short token (HMAC), not a raw ID",
+/// mitigation is that the identifier is a signed short token (HMAC), not a raw ID,
 /// which is what makes an edit detectable rather than merely unlikely.
 /// </para>
 /// <para>
@@ -142,7 +142,7 @@ public sealed class ClickIdTamperingTests
     [Fact]
     public void InstallReferrer_CarriesTheClickIdUnderTheDocumentedKey()
     {
-        // §B.7.2 shows the referrer as dl_cid%3D…%26utm_source%3Dfb, which is the percent-encoded form
+        // The referrer arrives as dl_cid%3D…%26utm_source%3Dfb, which is the percent-encoded form
         // Play delivers. The parser has to see through that, or every Android attribution silently
         // becomes organic.
         string clickId = Codec.New(Minted);
@@ -173,7 +173,7 @@ public sealed class ClickIdTamperingTests
     [Fact]
     public void InstallReferrer_WithoutAClickId_IsAnOrganicInstallRatherThanAnError()
     {
-        // TC-142: an organic install carries no dl_cid, and that is not a failure. Conflating the two
+        // An organic install carries no dl_cid, and that is not a failure. Conflating the two
         // would turn every Play Store install into a logged security event.
         Assert.False(InstallReferrerParser.TryGetClickId(
             "utm_source=google-play&utm_medium=organic",

@@ -9,8 +9,8 @@ using Dle.Domain.Contracts;
 namespace Dle.IntegrationTests.Control;
 
 /// <summary>
-/// The application routes of the control plane through HTTP against a real PostgreSQL (§B.4,
-/// FR-140 to FR-146): registering an iOS or Android application with its identifiers and
+/// The application routes of the control plane through HTTP against a real PostgreSQL:
+/// registering an iOS or Android application with its identifiers and
 /// certificate fingerprints, pairing it with the tenant's domains, the Play App Signing warning,
 /// and the SDK keys an application authenticates with - issued once in the clear, stored as a
 /// prefix and a hash, revocable.

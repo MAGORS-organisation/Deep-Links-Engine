@@ -123,7 +123,7 @@ public sealed class CacheBehaviourTests(DleInfrastructureFixture infrastructure)
     [RequiresDockerFact]
     public async Task AssociationDocument_AfterTheHostIsInvalidated_IsRegenerated()
     {
-        // TC-125: a rule change reaches the association file within fifteen minutes. The expiry is
+        // A rule change reaches the association file within fifteen minutes. The expiry is
         // the backstop; the host tag is the mechanism, and it is what makes the change immediate.
         string host = TestSeed.UniqueHost("cache-aasa");
         Guid tenantId = await TestSeed.TenantAsync(Database, "cache-aasa", cancellationToken: Ct);
@@ -162,7 +162,7 @@ public sealed class CacheBehaviourTests(DleInfrastructureFixture infrastructure)
     [RequiresDockerFact]
     public async Task CachedSnapshot_SurvivesARestartOfTheEdgeBecauseTheSharedLevelHoldsIt()
     {
-        // §B.8 profile B: L2 is what absorbs the cold start of a scaled-out replica. A second host
+        // In a scaled-out deployment L2 is what absorbs the cold start of a new replica. A second host
         // over the same Valkey has to find the snapshot without going back to PostgreSQL.
         string host = TestSeed.UniqueHost("cache-l2");
         Guid tenantId = await TestSeed.TenantAsync(Database, "cache-l2", cancellationToken: Ct);

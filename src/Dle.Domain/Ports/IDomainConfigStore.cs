@@ -12,8 +12,8 @@ public interface IDomainConfigStore
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The document, or <see langword="null"/> when no iOS application is registered for
     /// the host. The caller must answer 404 in that case: Apple caches an empty document for a
-    /// week, so serving empty JSON breaks the domain for longer than a missing file does
-    ///.</returns>
+    /// week, so serving empty JSON breaks the domain for longer than a missing file does.
+    /// </returns>
     ValueTask<WellKnownDocument?> BuildAasaAsync(string host, CancellationToken ct);
 
     /// <summary>Builds the Digital Asset Links document for a host.</summary>

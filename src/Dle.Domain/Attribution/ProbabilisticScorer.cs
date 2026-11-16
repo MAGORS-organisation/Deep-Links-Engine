@@ -5,7 +5,7 @@ namespace Dle.Domain.Attribution;
 
 /// <summary>
 /// Scores a probabilistic match between the signals reported by a fresh installation and those
-/// recorded with an earlier click (§A.2.5, strategy S4 of ADR-008).
+/// recorded with an earlier click (strategy S4).
 /// </summary>
 /// <remarks>
 /// <para>

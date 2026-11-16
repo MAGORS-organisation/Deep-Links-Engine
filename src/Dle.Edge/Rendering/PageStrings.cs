@@ -4,8 +4,7 @@ using Dle.Domain.Ports;
 namespace Dle.Edge.Rendering;
 
 /// <summary>
-/// Every user-facing string on every page the edge renders, in the two languages the product ships
-///.
+/// Every user-facing string on every page the edge renders, in the two languages the product ships.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,8 +17,7 @@ namespace Dle.Edge.Rendering;
 /// <para>
 /// The copy avoids the second person imperative where the user has no agency ("this link is not
 /// available", not "you cannot open this link") and never names the reason a link is missing: the 404
-/// text has to read identically whether the slug does not exist or belongs to another tenant
-///.
+/// text has to read identically whether the slug does not exist or belongs to another tenant.
 /// </para>
 /// </remarks>
 internal sealed record PageStrings

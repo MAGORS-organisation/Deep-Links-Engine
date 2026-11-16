@@ -22,7 +22,7 @@ namespace Dle.Control.Features.Domains;
 /// <para>
 /// The fetch goes through the SSRF-guarded client. A verification target is a customer-supplied host
 /// name, which makes this an outbound request to an address the customer chooses — exactly the shape
-/// of T-02 — so the connection is validated at the socket, not at the name, and redirects are never
+/// of SSRF — so the connection is validated at the socket, not at the name, and redirects are never
 /// followed.
 /// </para>
 /// </remarks>

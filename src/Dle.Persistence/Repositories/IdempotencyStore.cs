@@ -210,7 +210,7 @@ public sealed class IdempotencyStore
 
         // The hash is not a secret, but comparing it in constant time costs nothing and keeps the
         // habit intact: a length-leaking or early-exit comparison of a digest is exactly the shape
-        // shared kernel §17.6 forbids elsewhere.
+        // that is forbidden elsewhere.
         if (!CryptographicOperations.FixedTimeEquals(record.RequestHash, requestHash))
         {
             return IdempotencyLookup.Conflict;

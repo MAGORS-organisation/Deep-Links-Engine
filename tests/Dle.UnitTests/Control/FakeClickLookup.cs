@@ -4,7 +4,7 @@ namespace Dle.UnitTests.Control;
 
 /// <summary>
 /// A click stream that answers from a list, and remembers what it was asked. The record of what was
-/// asked is the assertion for TC-145 and TC-146: when the probabilistic module is off or consent is
+/// asked is the assertion for the consent cases: when the probabilistic module is off or consent is
 /// absent, no candidate query may happen at all.
 /// </summary>
 internal sealed class FakeClickLookup : IClickLookup

@@ -4,7 +4,7 @@ namespace Dle.Persistence.Configurations;
 /// The PostgreSQL type and default names the entity configurations share.
 /// </summary>
 /// <remarks>
-/// They are constants rather than literals scattered across twenty files so that the DDL of §B.5.2
+/// They are constants rather than literals scattered across twenty files so that the DDL
 /// and the model can be compared line by line, and so that changing one of them is a single edit.
 /// </remarks>
 internal static class PostgresConventions
@@ -22,7 +22,7 @@ internal static class PostgresConventions
     /// </summary>
     internal const string TextArray = "text[]";
 
-    /// <summary>Fixed precision confidence, <c>numeric(3,2)</c> per §B.5.3.</summary>
+    /// <summary>Fixed precision confidence, <c>numeric(3,2)</c>.</summary>
     internal const string Numeric32 = "numeric(3,2)";
 
     /// <summary>

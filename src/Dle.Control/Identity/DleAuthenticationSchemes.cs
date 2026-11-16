@@ -6,7 +6,7 @@ namespace Dle.Control.Identity;
 /// <remarks>
 /// <para>
 /// There are three credentials and they are three schemes, not one scheme with three code paths.
-/// That separation is the mechanism behind §E.2.1 TB2: an SDK key ships inside an APK or an IPA and
+/// That separation is the trust boundary around SDK keys: an SDK key ships inside an APK or an IPA and
 /// must be assumed to be in an attacker's hands, so the policies that guard configuration writes
 /// simply do not list <see cref="SdkKey"/> among their accepted schemes. No amount of scope or role
 /// confusion can make an extracted SDK key satisfy them, because the authorization stack refuses the
@@ -23,10 +23,10 @@ public static class DleAuthenticationSchemes
     /// <summary>Selector scheme that forwards to whichever credential the request actually carries.</summary>
     public const string Default = "Dle";
 
-    /// <summary>Control-plane API keys, hashed with Argon2id (FR-242, K5).</summary>
+    /// <summary>Control-plane API keys, hashed with Argon2id.</summary>
     public const string ApiKey = "DleApiKey";
 
-    /// <summary>Keys embedded in customer applications. Narrow by construction (§E.2.1, TB2).</summary>
+    /// <summary>Keys embedded in customer applications. Narrow by construction.</summary>
     public const string SdkKey = "DleSdkKey";
 
     /// <summary>Bearer tokens issued by the administration UI identity provider.</summary>

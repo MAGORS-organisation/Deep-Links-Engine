@@ -34,7 +34,7 @@ public static class FastPersistenceServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">
     /// The application configuration. Read: <c>ConnectionStrings:Postgres</c> (required),
-    /// <c>ConnectionStrings:PostgresRead</c> (optional read replica, §B.8 profile B),
+    /// <c>ConnectionStrings:PostgresRead</c> (optional read replica),
     /// <c>ConnectionStrings:Valkey</c> (optional L2 cache), <c>Dle:Edge:Cache</c> and
     /// <c>Dle:Persistence:Fast</c>.
     /// </param>
@@ -55,7 +55,7 @@ public static class FastPersistenceServiceCollectionExtensions
     /// <para>
     /// The L2 cache is opt-in by configuration: with <c>ConnectionStrings:Valkey</c> present the shared
     /// level is a Valkey instance reached over the Redis protocol, and without it <c>HybridCache</c>
-    /// runs L1-only. That is the difference between §B.8 profile A and profile B, and it is a
+    /// runs L1-only. That is the difference between the two deployment profiles, and it is a
     /// configuration value rather than a code path so that both profiles run the same binary.
     /// </para>
     /// </remarks>
@@ -175,7 +175,7 @@ public static class FastPersistenceServiceCollectionExtensions
             });
 
             // HybridCache hides a dead L2 from the request path on purpose, so the only thing that
-            // can report the shared cache as down is a probe on a clock (§D.6, cache_l2_down).
+            // can report the shared cache as down is a probe on a clock (cache_l2_down).
             services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, DistributedCacheProbe>());
 
             services.AddDleValkeyTokenReplayGuard();
@@ -227,7 +227,7 @@ public static class FastPersistenceServiceCollectionExtensions
         {
             // Parameter logging stays off. A resolve parameter is a host and a slug, and a click lookup
             // parameter is a click identifier; logging them would put user-identifying values into logs
-            // at information level, which SHARED-KERNEL §17.5 forbids.
+            // at information level, which is forbidden.
             _ = builder.UseLoggerFactory(loggerFactory);
         }
 

@@ -14,15 +14,15 @@ namespace Dle.Persistence.Fast.Links;
 /// <remarks>
 /// <para>
 /// This is the reason <c>Dle.Persistence.Fast</c> exists. EF Core spends hundreds of microseconds per
-/// operation on entity materialisation and change tracking, which is most of the resolve budget of
-/// NFR-01 spent before any work is done, and its ahead-of-time support is explicitly experimental,
+/// operation on entity materialisation and change tracking, which is most of the resolve budget
+/// spent before any work is done, and its ahead-of-time support is explicitly experimental,
 /// which would rule out an AOT edge resolver altogether. One statement and a hand
 /// written reader loop cost neither.
 /// </para>
 /// <para>
 /// Nothing is materialised by reflection: columns are read by ordinal, and the three JSON columns go
-/// through <see cref="DleDomainJsonContext"/>, the source generated metadata that SHARED-KERNEL §17.3
-/// requires on this path.
+/// through <see cref="DleDomainJsonContext"/>, the source generated metadata
+/// required on this path.
 /// </para>
 /// <para>
 /// Caching is not this type's job. The store is the miss path behind <c>HybridCache</c>, which supplies
@@ -32,14 +32,14 @@ namespace Dle.Persistence.Fast.Links;
 /// </remarks>
 public sealed class DapperLinkStore : ILinkStore
 {
-    // Why the projection is wider than the covering index of §B.5.2, and why the index follows it:
+    // Why the projection is wider than a minimal covering index, and why the index follows it:
     //
-    // §B.5.2 defines ix_links_resolve as (domain_id, slug) INCLUDE (target_url, deeplink_path,
+    // A minimal ix_links_resolve is (domain_id, slug) INCLUDE (target_url, deeplink_path,
     // routing_rules, og_meta, is_active, starts_at, expires_at, quarantined_at, tenant_id). The
     // statement below also reads id, utm, title, campaign_id and expired_url, and none of the five is
     // optional: id is the click event's link, LinkSnapshot.Utm is required, title feeds the
     // interstitial and Open Graph, campaign_id feeds attribution, and expired_url is what separates
-    // the 302-to-a-farewell-page of TC-104 from a bare 404. A covering index that leaves one of them
+    // the 302-to-a-farewell-page of an expired link from a bare 404. A covering index that leaves one of them
     // out is not covering — the planner falls back to uq_links_domain_slug plus a heap fetch — so the
     // migration's INCLUDE list carries all five, and CoveringIndexTests checks the plan of this exact
     // statement. A column added here has to be added there.
@@ -111,7 +111,7 @@ public sealed class DapperLinkStore : ILinkStore
     /// <summary>
     /// Creates the store.
     /// </summary>
-    /// <param name="readDataSource">The read pool, which is a replica under §B.8 profile B.</param>
+    /// <param name="readDataSource">The read pool, which is a replica when one is configured.</param>
     /// <param name="options">Hot-path persistence options; supplies the command timeout.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public DapperLinkStore(DleReadDataSource readDataSource, FastPersistenceOptions options)

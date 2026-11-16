@@ -203,7 +203,7 @@ public class DleClient internal constructor(
     private val osVersion: String? = Build.VERSION.RELEASE?.takeIf { it.isNotBlank() }
 
     /**
-     * Recovers the click that led to this installation (`POST /v1/resolve`, spec §B.7.2).
+     * Recovers the click that led to this installation (`POST /v1/resolve`).
      *
      * The first call reads the Play Install Referrer once (S1), sends it with the platform,
      * versions, consent and any evidence in [options], and persists the answer. Later calls
@@ -280,8 +280,8 @@ public class DleClient internal constructor(
      * [DleConfig.flushDelayMillis] later, survive process death and are retried offline.
      *
      * Behavioural events are dropped here, not buffered, while [DleConsent.analytics] is `false`
-     * and [DleConfig.requireAnalyticsConsentForEvents] is on. [DleEventType.LINK_OPEN] is exempt
-     *. Never throws.
+     * and [DleConfig.requireAnalyticsConsentForEvents] is on. [DleEventType.LINK_OPEN] is exempt.
+     * Never throws.
      *
      * @param event the event, built with the factories on [DleEvent].
      */
@@ -310,7 +310,7 @@ public class DleClient internal constructor(
 
     /**
      * Resolves the screen a short link the app was opened with should lead to
-     * (`POST /v1/resolve-link`, FR-223, spec §B.6.4).
+     * (`POST /v1/resolve-link`).
      *
      * A verified App Link opens the app with the short URL itself — `https://go.example.com/AbC12345`
      * — which does not say which screen to show. This asks the engine: the answer has

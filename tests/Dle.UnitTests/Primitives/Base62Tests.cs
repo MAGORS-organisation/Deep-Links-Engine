@@ -4,7 +4,7 @@ using Xunit;
 namespace Dle.UnitTests.Primitives;
 
 /// <summary>
-/// ADR-007: the slug is base62 of a keyed permutation of a sequence. If encode/decode is not an
+/// The slug is base62 of a keyed permutation of a sequence. If encode/decode is not an
 /// exact involution over the whole 64-bit range, slugs collide or become unrecoverable.
 /// </summary>
 public sealed class Base62Tests
@@ -116,7 +116,7 @@ public sealed class Base62Tests
     [InlineData(1UL)]
     [InlineData(61UL)]
     [InlineData(62UL)]
-    [InlineData(140737488355327UL)] // 2^47 - 1, the Feistel domain of ADR-007
+    [InlineData(140737488355327UL)] // 2^47 - 1, the top of the slug Feistel domain
     [InlineData(140737488355328UL)]
     [InlineData(9223372036854775808UL)]
     [InlineData(18446744073709551614UL)]

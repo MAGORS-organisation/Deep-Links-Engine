@@ -2,7 +2,7 @@ namespace Dle.Control.Features.Attribution;
 
 /// <summary>
 /// Body of <c>POST /v1/claim-codes</c>: the interstitial page asking for the six characters it will
-/// show the user (S3, FR-184, §B.6.3).
+/// show the user (S3).
 /// </summary>
 /// <remarks>
 /// The interstitial is served by the edge, which has just written the click event and therefore
@@ -20,7 +20,7 @@ public sealed record IssueClaimCodeRequest
 
 /// <summary>
 /// A freshly issued claim code. The plaintext code appears here and nowhere else: storage keeps
-/// only its keyed hash (§E.4.1, K3).
+/// only its keyed hash.
 /// </summary>
 public sealed record ClaimCodeResponse
 {

@@ -19,12 +19,12 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The values are the §E.9 table. What is not configurable is that the limits exist: every route
+/// The values come from <c>Dle:RateLimits</c>. What is not configurable is that the limits exist: every route
 /// names a policy, and the global limiter treats an API route that named none as suspect rather than
 /// as unlimited, which is the fail-closed reading of a forgotten attribute.
 /// </para>
 /// <para>
-/// The authentication limit of §E.9 — ten attempts a minute, with constant-time verification either
+/// The authentication limit — ten attempts a minute, with constant-time verification either
 /// way — is deliberately not here. Endpoint rate limiting runs after authentication, so a limiter
 /// registered at this layer could not stop an attacker making the server perform one Argon2id
 /// verification per guess, which is both the credential-stuffing surface and, at roughly nineteen
@@ -217,7 +217,7 @@ public static class ControlRateLimitingServiceCollectionExtensions
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task that completes when the response has been written.</returns>
     /// <remarks>
-    /// §E.9 answers a rejected request with 429 and a <c>Retry-After</c>, never with the framework's
+    /// A rejected request is answered with 429 and a <c>Retry-After</c>, never with the framework's
     /// default 503, which tells a caller to try again immediately and turns a limit into a
     /// self-inflicted retry storm.
     /// </remarks>
@@ -275,8 +275,8 @@ public static class ControlRateLimitingServiceCollectionExtensions
     /// <param name="caller">The authenticated caller, when there is one.</param>
     /// <returns>The key.</returns>
     /// <remarks>
-    /// The non-secret key prefix identifies an authenticated caller, which is what §E.9 keys the link
-    /// creation limit on. An unauthenticated request falls back to the remote address, reduced to a
+    /// The non-secret key prefix identifies an authenticated caller, which is what the link
+    /// creation limit is keyed on. An unauthenticated request falls back to the remote address, reduced to a
     /// /64 for IPv6 because a single residential connection is routinely handed a whole /64 and
     /// keying on the exact address would hand one household an unlimited quota. The key never reaches
     /// a log.

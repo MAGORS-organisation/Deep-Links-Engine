@@ -8,8 +8,8 @@ namespace Dle.Persistence.Fast.Telemetry;
 /// <remarks>
 /// <para>
 /// Instrument names use the OpenTelemetry dotted spelling. A Prometheus exporter renders
-/// <c>dle.click_events.dropped</c> as <c>dle_click_events_dropped_total</c>, which is the metric §C.6
-/// names and puts an alert on. That alert is the point: dropping click events is a deliberate trade
+/// <c>dle.click_events.dropped</c> as <c>dle_click_events_dropped_total</c>, which is the metric
+/// an alert watches. That alert is the point: dropping click events is a deliberate trade
 /// under load, but a silent one would mean campaign numbers quietly going wrong with nothing
 /// to notice it.
 /// </para>
@@ -69,7 +69,7 @@ public sealed class FastPersistenceMetrics : IDisposable
             "dle.cache.l2.up",
             ObserveDistributedCacheUp,
             unit: "1",
-            description: "1 while the shared (L2) cache answers, 0 while it is unreachable and resolves fall through to L1 and PostgreSQL (§D.6, cache_l2_down). Not reported when no L2 is configured.");
+            description: "1 while the shared (L2) cache answers, 0 while it is unreachable and resolves fall through to L1 and PostgreSQL (cache_l2_down). Not reported when no L2 is configured.");
     }
 
     /// <summary>Counts one click event dropped by the bounded channel.</summary>

@@ -3,7 +3,7 @@ using Dle.Domain.Analytics;
 namespace Dle.Domain.Ports;
 
 /// <summary>
-/// Writes batches of SDK reported events (<c>POST /v1/events</c>, §B.7.2).
+/// Writes batches of SDK reported events (<c>POST /v1/events</c>).
 /// </summary>
 public interface ISdkEventWriter
 {

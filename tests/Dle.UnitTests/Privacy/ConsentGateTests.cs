@@ -4,7 +4,7 @@ using Xunit;
 namespace Dle.UnitTests.Privacy;
 
 /// <summary>
-/// SHARED-KERNEL section 2 truth table. Every row is a legal position, not a preference: ePrivacy
+/// The consent truth table. Every row is a legal position, not a preference: ePrivacy
 /// art. 5(3) and EDPB 2/2023 are what make the "Full without attribution consent" row degrade
 /// rather than pass through.
 /// </summary>

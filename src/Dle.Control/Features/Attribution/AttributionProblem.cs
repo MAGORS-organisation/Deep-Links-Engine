@@ -46,7 +46,7 @@ public static class AttributionProblem
     /// <returns>A 401 problem document with the <c>WWW-Authenticate</c> challenge.</returns>
     /// <remarks>
     /// The detail is identical for every cause on purpose. Telling an attacker that a key exists but
-    /// is inactive is a free oracle, and §E.9 already pairs this endpoint with a per-address limit on
+    /// is inactive is a free oracle, and this endpoint is already paired with a per-address limit on
     /// verification attempts.
     /// </remarks>
     public static IResult Unauthenticated() => new ProblemResult(

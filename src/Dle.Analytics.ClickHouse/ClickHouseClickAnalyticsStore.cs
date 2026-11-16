@@ -8,8 +8,8 @@ using Microsoft.Extensions.Logging;
 namespace Dle.Analytics.ClickHouse;
 
 /// <summary>
-/// <see cref="IClickAnalyticsStore"/> over ClickHouse — the experimental opt-in analytics provider
-/// of ADR-006, intended for installations past roughly fifty million events a
+/// <see cref="IClickAnalyticsStore"/> over ClickHouse — the experimental opt-in analytics provider,
+/// intended for installations past roughly fifty million events a
 /// month.
 /// </summary>
 /// <remarks>
@@ -24,8 +24,7 @@ namespace Dle.Analytics.ClickHouse;
 /// The contract is satisfied identically to the PostgreSQL implementation, which is the whole
 /// point of the port: moving provider is an operator decision, not a rewrite. Every query is
 /// tenant scoped, every query carries the reported time range so the monthly partitions prune,
-/// and crawler traffic is excluded unless <see cref="AnalyticsQuery.IncludeBots"/> is set
-///.
+/// and crawler traffic is excluded unless <see cref="AnalyticsQuery.IncludeBots"/> is set.
 /// </para>
 /// <para>
 /// Unlike the PostgreSQL provider this one keeps no rollup tables. ClickHouse aggregates raw
@@ -283,7 +282,7 @@ public sealed partial class ClickHouseClickAnalyticsStore : IClickAnalyticsStore
         string installWhere = BuildInstallFilter(query, "i", parameters);
 
         // Installs that carry no attribution row at all are reported as "none" rather than
-        // dropped: the unmatched share is the honest half of the ADR-008 dashboard panel.
+        // dropped: the unmatched share is the honest half of the attribution-quality dashboard panel.
         string sql = $$"""
             SELECT match_type,
                    toInt64(count()) AS matches,

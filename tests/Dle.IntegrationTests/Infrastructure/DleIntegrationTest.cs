@@ -82,8 +82,8 @@ public abstract class DleIntegrationTest : IAsyncLifetime
     /// <param name="configure">Optional adjustment of the configuration before the host is built.</param>
     /// <param name="valkey">
     /// The L2 connection string. Defaults to the fixture's Valkey; pass
-    /// <see cref="DleInfrastructureFixture.UnreachableValkeyConnectionString"/> for the §D.6 case, or
-    /// an empty string for an L1-only host (§B.8 profile A).
+    /// <see cref="DleInfrastructureFixture.UnreachableValkeyConnectionString"/> for the Valkey outage
+    /// case, or an empty string for an L1-only host.
     /// </param>
     /// <returns>The host, disposed with the test.</returns>
     protected DleTestHost<EdgeOptions> StartEdge(

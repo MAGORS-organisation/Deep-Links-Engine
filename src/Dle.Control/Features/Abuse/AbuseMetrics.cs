@@ -7,7 +7,7 @@ namespace Dle.Control.Features.Abuse;
 /// </summary>
 /// <remarks>
 /// Names use the OpenTelemetry dotted spelling; a Prometheus exporter renders
-/// <c>dle.abuse.blocked</c> as <c>dle_abuse_blocked_total</c>, which is the metric §C.6 names.
+/// <c>dle.abuse.blocked</c> as <c>dle_abuse_blocked_total</c>.
 /// The counter is tagged by the source of the verdict, because "blocked by our own list" and
 /// "blocked by URLhaus" answer different operational questions: the first says the operator is
 /// working, the second says the feed is.
@@ -41,7 +41,7 @@ public sealed class AbuseMetrics : IDisposable
         _reports = _meter.CreateCounter<long>(
             "dle.abuse.reports",
             unit: "{report}",
-            description: "Abuse reports accepted through the public form (FR-245, DSA article 16).");
+            description: "Abuse reports accepted through the public form (DSA article 16).");
 
         _quarantines = _meter.CreateCounter<long>(
             "dle.abuse.quarantines",

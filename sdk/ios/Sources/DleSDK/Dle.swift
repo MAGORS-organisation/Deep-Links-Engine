@@ -19,8 +19,8 @@ import UIKit
 /// What it does, and only this:
 /// * **Resolve once.** The first call to ``resolve(claimCode:loginKey:)`` after an install
 ///   posts `POST /v1/resolve` with the installation id, `ios`, the app and OS versions and the
-///   consent record; the answer is persisted and every later call returns it without a request
-///. Device signals are attached only when ``DleDeferredStrategies/probabilistic`` is
+///   consent record; the answer is persisted and every later call returns it without a request.
+///   Device signals are attached only when ``DleDeferredStrategies/probabilistic`` is
 ///   enabled **and** ``DleConsent/attribution`` was granted; otherwise the `signals` member is
 ///   omitted from the body, not sent empty.
 /// * **Report direct opens.** ``handle(_:)`` and ``handle(url:)`` queue a `link_open` for every
@@ -31,8 +31,8 @@ import UIKit
 ///   foreground.
 ///
 /// What it never does: read the pasteboard, touch `ASIdentifierManager` or App Tracking
-/// Transparency, derive an identifier from the device, or put anything on a custom-scheme URL
-///. The only identifier it creates is a random UUID kept in the Keychain.
+/// Transparency, derive an identifier from the device, or put anything on a custom-scheme URL.
+/// The only identifier it creates is a random UUID kept in the Keychain.
 ///
 /// Thread-safety: every method is callable from any thread. The class is a `Sendable` final
 /// class rather than an actor because ``handle(_:)`` and ``handle(url:)`` have to return
@@ -236,15 +236,15 @@ public final class Dle: Sendable {
         }
     }
 
-    /// Submits the claim code the user typed (S3, FR-184). Equivalent to
+    /// Submits the claim code the user typed (S3). Equivalent to
     /// ``resolve(claimCode:loginKey:)`` with `claimCode` only. The engine redeems the code only
     /// under ``DleConsent/attribution``; without it the answer is unmatched and the code unspent.
     public func submitClaimCode(_ code: String) async throws -> DeferredLink {
         try await resolve(claimCode: code)
     }
 
-    /// Reconciles this installation with the click that carried the same account key (S2,
-    /// FR-185). `loginKey` must be opaque and already hashed; never pass an e-mail address or a
+    /// Reconciles this installation with the click that carried the same account key (S2).
+    /// `loginKey` must be opaque and already hashed; never pass an e-mail address or a
     /// raw user id. Equivalent to ``resolve(claimCode:loginKey:)`` with `loginKey` only.
     public func reconcileLogin(loginKey: String) async throws -> DeferredLink {
         try await resolve(loginKey: loginKey)

@@ -2,7 +2,6 @@
 
   <!--
     Deep Link Engine (DLE) — properties shared by every project in the solution.
-    Normative source: docs/dev/SHARED-KERNEL.md §0 and docs/zadanie.md §C.1/§C.2.
     Nothing here may be relaxed in an individual project without a written reason.
   -->
 
@@ -43,20 +42,20 @@
         CA1515  "Make types internal" — public surface in app assemblies is
                 intentional (minimal API handlers, integration test fixtures).
 
-      Deliberately NOT listed: CA1031 (SHARED-KERNEL §17.9 forbids a global
-      suppression of catch-all handlers) and CS1591 (missing XML doc comments
+      Deliberately NOT listed: CA1031 (a global suppression of catch-all
+      handlers is forbidden) and CS1591 (missing XML doc comments
       on public members must stay a build error).
     -->
     <!--
       NuGet audit: Low (NU1901) and Moderate (NU1902) are suppressed from MSBuild
       warnaserror so they don't break CI builds or locked restores; High and Critical
-      vulnerabilities remain enforced by the S-05 gate via .github/scripts/nuget-vulnerabilities.py.
+      vulnerabilities remain enforced by the hard gate in .github/scripts/nuget-vulnerabilities.py.
     -->
     <NoWarn>$(NoWarn);CA1848;CA2007;CA1812;CA1515;NU1901;NU1902</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Label="Runtime behaviour">
-    <!-- SHARED-KERNEL §0: every ToString/Parse uses CultureInfo.InvariantCulture. -->
+    <!-- Every ToString/Parse uses CultureInfo.InvariantCulture. -->
     <InvariantGlobalization>true</InvariantGlobalization>
     <UseSystemResourceKeys>false</UseSystemResourceKeys>
     <TieredPGO>true</TieredPGO>
@@ -77,7 +76,7 @@
     <!-- Central Package Management: no Version attribute may appear on a PackageReference. -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <!-- packages.lock.json per project: CI restores in locked mode so a resolved dependency
-         graph cannot drift between a review and a release (T-14, OWASP A03:2025 supply chain). -->
+         graph cannot drift between a review and a release (OWASP A03:2025 supply chain). -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true' And Exists('$(MSBuildProjectDirectory)/packages.lock.json')">true</RestoreLockedMode>
   </PropertyGroup>

@@ -6,7 +6,7 @@ using Dle.Edge.Resolution;
 namespace Dle.Edge.RateLimiting;
 
 /// <summary>
-/// Which rate limit table row of §E.9 a request falls under, and the key its budget is counted
+/// Which edge rate limit a request falls under, and the key its budget is counted
 /// against.
 /// </summary>
 /// <remarks>
@@ -25,7 +25,7 @@ namespace Dle.Edge.RateLimiting;
 /// </remarks>
 public enum EdgeRateLimitKind
 {
-    /// <summary>Not covered by any row of §E.9.</summary>
+    /// <summary>Not covered by any edge rate limit.</summary>
     Unlimited = 0,
 
     /// <summary><c>GET /{slug}</c>: sliding window, 600 per minute, keyed by network prefix.</summary>
@@ -38,7 +38,7 @@ public enum EdgeRateLimitKind
 /// <summary>
 /// The partition a request is counted in: what kind of budget, and whose.
 /// </summary>
-/// <param name="Kind">Which row of §E.9 applies.</param>
+/// <param name="Kind">Which rate limit applies.</param>
 /// <param name="Key">The client key, already reduced to a network prefix or an address.</param>
 public readonly record struct EdgeRateLimitPartition(EdgeRateLimitKind Kind, string Key);
 
@@ -47,7 +47,7 @@ public readonly record struct EdgeRateLimitPartition(EdgeRateLimitKind Kind, str
 /// </summary>
 /// <remarks>
 /// <para>
-/// §E.9 keys the resolve limits by network prefix — a <c>/24</c> for IPv4 and a <c>/48</c> for IPv6 —
+/// The resolve limits are keyed by network prefix — a <c>/24</c> for IPv4 and a <c>/48</c> for IPv6 —
 /// and not by address. The reason is arithmetic: a residential IPv6 allocation is a <c>/56</c> or a
 /// <c>/64</c>, so an attacker with one line has billions of addresses and, keyed by address, billions
 /// of independent budgets. A <c>/48</c> is the smallest block a site is normally allocated, which
@@ -99,7 +99,7 @@ public static class EdgeRateLimitPartitions
     }
 
     /// <summary>
-    /// Returns the per-client key the QR limit is counted under (§E.9 keys that row by IP).
+    /// Returns the per-client key the QR limit is counted under (that limit is keyed by IP).
     /// </summary>
     /// <remarks>
     /// The exact address for IPv4. For IPv6 the <c>/64</c>: one subscriber is routinely handed a whole
@@ -140,7 +140,7 @@ public static class EdgeRateLimitPartitions
     }
 
     /// <summary>
-    /// Decides which row of §E.9 a request falls under from its method and path alone.
+    /// Decides which rate limit a request falls under from its method and path alone.
     /// </summary>
     /// <param name="method">The HTTP method.</param>
     /// <param name="path">The request path.</param>

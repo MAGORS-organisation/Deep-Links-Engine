@@ -6,8 +6,8 @@ namespace Dle.Edge.Rendering;
 /// <remarks>
 /// <para>
 /// It is a compiled literal, it is written with the response nonce, and it is the whole of the page's
-/// scripting. There is no framework, no bundle and no external origin, because NFR-14 forbids the
-/// resolve path from making a third-party call and T-11 is answered by a policy with no
+/// scripting. There is no framework, no bundle and no external origin, because the
+/// resolve path makes no third-party call and stored cross-site scripting is answered by a policy with no
 /// <c>unsafe-inline</c> and no <c>unsafe-eval</c> at all.
 /// </para>
 /// <para>

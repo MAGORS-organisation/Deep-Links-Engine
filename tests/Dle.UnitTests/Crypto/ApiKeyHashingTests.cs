@@ -199,7 +199,7 @@ public sealed class ApiKeyHashingTests
     }
 
     /// <summary>
-    /// S-03. The comparison of a derived hash with the stored one must not exit early: an early
+    /// The comparison of a derived hash with the stored one must not exit early: an early
     /// exit turns key verification into a byte-at-a-time search.
     /// </summary>
     [Fact]

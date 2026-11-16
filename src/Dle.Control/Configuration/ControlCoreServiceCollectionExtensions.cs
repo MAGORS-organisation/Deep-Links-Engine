@@ -212,7 +212,7 @@ public static class ControlCoreServiceCollectionExtensions
     /// <remarks>
     /// The cache invalidator is registered here rather than left to the edge's module. The control
     /// plane is what changes a link, and a change the edge cannot be told about is a change that
-    /// takes effect whenever the cached entry happens to expire — which is exactly what TC-125 rules
+    /// takes effect whenever the cached entry happens to expire — which is exactly what has to be ruled
     /// out. It is the same implementation the edge registers, over the same two-level cache, so a
     /// removal reaches both levels on every replica.
     /// </remarks>
@@ -249,7 +249,7 @@ public static class ControlCoreServiceCollectionExtensions
 
             // Valkey speaks the Redis protocol, so the StackExchange.Redis backed IDistributedCache
             // is the shared level; HybridCache picks it up simply by it being registered. Without a
-            // connection string the cache is in-process only, which is §B.8 profile A.
+            // connection string the cache is in-process only.
             services.AddStackExchangeRedisCache(redis =>
             {
                 redis.Configuration = valkey;
@@ -269,7 +269,7 @@ public static class ControlCoreServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <remarks>
     /// A verification target is a customer-supplied host name, which makes this an outbound request
-    /// to an address the customer chooses — the shape of T-02. The handler validates the address at
+    /// to an address the customer chooses — the shape of an SSRF attack. The handler validates the address at
     /// the socket rather than the name before it, so nothing can move between the check and the
     /// connection, and it never follows a redirect on its own.
     /// </remarks>

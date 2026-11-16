@@ -4,7 +4,7 @@ using Xunit;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// FR-124. A version predicate with no bound at all is vacuously true; a predicate with a bound
+/// A version predicate with no bound at all is vacuously true; a predicate with a bound
 /// never matches an unknown version, because "we could not read the version" is not evidence that
 /// the version is high enough.
 /// </summary>

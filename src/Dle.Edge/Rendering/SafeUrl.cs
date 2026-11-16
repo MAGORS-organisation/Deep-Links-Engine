@@ -5,7 +5,7 @@ namespace Dle.Edge.Rendering;
 /// </summary>
 /// <remarks>
 /// <para>
-/// T-11 is stored cross-site scripting through the values a page interpolates: Open Graph metadata,
+/// The threat is stored cross-site scripting through the values a page interpolates: Open Graph metadata,
 /// the link's own target, tenant branding and anything arriving on the query string. HTML encoding
 /// handles the text; it does not handle a URL, because a <c>javascript:</c> URL survives encoding
 /// intact and executes on click. The scheme has to be checked separately, and it has to be checked
@@ -15,7 +15,7 @@ namespace Dle.Edge.Rendering;
 /// <para>
 /// Custom application schemes are the one exception, and a narrow one. The interstitial's button may
 /// carry <c>myapp://…</c>, but only when the scheme matches the value configured on the link, and never
-/// a scheme the browser treats as executable or as a document (§A.2.3, CVE-2026-26123).
+/// a scheme the browser treats as executable or as a document (CVE-2026-26123).
 /// </para>
 /// </remarks>
 internal static class SafeUrl

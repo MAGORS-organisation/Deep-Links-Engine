@@ -9,7 +9,7 @@ namespace Dle.Domain.Primitives;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <see cref="TryNormalize"/> is the homoglyph defence required by TC-109. Characters outside
+/// <see cref="TryNormalize"/> is the homoglyph defence. Characters outside
 /// <c>[a-z0-9_-]</c> are <em>rejected</em>, never folded: a Cyrillic <c>а</c> (U+0430) must not
 /// become a Latin <c>a</c>, otherwise a tenant could mint a slug that collides with another
 /// tenant's link on the same domain.
@@ -96,8 +96,8 @@ public static class SlugPolicy
         }
 
         // Under InvariantGlobalization the call above returned `raw` untouched. Fold the
-        // compatibility characters that matter to this allowlist ourselves so the NFKC step
-        // SHARED-KERNEL §1 requires happens whether or not the runtime carries ICU.
+        // compatibility characters that matter to this allowlist ourselves so the required NFKC
+        // step happens whether or not the runtime carries ICU.
         normalized = CompatibilityFold.Apply(normalized);
 
         normalized = normalized.Trim().ToLowerInvariant();

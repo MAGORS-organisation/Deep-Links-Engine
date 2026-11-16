@@ -5,13 +5,13 @@ using System.Text;
 namespace Dle.Domain.WellKnown;
 
 /// <summary>
-/// Pure generators for <c>apple-app-site-association</c> and <c>assetlinks.json</c>
-///. No HTTP, no I/O, no clock — everything here is testable in isolation.
+/// Pure generators for <c>apple-app-site-association</c> and <c>assetlinks.json</c>.
+/// No HTTP, no I/O, no clock — everything here is testable in isolation.
 /// </summary>
 /// <remarks>
 /// Both builders return <see langword="null"/> when a host has no application of that platform, and the
 /// endpoint must turn that into <c>404</c>. Returning an empty but syntactically valid JSON document
-/// instead is the trap TC-122 exists for: Apple accepts such a file, caches it, and the domain is dead
+/// instead is a trap: Apple accepts such a file, caches it, and the domain is dead
 /// for roughly a week.
 /// </remarks>
 public static class WellKnownBuilder

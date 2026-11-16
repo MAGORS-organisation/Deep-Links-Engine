@@ -5,8 +5,8 @@ package sk.magors.dle
  * `ResolveResponseDto` member for member.
  *
  * [matchType] and [confidence] are non-nullable on purpose. Every attribution carries both, and a
- * response without them is refused by the SDK as malformed rather than defaulted (FR-186,
- * ADR-008). A [MatchType.PROBABILISTIC] result with [confidence] `0.6` is a hint; treat it as a
+ * response without them is refused by the SDK as malformed rather than defaulted. A
+ * [MatchType.PROBABILISTIC] result with [confidence] `0.6` is a hint; treat it as a
  * suggestion in the UI, never as fact. Use [isDeterministic] before acting irreversibly.
  *
  * @property matched whether any strategy matched. When `false` the application continues with its

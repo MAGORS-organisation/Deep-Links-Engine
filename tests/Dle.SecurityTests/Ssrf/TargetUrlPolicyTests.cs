@@ -7,10 +7,10 @@ namespace Dle.SecurityTests.Ssrf;
 /// </summary>
 /// <remarks>
 /// <para>
-/// §E.3 step 1 is a scheme allow list and step 2 is a check on the <em>resolved</em> address rather
-/// than on the name. This class covers everything in those two steps that can be decided without a
-/// resolver: the scheme, the credential form, the special-use names, and every address literal an
-/// attacker reaches for when the string check is the only check.
+/// The first step of the target check is a scheme allow list and the second is a check on the
+/// <em>resolved</em> address rather than on the name. This class covers everything in those two
+/// steps that can be decided without a resolver: the scheme, the credential form, the special-use
+/// names, and every address literal an attacker reaches for when the string check is the only check.
 /// </para>
 /// <para>
 /// The address matrix is deliberately exhaustive about IPv6, because that is where these checks
@@ -21,7 +21,7 @@ namespace Dle.SecurityTests.Ssrf;
 /// </remarks>
 public sealed class TargetUrlPolicyTests
 {
-    /// <summary>Schemes TC-161 requires to be refused outright.</summary>
+    /// <summary>Schemes that must be refused outright.</summary>
     public static TheoryData<string> ForbiddenSchemeUrls() =>
     [
         "javascript:alert(1)",
@@ -47,15 +47,15 @@ public sealed class TargetUrlPolicyTests
         "myapp://open/product/1",
     ];
 
-    /// <summary>Addresses §E.2.2 T-02 names, plus every alias that reaches them.</summary>
+    /// <summary>Addresses an SSRF attack reaches for, plus every alias that reaches them.</summary>
     public static TheoryData<string, string> ForbiddenAddresses() => new()
     {
-        { "169.254.169.254", "the cloud metadata endpoint named in T-02" },
+        { "169.254.169.254", "the cloud metadata endpoint" },
         { "169.254.170.2", "the ECS task metadata endpoint" },
         { "127.0.0.1", "loopback" },
         { "127.1.2.3", "loopback, the whole /8" },
         { "0.0.0.0", "this network" },
-        { "10.0.0.1", "RFC 1918, named in TC-162" },
+        { "10.0.0.1", "RFC 1918, the bottom of the range" },
         { "172.16.0.1", "RFC 1918" },
         { "172.31.255.254", "RFC 1918, the top of the range" },
         { "192.168.1.1", "RFC 1918" },
@@ -233,7 +233,7 @@ public sealed class TargetUrlPolicyTests
     [Fact]
     public void IsForbiddenAddress_IsTotalAndNeverThrows()
     {
-        // §17.9: a decision branch that cannot classify its input must deny, not fall through and not
+        // Deny by default: a decision branch that cannot classify its input must deny, not fall through and not
         // fail. Sixteen arbitrary bytes is every IPv6 address there is.
         Gen.Byte.Array[16].Sample(
             bytes =>

@@ -3,13 +3,13 @@ using System.Globalization;
 namespace Dle.Domain.Attribution;
 
 /// <summary>
-/// Short code shown on the interstitial page and typed by the user inside the application (S3,
-/// FR-184). On iOS this is the only deterministic deferred strategy that does not require the
+/// Short code shown on the interstitial page and typed by the user inside the application (S3).
+/// On iOS this is the only deterministic deferred strategy that does not require the
 /// user to be logged in.
 /// </summary>
 /// <remarks>
 /// A code carries roughly 28 bits of entropy over a 26 character alphabet. That is weak on its
-/// own, which is why §E.4.1 (K3) pairs it with a one hour time to live and a rate limit: the code
+/// own, which is why it is paired with a one hour time to live and a rate limit: the code
 /// is a single use claim ticket, never a credential.
 /// </remarks>
 public static class ClaimCode

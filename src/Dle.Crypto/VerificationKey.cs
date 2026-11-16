@@ -121,7 +121,7 @@ public sealed class VerificationKey
         catch (Exception)
 #pragma warning restore CA1031
         {
-            // SHARED-KERNEL section 17.9: a signature that makes a primitive throw is treated
+            // Deny by default: a signature that makes a primitive throw is treated
             // exactly like one that does not verify, never as an error a caller might handle
             // differently. The exception carries no information a verifier is allowed to act on.
             return false;
@@ -178,8 +178,8 @@ public sealed class VerificationKey
         SlhDsaPublicKeyParameters.FromEncoding(SlhDsaParameters.slh_dsa_sha2_128s, material.ToArray());
 
     /// <summary>
-    /// Recomputes the tag and compares it in constant time. SHARED-KERNEL section 17.6 admits no
-    /// exception here: an equality comparison leaks the tag one byte at a time.
+    /// Recomputes the tag and compares it in constant time, with no
+    /// exception: an equality comparison leaks the tag one byte at a time.
     /// </summary>
     private bool VerifyHmac(ReadOnlySpan<byte> payload, ReadOnlySpan<byte> signature)
     {

@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 
 // The control plane's composition root. It calls exactly the eleven module registrations and the
-// eleven endpoint maps named in SHARED-KERNEL §15 and nothing else: every module owns its own
+// eleven endpoint maps and nothing else: every module owns its own
 // wiring, so this file stays a list of what the deployment unit is made of rather than a place where
 // configuration accumulates.
 
@@ -191,7 +191,7 @@ static async Task ServeAdminSpaAsync(HttpContext context)
     if (!index.Exists)
     {
         // No bundled application in this build. Saying so plainly beats a blank 404 that looks like
-        // a routing bug (SHARED-KERNEL §17.9: the branch that cannot serve says why).
+        // a routing bug: the branch that cannot serve says why.
         await Results
             .Problem(
                 title: "The administration application is not bundled in this build.",

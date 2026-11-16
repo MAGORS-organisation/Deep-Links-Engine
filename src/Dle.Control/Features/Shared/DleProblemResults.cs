@@ -56,8 +56,8 @@ internal static class DleProblemResults
 
     /// <summary>
     /// Answers 404. Also the answer for a resource that belongs to another tenant: a 403 there
-    /// would confirm that the identifier exists, which is exactly what SHARED-KERNEL §17.7 and
-    /// TC-166 forbid.
+    /// would confirm that the identifier exists, which is exactly the disclosure
+    /// to avoid.
     /// </summary>
     /// <param name="detail">What was not found, without echoing anything the caller did not send.</param>
     /// <returns>The result.</returns>

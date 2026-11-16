@@ -12,7 +12,7 @@ namespace Dle.Control.Features.Attribution;
 /// </summary>
 /// <remarks>
 /// <para>
-/// §B.5.3 puts it plainly: when a customer disputes an attribution — "why did you credit this
+/// Put plainly: when a customer disputes an attribution — "why did you credit this
 /// install to that campaign?" — this column is the only defence. So the evidence is assembled at the
 /// moment of the decision, from the values the decision actually used, and it is written in the same
 /// transaction as the attribution rather than logged somewhere alongside it.
@@ -20,8 +20,7 @@ namespace Dle.Control.Features.Attribution;
 /// <para>
 /// What never goes in: raw device signals, the full referrer, the caller's address. A dispute is
 /// answered by naming which signals agreed and what each contributed, which is what
-/// <see cref="ProbabilisticSignal"/> records; it is not answered by keeping a fingerprint on file
-///.
+/// <see cref="ProbabilisticSignal"/> records; it is not answered by keeping a fingerprint on file.
 /// </para>
 /// </remarks>
 public sealed class AttributionEvidence
@@ -172,7 +171,7 @@ public static class AttributionReasons
 {
     /// <summary>
     /// The consent gate refused to link a click to this installation. Deferred matching is
-    /// cross-session linking, which §E.6.2 places in the <c>full</c> mode and ePrivacy art. 5(3)
+    /// cross-session linking, which belongs to the <c>full</c> consent mode and ePrivacy art. 5(3)
     /// places behind documented consent. An operator wondering why every install comes back
     /// organic finds this reason in the evidence.
     /// </summary>

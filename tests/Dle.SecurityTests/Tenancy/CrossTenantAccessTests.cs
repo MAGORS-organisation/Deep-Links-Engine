@@ -9,11 +9,11 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Dle.SecurityTests.Tenancy;
 
 /// <summary>
-/// S-02 / TC-166: a valid credential of one tenant, pointed at another tenant's resource, gets 404.
+/// A valid credential of one tenant, pointed at another tenant's resource, gets 404.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Not 403. §E.2.2 T-09 rates cross-tenant leakage as serious, and TC-166 spells out why the status code
+/// Not 403. Cross-tenant leakage is serious, and the status code
 /// is part of the mitigation: 403 confirms that the identifier names something. On a system whose
 /// identifiers are Snowflakes and UUIDs that is a small leak, but it is a leak that compounds — a
 /// competitor who can confirm which link identifiers exist can measure another tenant's campaign

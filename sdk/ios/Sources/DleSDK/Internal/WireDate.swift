@@ -5,8 +5,8 @@ import Foundation
 /// The engine serialises `DateTimeOffset` as `2026-09-03T10:00:00+00:00` — an explicit zero
 /// offset rather than `Z`, and fractional seconds only when they are non-zero. The SDK writes
 /// exactly that form, so a body it produces is byte-comparable with the literals of
-/// `tests/Dle.ContractTests/Wire/SdkWireContractTests.cs`, and it reads both forms, because the
-/// specification's example body uses `Z`.
+/// `tests/Dle.ContractTests/Wire/SdkWireContractTests.cs`, and it reads both forms, because `Z`
+/// is just as valid a zero offset.
 enum DleWireDate {
     /// Renders an instant in UTC, millisecond precision, `+00:00` suffix.
     static func string(from date: Date) -> String {

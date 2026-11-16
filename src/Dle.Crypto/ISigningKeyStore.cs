@@ -40,7 +40,7 @@ public interface ISigningKeyStore
     /// <param name="kid">Identifier of the key to retire.</param>
     /// <param name="notAfter">Instant after which the key stops being accepted. Always in the
     /// future: a retirement that closed the window immediately would invalidate signatures made a
-    /// moment earlier, which is exactly what S-12 forbids.</param>
+    /// moment earlier, which a key rotation must never do.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes when the change is durable.</returns>
     ValueTask RetireAsync(string kid, DateTimeOffset notAfter, CancellationToken ct);

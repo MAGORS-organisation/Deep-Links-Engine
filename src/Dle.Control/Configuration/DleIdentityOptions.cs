@@ -29,7 +29,7 @@ public sealed class DleIdentityOptions
     /// <remarks>
     /// A deployment with no mobile SDK in the field can switch the whole scheme off. It is a
     /// separate switch from the control-plane key scheme on purpose: the two credentials share
-    /// nothing but the transport (§E.2.1, TB2).
+    /// nothing but the transport.
     /// </remarks>
     public bool EnableSdkKeys { get; set; } = true;
 
@@ -39,7 +39,7 @@ public sealed class DleIdentityOptions
     /// <remarks>
     /// It must differ from <c>Dle:Crypto:ApiKeyPrefix</c>. If the two matched, a control-plane key
     /// and an application key would be indistinguishable before verification, and the scheme
-    /// separation that §E.2.1 TB2 rests on would collapse into a lookup order. The composition root
+    /// separation, which is a trust boundary, would collapse into a lookup order. The composition root
     /// refuses to start when they are equal.
     /// </remarks>
     [Required]

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Dle.Control.Features.Apps;
 
 /// <summary>
-/// <c>POST</c>, <c>GET</c> and <c>DELETE /api/v1/apps/{id}/sdk-keys</c> (§E.2.1, TB2).
+/// <c>POST</c>, <c>GET</c> and <c>DELETE /api/v1/apps/{id}/sdk-keys</c>.
 /// </summary>
 /// <remarks>
 /// <para>

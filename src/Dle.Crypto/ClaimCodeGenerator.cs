@@ -7,12 +7,12 @@ namespace Dle.Crypto;
 
 /// <summary>
 /// Issues and checks claim codes: the six characters a user reads off the interstitial page and
-/// types into the freshly installed application (S3, FR-184, K3).
+/// types into the freshly installed application (S3).
 /// </summary>
 /// <remarks>
 /// <para>
 /// The code is drawn from 30 bits of randomness, which the six character alphabet then caps at
-/// 26^6, about 2^28.2. That is not a credential and is not treated as one: §E.4.1 pairs it with a
+/// 26^6, about 2^28.2. That is not a credential and is not treated as one: it is paired with a
 /// one hour time to live and a rate limit, and <c>claim_codes.consumed_at</c> makes it single use.
 /// The honest framing is a claim ticket that is cheap to guess once and pointless to guess twice.
 /// </para>

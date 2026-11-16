@@ -98,7 +98,7 @@ public static class DleProblem
     /// <remarks>
     /// There is deliberately no "belongs to another tenant" answer. A foreign identifier is filtered
     /// out by the tenant query filter before any handler sees it, so it arrives here as an ordinary
-    /// miss — which is exactly the response TC-166 requires, reached by construction rather than by
+    /// miss — which is exactly the right response, reached by construction rather than by
     /// a special case somebody could forget.
     /// </remarks>
     public static IResult NotFound(string detail) =>
@@ -145,8 +145,7 @@ public static class DleProblem
     /// <returns>A 503 problem document.</returns>
     /// <remarks>
     /// Used where a missing dependency would otherwise weaken a security decision — a target URL that
-    /// cannot be checked against the reputation feed is refused rather than accepted unchecked
-    ///.
+    /// cannot be checked against the reputation feed is refused rather than accepted unchecked.
     /// </remarks>
     public static IResult DependencyUnavailable(string detail) =>
         Create(

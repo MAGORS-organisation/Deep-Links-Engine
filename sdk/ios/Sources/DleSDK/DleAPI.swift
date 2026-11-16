@@ -247,8 +247,8 @@ struct EventBatchAccepted: Decodable, Sendable, Hashable {
 
 /// The HTTP client of the SDK plane: `POST /v1/resolve` and `POST /v1/events`.
 ///
-/// Every request carries `Authorization: Bearer <sdkKey>` and a fresh W3C `traceparent`
-///, and is JSON in the snake_case shape of `Dle.Domain.Contracts.SdkContracts`.
+/// Every request carries `Authorization: Bearer <sdkKey>` and a fresh W3C `traceparent`,
+/// and is JSON in the snake_case shape of `Dle.Domain.Contracts.SdkContracts`.
 /// Failures become ``DleError`` values; the response status, never the body, is logged.
 struct DleAPI: Sendable {
     /// `EventBatchDto.MaxEventsPerBatch`.

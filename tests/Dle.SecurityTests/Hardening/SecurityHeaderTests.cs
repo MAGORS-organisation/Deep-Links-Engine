@@ -5,14 +5,14 @@ using Dle.Edge.Resolution;
 namespace Dle.SecurityTests.Hardening;
 
 /// <summary>
-/// S-04 and T-11: the response hardening headers, and an interstitial policy with no
+/// The response hardening headers, and an interstitial policy with no
 /// <c>unsafe-inline</c> anywhere in it.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The interstitial is the one page in the product that renders customer-controlled text: the link's
-/// Open Graph title and description, the tenant's branding, the campaign name. §E.2.2 T-11 is stored
-/// cross-site scripting through exactly those values, and S-04 makes the content security policy an
+/// Open Graph title and description, the tenant's branding, the campaign name. The threat is stored
+/// cross-site scripting through exactly those values, and the content security policy is an
 /// automated check rather than a review item.
 /// </para>
 /// <para>
@@ -193,7 +193,7 @@ public sealed class SecurityHeaderTests
     [Fact]
     public async Task AQuarantinedLink_IsGoneRatherThanRedirectedAndStillCarriesThePolicy()
     {
-        // TC-103 at the header level: the withdrawn link renders an explanation, and an explanation is
+        // A quarantined link at the header level: the withdrawn link renders an explanation, and an explanation is
         // markup, so it is one of the pages the policy has to be right for.
         using HttpResponseMessage response = await GetAsync("/" + GoneSlug, InAppUserAgent, "198.18.30.7");
 

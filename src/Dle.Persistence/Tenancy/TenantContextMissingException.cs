@@ -5,7 +5,7 @@ namespace Dle.Persistence.Tenancy;
 /// </summary>
 /// <remarks>
 /// This is the failure mode that replaces the silent one. Without it a query that forgets the
-/// tenant would simply return the rows of every tenant, which is the leak T-09 describes; with it
+/// tenant would simply return the rows of every tenant, a cross-tenant leak; with it
 /// the query cannot execute at all. If the operation genuinely spans tenants, open a
 /// <see cref="DleDbContext.BeginCrossTenantScope"/> and say why.
 /// </remarks>

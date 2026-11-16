@@ -1,7 +1,7 @@
 import Foundation
 
-/// Why the engine refused a claim code (`reason` member of the `claim-code-invalid` problem,
-/// TC-148). The raw values are the wire values.
+/// Why the engine refused a claim code (`reason` member of the `claim-code-invalid` problem).
+/// The raw values are the wire values.
 public enum DleClaimCodeRejection: String, Sendable, Hashable, CaseIterable {
     /// The code passed its time to live. Ask the user to read a fresh one off the link page.
     case expired

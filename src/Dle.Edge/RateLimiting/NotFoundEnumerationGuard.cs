@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Edge.RateLimiting;
 
 /// <summary>
-/// The anti-enumeration budget of §E.9: a token bucket over resolve requests that ended in 404, and
+/// The anti-enumeration budget: a token bucket over resolve requests that ended in 404, and
 /// a shadow ban for a network prefix that drains it.
 /// </summary>
 /// <remarks>
@@ -50,7 +50,7 @@ public sealed partial class NotFoundEnumerationGuard : IDisposable
     private bool _disposed;
 
     /// <summary>Creates the guard.</summary>
-    /// <param name="options">Edge rate limit options; supplies the §E.9 values.</param>
+    /// <param name="options">Edge rate limit options; supplies the budget values.</param>
     /// <param name="timeProvider">Clock driving ban expiry.</param>
     /// <param name="metrics">Edge instruments; counts requests answered from the ban list.</param>
     /// <param name="logger">Logger.</param>
@@ -90,8 +90,8 @@ public sealed partial class NotFoundEnumerationGuard : IDisposable
                 ReplenishmentPeriod = _period,
 
                 // No queue. A caller that is out of tokens is told so immediately; making it wait
-                // would hold a request open on the resolve path, which is the one place §17.8 rules
-                // out blocking.
+                // would hold a request open on the resolve path, which is the one place where
+                // blocking is ruled out.
                 QueueLimit = 0,
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 AutoReplenishment = true,

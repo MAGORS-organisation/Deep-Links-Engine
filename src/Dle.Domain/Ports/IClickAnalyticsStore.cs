@@ -37,7 +37,7 @@ public interface IClickAnalyticsStore
     /// <returns>The funnel summary, with attributed installs reported separately from installs.</returns>
     Task<FunnelSummary> GetFunnelAsync(AnalyticsQuery query, CancellationToken ct);
 
-    /// <summary>Distribution of attribution strategies, for the honest dashboard of ADR-008.</summary>
+    /// <summary>Distribution of attribution strategies, for the honest attribution dashboard.</summary>
     /// <param name="query">The report parameters.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>One row per match type that occurred, including <c>none</c>.</returns>

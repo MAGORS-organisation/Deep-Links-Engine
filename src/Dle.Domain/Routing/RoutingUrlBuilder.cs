@@ -17,16 +17,16 @@ namespace Dle.Domain.Routing;
 /// </para>
 /// <para>
 /// <b>Consent is an input, not a post-filter.</b> The overloads that take a <see cref="ConsentDecision"/>
-/// are the ones the edge uses. The four-argument overloads required by the shared kernel contract
+/// are the ones the edge uses. The four-argument overloads of the public contract
 /// default to a denied consent decision, so a caller that has not run the consent gate can never emit a
-/// click-id parameter by accident (ePrivacy art. 5(3), §E.6.2, TC-145/TC-146).
+/// click-id parameter by accident (ePrivacy art. 5(3)).
 /// </para>
 /// </remarks>
 public static class RoutingUrlBuilder
 {
     /// <summary>
     /// Query parameters that may be carried from the incoming request into the target URL
-    /// (allowlist, §E.6.3). Anything not listed here is dropped, which is what makes an open redirect
+    /// (allowlist). Anything not listed here is dropped, which is what makes an open redirect
     /// through a query parameter impossible.
     /// </summary>
     public static readonly string[] ForwardableQueryKeys =
@@ -208,7 +208,7 @@ public static class RoutingUrlBuilder
         string target = AbsoluteWebUrl(decision.WebUrl) ?? AbsoluteWebUrl(link.TargetUrl) ?? link.TargetUrl;
 
         // Only the query component of `target` is ever touched below; its scheme, host and path are
-        // copied verbatim into the result, which is what makes TC-164 structurally impossible.
+        // copied verbatim into the result, which is what makes an open redirect structurally impossible.
         UrlParts parts = Split(target);
 
         var locked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -283,7 +283,7 @@ public static class RoutingUrlBuilder
     /// <returns>The deep link URL, or <see langword="null"/> when the link has no deep link target.</returns>
     /// <remarks>
     /// Any application may register the same custom scheme and no operating system verifies the claim
-    /// (§A.2.3, CVE-2026-26123), so nothing but the click id is ever placed on a custom-scheme URL, and
+    /// (CVE-2026-26123), so nothing but the click id is ever placed on a custom-scheme URL, and
     /// web schemes are refused as a "custom" scheme so that this cannot be turned into an open redirect.
     /// </remarks>
     public static string? BuildDeeplinkUrl(

@@ -36,7 +36,7 @@ import Foundation
 /// ```
 ///
 /// A code is a single-use claim ticket with a one-hour time to live and a rate limit behind it
-/// (spec §E.4.1, K3) — never a credential. Never put one on a custom-scheme URL.
+/// — never a credential. Never put one on a custom-scheme URL.
 public enum DleClaimCode {
     /// Number of characters in a claim code (`ClaimCode.Length`).
     public static let length = 6

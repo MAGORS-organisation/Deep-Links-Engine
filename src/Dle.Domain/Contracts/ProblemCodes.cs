@@ -75,8 +75,8 @@ public static class ProblemCodes
     public const string WriteConflict = Base + "write-conflict";
 
     /// <summary>
-    /// The link's resolve-time fields are together larger than the covering index can hold
-    ///; shorten the target URL, the expired URL, the title, the UTM set or the rules.
+    /// The link's resolve-time fields are together larger than the covering index can hold;
+    /// shorten the target URL, the expired URL, the title, the UTM set or the rules.
     /// </summary>
     public const string LinkTooLarge = Base + "link-too-large";
 

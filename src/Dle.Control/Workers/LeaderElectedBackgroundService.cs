@@ -48,7 +48,7 @@ namespace Dle.Control.Workers;
 ///   </item>
 /// </list>
 /// <para>
-/// SHARED-KERNEL §17.9 applies to the catch below: it is not empty, it names the job, and its
+/// The catch below is deliberate: it is not empty, it names the job, and its
 /// default is to skip the pass rather than to continue in an unknown state.
 /// </para>
 /// </remarks>

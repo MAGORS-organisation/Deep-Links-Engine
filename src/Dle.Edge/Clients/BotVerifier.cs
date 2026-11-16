@@ -20,7 +20,7 @@ namespace Dle.Edge.Clients;
 /// Graph document instead of a redirect and its click is flagged <c>is_bot</c>, which keeps
 /// it out of every campaign report. Trusting the user agent alone would therefore hand anyone
 /// a free switch for suppressing a competitor's numbers, or for inflating their own by pretending not
-/// to be a bot; TC-107 is that scenario written as a test.
+/// to be a bot.
 /// </para>
 /// <para>
 /// The protocol is the one Google, Bing and Apple document. Resolve the address to a host name
@@ -34,17 +34,16 @@ namespace Dle.Edge.Clients;
 /// Three properties keep two DNS round trips off the critical path. Only a request whose user agent
 /// already claims to be a crawler can reach here at all; the verdict is cached per address and
 /// crawler for <c>Dle:Edge:BotDetection:CacheTtlMinutes</c>; and each attempt runs under a hard
-/// millisecond budget, because an unbounded lookup would turn a slow resolver into a slow redirect
-///.
+/// millisecond budget, because an unbounded lookup would turn a slow resolver into a slow redirect.
 /// </para>
 /// <para>
 /// Crawlers that publish no reverse DNS convention — the social preview fetchers — are reported as
 /// genuine rather than as forgeries. That is the bounded acceptance
 /// <see cref="CrawlerCatalog"/> documents: confirming them would need their published address ranges,
-/// downloading those would be the outbound third-party call NFR-14 forbids, and the worst a forged
+/// downloading those would be an outbound third-party call the resolve path never makes, and the worst a forged
 /// <c>facebookexternalhit</c> obtains is the Open Graph document the link already publishes to anyone
-/// it is shared with. Marking them unverified instead would break TC-106, which requires exactly that
-/// document.
+/// it is shared with. Marking them unverified instead would withhold exactly that
+/// document from link previews.
 /// </para>
 /// </remarks>
 public sealed class BotVerifier : IBotVerifier
@@ -130,7 +129,7 @@ public sealed class BotVerifier : IBotVerifier
         "Design",
         "CA1031:Do not catch general exception types",
         Justification = "A DNS failure of any kind must not fail the request. Every failure is logged and the branch " +
-                        "returns false, which is the deny-by-default outcome SHARED-KERNEL §17.9 requires.")]
+                        "returns false, which is the deny-by-default outcome.")]
     private async ValueTask<bool> ConfirmAsync(
         string crawlerName,
         IPAddress address,

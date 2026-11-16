@@ -75,7 +75,7 @@ WARNING — network policy peers missing: no peer is configured for
 {{- if not $postgresPeers }} PostgreSQL (networkPolicy.postgres.cidrs / selectors){{ end }}
 {{- if and (not $postgresPeers) (not $valkeyPeers) }} and{{ end }}
 {{- if not $valkeyPeers }} Valkey (networkPolicy.valkey.cidrs / selectors){{ end }}.
-{{- if .Values.networkPolicy.allowUnscopedDataStoreEgress }} Unscoped port egress (0.0.0.0/0) is enabled via networkPolicy.allowUnscopedDataStoreEgress. Name explicit peers to keep NFR-14 enforceable.
+{{- if .Values.networkPolicy.allowUnscopedDataStoreEgress }} Unscoped port egress (0.0.0.0/0) is enabled via networkPolicy.allowUnscopedDataStoreEgress. Name explicit peers to keep the rule of no third-party egress from the resolve path enforceable.
 {{- else }} Egress rules to unconfigured external data stores have been omitted by default; set networkPolicy.postgres / networkPolicy.valkey peers before pods will be allowed to connect.
 {{- end }}
 {{- end }}

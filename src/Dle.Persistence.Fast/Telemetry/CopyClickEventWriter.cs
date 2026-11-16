@@ -9,18 +9,18 @@ namespace Dle.Persistence.Fast.Telemetry;
 /// <para>
 /// The click stream is the highest-volume table in the product and every row is an insert that nobody
 /// reads back for minutes. Binary <c>COPY</c> is the only write path in Postgres that avoids per-row
-/// statement overhead entirely, which is what makes the target of §C.3.2 — five thousand rows every
-/// 250 ms per instance — reachable on the hardware of §B.8 profile A.
+/// statement overhead entirely, which is what makes the target — five thousand rows every
+/// 250 ms per instance — reachable on a single-node deployment.
 /// </para>
 /// <para>
-/// The column list, its order and the type of every value have to agree with the DDL of §B.5.3
+/// The column list, its order and the type of every value have to agree with the <c>click_events</c> DDL
 /// exactly. A binary <c>COPY</c> carries type OIDs, not names: one column in the wrong place or one
 /// value written as <c>text</c> into <c>character(2)</c> aborts the whole batch, not the offending row.
 /// That is why the country code is normalised to null unless it is exactly two characters, and why the
 /// network prefix is parsed into <see cref="NpgsqlInet"/> instead of being handed over as a string.
 /// </para>
 /// <para>
-/// <c>ClickEvent.SpoofedBot</c> has no column of its own in §B.5.3 and is carried in <c>extra</c> under
+/// <c>ClickEvent.SpoofedBot</c> has no column of its own and is carried in <c>extra</c> under
 /// the key <c>spoofed_bot</c>. Adding a column would be a schema change owned by the control plane's
 /// migrations, and the flag is rare enough that a JSON key costs nothing.
 /// </para>
@@ -28,7 +28,7 @@ namespace Dle.Persistence.Fast.Telemetry;
 public sealed class CopyClickEventWriter : IClickEventWriter
 {
     /// <summary>
-    /// The copy statement. Column order mirrors <c>click_events</c> in §B.5.3 top to bottom.
+    /// The copy statement. Column order mirrors the <c>click_events</c> DDL top to bottom.
     /// </summary>
     private const string CopyCommand =
         "COPY click_events (id, occurred_at, tenant_id, link_id, click_id, ip_hash, ip_prefix, " +

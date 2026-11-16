@@ -6,7 +6,7 @@ using Xunit;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// FR-127: rule evaluation is deterministic, the first matching rule wins, and a rule without a
+/// Rule evaluation is deterministic, the first matching rule wins, and a rule without a
 /// "when" is the default. Nothing here may depend on the wall clock — the engine is handed a
 /// FrozenClock and every client carries an explicit ReceivedAt.
 /// </summary>

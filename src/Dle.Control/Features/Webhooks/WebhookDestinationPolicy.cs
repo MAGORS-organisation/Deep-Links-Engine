@@ -22,7 +22,7 @@ public readonly record struct WebhookDestinationVerdict(bool Accepted, string? R
 }
 
 /// <summary>
-/// Decides whether a webhook may be pointed at a URL (T-02, §E.3 steps 1 and 2).
+/// Decides whether a webhook may be pointed at a URL (SSRF: syntax, then the resolved address).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -79,7 +79,7 @@ public static class WebhookDestinationPolicy
             // could never do the thing it exists for: the syntax stage already refuses every
             // loopback and private literal, so a destination on a development machine or an
             // internal network was refused whatever the switch said. Everything below this line is
-            // the SSRF defence of T-02, which is exactly what an operator turns off here, knowingly
+            // the SSRF defence, which is exactly what an operator turns off here, knowingly
             // and only on an instance where no untrusted tenant can register a subscription.
             return WebhookDestinationVerdict.Ok;
         }

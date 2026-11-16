@@ -209,7 +209,7 @@ public sealed partial class WebhookDispatcher
         {
             // No usable webhook key. The symmetric slot alone would still verify for the customer,
             // but silently dropping the slot a third party relies on is exactly the kind of quiet
-            // degradation §E.5.3 is trying to avoid, so the delivery is refused and counted.
+            // degradation to avoid, so the delivery is refused and counted.
             LogNoSigningKey(_logger, exception);
             return Unsendable(eventType, started, "No webhook signing key is available.");
         }

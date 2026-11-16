@@ -3,19 +3,19 @@ using System.Diagnostics.Metrics;
 namespace Dle.Edge.Telemetry;
 
 /// <summary>
-/// The instrument set of §C.6 that the edge owns.
+/// The instrument set that the edge owns.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Instrument names use the OpenTelemetry dotted spelling; a Prometheus exporter renders
 /// <c>dle.resolve.duration</c> as <c>dle_resolve_duration_seconds</c> and the counter
-/// <c>dle.resolve</c> as <c>dle_resolve_total</c>, which are the names §C.6 puts dashboards and
-/// alerts on. <c>dle_click_events_dropped_total</c> is not here — it belongs to the bounded channel
+/// <c>dle.resolve</c> as <c>dle_resolve_total</c>, which are the names dashboards and
+/// alerts use. <c>dle_click_events_dropped_total</c> is not here — it belongs to the bounded channel
 /// in <c>Dle.Persistence.Fast</c>, and the telemetry module adds that meter to the same pipeline
 /// rather than counting the same event twice.
 /// </para>
 /// <para>
-/// The cache ratio is split into L1 and L2 as §C.6 requires, and the split is measured rather than
+/// The cache ratio is split into L1 and L2, and the split is measured rather than
 /// guessed: <c>HybridCache</c> only invokes a serializer when a value crosses the distributed level,
 /// so a deserialization is exactly an L2 read and everything else that skipped the factory was an L1
 /// hit. <see cref="RecordDistributedRead"/> is called from the cache serializer for that reason.

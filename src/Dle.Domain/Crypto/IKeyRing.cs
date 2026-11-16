@@ -1,8 +1,7 @@
 namespace Dle.Domain.Crypto;
 
 /// <summary>
-/// Holds the signing material of a deployment and owns its rotation (§E.4.2, K4 and K7 of the
-/// cryptographic inventory).
+/// Holds the signing material of a deployment and owns its rotation.
 /// </summary>
 public interface IKeyRing
 {

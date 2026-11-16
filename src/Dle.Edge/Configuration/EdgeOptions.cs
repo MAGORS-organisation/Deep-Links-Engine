@@ -10,8 +10,8 @@ namespace Dle.Edge.Configuration;
 /// The subsections are separate option types bound from their own sections rather than nested
 /// properties of this one. That is deliberate: <c>ValidateDataAnnotations</c> does not recurse into
 /// a nested object, so a nested <c>AutoRedirectMs</c> of zero would pass validation and only fail in
-/// production. Each type is registered with its own <c>ValidateOnStart</c>, so every value in
-/// §16 is checked before the first request and the diagnostic names the section it came from.
+/// production. Each type is registered with its own <c>ValidateOnStart</c>, so every value
+/// is checked before the first request and the diagnostic names the section it came from.
 /// </para>
 /// <para>
 /// <c>Dle:Edge:Cache</c> is deliberately absent. It is bound by <c>Dle.Persistence.Fast</c>, which
@@ -80,8 +80,7 @@ public sealed class BotDetectionOptions
     /// <remarks>
     /// The lookup only runs for a request whose user agent claims to be a crawler, and only on a
     /// cache miss, but it is still I/O on the resolve path, so it is bounded rather than trusted.
-    /// Exceeding the budget is a failed verification, never a slow response (SHARED-KERNEL §17.8,
-    /// §17.9).
+    /// Exceeding the budget is a failed verification, never a slow response.
     /// </remarks>
     [Range(50, 5_000)]
     public int VerificationTimeoutMs { get; set; } = 750;
@@ -91,7 +90,7 @@ public sealed class BotDetectionOptions
 /// Geographic lookup behaviour, bound from <c>Dle:Edge:GeoIp</c>.
 /// </summary>
 /// <remarks>
-/// NFR-14 is absolute: the resolve path makes no outbound third-party call, geographic lookup
+/// The rule is absolute: the resolve path makes no outbound third-party call, geographic lookup
 /// included. The database is therefore a local file opened in memory-mapped mode, and
 /// <see cref="AutoUpdate"/> means "notice that the file on disk was replaced", not "download it".
 /// Refreshing the file itself belongs to the deployment — a sidecar, a cron job or a mounted volume.

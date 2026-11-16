@@ -32,8 +32,7 @@ public sealed class SigningKeyRecordConfiguration : IEntityTypeConfiguration<Sig
             .HasColumnName("public_key")
             .IsRequired();
 
-        // Encrypted at rest, and never read by the edge: the resolver verifies but does not sign
-        //.
+        // Encrypted at rest, and never read by the edge: the resolver verifies but does not sign.
         builder.Property(k => k.PrivateKeyEncrypted)
             .HasColumnName("private_key_encrypted");
 

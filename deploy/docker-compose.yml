@@ -1,7 +1,7 @@
 # =============================================================================
-# Deep Link Engine (DLE) — Profile A: one server, one `docker compose up`.
+# Deep Link Engine (DLE) — one server, one `docker compose up`.
 #
-#   docs/zadanie.md §B.8:
+#   Topology:
 #     caddy (TLS, HTTP/2+3)  →  dle-edge (2 replicas)  ┐
 #                               dle-control (1)        ├→ postgres:18
 #                                                      └→ valkey:8
@@ -235,7 +235,7 @@ services:
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:18}
     # For a postgres:18 that also has pg_partman (daily click_events partitions with automatic
-    # retention, §B.5.2), build the variant and set POSTGRES_IMAGE=dle-postgres:18 in .env:
+    # retention), build the variant and set POSTGRES_IMAGE=dle-postgres:18 in .env:
     #   docker build -t dle-postgres:18 -f docker/Dockerfile.postgres docker
     # Without it the migration installs a plain-SQL fallback maintenance function instead.
     restart: unless-stopped

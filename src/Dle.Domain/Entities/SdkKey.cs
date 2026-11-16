@@ -8,7 +8,7 @@ namespace Dle.Domain.Entities;
 /// An SDK key travels inside an application binary, so it is a public identifier rather than a
 /// secret: anyone can extract it. Its value comes from being bound to one application and one
 /// tenant and from being rate limited, not from being hidden. It must never be granted control
-/// plane rights (§E.7, K6).
+/// plane rights.
 /// </remarks>
 public class SdkKey
 {

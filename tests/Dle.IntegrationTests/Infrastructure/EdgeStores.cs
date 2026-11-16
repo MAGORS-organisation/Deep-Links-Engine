@@ -44,10 +44,10 @@ public sealed class EdgeStores : IAsyncDisposable
     /// <summary>Per-host configuration and the two association documents.</summary>
     public IDomainConfigStore Domains { get; }
 
-    /// <summary>Click lookups for attribution, with the partition pruning hints of §B.6.3.</summary>
+    /// <summary>Click lookups for attribution, with their partition pruning hints.</summary>
     public IClickLookup Clicks { get; }
 
-    /// <summary>The binary <c>COPY</c> writer of §C.3.2.</summary>
+    /// <summary>The binary <c>COPY</c> click event writer.</summary>
     public IClickEventWriter ClickWriter { get; }
 
     /// <summary>Opens the stores over a test database.</summary>

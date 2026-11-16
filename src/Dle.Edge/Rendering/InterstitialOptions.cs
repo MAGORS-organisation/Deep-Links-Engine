@@ -36,8 +36,8 @@ public sealed class InterstitialOptions
     /// <remarks>
     /// This is a progressive enhancement and never the only path: the page always carries a real anchor
     /// the user can tap, because inside the Facebook, Instagram and TikTok webviews a Universal Link
-    /// only fires on a genuine tap - <c>window.location</c> from a script is not a user gesture on iOS
-    ///. The countdown can also be stopped from the page, which is what keeps a timed
+    /// only fires on a genuine tap - <c>window.location</c> from a script is not a user gesture on iOS.
+    /// The countdown can also be stopped from the page, which is what keeps a timed
     /// navigation compatible with WCAG 2.2 success criterion 2.2.1.
     /// </remarks>
     [Range(0, 60_000)]
@@ -58,8 +58,8 @@ public sealed class InterstitialOptions
     public string? LogoUrl { get; set; }
 
     /// <summary>
-    /// Where a tenant whose link was quarantined after an abuse report appeals the decision
-    ///. Shown on the 410 page.
+    /// Where a tenant whose link was quarantined after an abuse report appeals the decision.
+    /// Shown on the 410 page.
     /// </summary>
     [StringLength(512)]
     public string? AppealUrl { get; set; }
@@ -77,8 +77,8 @@ public sealed class InterstitialOptions
     public string? PrivacyUrl { get; set; }
 
     /// <summary>
-    /// Whether the interstitial may show a claim code when the resolve pipeline issued one
-    ///. The code is only rendered when one is actually present.
+    /// Whether the interstitial may show a claim code when the resolve pipeline issued one.
+    /// The code is only rendered when one is actually present.
     /// </summary>
     public bool ShowClaimCode { get; set; } = true;
 

@@ -9,8 +9,7 @@ using Dle.Edge.Configuration;
 namespace Dle.IntegrationTests.Edge;
 
 /// <summary>
-/// The resolve path end to end: the real edge composition root, real PostgreSQL, real Valkey
-///.
+/// The resolve path end to end: the real edge composition root, real PostgreSQL, real Valkey.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -54,7 +53,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     [RequiresDockerFact]
     public async Task Resolve_ActiveLinkOnIosWithoutTheApp_ServesTheInterstitialThatOffersTheStore()
     {
-        // TC-101: "interstitial or 302 to the App Store with pt/ct". With the shipped Auto policy an
+        // The expected answer is an interstitial or a 302 to the App Store with pt/ct. With the shipped Auto policy an
         // iOS browser gets the interstitial, because a bare 302 to the store would skip the one tap
         // that lets the operating system hand a Universal Link to an installed application.
         const string StoreUrl = "https://apps.apple.com/app/id123456789?pt=1234&ct=autumn26&mt=8";
@@ -90,7 +89,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     [RequiresDockerFact]
     public async Task Resolve_ActiveLinkOnIosWithInterstitialNever_Redirects302ToTheStoreWithPtAndCt()
     {
-        // The other half of TC-101's "or": with the interstitial switched off for this rule the same
+        // The other half of that "or": with the interstitial switched off for this rule the same
         // link answers 302 straight to the App Store, and the campaign parameters survive intact.
         const string StoreUrl = "https://apps.apple.com/app/id123456789?pt=1234&ct=autumn26&mt=8";
 
@@ -123,7 +122,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     [RequiresDockerFact]
     public async Task Resolve_UnknownSlug_AnswersExactlyAsItDoesForAnotherTenantsSlug()
     {
-        // TC-102 and TC-166 in one: a slug that exists somewhere else must be indistinguishable from
+        // A slug that exists somewhere else must be indistinguishable from
         // a slug that exists nowhere. Anything that differs — a status, a byte of the body, a header
         // — is an oracle for enumerating other tenants' links.
         string hostA = TestSeed.UniqueHost("tc102-a");
@@ -302,7 +301,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     [InlineData("TelegramBot (like TwitterBot)")]
     public async Task Resolve_ForEveryLinkPreviewFetcher_Serves200HtmlWithOpenGraphTags(string userAgent)
     {
-        // §D.2.1 lists the crawler check as the one automatable row of the device matrix. Each of
+        // The crawler check is the one part of device testing that can be automated. Each of
         // these fetchers renders a preview from the document and none of them follows a redirect
         // reliably, so a 30x here is a blank card in somebody's chat client.
         string host = TestSeed.UniqueHost("crawlers");
@@ -366,7 +365,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
         // The link's own default, kept where the request said nothing.
         Assert.Contains("utm_medium=default-medium", location, StringComparison.Ordinal);
 
-        // FR-128: our own click identifier, added last.
+        // Our own click identifier, added last.
         Assert.Contains("dl_cid=", location, StringComparison.Ordinal);
 
         // Not on the allowlist, so it never reaches the target — and neither does the consent
@@ -380,9 +379,8 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     public async Task Resolve_WithoutAConsentSignal_ForwardsUtmButNeverTheClickId()
     {
         // The same request without the consent signal. The tenant is on full, so the operator has
-        // enabled attribution — and the visitor still has not consented to it, which is exactly the
-        // row of the SHARED-KERNEL §2 matrix that says "Full and no signal behaves like
-        // AggregateOnly".
+        // enabled attribution — and the visitor still has not consented to it, and Full with no
+        // consent signal behaves like AggregateOnly.
         string host = TestSeed.UniqueHost("tc110b");
         Guid tenantId = await TestSeed.TenantAsync(Database, "tc110b", "full", Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
@@ -405,7 +403,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     [RequiresDockerFact]
     public async Task Resolve_WithATargetInAQueryParameter_IgnoresItCompletely()
     {
-        // TC-164: the open redirect. The target comes from the stored rule set and from nowhere
+        // The open redirect. The target comes from the stored rule set and from nowhere
         // else, which is a structural property of RoutingUrlBuilder — it only ever edits the query
         // component of the stored URL — rather than a filter that could be got past.
         string host = TestSeed.UniqueHost("tc164");

@@ -11,13 +11,13 @@ using Microsoft.Extensions.Options;
 namespace Dle.SecurityTests.Fuzzing;
 
 /// <summary>
-/// The three fuzz targets §D.4 asks for: the URL parser, the user-agent parser and the
+/// The three fuzz targets: the URL parser, the user-agent parser and the
 /// <c>routing_rules</c> deserializer.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>SharpFuzz is not installed and these were not run under it.</b> §D.4 lists SharpFuzz for
-/// nightly fuzzing; it needs libFuzzer and an instrumentation pass over the assemblies under test,
+/// <b>SharpFuzz is not installed and these were not run under it.</b> SharpFuzz is the intended tool
+/// for nightly fuzzing; it needs libFuzzer and an instrumentation pass over the assemblies under test,
 /// neither of which exists on this machine, and the package is not in the repository's central
 /// version list. Adding it is a change to the solution's dependency set and to CI, not to a test
 /// project, so what is here is the half that belongs in a test project: the targets themselves,
@@ -44,7 +44,7 @@ public static class FuzzTargets
         NullGeoIpResolver.Instance,
         Options.Create(new EdgeOptions()));
 
-    /// <summary>Fuzzes the URL and host validation path (T-01, T-02, TC-161 to TC-164).</summary>
+    /// <summary>Fuzzes the URL and host validation path (open redirect and SSRF).</summary>
     /// <param name="data">Raw bytes from the fuzzer.</param>
     /// <exception cref="InvalidOperationException">
     /// A URL was approved that is not an absolute http or https URL, which is the finding this target
@@ -59,7 +59,7 @@ public static class FuzzTargets
         if (verdict.Level == UrlSafetyLevel.Safe)
         {
             // The invariant, checked rather than assumed: an approval must be an absolute web URL.
-            // A fuzzer that found an input approving something else has found a T-01 bypass, and a
+            // A fuzzer that found an input approving something else has found an open-redirect bypass, and a
             // silent wrong answer here would never surface as a crash.
             if (!Uri.TryCreate(candidate, UriKind.Absolute, out Uri? parsed)
                 || (parsed.Scheme != Uri.UriSchemeHttp && parsed.Scheme != Uri.UriSchemeHttps))
@@ -77,7 +77,7 @@ public static class FuzzTargets
         _ = SlugPolicy.TryNormalize(candidate, out _);
     }
 
-    /// <summary>Fuzzes the user-agent classifier (T-10: the key space is attacker controlled).</summary>
+    /// <summary>Fuzzes the user-agent classifier (the key space is attacker controlled).</summary>
     /// <param name="data">Raw bytes from the fuzzer.</param>
     /// <remarks>
     /// The classifier runs compiled regular expressions over a header any client chooses, which is a
@@ -109,7 +109,7 @@ public static class FuzzTargets
     /// <summary>Fuzzes the <c>routing_rules</c> deserializer and its validator.</summary>
     /// <param name="data">Raw bytes from the fuzzer.</param>
     /// <remarks>
-    /// T-12 is a deserialization attack on the rule document. The mitigations §E.2.2 names are JSON
+    /// The threat is a deserialization attack on the rule document. The mitigations are JSON
     /// Schema validation, depth and size limits, and <c>System.Text.Json</c> without polymorphism;
     /// this target is what checks that the combination has no input it cannot survive. A malformed
     /// document must produce a <see cref="JsonException"/> and nothing else — a

@@ -5,10 +5,10 @@ using Xunit;
 namespace Dle.UnitTests.Primitives;
 
 /// <summary>
-/// TC-109. A slug is a tenant-scoped identifier that a human reads off a poster. If a Cyrillic "а"
+/// A slug is a tenant-scoped identifier that a human reads off a poster. If a Cyrillic "а"
 /// were quietly folded onto the Latin "a", two tenants would fight over one address; if a
 /// compatibility form were not folded at all, one tenant would own two spellings of one name.
-/// SHARED-KERNEL section 1 asks for both: NFKC first, then a strict character allowlist.
+/// The policy does both: NFKC first, then a strict character allowlist.
 /// </summary>
 public sealed class SlugPolicyTests
 {
@@ -57,7 +57,7 @@ public sealed class SlugPolicyTests
             string.Create(
                 CultureInfo.InvariantCulture,
                 $"""
-                SHARED-KERNEL section 1 requires NFKC normalisation before the character allowlist,
+                The slug policy requires NFKC normalisation before the character allowlist,
                 so "{raw}" must fold to "{expected}" rather than be refused.
 
                 Root cause if this fails: Directory.Build.props sets InvariantGlobalization=true for

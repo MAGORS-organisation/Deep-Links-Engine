@@ -1,5 +1,5 @@
 # =============================================================================
-# Dependabot — threat T-14 (compromised dependency: locked versions + Dependabot + review).
+# Dependabot — defence against a compromised dependency: locked versions + Dependabot + review.
 #
 # Every ecosystem the repository actually contains. Pull requests target `develop` (the
 # integration branch; `master` is reserved for releases). Minor and patch updates are grouped

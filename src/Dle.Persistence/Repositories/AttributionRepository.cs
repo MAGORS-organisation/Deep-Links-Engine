@@ -112,7 +112,7 @@ public sealed class AttributionRepository
     }
 
     /// <summary>
-    /// Writes an attribution, honouring both uniqueness rules of §B.5.3.
+    /// Writes an attribution, honouring both of its uniqueness rules.
     /// </summary>
     /// <param name="record">The attribution to write.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

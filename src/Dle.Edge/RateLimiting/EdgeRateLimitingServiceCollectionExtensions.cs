@@ -15,12 +15,11 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// The single composition entry point of the edge rate limiting module
-///.
+/// The single composition entry point of the edge rate limiting module.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Two of the three §E.9 rows for the edge are installed here as one global partitioned limiter: the
+/// Two of the three edge rate limits are installed here as one global partitioned limiter: the
 /// sliding window over <c>GET /{slug}</c> and the tighter sliding window over <c>GET /{slug}/qr</c>.
 /// The third — the token bucket over responses that ended in 404, and the shadow ban behind it —
 /// cannot live in middleware at all, because middleware decides before the handler runs and a limit on
@@ -42,7 +41,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 public static class EdgeRateLimitingServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers the §E.9 limiters and the enumeration guard.
+    /// Registers the edge rate limiters and the enumeration guard.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">The application configuration; reads <c>Dle:RateLimits:Edge</c>.</param>
@@ -88,7 +87,7 @@ public static class EdgeRateLimitingServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Builds the partitioned limiter covering the two request-shaped rows of §E.9.
+    /// Builds the partitioned limiter covering the two request-shaped limits.
     /// </summary>
     private static PartitionedRateLimiter<HttpContext> BuildGlobalLimiter(EdgeRateLimitOptions options)
     {
@@ -176,8 +175,8 @@ public static class EdgeRateLimitingServiceCollectionExtensions
         }
 
         // Zero seconds is the honest value, not a placeholder: the limiter rejects before the resolver
-        // runs, so nothing was done. The sample is tagged outcome=rate_limited, which is what lets an
-        // NFR-01 dashboard exclude it from the latency objective rather than have it drag the median
+        // runs, so nothing was done. The sample is tagged outcome=rate_limited, which is what lets a
+        // dashboard exclude it from the latency objective rather than have it drag the median
         // down during an attack.
         context.RequestServices.GetRequiredService<EdgeMetrics>().RecordResolve(
             0d,

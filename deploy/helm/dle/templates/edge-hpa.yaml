@@ -1,7 +1,7 @@
 {{- /*
-HPA for the edge (§B.8 profile B: 3–20 pods). CPU utilisation is relative to
+HPA for the edge (3–20 pods). CPU utilisation is relative to
 edge.resources.requests.cpu; the optional per-pod requests-per-second signal needs a metrics
-adapter that serves edge.autoscaling.rps.metricName as a Pods metric. §D.6: a 10× traffic step
+adapter that serves edge.autoscaling.rps.metricName as a Pods metric. A 10× traffic step
 must not push p99 above 200 ms — the behaviour block scales up without a stabilisation window.
 */ -}}
 {{- if .Values.edge.autoscaling.enabled }}

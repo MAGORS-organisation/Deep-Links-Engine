@@ -29,7 +29,7 @@ public static class ControlActivitySource
 /// The control-plane instrument set.
 /// </summary>
 /// <remarks>
-/// The metric names follow the <c>dle_</c> prefix of §C.6. They are deliberately few: the control
+/// The metric names carry the <c>dle_</c> prefix. They are deliberately few: the control
 /// plane is not the latency-critical half of the product, and an instrument that nobody alerts on is
 /// cardinality somebody pays for.
 /// </remarks>

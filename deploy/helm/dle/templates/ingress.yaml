@@ -1,7 +1,7 @@
 {{- /*
 =============================================================================
 Ingress — mirrors deploy/Caddyfile on ingress.host:
-  /.well-known/jwks.json                       → control (public signing keys, §B.7)
+  /.well-known/jwks.json                       → control (public signing keys)
   /.well-known/*                               → edge    (apple-app-site-association, assetlinks.json)
   ingress.controlPaths (/api /v1 /admin /scalar /openapi) → control
   everything else, i.e. /{slug}, /{slug}/qr    → edge

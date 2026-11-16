@@ -47,7 +47,7 @@ public sealed class DleControlOptions
     /// Largest number of rows accepted by one NDJSON bulk create request.
     /// </summary>
     /// <remarks>
-    /// The requirement is "at least ten thousand", and the value is a cap rather than a target: the
+    /// At least ten thousand rows must be accepted, and the value is a cap rather than a target: the
     /// request is streamed, so the number bounds the work a single caller may queue, not the memory
     /// the server needs to hold.
     /// </remarks>
@@ -74,8 +74,7 @@ public sealed class DleControlOptions
     /// enough on its own. Naming the operator tenant here is the multi-tenant answer;
     /// <see cref="AllowTenantSelfService"/> is the single-organisation one. With neither set, the
     /// tenant found under <c>Dle:Bootstrap:DefaultTenantSlug</c> is the operator while
-    /// <c>Dle:Bootstrap:Enabled</c> is on; otherwise the tenant routes deny every caller
-    ///.
+    /// <c>Dle:Bootstrap:Enabled</c> is on; otherwise the tenant routes deny every caller.
     /// </remarks>
     public Guid? InstanceTenantId { get; set; }
 
@@ -87,7 +86,7 @@ public sealed class DleControlOptions
 
     /// <summary>
     /// Identifier of this process within the deployment, 0 to 1023, used by the link identifier
-    /// generator (ADR-007 adjacent: the Snowflake layout of <c>links.id</c>).
+    /// generator (the Snowflake layout of <c>links.id</c>).
     /// </summary>
     /// <remarks>
     /// Two replicas sharing one node identifier can mint the same identifier in the same

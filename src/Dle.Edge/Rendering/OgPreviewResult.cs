@@ -8,12 +8,12 @@ namespace Dle.Edge.Rendering;
 /// <para>
 /// <b>Why this is not a redirect.</b> Social crawlers follow 30x responses unreliably and run no
 /// JavaScript. A crawler that is redirected either loses the metadata or gives up, and the result is a
-/// link preview that renders as a bare URL — the single most visible failure mode a link shortener has
-///. So the crawler gets a complete static document, and it gets it at the short URL itself.
+/// link preview that renders as a bare URL — the single most visible failure mode a link shortener has.
+/// So the crawler gets a complete static document, and it gets it at the short URL itself.
 /// </para>
 /// <para>
 /// <b>Where the metadata comes from.</b> The link's own values layered over the domain's defaults
-/// through <see cref="OgMeta.MergeWith(OgMeta?)"/>, which is what FR-105 means by a fallback: a link
+/// through <see cref="OgMeta.MergeWith(OgMeta?)"/>, which is what a fallback means here: a link
 /// that sets only a title still gets the tenant's image and site name. Every value is authored in the
 /// control plane by an authenticated operator, and every one of them is still encoded on the way out
 /// and, if it is a URL, filtered by <see cref="SafeUrl"/> — a stored value is not a trusted one.

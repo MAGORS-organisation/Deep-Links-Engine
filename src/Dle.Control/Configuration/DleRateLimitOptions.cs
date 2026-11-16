@@ -3,8 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Control.Configuration;
 
 /// <summary>
-/// Rate limits for the control plane, bound from <c>Dle:RateLimits</c>. The defaults are the values
-/// tabulated in §E.9.
+/// Rate limits for the control plane, bound from <c>Dle:RateLimits</c>.
 /// </summary>
 /// <remarks>
 /// The numbers are configuration because a self-hosted instance serving one marketing team and a

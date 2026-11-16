@@ -3,7 +3,7 @@ using Dle.Domain.Attribution;
 namespace Dle.Control.Features.Attribution;
 
 /// <summary>
-/// The four deferred matching strategies of ADR-008, in the order the default configuration tries
+/// The four deferred matching strategies, in the order the default configuration tries
 /// them.
 /// </summary>
 /// <remarks>

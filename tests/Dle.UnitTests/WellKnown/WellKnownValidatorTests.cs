@@ -4,7 +4,7 @@ using Xunit;
 namespace Dle.UnitTests.WellKnown;
 
 /// <summary>
-/// FR-143, FR-144, TC-123, TC-124. Neither Apple nor Google follows a redirect to a well-known
+/// Neither Apple nor Google follows a redirect to a well-known
 /// file, so a single hop is fatal, not cosmetic. The upload-certificate case is the opposite: it is
 /// a warning, because the file may still be correct and the operator has to be told, not blocked.
 /// </summary>
@@ -23,7 +23,7 @@ public sealed class WellKnownValidatorTests
         """[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"sk.zakaznik.app","sha256_cert_fingerprints":["""
         + "\"" + Fingerprint + "\"" + "]}}]";
 
-    // ================================================================ TC-124: redirects are fatal
+    // ================================================================ redirects are fatal
 
     [Theory]
     [InlineData(1)]
@@ -206,7 +206,7 @@ public sealed class WellKnownValidatorTests
             ValidAssetLinks, "application/json", 200, 0, [lowercaseNoSeparators]));
     }
 
-    // ================================================================ TC-123: upload certificate
+    // ================================================================ upload certificate
 
     [Fact]
     public void ValidateAssetLinks_FingerprintOutsideANonEmptyPlaySigningList_IsAWarningNotAnError()

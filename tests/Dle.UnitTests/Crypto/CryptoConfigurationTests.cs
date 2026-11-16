@@ -65,7 +65,7 @@ public sealed class CryptoConfigurationTests
     [Fact]
     public void Validate_PostQuantumSigningAlgorithmWithoutTheFlag_IsRefused()
     {
-        // §E.5.3 keeps the post-quantum algorithms off in phase 0; turning one on by editing the
+        // The post-quantum algorithms stay off unless their flag is set; turning one on by editing the
         // algorithm alone must not quietly work.
         CryptoOptions options = Valid();
         options.SigningAlgorithm = SignatureAlgorithms.MlDsa65;
@@ -349,7 +349,7 @@ public sealed class CryptoConfigurationTests
     [Fact]
     public async Task ReplayGuard_FullOfLiveEntries_RefusesRatherThanForgetting()
     {
-        // SHARED-KERNEL §17.9: the default is deny. Forgetting an identifier it promised to
+        // The default is deny. Forgetting an identifier it promised to
         // remember would turn a full guard into a replay window.
         CryptoTestClock clock = new(Now);
         InMemoryTokenReplayGuard guard = new(2, clock, NullLogger<InMemoryTokenReplayGuard>.Instance);

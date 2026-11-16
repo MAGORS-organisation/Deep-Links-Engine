@@ -3,8 +3,7 @@
   <!--
     Fast, in-process tests: routing engine determinism,
     consent gate matrix, slug policy, base62 and
-    Feistel round-trips, well-known builders, URL policy (TC-161..164).
-    docs/zadanie.md §D.1.
+    Feistel round-trips, well-known builders, URL policy.
   -->
 
   <ItemGroup>

@@ -90,7 +90,7 @@ public sealed class ClickIdCodecTests
     }
 
     /// <summary>
-    /// T-05 / TC-167. Every single-character mutation of a valid identifier — 17 positions times
+    /// Every single-character mutation of a valid identifier — 17 positions times
     /// the 61 other base62 digits — must be refused. This is the whole reason the identifier is a
     /// MAC-ed token rather than a raw counter.
     /// </summary>

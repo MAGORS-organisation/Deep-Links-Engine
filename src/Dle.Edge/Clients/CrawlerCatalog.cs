@@ -3,8 +3,7 @@ using System.Collections.Frozen;
 namespace Dle.Edge.Clients;
 
 /// <summary>
-/// The crawlers the edge recognises by user agent, and how each of them can be confirmed
-///.
+/// The crawlers the edge recognises by user agent, and how each of them can be confirmed.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -16,7 +15,7 @@ namespace Dle.Edge.Clients;
 /// <para>
 /// Only the search engines publish a reverse DNS convention, so only they can be confirmed. The
 /// social fetchers — Facebook, X, Slack, LinkedIn, Discord, WhatsApp, Telegram — publish address
-/// ranges instead, and downloading those would be an outbound third-party call, which NFR-14 rules
+/// ranges instead, and downloading those would be an outbound third-party call, which is ruled
 /// out on this path. They are therefore recognised but not confirmable, and that is a deliberate and
 /// bounded acceptance: the worst a forged <c>facebookexternalhit</c> can obtain is the Open Graph
 /// document that the link already publishes to anyone who shares it, and the click it produces is

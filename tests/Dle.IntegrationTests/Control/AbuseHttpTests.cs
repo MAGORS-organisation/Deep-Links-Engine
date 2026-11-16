@@ -8,8 +8,8 @@ using Dle.Domain.Contracts;
 namespace Dle.IntegrationTests.Control;
 
 /// <summary>
-/// The notice-and-action path of §E.3 through HTTP against a real PostgreSQL (FR-245, DSA art. 16,
-/// TC-103): anyone may report a short URL without a credential, the reporter's address is kept
+/// The notice-and-action path through HTTP against a real PostgreSQL (DSA art. 16): anyone may
+/// report a short URL without a credential, the reporter's address is kept
 /// only as a hash, a report for a URL that is not one of ours is accepted without becoming an
 /// oracle, the tenant sees only its own reports, the instance operator triages every report with
 /// a statement of reasons, and quarantine withdraws a link from service as a versioned change

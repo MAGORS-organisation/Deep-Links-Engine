@@ -132,7 +132,7 @@ public sealed record CreateAppRequest
     public string? StoreUrl { get; init; }
 
     /// <summary>Custom URI scheme, used only as a last resort fallback. Never carry secrets over
-    /// it: any application can claim the same scheme (§A.2.3, CVE-2026-26123).</summary>
+    /// it: any application can claim the same scheme (CVE-2026-26123).</summary>
     public string? CustomScheme { get; init; }
 
     /// <summary>Minimum application version that understands the deep link format.</summary>

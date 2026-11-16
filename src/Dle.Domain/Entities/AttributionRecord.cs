@@ -13,8 +13,7 @@ namespace Dle.Domain.Entities;
 /// <see cref="MatchType"/> and <see cref="Confidence"/> are always stored together. A
 /// probabilistic match is never rounded up into a certainty, and <see cref="Evidence"/> records
 /// what actually decided it — for a probabilistic match, which signals agreed and what each one
-/// contributed. When a customer disputes an attribution, this column is the only defence
-///.
+/// contributed. When a customer disputes an attribution, this column is the only defence.
 /// </para>
 /// </remarks>
 public class AttributionRecord

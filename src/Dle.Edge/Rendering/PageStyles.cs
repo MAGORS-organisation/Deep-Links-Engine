@@ -13,8 +13,8 @@ namespace Dle.Edge.Rendering;
 /// <see cref="StylesheetPath"/>, which the browser caches across every link on the domain.
 /// </para>
 /// <para>
-/// No <c>@font-face</c>, no <c>@import</c>, no third-party origin, in either half: NFR-14 forbids an
-/// outgoing third-party call from anything the resolve path serves, and a webfont is exactly that.
+/// No <c>@font-face</c>, no <c>@import</c>, no third-party origin, in either half: no outgoing
+/// third-party call is allowed from anything the resolve path serves, and a webfont is exactly that.
 /// The system font stack renders instantly and matches the platform the user is already on.
 /// </para>
 /// </remarks>
@@ -34,8 +34,7 @@ internal static class PageStyles
     internal const string FaviconPath = "/static/favicon.svg";
 
     /// <summary>
-    /// The inline stylesheet. Written with a nonce, so the page needs no <c>unsafe-inline</c>
-    ///.
+    /// The inline stylesheet. Written with a nonce, so the page needs no <c>unsafe-inline</c>.
     /// </summary>
     /// <remarks>
     /// Contrast, measured against WCAG 2.2 AA: light scheme text #16202e on #f6f7f9 is 13.4:1 and the
@@ -44,8 +43,8 @@ internal static class PageStyles
     /// (10.2:1) in the dark one. The focus ring is drawn with <c>outline</c> rather than a shadow so
     /// that it survives forced-colours mode, and it never shrinks below the 2px minimum of SC 2.4.13.
     /// </remarks>
-    internal const string CriticalCss = """
-        *,*::before,*::after{box-sizing:border-box}
+    internal const string CriticalCss = """,
+        * *::before,*::after{box-sizing:border-box}
         :root{
         color-scheme:light dark;
         --dle-bg:#f6f7f9;--dle-surface:#ffffff;--dle-inset:#f2f4f7;

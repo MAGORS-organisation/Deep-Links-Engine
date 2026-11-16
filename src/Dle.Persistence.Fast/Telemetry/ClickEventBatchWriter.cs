@@ -13,8 +13,8 @@ namespace Dle.Persistence.Fast.Telemetry;
 /// <remarks>
 /// <para>
 /// The batching rule is "up to <c>ClickEventBatchSize</c> rows or <c>ClickEventFlushMilliseconds</c>,
-/// whichever comes first". Both halves matter: the row cap is what makes the throughput target of
-/// §C.3.2 reachable, and the time cap is what keeps a quiet tenant's single click from sitting in
+/// whichever comes first". Both halves matter: the row cap is what makes the throughput target
+/// reachable, and the time cap is what keeps a quiet tenant's single click from sitting in
 /// memory until the next busy period — and from being lost if the process is replaced first.
 /// </para>
 /// <para>

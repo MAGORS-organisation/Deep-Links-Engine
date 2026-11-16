@@ -6,7 +6,7 @@ namespace Dle.Crypto;
 /// </summary>
 /// <remarks>
 /// The sequence is the only source of uniqueness; the permutation only hides it. That is the whole
-/// point of ADR-007 — because the mapping is a bijection, creating a link needs no retry loop
+/// point of the design — because the mapping is a bijection, creating a link needs no retry loop
 /// against a unique index and has a deterministic response time, while the slug still leaks
 /// neither the order nor the volume of link creation.
 /// </remarks>

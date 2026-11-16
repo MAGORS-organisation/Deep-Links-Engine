@@ -4,12 +4,12 @@ using System.Text.RegularExpressions;
 namespace Dle.SecurityTests.Enumeration;
 
 /// <summary>
-/// TC-102 and the edge half of TC-166: a missing slug and another tenant's slug are the same answer.
+/// A missing slug and another tenant's slug are the same answer at the edge.
 /// </summary>
 /// <remarks>
 /// <para>
-/// TC-102 asks for the same response and the same time, and T-07
-/// explains what leaks otherwise: whether a campaign exists. A scanner that can tell "no such link"
+/// The two cases must get the same response in the same time, because otherwise
+/// what leaks is whether a campaign exists. A scanner that can tell "no such link"
 /// from "not yours" has an oracle for the entire slug space of every other customer on the instance,
 /// and it does not need the link to resolve for that to be worth money.
 /// </para>
@@ -19,8 +19,8 @@ namespace Dle.SecurityTests.Enumeration;
 /// wide tolerance, because a microbenchmark inside a test runner on a shared machine measures the
 /// garbage collector and the scheduler at least as much as it measures the code — and a timing test
 /// tight enough to detect a real oracle would fail often enough to be muted within a month. A genuine
-/// timing analysis belongs on a quiet machine with a statistical tool, and §D.7 puts it in the
-/// penetration test.
+/// timing analysis belongs on a quiet machine with a statistical tool, as part of a penetration
+/// test.
 /// </para>
 /// </remarks>
 [Collection(EdgeCollection.Name)]

@@ -9,7 +9,7 @@ using Xunit;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// TC-164 and FR-128. The redirect target is never taken from the request: only the query component
+/// The redirect target is never taken from the request: only the query component
 /// of the configured target is ever touched, and only with keys from a fixed allowlist. Everything
 /// else the caller sends is dropped on the floor.
 /// </summary>
@@ -24,7 +24,7 @@ public sealed class RoutingUrlBuilderTests
         Action = RoutingActionKind.Web,
     };
 
-    // ================================================================ TC-164: open redirect
+    // ================================================================ open redirect
 
     [Theory]
     [InlineData("to", "https://evil.example.com/")]
@@ -81,7 +81,7 @@ public sealed class RoutingUrlBuilderTests
         Assert.DoesNotContain("evil", url, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ================================================================ TC-110: forwardable allowlist
+    // ================================================================ forwardable allowlist
 
     [Theory]
     [InlineData("utm_source")]

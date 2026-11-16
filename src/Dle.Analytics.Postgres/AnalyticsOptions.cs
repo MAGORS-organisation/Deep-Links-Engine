@@ -3,8 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Analytics.Postgres;
 
 /// <summary>
-/// Configuration of the analytics module, bound from the <c>Dle:Analytics</c> section
-///.
+/// Configuration of the analytics module, bound from the <c>Dle:Analytics</c> section.
 /// </summary>
 public sealed class AnalyticsOptions
 {
@@ -23,7 +22,7 @@ public sealed class AnalyticsOptions
 
     /// <summary>
     /// Upper bound on the number of rows a breakdown query may return, whatever
-    /// <see cref="AnalyticsQuery.Limit"/> asks for. A report is a report, not an export; FR-203
+    /// <see cref="AnalyticsQuery.Limit"/> asks for. A report is a report, not an export;
     /// exports go through <c>IAnalyticsExporter</c>.
     /// </summary>
     [Range(1, 100_000)]

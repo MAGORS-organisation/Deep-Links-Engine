@@ -34,7 +34,7 @@ public sealed record AttributedLink(
 /// </summary>
 /// <remarks>
 /// <para>
-/// The seam exists so that the two integrity rules of §B.5.3 — one installation has at most one
+/// The seam exists so that the two integrity rules — one installation has at most one
 /// attribution, one click is credited to at most one installation — can be exercised without a
 /// database. They are enforced by unique indexes in the real implementation, and the fake used in
 /// tests enforces exactly the same two rules, so a test that passes against the fake is testing the
@@ -78,7 +78,7 @@ public interface IAttributionStore
     Task<AttributionRecord?> FindAttributionByInstallAsync(Guid installRowId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Writes an attribution, honouring both uniqueness rules of §B.5.3.
+    /// Writes an attribution, honouring both uniqueness rules.
     /// </summary>
     /// <param name="record">The attribution to write.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -98,7 +98,7 @@ public interface IAttributionStore
     /// the click is spoken for.
     /// </returns>
     /// <remarks>
-    /// This is the narrow remedy TC-148 needs. A user whose claim code had expired asks for a new
+    /// This is the narrow remedy for an expired claim code. A user whose claim code had expired asks for a new
     /// one and enters it; without this the stored "organic" verdict would be permanent and the new
     /// code would be pointless. It is deliberately the only mutation path: it never creates a second
     /// attribution, it only fires when the stored verdict is <c>none</c>, and the caller only offers

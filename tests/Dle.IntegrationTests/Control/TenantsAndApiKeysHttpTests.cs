@@ -7,8 +7,8 @@ using Dle.Domain.Contracts;
 namespace Dle.IntegrationTests.Control;
 
 /// <summary>
-/// Tenants, API keys and the JWKS document through HTTP against a real PostgreSQL (§B.7.4, §E.4,
-/// FR-240 to FR-244): a tenant reads itself, only the instance operator provisions, lists,
+/// Tenants, API keys and the JWKS document through HTTP against a real PostgreSQL: a tenant reads
+/// itself, only the instance operator provisions, lists,
 /// suspends and deletes tenants, keys are issued once in the clear with a role no stronger than
 /// the issuer's, listed by prefix, and stop authenticating once they are revoked or their tenant
 /// is suspended.

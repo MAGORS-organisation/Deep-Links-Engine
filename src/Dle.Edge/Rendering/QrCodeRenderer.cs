@@ -96,8 +96,7 @@ internal static class QrCodeRenderer
             return true;
         }
 
-        // Unrecognised: refuse rather than silently substituting a format the caller did not ask for
-        //.
+        // Unrecognised: refuse rather than silently substituting a format the caller did not ask for.
         return false;
     }
 

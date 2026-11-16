@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Hard gate on known-vulnerable NuGet packages (docs/zadanie.md S-05, NFR-13, T-14).
+"""Hard gate on known-vulnerable NuGet packages.
 
 Runs `dotnet list <solution> package --vulnerable --include-transitive --format json`, walks every
 project / framework / top-level and transitive package, and:

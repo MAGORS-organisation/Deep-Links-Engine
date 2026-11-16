@@ -12,8 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Dle.IntegrationTests.Control;
 
 /// <summary>
-/// The analytics of the control plane through HTTP against a real PostgreSQL (§B.7.6, FR-300 to
-/// FR-312, ADR-006, ADR-008): the click and install series, the breakdowns, the funnel and the
+/// The analytics of the control plane through HTTP against a real PostgreSQL: the click and
+/// install series, the breakdowns, the funnel and the
 /// attribution quality panel computed from raw events, the same figures served from the rollups
 /// after the rollup job has run, the CSV and Parquet exports, the live stream, the retention job
 /// that drops expired partitions and forgets IP prefixes, and the whole-tenant export.

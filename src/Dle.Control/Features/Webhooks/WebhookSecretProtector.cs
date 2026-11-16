@@ -9,7 +9,7 @@ namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
 /// Encrypts and decrypts the shared secret stored in
-/// <see cref="Dle.Domain.Entities.WebhookSubscription.SecretEncrypted"/> (§B.5.2, §E.4.1 K4).
+/// <see cref="Dle.Domain.Entities.WebhookSubscription.SecretEncrypted"/>.
 /// </summary>
 /// <remarks>
 /// <para>

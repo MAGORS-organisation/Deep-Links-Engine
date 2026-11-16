@@ -15,7 +15,7 @@ namespace Dle.Control.Workers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// FR-247 asks for three things and this pass does all three: hash the address after the configured
+/// Retention has three parts and this pass does all three: hash the address after the configured
 /// window, drop the raw data, and — the part that is easy to skip — make the job's own execution
 /// auditable. A retention control nobody can prove ran is not a control. Each pass therefore leaves
 /// three traces that have to agree: a row in <c>analytics_retention_runs</c> written by the service

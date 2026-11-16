@@ -69,14 +69,15 @@ public static class DleTestSettings
         Dictionary<string, string?> settings = Common(postgres, valkey);
 
         // No GeoIP database is shipped with the tests. country stays null, geo predicates fall
-        // through to the default rule, and dle_geoip_available reports 0 (section D.6).
+        // through to the default rule, and dle_geoip_available reports 0.
         settings["Dle:Edge:GeoIp:Provider"] = "None";
         settings["Dle:Edge:GeoIp:AutoUpdate"] = "false";
 
         // A closed test network has no reverse DNS, so confirming a crawler by PTR would turn every
-        // recognised crawler into a spoof. The crawlers TC-106 exercises publish no DNS convention
-        // and are accepted without a lookup either way; this only keeps the search engines out of a
-        // resolver timeout. TC-107 belongs to the unit suite, where the verifier is substituted.
+        // recognised crawler into a spoof. The link preview crawlers exercised here publish no DNS
+        // convention and are accepted without a lookup either way; this only keeps the search engines
+        // out of a resolver timeout. The spoofed-crawler case belongs to the unit suite, where the
+        // verifier is substituted.
         settings["Dle:Edge:BotDetection:ReverseDnsVerify"] = "false";
 
         settings["Dle:Edge:Interstitial:Enabled"] = "true";
@@ -90,8 +91,8 @@ public static class DleTestSettings
         settings["Dle:Edge:Network:UseForwardedHeaders"] = "false";
 
         // The enumeration budget is per network prefix and every request from the test client shares
-        // one, so the shipped burst of forty would shadow ban the suite partway through a run
-        // (section E.9). The mechanism itself is asserted in the security suite, where the budget is
+        // one, so the shipped burst of forty would shadow ban the suite partway through a run.
+        // The mechanism itself is asserted in the security suite, where the budget is
         // the thing under test rather than an obstacle to it.
         settings["Dle:RateLimits:Edge:Enabled"] = "true";
         settings["Dle:RateLimits:Edge:Resolve:PermitsPerWindow"] = "1000000";

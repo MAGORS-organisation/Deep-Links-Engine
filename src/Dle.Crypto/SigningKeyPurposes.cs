@@ -6,13 +6,13 @@ namespace Dle.Crypto;
 /// </summary>
 public static class SigningKeyPurposes
 {
-    /// <summary>Keys that sign the tokens described in §E.4.2.</summary>
+    /// <summary>Keys that sign tokens.</summary>
     public const string Token = "token";
 
-    /// <summary>Keys that sign outbound webhook payloads (K4).</summary>
+    /// <summary>Keys that sign outbound webhook payloads.</summary>
     public const string Webhook = "webhook";
 
-    /// <summary>Keys behind the click identifier permutation and its MAC (K2).</summary>
+    /// <summary>Keys behind the click identifier permutation and its MAC.</summary>
     public const string ClickId = "click_id";
 
     /// <summary>Keys behind the slug permutation.</summary>

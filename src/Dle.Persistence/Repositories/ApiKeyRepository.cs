@@ -28,7 +28,7 @@ public sealed class ApiKeyRepository
     /// <returns>The key, or <see langword="null"/> when there is none or it has been revoked.</returns>
     /// <remarks>
     /// The returned row carries the Argon2id hash, which the caller compares with
-    /// <c>CryptographicOperations.FixedTimeEquals</c> and never with equality (shared kernel §17.6).
+    /// <c>CryptographicOperations.FixedTimeEquals</c> and never with equality.
     /// A revoked key is filtered out here rather than checked afterwards, so forgetting the check
     /// is not possible; expiry is left to the caller because an expired key deserves a different
     /// answer from an unknown one.

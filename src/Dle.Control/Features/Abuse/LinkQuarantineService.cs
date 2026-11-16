@@ -13,8 +13,7 @@ using Microsoft.Extensions.Logging;
 namespace Dle.Control.Features.Abuse;
 
 /// <summary>
-/// Withdraws a link from service and returns it, with the trail both actions have to leave
-///.
+/// Withdraws a link from service and returns it, with the trail both actions have to leave.
 /// </summary>
 /// <remarks>
 /// <para>

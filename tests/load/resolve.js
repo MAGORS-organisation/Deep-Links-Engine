@@ -1,8 +1,8 @@
 // Deep Link Engine — resolve path load profile.
 //
-// The two scenarios and the three thresholds below are transcribed from §D.5 and are not to be
-// relaxed to make a run pass: they are the numbers NFR-01 and NFR-02 are written against, and a run
-// that misses them is a release that does not go out.
+// The two scenarios and the three thresholds below are not to be relaxed to make a run pass: they
+// are the resolve latency and error budgets, and a run that misses them is a release that does not
+// go out.
 //
 //   steady   constant-arrival-rate, 2000 requests a second for ten minutes
 //   spike    ramping-arrival-rate,  0 → 12000/s over 30 s, held 2 min, back to 2000/s over 1 min
@@ -10,9 +10,9 @@
 //   p(95) < 25 ms and p(99) < 50 ms on the steady scenario
 //   http_req_failed rate < 0.001 across the whole run
 //
-// Traffic mix, also §D.5: 80 % of requests hit one of the hundred hottest links, 15 % hit a random
+// Traffic mix: 80 % of requests hit one of the hundred hottest links, 15 % hit a random
 // existing link, 5 % ask for a slug that does not exist — the last of those is deliberate, because
-// the 404 path and the anti-enumeration budget of §E.9 are part of what is being measured, not noise
+// the 404 path and the anti-enumeration budget are part of what is being measured, not noise
 // to be excluded. 12 % of all requests carry a crawler user agent.
 //
 // Run it against a seeded instance:
@@ -37,7 +37,7 @@ http.setResponseCallback(http.expectedStatuses(200, 302, 404, 429));
 
 // Inlined rather than imported from jslib.k6.io. A remote import means the load test cannot run
 // without internet access and pulls an unpinned third-party module into the process on every run,
-// which is the supply-chain shape T-14 is about — for three lines of arithmetic.
+// which is the shape of a supply-chain attack — for three lines of arithmetic.
 function randomIntBetween(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -80,7 +80,7 @@ const BROWSER_AGENTS = [
   'Mozilla/5.0 (Linux; Android 15; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/470.0.0.36.109;]',
 ];
 
-// The six §D.2.1 names plus WhatsApp. A confirmed crawler is served an Open Graph document instead
+// The common link preview crawlers, WhatsApp included. A confirmed crawler is served an Open Graph document instead
 // of a redirect, which is a different and more expensive path — 12 % of it is part of the profile
 // precisely because it is the path a naive benchmark leaves out.
 const CRAWLER_AGENTS = [
@@ -148,11 +148,11 @@ export const options = {
   },
 
   thresholds: {
-    // §D.5, verbatim.
+    // The latency and error budgets.
     'http_req_duration{scenario:steady}': ['p(95)<25', 'p(99)<50'],
     http_req_failed: ['rate<0.001'],
 
-    // The spike has no latency threshold in §D.5 — §D.6 says p99 must stay under 200 ms while the
+    // The spike has no steady-state latency threshold, but p99 must stay under 200 ms while the
     // autoscaler catches up, and that is what this asserts.
     'http_req_duration{scenario:spike}': ['p(99)<200'],
 
@@ -160,7 +160,7 @@ export const options = {
     // hit every latency target while quietly answering 404 to everything.
     dle_correct_outcome: ['rate>0.999'],
 
-    // The hot path is the one NFR-01 is about, and it is the one that must be cheap.
+    // The hot path is the one the latency budget is about, and it is the one that must be cheap.
     dle_hot_latency: ['p(95)<25', 'p(99)<50'],
   },
 
@@ -239,7 +239,7 @@ function record(response, kind, isCrawler) {
   let expected;
 
   if (kind === 'miss') {
-    // 429 is a correct answer once a generator address has drained its §E.9 budget. It is counted
+    // 429 is a correct answer once a generator address has drained its 404 budget. It is counted
     // separately rather than treated as a failure, and the README explains how to keep the miss
     // stream spread across enough source addresses for it to stay rare.
     expected = status === 404 || status === 429;
@@ -254,8 +254,8 @@ function record(response, kind, isCrawler) {
     expected = status === 200;
     previews.add(status === 200 ? 1 : 0);
   } else {
-    // Never 301: ADR-009. A 200 here is the interstitial, which the in-app agents in the population
-    // legitimately produce.
+    // Never 301, which browsers and intermediaries cache indefinitely. A 200 here is the
+    // interstitial, which the in-app agents in the population legitimately produce.
     expected = status === 302 || status === 200;
     redirects.add(status === 302 ? 1 : 0);
   }
@@ -278,7 +278,7 @@ function record(response, kind, isCrawler) {
 // ---------------------------------------------------------------------------------------------
 
 export function handleSummary(data) {
-  // The two acceptance numbers §D.5 states that k6 cannot see from outside — the cache hit ratio and
+  // The two acceptance numbers that k6 cannot see from outside — the cache hit ratio and
   // the dropped-event counter — are read from the instance's own metrics endpoint. They are printed
   // here as a reminder rather than asserted, because scraping Prometheus from inside a load test
   // would add a request to every iteration.
@@ -287,7 +287,7 @@ export function handleSummary(data) {
     'Acceptance criteria k6 cannot decide on its own:',
     '  cache hit rate >= 95 %       dle_cache_hit_ratio{level="l1"} + {level="l2"} on the edge',
     '  dropped click events = 0     dle_click_events_dropped_total must not have moved during the run',
-    '  p99 <= 200 ms while scaling  §D.6, the spike scenario',
+    '  p99 <= 200 ms while scaling  the spike scenario',
     '',
   ].join('\n');
 

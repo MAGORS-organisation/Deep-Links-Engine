@@ -16,13 +16,13 @@ public sealed record CapturedLog(string Category, LogLevel Level, string Message
 }
 
 /// <summary>
-/// Captures everything the host logs so that S-08 can be asserted rather than reviewed.
+/// Captures everything the host logs so that log redaction can be asserted rather than reviewed.
 /// </summary>
 /// <remarks>
 /// <para>
-/// T-08 is a GDPR incident waiting in a log file: the address, the user agent and the full URL of every
-/// click. §E.2.2 forbids logging the <c>Authorization</c> header, the referrer and the query string at
-/// <c>Information</c>, and S-08 makes "no PII at Information or below" an acceptance criterion.
+/// A log file is a GDPR incident waiting to happen: the address, the user agent and the full URL of every
+/// click. Logging the <c>Authorization</c> header, the referrer and the query string at
+/// <c>Information</c> is forbidden, and "no PII at Information or below" is an acceptance criterion.
 /// </para>
 /// <para>
 /// An acceptance criterion phrased that way is only checkable against a real capture: it is about what
@@ -39,7 +39,7 @@ public sealed class CapturingLoggerProvider : ILoggerProvider
     /// <summary>Everything captured since the last <see cref="Clear"/>.</summary>
     public IReadOnlyCollection<CapturedLog> Entries => _entries;
 
-    /// <summary>Entries at <see cref="LogLevel.Information"/> or below, which is S-08's scope.</summary>
+    /// <summary>Entries at <see cref="LogLevel.Information"/> or below, which is the redaction scope.</summary>
     public IEnumerable<CapturedLog> AtInformationOrBelow =>
         _entries.Where(entry => entry.Level <= LogLevel.Information);
 

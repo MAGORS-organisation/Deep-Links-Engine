@@ -3,7 +3,7 @@ using System.Text;
 namespace Dle.SecurityTests.OpenRedirect;
 
 /// <summary>
-/// Generates the open-redirect corpus (T-01, CWE-601, TC-164).
+/// Generates the open-redirect corpus (CWE-601).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -31,7 +31,7 @@ namespace Dle.SecurityTests.OpenRedirect;
 /// assertion simple and total: whatever the engine answers, that string must not appear anywhere in a
 /// <c>Location</c> header — with one deliberate exception, described on
 /// <see cref="IsSafeLocation(string?, IReadOnlyCollection{string}, out string, bool)"/>, for the
-/// allow-listed UTM parameters that §E.6.3 copies into the target's query as data.
+/// allow-listed UTM parameters that are copied into the target's query as data.
 /// </para>
 /// </remarks>
 public static class HostileUrlCorpus
@@ -133,7 +133,7 @@ public static class HostileUrlCorpus
 
     /// <summary>Query parameter names an attacker would try to steer a redirect with.</summary>
     /// <remarks>
-    /// <c>to</c> is the one TC-164 names. The rest are the conventional spellings a generic scanner
+    /// <c>to</c> is the obvious one. The rest are the conventional spellings a generic scanner
     /// tries, and none of them is on <see cref="RoutingUrlBuilder.ForwardableQueryKeys"/>, which is
     /// exactly the property under test.
     /// </remarks>

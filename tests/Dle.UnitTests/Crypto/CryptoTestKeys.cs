@@ -5,7 +5,7 @@ namespace Dle.UnitTests.Crypto;
 
 /// <summary>
 /// Fixed key material and a deterministic generator, so that every crypto test is reproducible.
-/// SHARED-KERNEL §0 forbids ambient randomness in a decision; a test that cannot be replayed
+/// Ambient randomness is forbidden in a decision; a test that cannot be replayed
 /// byte for byte cannot be debugged when it fails once in a thousand runs.
 /// </summary>
 internal static class CryptoTestKeys

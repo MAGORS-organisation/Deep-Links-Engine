@@ -1,8 +1,7 @@
 namespace Dle.Domain.WellKnown;
 
 /// <summary>
-/// One Android application registered on a link domain, as it will appear in <c>assetlinks.json</c>
-///.
+/// One Android application registered on a link domain, as it will appear in <c>assetlinks.json</c>.
 /// </summary>
 public sealed record AndroidAppEntry
 {

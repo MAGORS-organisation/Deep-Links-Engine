@@ -8,8 +8,7 @@ using Microsoft.AspNetCore.Http;
 namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
-/// <c>POST /api/v1/webhooks/{id}/test</c> — sends one delivery now and reports what happened
-///.
+/// <c>POST /api/v1/webhooks/{id}/test</c> — sends one delivery now and reports what happened.
 /// </summary>
 /// <remarks>
 /// <para>

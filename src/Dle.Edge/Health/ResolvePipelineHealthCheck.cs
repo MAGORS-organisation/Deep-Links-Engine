@@ -12,7 +12,7 @@ namespace Dle.Edge.Health;
 /// <remarks>
 /// <para>
 /// The check deliberately performs no I/O, and in particular does not ask whether PostgreSQL is
-/// reachable. §D.6 requires that resolve keeps serving cached links through a database outage, so an
+/// reachable. Resolve must keep serving cached links through a database outage, so an
 /// instance that reported itself unready during one would be removed from rotation by the orchestrator
 /// — turning a degradation the design already survives into a full outage, and doing it to every
 /// instance at once. Whether the database is reachable belongs on a dashboard, not on a probe that

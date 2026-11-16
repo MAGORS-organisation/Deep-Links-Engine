@@ -4,7 +4,7 @@ namespace Dle.Domain.Crypto;
 
 /// <summary>
 /// Turns a remote address into the only two forms the engine is ever allowed to store: a keyed
-/// hash and a truncated network prefix (§B.5.3, FR-247, K9 of the cryptographic inventory).
+/// hash and a truncated network prefix.
 /// </summary>
 /// <remarks>
 /// An IP address is personal data (Breyer, C-582/14), so the raw address never reaches storage.

@@ -2,7 +2,7 @@ namespace Dle.Domain.Routing;
 
 /// <summary>
 /// The default <see cref="IRoutingEngine"/>: an ordered, first-match-wins evaluator over the rule set
-/// with deterministic A/B bucketing and the ADR-009 response shape mapping.
+/// with deterministic A/B bucketing and the per-client response shape mapping.
 /// </summary>
 public sealed class RoutingEngine : IRoutingEngine
 {

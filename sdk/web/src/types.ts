@@ -44,10 +44,10 @@ export type Channel =
   | 'crawler'
   | 'app';
 
-/** Event kinds accepted by `POST /v1/events` (`SdkEventNames`, spec §B.7.2). */
+/** Event kinds accepted by `POST /v1/events` (`SdkEventNames`). */
 export type DleEventType = 'link_open' | 'first_open' | 'session' | 'conversion' | 'custom';
 
-/** Supported UI languages. `auto` derives from `navigator.language` (NFR-15: EN + SK). */
+/** Supported UI languages. `auto` derives from `navigator.language` (EN + SK). */
 export type Language = 'en' | 'sk' | 'auto';
 
 /** Console verbosity. `silent` disables all SDK output. */
@@ -59,7 +59,7 @@ export type LocalizedText = string | { readonly en: string; readonly sk: string 
 /**
  * Consent signal handed to the engine. Both flags default to `false` — the SDK is
  * consent-first, so nothing is collected until the host site's CMP says otherwise
- * (ePrivacy art. 5(3), spec §E.6.2).
+ * (ePrivacy art. 5(3)).
  */
 export interface DleConsent {
   /** Permission to report behavioural events (`POST /v1/events`). */

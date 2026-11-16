@@ -8,7 +8,7 @@ namespace Dle.Control.Features.Jwks;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <see cref="IKeyRing"/> owns the token signing keys of §E.4.2, and it is deliberately not the
+/// <see cref="IKeyRing"/> owns the token signing keys, and it is deliberately not the
 /// owner of every key in the product: a webhook is signed with a key bound to the webhook purpose,
 /// so that compromising it cannot be turned into the ability to mint click tokens. Those
 /// keys still have to be published, because the whole point of the asymmetric half of the webhook

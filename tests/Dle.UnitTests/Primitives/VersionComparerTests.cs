@@ -4,9 +4,9 @@ using Xunit;
 namespace Dle.UnitTests.Primitives;
 
 /// <summary>
-/// FR-124 routes on OS and application version. A comparer that is not a total order turns a
+/// Routing rules match on OS and application version. A comparer that is not a total order turns a
 /// "min_app_version" rule into a coin toss, so the ordering laws are asserted, not only the
-/// individual comparisons. SHARED-KERNEL section 1: missing components are zero, the prerelease
+/// individual comparisons. Missing components are zero, and the prerelease
 /// suffix is ignored.
 /// </summary>
 public sealed class VersionComparerTests

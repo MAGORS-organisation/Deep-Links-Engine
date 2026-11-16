@@ -1,6 +1,5 @@
 # =============================================================================
 # Security — SCA, licence policy, image and filesystem scanning, ZAP baseline.
-# Requirements S-04 / S-05, NFR-13, NFR-18 and threat T-14.
 #
 #   nuget-vulnerabilities  `dotnet list package --vulnerable` via .github/scripts — HARD gate (>= High)
 #   npm-audit              sdk/web and src/Dle.Admin.Web — HARD gate (>= high)
@@ -43,7 +42,7 @@ env:
 jobs:
   # ---------------------------------------------------------------------------------------------
   nuget-vulnerabilities:
-    name: NuGet vulnerabilities (S-05, hard gate)
+    name: NuGet vulnerabilities (hard gate)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

@@ -24,8 +24,7 @@ namespace Dle.Control.Features.Attribution;
 public readonly record struct EventBatchOutcome(int Accepted, int Rejected, bool DirectOpenAttributed);
 
 /// <summary>
-/// <c>POST /v1/events</c> — the SDK's report of what happened on the device (§B.6.4, §B.7.2,
-/// FR-223, FR-226).
+/// <c>POST /v1/events</c> — the SDK's report of what happened on the device.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -34,15 +33,15 @@ public readonly record struct EventBatchOutcome(int Accepted, int Rejected, bool
 /// application directly and <b>no HTTP request reaches the engine at all</b>. That is the normal,
 /// successful case — the case the whole product exists to produce — and it is invisible to the
 /// server. Without the <c>link_open</c> event the click is never counted, re-engagement campaigns
-/// cannot be measured, and the statistics are understated exactly where the campaign worked best
-///. Every other event type here is ordinary telemetry; this one is the difference between
+/// cannot be measured, and the statistics are understated exactly where the campaign worked best.
+/// Every other event type here is ordinary telemetry; this one is the difference between
 /// a measurement product and a redirector.
 /// </para>
 /// <para>
 /// A <c>link_open</c> whose URL resolves to one of the caller's own links is therefore an
 /// attribution in its own right: match type <c>direct_open</c>, confidence exactly 1.00, because
-/// the application is not guessing — it is reporting the URL the operating system handed it
-///. It obeys the same rule as every other match: one installation carries at most one
+/// the application is not guessing — it is reporting the URL the operating system handed it.
+/// It obeys the same rule as every other match: one installation carries at most one
 /// attribution, so a direct open never displaces a decision that is already there, and only ever
 /// replaces a stored <c>none</c>.
 /// </para>
@@ -198,8 +197,7 @@ public sealed partial class RecordEvents
                     cancellationToken);
 
                 // A link of another tenant is treated exactly like a URL that is not ours at all.
-                // Anything else would let one tenant confirm the existence of another's slug
-                //.
+                // Anything else would let one tenant confirm the existence of another's slug.
                 if (link is not null && link.TenantId == caller.TenantId)
                 {
                     linkId = link.Id;
@@ -269,7 +267,7 @@ public sealed partial class RecordEvents
     /// <para>
     /// No consent gate stands in front of this, and the reason is worth stating rather than
     /// assuming. The deferred strategies join an anonymous web click to an installation across two
-    /// sessions and two contexts, which is what §E.6.2 calls <c>full</c> mode and what ePrivacy
+    /// sessions and two contexts, which is what the <c>full</c> consent mode covers and what ePrivacy
     /// art. 5(3) puts behind documented consent. A direct open joins nothing: the operating system
     /// handed the application a URL, the application reports the URL it was given, and the engine
     /// looks up which of the tenant's own links it is. No click is read, no device signal is
@@ -277,7 +275,7 @@ public sealed partial class RecordEvents
     /// evidence so the reasoning is auditable, but it does not gate the record.
     /// </para>
     /// <para>
-    /// The two uniqueness rules of §B.5.3 still hold. An installation that already carries a real
+    /// The two uniqueness rules still hold. An installation that already carries a real
     /// match keeps it, because a deferred deterministic match explains where the install came from
     /// and a later direct open only says the application was opened again. A stored <c>none</c> is
     /// replaced, because a direct open is deterministic evidence the earlier decision did not

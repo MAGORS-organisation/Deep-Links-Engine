@@ -16,7 +16,7 @@ export const webhooks = {
     return api(base, { query: { onlyActive }, signal });
   },
 
-  /** The secret in the answer is shown once (§B.5.2, §E.4.1 K4). */
+  /** The secret in the answer is shown once. */
   create(body: CreateWebhookRequest): Promise<WebhookCreatedResponse> {
     return api(base, { method: 'POST', body });
   },

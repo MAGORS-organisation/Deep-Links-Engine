@@ -8,7 +8,7 @@ public sealed record CreateLinkRequest
     /// <summary>Domain that will serve the link.</summary>
     public required Guid DomainId { get; init; }
 
-    /// <summary>Custom slug. Omit to have one generated (8 base62 characters, ADR-007). A custom
+    /// <summary>Custom slug. Omit to have one generated (8 base62 characters). A custom
     /// slug must be distinguishable from the generated shape, so 3 to 7 or 9 or more characters.</summary>
     public string? Slug { get; init; }
 

@@ -7,7 +7,7 @@ namespace Dle.Control.Features.Webhooks;
 /// </summary>
 /// <remarks>
 /// <para>
-/// §C.6 names two: <c>dle_webhook_delivery_duration_seconds</c> as a histogram and
+/// There are two: <c>dle_webhook_delivery_duration_seconds</c> as a histogram and
 /// <c>dle_webhook_dlq_size</c> as a gauge. The gauge is the one that matters operationally. A
 /// delivery that exhausts its retries is a promise the product failed to keep, and unless the
 /// number of them is on a dashboard the failure is invisible: the customer's data is simply

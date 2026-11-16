@@ -380,7 +380,7 @@ public sealed partial class PostgresClickAnalyticsStore : IClickAnalyticsStore
             ct);
 
         // Installs carrying no attribution row at all are reported as "none" rather than dropped.
-        // That unmatched share is the honest half of the ADR-008 dashboard panel, and it is
+        // That unmatched share is the honest half of the attribution-quality dashboard panel, and it is
         // exactly the number a commercial measurement partner has an incentive to lose.
         string sql = useRollup
             ? $"""

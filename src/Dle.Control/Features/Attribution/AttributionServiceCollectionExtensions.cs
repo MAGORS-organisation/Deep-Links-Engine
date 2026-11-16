@@ -14,7 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Component C-06 of §B.3 runs inside the control plane process but is a different service from
+/// The SDK attribution service runs inside the control plane process but is a different service from
 /// the control plane API: different credentials, different rate limits, different failure
 /// behaviour. That separation is expressed here, not documented and hoped for — the SDK endpoints
 /// authenticate with their own scheme, carry their own limiters keyed on <c>install_id</c>, and

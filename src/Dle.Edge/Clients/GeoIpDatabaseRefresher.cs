@@ -14,7 +14,7 @@ namespace Dle.Edge.Clients;
 /// </summary>
 /// <remarks>
 /// <para>
-/// It watches, it does not download. NFR-14 forbids an outbound third-party call from anything the
+/// It watches, it does not download. No outbound third-party call is allowed from anything the
 /// resolve path depends on, and the database is exactly that; fetching a new edition belongs to the
 /// deployment — a <c>geoipupdate</c> sidecar, a cron job, a re-mounted volume — and this loop's whole
 /// job is to make the process pick the new file up without a restart.
@@ -63,7 +63,7 @@ public sealed partial class GeoIpDatabaseRefresher : BackgroundService
         "CA1031:Do not catch general exception types",
         Justification = "A background loop that dies takes the refresh with it for the life of the process. Every " +
                         "failure is logged and the loop continues with the database it already has, which is the " +
-                        "explicit fallback SHARED-KERNEL §17.9 asks for.")]
+                        "explicit fallback.")]
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!_options.AutoUpdate)

@@ -3,7 +3,7 @@ using Npgsql;
 namespace Dle.IntegrationTests.Persistence;
 
 /// <summary>
-/// The four uniqueness rules §B.5.2 and §B.5.3 put in the schema rather than in a service.
+/// The four uniqueness rules that live in the schema rather than in a service.
 /// </summary>
 /// <remarks>
 /// Every one of them protects an invariant that a race would otherwise break: two requests creating
@@ -83,7 +83,7 @@ public sealed class UniqueIndexTests(DleInfrastructureFixture infrastructure)
     [RequiresDockerFact]
     public async Task Attributions_SecondInstallClaimingTheSameClick_IsRejected()
     {
-        // TC-144: one click is worth at most one install. There is no foreign key to click_events —
+        // One click is worth at most one install. There is no foreign key to click_events —
         // a partitioned table has a composite primary key and nothing to reference — so this partial
         // unique index is the only thing standing between the product and the cheapest attribution
         // fraud there is.

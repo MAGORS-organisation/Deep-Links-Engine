@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 // request without ever using them.
 WebApplicationBuilder builder = WebApplication.CreateSlimBuilder(args);
 
-// SHARED-KERNEL §15: five module registrations, four endpoint maps, nothing wired by hand. Each
+// Five module registrations, four endpoint maps, nothing wired by hand. Each
 // module owns its own options, its own validation and its own seams, so this file stays a statement
 // of what the process is rather than of how any of it works.
 builder.Services
@@ -36,8 +36,8 @@ if (app.Services.GetRequiredService<IOptions<NetworkOptions>>().Value.UseForward
 app.UseMiddleware<SecurityHeadersMiddleware>();
 
 // The interstitial's versioned stylesheet and icon, plus robots.txt. Served from the same origin
-// because the pages' content security policy allows no other, and because NFR-14 forbids the resolve
-// path from depending on a third-party origin for anything at all.
+// because the pages' content security policy allows no other, and because the resolve
+// path must not depend on a third-party origin for anything at all.
 //
 // Before UseRouting, and that ordering is load bearing: the static file middleware steps aside once an
 // endpoint has been selected, and "/{slug}" selects one for every single-segment path — so with the

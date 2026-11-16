@@ -33,7 +33,7 @@ public sealed partial class DapperClickLookup : IClickLookup
     // touch every partition's index — 180 of them at full retention. The cost therefore grows linearly
     // with how long the system has been running and with how old the install is, which means it is
     // invisible in every test written before the first partitions age out and only appears in
-    // production about six months after launch. This is the silent performance debt §B.6.3 warns about.
+    // production about six months after launch. This is a silent performance debt.
     //
     // The bounds are not guessed by the caller: the click identifier carries its own timestamp, encrypted
     // with the same Feistel construction as the slug, and the attribution service decodes it into

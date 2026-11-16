@@ -7,7 +7,7 @@ namespace Dle.Domain.Entities;
 /// <remarks>
 /// Only the hash of the code is stored: the code is short and low entropy, so a leaked table must
 /// not hand an attacker a set of valid claims. <see cref="ConsumedAt"/> makes redemption single
-/// use, and the short expiry bounds the guessing window (§E.4.1, K3; TC-148).
+/// use, and the short expiry bounds the guessing window.
 /// </remarks>
 public class ClaimCodeRecord
 {

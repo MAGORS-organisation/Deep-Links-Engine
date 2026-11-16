@@ -7,7 +7,7 @@ namespace Dle.Crypto;
 /// ML-DSA-65 signer (<see cref="SignatureAlgorithms.MlDsa65"/>), the FIPS 204 lattice signature.
 /// </summary>
 /// <remarks>
-/// BouncyCastle rather than the BCL, deliberately. §E.5.2: <c>System.Security.Cryptography.MLDsa</c>
+/// BouncyCastle rather than the BCL, deliberately: <c>System.Security.Cryptography.MLDsa</c>
 /// ships in .NET 10 behind <c>[Experimental("SYSLIB5006")]</c> and delegates to the platform, which
 /// means OpenSSL 3.5+ on Linux — absent from Ubuntu 24.04 LTS and RHEL 9. An open source product
 /// that a stranger deploys on their own LTS box cannot make that a requirement, so the portable

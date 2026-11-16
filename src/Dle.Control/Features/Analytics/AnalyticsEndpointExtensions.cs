@@ -31,7 +31,7 @@ namespace Microsoft.AspNetCore.Builder;
 /// </para>
 /// <para>
 /// The tenant data export is mapped from here rather than from <c>MapTenants</c> because it is an
-/// export and this is the export surface — SHARED-KERNEL §15 names no <c>MapExports</c>, and adding
+/// export and this is the export surface — the composition contract has no <c>MapExports</c>, and adding
 /// one would be a change to a contract that other slices already code against.
 /// </para>
 /// </remarks>
@@ -66,7 +66,7 @@ public static class AnalyticsEndpointExtensions
             .WithName("GetInstallAnalytics")
             .WithSummary("The same series, from the install side.")
             .WithDescription(
-                "Named separately because §B.7.3 names it, and answered by the same query: clicks, "
+                "Named separately so the install side has its own route, and answered by the same query: clicks, "
                 + "installs and conversions come out of one pass over one window, and serving them "
                 + "from three requests would triple the work to produce numbers that have to agree "
                 + "anyway.")

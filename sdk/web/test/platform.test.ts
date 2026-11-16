@@ -73,7 +73,7 @@ const TABLE: readonly Row[] = [
     osVersion: '14',
   },
   {
-    name: 'Android 15 Chrome (os_version "15" of the B.7.2 literal)',
+    name: 'Android 15 Chrome (os_version "15" of the wire literal)',
     ua: 'Mozilla/5.0 (Linux; Android 15; Pixel 9 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36',
     platform: 'android',
     channel: 'browser',

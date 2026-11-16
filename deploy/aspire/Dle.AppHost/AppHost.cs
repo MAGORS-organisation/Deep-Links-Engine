@@ -31,9 +31,9 @@ IResourceBuilder<RedisResource> valkey = builder
     .WithImage("valkey/valkey", "8")
     .WithLifetime(ContainerLifetime.Persistent);
 
-// SHARED-KERNEL §16 names the connection strings Postgres and Valkey, and both processes read exactly
-// those keys. connectionName pins that contract here rather than forcing the resource names to double
-// as configuration keys.
+// The connection strings are named Postgres and Valkey, and both processes read exactly those keys.
+// connectionName pins that contract here rather than forcing the resource names to double as
+// configuration keys.
 //
 // The control plane owns the schema, the workers and the administrative API. It waits for the
 // database because its first action on a cold start is to check the migration state.
@@ -46,7 +46,7 @@ builder
     .WithHttpHealthCheck("/healthz")
     .WithExternalHttpEndpoints();
 
-// The data plane. It deliberately does not wait for the control plane: §D.6 requires the edge to
+// The data plane. It deliberately does not wait for the control plane: the edge must
 // start and serve from cache when its dependencies are unavailable, and a start-up ordering
 // constraint here would quietly hide a regression in that behaviour.
 builder

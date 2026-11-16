@@ -19,7 +19,7 @@ public sealed record SchemaViolation(string InstancePath, string Keyword, string
 /// </summary>
 /// <remarks>
 /// <para>
-/// Written rather than taken off the shelf for one reason: NFR-18 makes licence purity a build gate,
+/// Written rather than taken off the shelf for one reason: licence purity is a build gate,
 /// and the dependency set of this repository is centrally managed and deliberately short. A contract
 /// test suite that needs a new third-party package in order to check a hundred lines of schema is a
 /// bad trade — particularly when the alternative is three hundred lines that do exactly what these

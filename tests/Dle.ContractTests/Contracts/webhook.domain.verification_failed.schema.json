@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DLE webhook payload: domain.verification_failed",
-  "description": "A domain's association files stopped verifying. Envelope per docs/zadanie.md B.7.4.",
+  "description": "A domain's association files stopped verifying.",
   "type": "object",
   "additionalProperties": false,
   "required": [

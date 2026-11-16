@@ -8,9 +8,9 @@ namespace Dle.Persistence.Fast.Configuration;
 /// <remarks>
 /// <para>
 /// Bound from the configuration section <c>Dle:Persistence:Fast</c>, with the connection strings read
-/// from the standard <c>ConnectionStrings</c> section named in SHARED-KERNEL §16:
+/// from the standard <c>ConnectionStrings</c> section:
 /// <c>ConnectionStrings:Postgres</c> for the primary and the optional
-/// <c>ConnectionStrings:PostgresRead</c> for the read replica of §B.8 profile B.
+/// <c>ConnectionStrings:PostgresRead</c> for the read replica.
 /// </para>
 /// <para>
 /// The four pool and timeout settings are owned by this section, not by the connection string: they
@@ -35,7 +35,7 @@ public sealed class FastPersistenceOptions
 
     /// <summary>
     /// Name of the optional connection string for a read replica. When it is absent the read data
-    /// source is the primary one (§B.8 profile A).
+    /// source is the primary one.
     /// </summary>
     public const string ReadConnectionStringName = "PostgresRead";
 
@@ -50,19 +50,19 @@ public sealed class FastPersistenceOptions
 
     /// <summary>
     /// Upper bound of the primary connection pool. The default matches a four vCPU edge instance
-    /// serving the throughput target of NFR-03 at a cache hit rate above 95 %, where only misses reach
+    /// serving the throughput target at a cache hit rate above 95 %, where only misses reach
     /// Postgres at all.
     /// </summary>
     public int MaxPoolSize { get; init; } = 64;
 
     /// <summary>
     /// Connections kept open when idle. A small non-zero value removes the connection handshake from
-    /// the first cache miss after a quiet period, which would otherwise show up in the p99 of NFR-02.
+    /// the first cache miss after a quiet period, which would otherwise show up in the cache-miss p99.
     /// </summary>
     public int MinPoolSize { get; init; } = 4;
 
     /// <summary>
-    /// Command timeout in seconds for the read path. Deliberately short: the resolve budget of NFR-01
+    /// Command timeout in seconds for the read path. Deliberately short: the resolve budget
     /// is eight milliseconds, so a lookup that has been running for seconds has already failed its
     /// caller and is only holding a connection hostage.
     /// </summary>

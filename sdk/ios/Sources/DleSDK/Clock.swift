@@ -4,7 +4,7 @@ import Foundation
 ///
 /// The SDK never calls `Date()` or `Task.sleep` directly; everything goes through a clock so
 /// that retry/backoff behaviour is deterministically testable (mirrors the server-side rule of
-/// using `TimeProvider` instead of `DateTime.UtcNow`, SHARED-KERNEL §17.2).
+/// using `TimeProvider` instead of `DateTime.UtcNow`).
 public protocol DleClock: Sendable {
     /// The current wall-clock instant.
     var now: Date { get }

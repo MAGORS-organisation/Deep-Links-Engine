@@ -12,12 +12,12 @@ import {
 } from '../src/api';
 import { VERSION, referrerFromSearch } from '../src/index';
 import type { DleEvent } from '../src/types';
-import { B72 } from './helpers';
+import { WIRE } from './helpers';
 
-describe('wire contract §B.7.2 (literals from SdkWireContractTests.cs)', () => {
+describe('wire contract (literals from SdkWireContractTests.cs)', () => {
   it('serialises ResolveRequestDto byte-for-byte', () => {
     const body = buildResolveRequest({
-      installId: B72.INSTALL_ID,
+      installId: WIRE.INSTALL_ID,
       platform: 'android',
       appVersion: '3.4.1',
       osVersion: '15',
@@ -26,24 +26,24 @@ describe('wire contract §B.7.2 (literals from SdkWireContractTests.cs)', () => 
       signals: { language: 'sk-SK', screen: '1080x2400', tz_offset: 120 },
       consent: { analytics: true, attribution: true, ts: '2026-09-03T10:00:00+00:00' },
     });
-    expect(JSON.stringify(body)).toBe(B72.RESOLVE_REQUEST);
+    expect(JSON.stringify(body)).toBe(WIRE.RESOLVE_REQUEST);
   });
 
   it('serialises EventBatchDto byte-for-byte', () => {
-    const body = buildEventBatch(B72.INSTALL_ID, [
+    const body = buildEventBatch(WIRE.INSTALL_ID, [
       { type: 'link_open', url: 'https://link.zak.sk/aB3xK9pQ', ts: '2026-09-03T10:00:00+00:00' },
       { type: 'conversion', name: 'purchase', value: 24.9, currency: 'EUR', ts: '2026-09-03T10:05:00+00:00' },
     ]);
-    expect(JSON.stringify(body)).toBe(B72.EVENT_BATCH);
+    expect(JSON.stringify(body)).toBe(WIRE.EVENT_BATCH);
   });
 
   it('adds platform and app_version in contract order when present', () => {
-    const body = buildEventBatch(B72.INSTALL_ID, [{ type: 'session' }], { platform: 'ios', appVersion: '1.2.3' });
+    const body = buildEventBatch(WIRE.INSTALL_ID, [{ type: 'session' }], { platform: 'ios', appVersion: '1.2.3' });
     expect(Object.keys(body)).toEqual(['install_id', 'platform', 'app_version', 'events']);
   });
 
   it('parses ResolveResponseDto into the camelCase surface', () => {
-    const result = parseResolveResponse(JSON.parse(B72.RESOLVE_RESPONSE));
+    const result = parseResolveResponse(JSON.parse(WIRE.RESOLVE_RESPONSE));
     expect(result).toEqual({
       matched: true,
       matchType: 'install_referrer',
@@ -57,7 +57,7 @@ describe('wire contract §B.7.2 (literals from SdkWireContractTests.cs)', () => 
   });
 
   it('treats an unmatched install as a result, not an error', () => {
-    const result = parseResolveResponse(JSON.parse(B72.RESOLVE_RESPONSE_UNMATCHED));
+    const result = parseResolveResponse(JSON.parse(WIRE.RESOLVE_RESPONSE_UNMATCHED));
     expect(result).toEqual({ matched: false, matchType: 'none', confidence: 0, params: {}, expiresIn: 0 });
     expect('clickId' in result).toBe(false);
     expect('link' in result).toBe(false);
@@ -65,7 +65,7 @@ describe('wire contract §B.7.2 (literals from SdkWireContractTests.cs)', () => 
   });
 
   it('parses the accepted acknowledgement literal', () => {
-    expect(JSON.parse(B72.EVENT_BATCH_ACCEPTED)).toEqual({ accepted: 2, rejected: 0 });
+    expect(JSON.parse(WIRE.EVENT_BATCH_ACCEPTED)).toEqual({ accepted: 2, rejected: 0 });
   });
 
   it('keeps params keys in their original spelling', () => {

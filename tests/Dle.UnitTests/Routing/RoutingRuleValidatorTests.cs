@@ -5,7 +5,7 @@ using Xunit;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// TC-105 and FR-127. Validation runs at write time, so an invalid rule set never reaches the hot
+/// Validation runs at write time, so an invalid rule set never reaches the hot
 /// path. The error Path strings are part of the API contract (RFC 9457 problem details point the
 /// admin UI at one field), so they are asserted, not just the number of errors.
 /// </summary>

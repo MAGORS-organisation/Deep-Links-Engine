@@ -1,7 +1,7 @@
 import XCTest
 @testable import DleSDK
 
-/// The SDK wire contract of §B.7.2, asserted against the literal bodies of
+/// The SDK wire contract, asserted against the literal bodies of
 /// `tests/Dle.ContractTests/Wire/SdkWireContractTests.cs`.
 ///
 /// The literals are copied, not re-derived: the point is that the bytes this SDK produces are

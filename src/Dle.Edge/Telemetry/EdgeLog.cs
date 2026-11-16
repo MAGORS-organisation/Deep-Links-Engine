@@ -13,7 +13,7 @@ namespace Dle.Edge.Telemetry;
 /// argument array and format a string on every request whether or not anybody is listening.
 /// </para>
 /// <para>
-/// What is <em>not</em> here matters as much as what is. SHARED-KERNEL §17.5 forbids logging the
+/// What is <em>not</em> here matters as much as what is. Nothing is allowed to log the
 /// <c>Authorization</c> header, the full referrer, the full query string or a raw client address at
 /// <c>Information</c> or below, so no parameter below carries any of them: the referrer appears as a
 /// host, the address as a /24 or /48 network prefix, and the query string never appears at all.

@@ -18,7 +18,7 @@ namespace Dle.Edge.Resolution;
 /// <see cref="RoutingUrlBuilder.ForwardableQueryKeys"/> are copied, so a parameter a client invents
 /// cannot ride along into the redirect target, and no parameter that steers behaviour — the preview
 /// switch, the consent signals — is copied at all, so none of them can leak into an outbound URL. It
-/// is also the structural half of SHARED-KERNEL §17.4 and TC-164: no redirect target can be taken from
+/// is also the structural half of the open redirect defence: no redirect target can be taken from
 /// a request parameter if no request parameter capable of being one ever reaches the URL builder.
 /// </para>
 /// </remarks>

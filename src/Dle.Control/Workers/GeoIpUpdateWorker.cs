@@ -8,11 +8,11 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Workers;
 
 /// <summary>
-/// Refreshes the GeoIP database out of band (§C.4 <c>Dle:Edge:GeoIp</c>, NFR-14).
+/// Refreshes the GeoIP database out of band (<c>Dle:Edge:GeoIp</c>).
 /// </summary>
 /// <remarks>
 /// <para>
-/// §E.6.3 forbids an outgoing call to a third party from the hot path, which is why the edge
+/// The hot path makes no outgoing call to a third party, which is why the edge
 /// resolves geography against a local database file and never against a service. A local file has
 /// to be refreshed by something, and that something must not be the edge: a resolver that downloads
 /// a two hundred megabyte archive while serving redirects is a latency incident waiting for a

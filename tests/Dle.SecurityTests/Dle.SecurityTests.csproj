@@ -1,9 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Adversarial tests for the threat register in docs/zadanie.md §E.2.2:
-    open-redirect fuzzing (T-01/T-02, TC-161..164), click-id tampering
-, cross-tenant access returning 404 not 403,
+    Adversarial tests: open-redirect and SSRF fuzzing, click-id tampering,
+    cross-tenant access returning 404 not 403,
     timing-safe secret comparison and rate-limit enforcement.
   -->
 

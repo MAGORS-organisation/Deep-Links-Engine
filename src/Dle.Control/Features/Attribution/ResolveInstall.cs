@@ -28,7 +28,7 @@ public sealed record ResolveOutcome(ResolveResponseDto? Response, ClaimCodeStatu
 
 /// <summary>
 /// <c>POST /v1/resolve</c> — hands a freshly installed application the context of the click that
-/// led to it (§B.6.2, §B.6.3, §B.7.2, FR-182 to FR-188).
+/// led to it.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -43,7 +43,7 @@ public sealed record ResolveOutcome(ResolveResponseDto? Response, ClaimCodeStatu
 ///   <item>
 ///     <description>
 ///     <b>Consent is an input, not a filter.</b> Cross-session linking of a click to an install is
-///     what §E.6.2 calls <c>full</c> mode and what ePrivacy art. 5(3) puts behind documented
+///     what the <c>full</c> consent mode covers and what ePrivacy art. 5(3) puts behind documented
 ///     consent, so without it no click is looked up at all and the answer is <c>none</c> with the
 ///     reason recorded. Device signals go further still: the only code that can read them is an
 ///     instance method of <see cref="ProbabilisticConsent"/>, and without the grant no such
@@ -64,14 +64,13 @@ public sealed record ResolveOutcome(ResolveResponseDto? Response, ClaimCodeStatu
 ///     <b>One click, one install.</b> The second installation to present the same click identifier
 ///     is told <c>none</c>. That is enforced by the partial unique index on
 ///     <c>attributions(click_id)</c> plus the transaction in
-///     <see cref="AttributionRepository"/> — not by a check in this class, which could lose a race
-///.
+///     <see cref="AttributionRepository"/> — not by a check in this class, which could lose a race.
 ///     </description>
 ///   </item>
 /// </list>
 /// <para>
 /// Every decision, including every refusal, is written with an evidence document naming what
-/// decided it. §B.5.3 is blunt about why: when a customer disputes an attribution, that document is
+/// decided it. The reason is blunt: when a customer disputes an attribution, that document is
 /// the only defence.
 /// </para>
 /// </remarks>
@@ -221,7 +220,7 @@ public sealed partial class ResolveInstall
 
         AttributionRecord? stored = await _store.FindAttributionByInstallAsync(install.Id, cancellationToken);
 
-        // TC-143. A decision already exists, so this call re-reads it instead of making a new one.
+        // A decision already exists, so this call re-reads it instead of making a new one.
         if (stored is not null && !string.Equals(stored.MatchType, MatchTypeNames.None, StringComparison.Ordinal))
         {
             return new ResolveOutcome(await RespondAsync(stored, cancellationToken), ClaimCodeError: null);
@@ -310,7 +309,7 @@ public sealed partial class ResolveInstall
     /// The click identifier carries its own encrypted timestamp, so the lookup can bound
     /// <c>occurred_at</c> and the planner can prune the partitions of <c>click_events</c>. Without
     /// that bound the query touches every partition and its cost grows linearly with retention —
-    /// the silent debt §B.6.3 warns about, which only becomes visible half a year after launch.
+    /// a silent debt, which only becomes visible half a year after launch.
     /// </remarks>
     private async Task<StrategyOutcome> TryInstallReferrerAsync(
         ResolveRequestDto request,
@@ -586,8 +585,8 @@ public sealed partial class ResolveInstall
     /// <remarks>
     /// Past the window the answer is <c>none</c>, never a weak match. That is enforced twice: the
     /// candidate query only asks for clicks inside the window, and
-    /// <see cref="ProbabilisticScorer"/> returns exactly zero once the elapsed time reaches it
-    ///. The default window is sixty minutes rather than the seven days commercial vendors
+    /// <see cref="ProbabilisticScorer"/> returns exactly zero once the elapsed time reaches it.
+    /// The default window is sixty minutes rather than the seven days commercial vendors
     /// use, because beyond twenty-four hours a fingerprint match is more likely wrong than right.
     /// </remarks>
     private async Task<StrategyOutcome> TryProbabilisticAsync(
@@ -744,7 +743,7 @@ public sealed partial class ResolveInstall
                 return await RespondAsync(write.Record, cancellationToken);
 
             case AttributionOutcome.ClickAlreadyClaimed:
-                // TC-144: one click is worth one install, and the first one wins. The loser is told
+                // One click is worth one install, and the first one wins. The loser is told
                 // "none" and the refusal is recorded with the click identifier it wanted, in the
                 // evidence document rather than in the indexed column.
                 return await RecordLostClaimAsync(record, install, caller, now, cancellationToken);

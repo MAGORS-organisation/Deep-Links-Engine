@@ -1,7 +1,7 @@
 namespace Dle.ContractTests.OpenApi;
 
 /// <summary>
-/// The published-surface gate of §C.8: a breaking change to the control plane's contract fails the
+/// The published-surface gate: a breaking change to the control plane's contract fails the
 /// build here rather than surprising an integrator in production.
 /// </summary>
 /// <remarks>
@@ -90,7 +90,7 @@ public sealed class OpenApiContractBaselineTests
     [Fact]
     public void PublishedDocument_IsOpenApi31()
     {
-        // §B.7.3 names the version. It also decides how a nullable property is expressed — 3.1 uses a
+        // The published version is 3.1. It also decides how a nullable property is expressed — 3.1 uses a
         // type union, 3.0 used the `nullable` keyword — and every SDK generator branches on it.
         string version = _api.Document["openapi"]?.GetValue<string>() ?? string.Empty;
 
@@ -100,7 +100,7 @@ public sealed class OpenApiContractBaselineTests
     [Fact]
     public void PublishedDocument_DeclaresBothCredentialSchemes()
     {
-        // §E.2.1 TB2: the SDK key and the control-plane key are different credentials reaching
+        // The SDK key and the control-plane key are different credentials reaching
         // different surfaces. Publishing one scheme would invite an integrator to assume one token
         // opens everything.
         JsonObject schemes = _api.Contract["securitySchemes"] as JsonObject ?? [];

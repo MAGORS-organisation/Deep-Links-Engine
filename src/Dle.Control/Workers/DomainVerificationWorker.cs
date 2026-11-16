@@ -25,7 +25,7 @@ namespace Dle.Control.Workers;
 /// <c>application/json</c> to <c>text/html</c>, a certificate expires, a new build is signed with
 /// the upload certificate instead of the Play App Signing one. In every case deep links simply stop
 /// opening the application and start opening a browser. Nothing errors, nothing logs, and the
-/// customer's first signal is a drop in a conversion metric weeks later. §C.8 puts this on a
+/// customer's first signal is a drop in a conversion metric weeks later. The check runs on a
 /// nightly schedule for exactly that reason.
 /// </para>
 /// <para>
@@ -37,7 +37,7 @@ namespace Dle.Control.Workers;
 /// </para>
 /// <para>
 /// What this worker adds on top is the part only a scheduled pass can see. A host that stops
-/// resolving <em>after</em> it has verified successfully is the visible signature of T-04, subdomain
+/// resolving <em>after</em> it has verified successfully is the visible signature of a subdomain
 /// takeover: the customer pointed <c>link.customer.example</c> at a hosting provider with a CNAME,
 /// later removed the resource but left the record, and anybody who now claims that name at the
 /// provider inherits the domain — including its association files, which means they inherit the

@@ -7,18 +7,18 @@ using Dle.Control.Features.Webhooks;
 namespace Dle.ContractTests.Webhooks;
 
 /// <summary>
-/// The <c>DLE-Signature</c> and <c>DLE-Alg</c> header grammar of §B.7.4.
+/// The <c>DLE-Signature</c> and <c>DLE-Alg</c> header grammar.
 /// </summary>
 /// <remarks>
 /// <para>
-/// §B.7.4 prints the header as four members — <c>t=</c>, <c>v1=</c>, <c>v2=</c> and <c>kid=</c> — with
+/// The header has four members — <c>t=</c>, <c>v1=</c>, <c>v2=</c> and <c>kid=</c> — with
 /// <c>DLE-Alg: HS256+Ed25519</c> alongside. Every receiver in every language parses that by splitting
 /// on commas and on the first equals sign, so the member names, their separators and the encoding of
 /// their values are as much a wire contract as any JSON property.
 /// </para>
 /// <para>
 /// The forward-compatibility clause is asserted as well, because it is the whole reason the header has
-/// this shape. §E.5.3 plans a third slot, <c>v3=&lt;ML-DSA-65&gt;</c>. That is only a non-breaking
+/// this shape. A third slot, <c>v3=&lt;ML-DSA-65&gt;</c>, is planned. That is only a non-breaking
 /// change if today's parser already ignores members it does not recognise — so a test that an unknown
 /// member is tolerated is a test of the post-quantum migration path, not a test of a parser detail.
 /// </para>
@@ -26,7 +26,7 @@ namespace Dle.ContractTests.Webhooks;
 public sealed class WebhookSignatureGrammarTests
 {
     /// <summary>
-    /// The grammar of §B.7.4, as a receiver would implement it.
+    /// The header grammar, as a receiver would implement it.
     /// </summary>
     /// <remarks>
     /// Written independently of <see cref="WebhookSignature"/> on purpose. Parsing the product's
@@ -55,7 +55,7 @@ public sealed class WebhookSignatureGrammarTests
 
         Match match = Grammar.Match(header);
 
-        Assert.True(match.Success, "The produced header does not match the §B.7.4 grammar: " + header);
+        Assert.True(match.Success, "The produced header does not match the published grammar: " + header);
         Assert.Equal(Moment.ToUnixTimeSeconds().ToString(CultureInfo.InvariantCulture), match.Groups["t"].Value);
         Assert.True(match.Groups["v1"].Success, "The v1 slot is mandatory: it is the one every receiver starts with.");
     }
@@ -63,7 +63,7 @@ public sealed class WebhookSignatureGrammarTests
     [Fact]
     public void SignatureHeader_TimestampIsUnixSecondsNotMilliseconds()
     {
-        // §B.7.4 prints t=1756900000, which is seconds. A receiver comparing a millisecond value
+        // The published example is t=1756900000, which is seconds. A receiver comparing a millisecond value
         // against its own clock would reject every delivery as stale by fifty thousand years.
         string header = WebhookSignature.Create(Body, Secret, signer: null, Moment);
 
@@ -76,7 +76,7 @@ public sealed class WebhookSignatureGrammarTests
     public void SignatureHeader_V1IsBase64HmacSha256OverTimestampDotBody()
     {
         // The signing input is published as t + "." + body. Recomputing it here, from the
-        // specification rather than from the implementation, is what makes this a contract test: a
+        // published definition rather than from the implementation, is what makes this a contract test: a
         // receiver written against the documentation must arrive at the same bytes.
         string header = WebhookSignature.Create(Body, Secret, signer: null, Moment);
 
@@ -110,7 +110,7 @@ public sealed class WebhookSignatureGrammarTests
     [InlineData(null, false)]
     public void Parser_AcceptsAHeaderWithATimestampAndAtLeastOneSlot(string? header, bool expected)
     {
-        // The v3 case is the forward-compatibility clause of §E.5.3: an unknown member must be
+        // The v3 case is the forward-compatibility clause: an unknown member must be
         // ignored, not refused, or adding a post-quantum signature later breaks every receiver.
         Assert.Equal(expected, WebhookSignature.TryParse(header, out _));
     }
@@ -131,7 +131,7 @@ public sealed class WebhookSignatureGrammarTests
     [Fact]
     public void Parser_IsIndifferentToWhitespaceAndMemberOrder()
     {
-        // §B.7.4 prints the header wrapped over four lines, so a receiver will see the members in any
+        // The header may arrive wrapped over four lines, so a receiver will see the members in any
         // order and with arbitrary spacing after each comma.
         Assert.True(WebhookSignature.TryParse("kid=k_2026_09,v1=Zm9v,t=1756900000", out WebhookSignatureHeader compact));
         Assert.True(WebhookSignature.TryParse("t=1756900000,   v1=Zm9v ,  kid=k_2026_09", out WebhookSignatureHeader spaced));

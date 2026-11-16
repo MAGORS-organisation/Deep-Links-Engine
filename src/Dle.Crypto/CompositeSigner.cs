@@ -5,8 +5,8 @@ namespace Dle.Crypto;
 /// signature and an ML-DSA-65 signature over the same payload, both of which must verify.
 /// </summary>
 /// <remarks>
-/// This is the shape §E.5.3 names as the phase 2 default, and the reason it is hybrid rather than
-/// pure post-quantum is in §E.5.4: ANSSI and the EU roadmap both recommend hybrids precisely
+/// This is the shape meant to become the default in a later migration phase, and it is hybrid rather
+/// than pure post-quantum because ANSSI and the EU roadmap both recommend hybrids precisely
 /// because the lattice schemes are the less scrutinised half. A verifier that requires both
 /// signatures is no weaker than the stronger of the two, so adopting ML-DSA cannot regress
 /// security if the lattice assumption turns out to be wrong.

@@ -146,18 +146,17 @@ public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
         //      "WHERE quarantined_at IS NULL" index applicable and would simply ignore it.
         //   2. A quarantined link must still be found. Abuse handling answers it with 410 Gone and
         //      an explanation, not with 404: hiding the row would turn a withdrawn link into an
-        //      unknown one and destroy the distinction the DSA notice-and-action flow depends on
-        //.
+        //      unknown one and destroy the distinction the DSA notice-and-action flow depends on.
         //
         // Index-only scans additionally need a well maintained visibility map, which is why the
         // migration lowers autovacuum_vacuum_scale_factor on this table to 0.02.
         //
-        // The list is §B.5.2's plus the five columns the resolve statement in DapperLinkStore also
+        // The list is the minimal covering set plus the five columns the resolve statement in DapperLinkStore also
         // reads to build a LinkSnapshot: id (the click event's link), utm (appended to the target),
         // title (interstitial and Open Graph), campaign_id (attribution) and expired_url (the
-        // 302-to-a-farewell-page of TC-104). Covering means every column the statement touches;
+        // 302-to-a-farewell-page of an expired link). Covering means every column the statement touches;
         // one outside the list sends the whole lookup back to the heap, and the integration suite
-        // checks the plan of that exact statement rather than the spec's shorter one.
+        // checks the plan of that exact statement rather than a shorter one.
         builder.HasIndex(l => new { l.DomainId, l.Slug }, "ix_links_resolve")
             .HasDatabaseName("ix_links_resolve")
             .IncludeProperties(l => new

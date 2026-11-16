@@ -3,8 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Edge.Configuration;
 
 /// <summary>
-/// How much of a client address the click stream is allowed to carry, bound from <c>Dle:Privacy</c>
-///.
+/// How much of a client address the click stream is allowed to carry, bound from <c>Dle:Privacy</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -17,7 +16,7 @@ namespace Dle.Edge.Configuration;
 /// A raw address is never stored regardless of the setting: <see cref="ClickEvent"/> has no column
 /// for one, so <see cref="IpStorageModes.Full"/> means the same as
 /// <see cref="IpStorageModes.Prefix"/> here and exists only so the key is spelled the same way it is
-/// in §C.4.
+/// elsewhere in the configuration.
 /// </para>
 /// </remarks>
 public sealed class EdgePrivacyOptions

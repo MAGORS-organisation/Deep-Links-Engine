@@ -93,7 +93,7 @@ export function createFakeTarget(): {
 }
 
 /** Literal wire bodies transcribed from tests/Dle.ContractTests/Wire/SdkWireContractTests.cs. */
-export const B72 = {
+export const WIRE = {
   INSTALL_ID: '9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1',
   RESOLVE_REQUEST:
     '{"install_id":"9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1","platform":"android","app_version":"3.4.1","os_version":"15","referrer":"dl_cid%3DaB3xK9pQ%26utm_source%3Dfb","signals":{"language":"sk-SK","screen":"1080x2400","tz_offset":120},"consent":{"analytics":true,"attribution":true,"ts":"2026-09-03T10:00:00+00:00"}}',

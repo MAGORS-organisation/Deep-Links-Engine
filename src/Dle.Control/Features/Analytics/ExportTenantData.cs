@@ -12,8 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Dle.Control.Features.Analytics;
 
 /// <summary>
-/// <c>GET /api/v1/exports/tenant</c> — everything the engine holds for one tenant, as one archive
-///.
+/// <c>GET /api/v1/exports/tenant</c> — everything the engine holds for one tenant, as one archive.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -31,7 +30,7 @@ namespace Dle.Control.Features.Analytics;
 ///   <item>
 ///     <description>
 ///     <b>DORA article 30 exit plan.</b> A financial institution using this engine has to be able
-///     to demonstrate that it can leave. §E.6.4 says to build that as a product feature and a sales
+///     to demonstrate that it can leave. That is built as a product feature and a sales
 ///     argument rather than as a support process, and this is it: the exit plan is an HTTP request,
 ///     not a project.
 ///     </description>
@@ -230,7 +229,7 @@ public static class ExportTenantData
                 "installs.login_key_hash: the keyed account hash is omitted. It is a pseudonymous "
                     + "identifier of an end user and is not part of a tenant's own data.",
                 "click_events: the raw click stream is not in this archive. It is partitioned, it is "
-                    + "subject to the retention policy of FR-247, and it is exported through the "
+                    + "subject to the configured retention policy, and it is exported through the "
                     + "analytics export endpoint in CSV or Parquet.",
                 "signing_keys: engine key material, never a tenant's data.",
             ],

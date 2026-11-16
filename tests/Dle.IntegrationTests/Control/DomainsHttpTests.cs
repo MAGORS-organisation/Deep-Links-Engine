@@ -7,8 +7,8 @@ using Dle.Domain.Contracts;
 namespace Dle.IntegrationTests.Control;
 
 /// <summary>
-/// The domain routes of the control plane through HTTP against a real PostgreSQL (§B.4, FR-130 to
-/// FR-136): registering a host with its normalisation, the consent-mode override that may only
+/// The domain routes of the control plane through HTTP against a real PostgreSQL: registering a
+/// host with its normalisation, the consent-mode override that may only
 /// tighten the tenant's mode, the one-host-one-tenant rule, the refusal to delete a host that still
 /// serves links, and verification runs that record what DNS and the association files answered.
 /// </summary>

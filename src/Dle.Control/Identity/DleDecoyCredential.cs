@@ -13,7 +13,7 @@ namespace Dle.Control.Identity;
 /// Without it, an unknown key prefix would be refused after one indexed lookup while a known one
 /// would be refused after a full Argon2id verification. The difference is tens of milliseconds and
 /// is trivially measurable over a few samples, which turns the endpoint into an oracle telling an
-/// attacker exactly which prefixes exist — the enumeration T-07 is about.
+/// attacker exactly which prefixes exist — key enumeration by timing.
 /// </para>
 /// <para>
 /// The secret is random per process and never leaves it, so the decoy verification can only ever

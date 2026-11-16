@@ -27,8 +27,7 @@ public class App
     /// SHA-256 fingerprints of the Play App Signing key. Kept separately from
     /// <see cref="CertFingerprints"/> because publishing the upload certificate instead of the
     /// signing certificate is the single most common reason Android app links silently stop
-    /// working, and the validator can only warn about it if it can tell the two apart (FR-144,
-    /// TC-123).
+    /// working, and the validator can only warn about it if it can tell the two apart.
     /// </summary>
     public List<string> PlaySigningFingerprints { get; set; } = [];
 

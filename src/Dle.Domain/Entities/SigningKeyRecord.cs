@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// One signing key in the ring. Maps to <c>signing_keys</c> (§E.4.2, ADR-013, K7 in §E.4.1).
+/// One signing key in the ring. Maps to <c>signing_keys</c>.
 /// </summary>
 /// <remarks>
 /// Rotation is the reason this is a table rather than a configuration value. The verifier accepts

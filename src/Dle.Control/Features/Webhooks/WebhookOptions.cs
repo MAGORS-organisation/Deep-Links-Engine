@@ -11,11 +11,10 @@ namespace Dle.Control.Features.Webhooks;
 /// minutes must not lose its deliveries, and a customer endpoint that is down for two days must
 /// not be able to hold the queue hostage. Exponential backoff with jitter and a bounded attempt
 /// count is how both are true at once; what is left over lands in the dead letter queue, which is
-/// visible as <c>dle_webhook_dlq_size</c> precisely so that a silent loss becomes a loud one
-///.
+/// visible as <c>dle_webhook_dlq_size</c> precisely so that a silent loss becomes a loud one.
 /// </para>
 /// <para>
-/// The tolerance is five minutes, matching §B.7.4 and T-13. It is published here rather than
+/// The tolerance is five minutes. It is published here rather than
 /// hidden in the signer because the receiver has to apply the same number: a timestamp older than
 /// the tolerance must be refused by the receiver even when the signature verifies, or the
 /// signature is a replayable token rather than a proof of freshness.
@@ -81,7 +80,7 @@ public sealed class WebhookOptions
 
     /// <summary>Largest number of subscriptions one tenant may register.</summary>
     /// <remarks>
-    /// A soft quota in the sense of §E.9: exceeding it blocks creating another subscription and
+    /// A soft quota: exceeding it blocks creating another subscription and
     /// never blocks a delivery that already exists.
     /// </remarks>
     [Range(1, 1000)]

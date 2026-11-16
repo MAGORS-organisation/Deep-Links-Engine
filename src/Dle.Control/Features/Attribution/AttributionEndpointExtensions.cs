@@ -22,7 +22,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// The SDK facing endpoints. Component C-06 of §B.3.
+/// The SDK facing endpoints.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -30,18 +30,18 @@ namespace Microsoft.AspNetCore.Builder;
 /// operated by people with credentials that can change configuration; these are called by an
 /// application binary on a device, with a key that anybody who downloads the application can
 /// extract. Different prefix, different authentication scheme, different limits — the separation
-/// is §E.2.1 trust boundary TB2 made structural.
+/// is the trust boundary between the two made structural.
 /// </para>
 /// <para>
 /// Both SDK routes read and write through the source generated
 /// <see cref="AttributionJsonContext"/> rather than through the framework's binder. That is what
-/// SHARED-KERNEL §17.3 asks for on a path that is allowed sixty calls a minute per installation,
+/// a path that is allowed sixty calls a minute per installation needs (no reflection on the hot path),
 /// and it also pins the wire format to snake_case in this module regardless of what any other
 /// slice configures globally.
 /// </para>
 /// <para>
-/// Both take their rate limit lease <em>after</em> the body is parsed, because §E.9 keys both
-/// limits on <c>install_id</c> and that value arrives in the body. The rate limiting middleware
+/// Both take their rate limit lease <em>after</em> the body is parsed, because both
+/// limits are keyed on <c>install_id</c> and that value arrives in the body. The rate limiting middleware
 /// runs long before a body is read, so a middleware policy would have to buffer and parse every
 /// request just to find its partition key — exactly the work the limit exists to prevent.
 /// </para>
@@ -61,11 +61,11 @@ public static class AttributionEndpointExtensions
     {
         ArgumentNullException.ThrowIfNull(app);
 
-        // The SDK routes carry their own §E.9 limiters, keyed on install_id and acquired inside the
+        // The SDK routes carry their own limiters, keyed on install_id and acquired inside the
         // handlers because that value arrives in the body. The middleware's safety net is switched
         // off for them deliberately: it partitions by credential, and one SDK key is shared by every
         // installation of an application, so a tenant-wide request budget would throttle a hundred
-        // thousand devices against a limit §E.9 defines per device.
+        // thousand devices against a limit defined per device.
         RouteGroupBuilder sdk = app.MapGroup("/v1")
             .WithTags("SDK")
             .RequireCors(ControlCoreServiceCollectionExtensions.SdkCorsPolicy)
@@ -127,7 +127,7 @@ public static class AttributionEndpointExtensions
             .WithName("IssueClaimCode")
             .WithSummary("Issues the six characters an interstitial page shows the user.")
             .WithDescription(
-                "The deterministic iOS path of ADR-008. The edge has just written a click event "
+                "The deterministic iOS attribution path. The edge has just written a click event "
                 + "and exchanges its identifier for a short lived, single use code the user can "
                 + "read off the screen and type into the application. Only the "
                 + "keyed hash of the code is stored; the plaintext exists in this response and "
@@ -161,10 +161,10 @@ public static class AttributionEndpointExtensions
     /// <summary>Handles <c>POST /v1/resolve</c>.</summary>
     /// <param name="context">The request.</param>
     /// <param name="resolve">The engine.</param>
-    /// <param name="limiters">The §E.9 limiters.</param>
+    /// <param name="limiters">The SDK rate limiters.</param>
     /// <param name="metrics">Instruments.</param>
     /// <param name="options">Attribution options.</param>
-    /// <param name="limits">The configured §E.9 limits, quoted back in the refusal.</param>
+    /// <param name="limits">The configured rate limits, quoted back in the refusal.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The answer, or a problem document.</returns>
     private static async Task<IResult> ResolveAsync(
@@ -261,10 +261,10 @@ public static class AttributionEndpointExtensions
     /// <summary>Handles <c>POST /v1/events</c>.</summary>
     /// <param name="context">The request.</param>
     /// <param name="events">The use case.</param>
-    /// <param name="limiters">The §E.9 limiters.</param>
+    /// <param name="limiters">The SDK rate limiters.</param>
     /// <param name="metrics">Instruments.</param>
     /// <param name="options">Attribution options.</param>
-    /// <param name="limits">The configured §E.9 limits, which bound the batch size.</param>
+    /// <param name="limits">The configured rate limits, which bound the batch size.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>202 with the accepted and rejected counts, or a problem document.</returns>
     private static async Task<IResult> RecordAsync(
@@ -332,7 +332,7 @@ public static class AttributionEndpointExtensions
         }
 
         // One permit per event, not one per request. Sixty requests a minute carrying a hundred
-        // events each would be six thousand events a minute, which is not the limit §E.9 intends.
+        // events each would be six thousand events a minute, which is not what the limit intends.
         using RateLimitLease lease = await limiters.AcquireEventsAsync(
             batch.InstallId,
             batch.Events.Count,
@@ -363,7 +363,7 @@ public static class AttributionEndpointExtensions
     /// <param name="context">The request.</param>
     /// <param name="claimCodes">Claim code issuance.</param>
     /// <param name="store">The attribution store used to verify link existence.</param>
-    /// <param name="limiters">The §E.9 limiters.</param>
+    /// <param name="limiters">The SDK rate limiters.</param>
     /// <param name="options">Attribution options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>201 with the code, or a problem document.</returns>

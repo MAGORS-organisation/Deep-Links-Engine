@@ -69,7 +69,7 @@ public sealed class WebhookSignatureTests
     }
 
     /// <summary>
-    /// TC-165. One byte of the body is changed. Both signatures have to fail, because either one on
+    /// One byte of the body is changed. Both signatures have to fail, because either one on
     /// its own is what an integrator will rely on.
     /// </summary>
     [Fact]

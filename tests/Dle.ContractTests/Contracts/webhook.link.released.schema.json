@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DLE webhook payload: link.released",
-  "description": "A quarantined link was returned to service after a successful appeal. Envelope per docs/zadanie.md B.7.4.",
+  "description": "A quarantined link was returned to service after a successful appeal.",
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -6,7 +6,7 @@ using Dle.Domain.Ports;
 namespace Dle.IntegrationTests.Persistence;
 
 /// <summary>
-/// The pruning §B.6.3 calls the critical detail: a click lookup bounded by the timestamp its own
+/// Partition pruning, the critical detail: a click lookup bounded by the timestamp its own
 /// identifier carries touches one or two partitions, not the whole retention.
 /// </summary>
 /// <remarks>
@@ -16,7 +16,7 @@ namespace Dle.IntegrationTests.Persistence;
 /// partition's index — a hundred and eighty of them at full retention. The cost therefore grows with
 /// how long the system has been running, which makes it invisible in every test written before the
 /// first partitions age out and visible in production about six months after launch. That is the
-/// silent debt §B.6.3 warns about, and the bounded window is the whole remedy.
+/// silent debt to avoid, and the bounded window is the whole remedy.
 /// </para>
 /// <para>
 /// The bound is not guessed by the caller: the click identifier carries its own encrypted timestamp,
@@ -63,7 +63,7 @@ public sealed partial class PartitionPruningTests(DleInfrastructureFixture infra
             string.Create(
                 CultureInfo.InvariantCulture,
                 $"A bounded click lookup touched {touched.Count} partitions ({string.Join(", ", touched)}), "
-                + $"and §B.6.3 requires one or two. The plan was:\n{plan}"));
+                + $"and it must touch one or two. The plan was:\n{plan}"));
     }
 
     [RequiresDockerFact]
@@ -162,7 +162,7 @@ public sealed partial class PartitionPruningTests(DleInfrastructureFixture infra
     /// <remarks>
     /// The days are derived from the server's own clock rather than from the test process's, because
     /// the partitions were created by the migration against that same clock. Reading it is not the
-    /// ambient wall-clock dependency SHARED-KERNEL §17.2 forbids: it is reading a value out of the
+    /// forbidden ambient wall-clock dependency: it is reading a value out of the
     /// system under test.
     /// </remarks>
     private async Task<Fixture> SeedAcrossDaysAsync()

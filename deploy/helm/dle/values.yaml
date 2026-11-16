@@ -1,5 +1,5 @@
 # =============================================================================
-# Deep Link Engine (DLE) — Helm chart values (Profile B, docs/zadanie.md §B.8).
+# Deep Link Engine (DLE) — Helm chart values (Kubernetes).
 #
 #   CDN/WAF → Ingress → dle-edge (HPA 3–20)      ┐
 #                     → dle-control (2 replicas)  ├→ PostgreSQL primary + read replicas
@@ -122,7 +122,7 @@ secrets:
 externalPostgres:
   connectionString: ""
   # ConnectionStrings:PostgresRead — the edge moves link lookups and well-known reads to this
-  # replica (§B.8 profile B: "edge reads from a replica"). Empty = the edge reads the primary.
+  # replica. Empty = the edge reads the primary.
   # Point it at a read-only service (CloudNativePG `<cluster>-ro`, RDS reader endpoint, ...).
   readConnectionString: ""
 
@@ -170,7 +170,7 @@ postgresql:
 # round of L1 misses. Optional: without a connection string the edge runs on L1 + PostgreSQL.
 # -----------------------------------------------------------------------------
 # StackExchange.Redis connection string, e.g.  valkey.cache.svc:6379  or, for a cluster,
-# node-0:6379,node-1:6379,node-2:6379,password=...,ssl=true  (§B.8: three shards in production).
+# node-0:6379,node-1:6379,node-2:6379,password=...,ssl=true  (three shards in production).
 
 externalValkey:
   connectionString: ""
@@ -198,7 +198,7 @@ valkey:
 
 
 # -----------------------------------------------------------------------------
-# ClickHouse (optional analytics store; control plane only, §B.8 "ClickHouse (optional)")
+# ClickHouse (optional analytics store; control plane only)
 # -----------------------------------------------------------------------------
 
 externalClickHouse:
@@ -236,7 +236,7 @@ edge:
   # Used only while autoscaling.enabled is false.
   replicaCount: 3
 
-  # NFR-10: the whole Profile A stack fits 2 vCPU / 4 GB and an edge replica is limited to
+  # The whole Docker Compose stack fits 2 vCPU / 4 GB and an edge replica is limited to
   # 0.75 CPU / 384 Mi there (~500 req/s each). Requests are what the HPA divides by, so keep them
   # honest: 250m CPU ≈ the utilisation floor at which a pod is worth its scheduling slot.
   resources:
@@ -259,9 +259,9 @@ edge:
     rps:
       enabled: false
       metricName: http_server_requests_per_second
-      # Per-pod average. ~500 req/s is what one 0.75-CPU replica sustains (NFR-10 sizing).
+      # Per-pod average. ~500 req/s is what one 0.75-CPU replica sustains (Docker Compose sizing).
       targetAverageValue: "400"
-    # §D.6: a 10× traffic step must not push p99 above 200 ms while scaling. Scale up eagerly,
+    # A 10× traffic step must not push p99 above 200 ms while scaling. Scale up eagerly,
     # scale down slowly.
     behavior:
       scaleUp:
@@ -290,7 +290,7 @@ edge:
 
   probes:
     # Liveness runs NO dependency checks by design (a database blip must never restart every
-    # replica at once). Readiness on the edge is /healthz too: NFR-06 / §D.6 require resolves to
+    # replica at once). Readiness on the edge is /healthz too: resolves must
     # keep working from cache while PostgreSQL is down, so a probe that fails on the database
     # would pull the whole fleet out of rotation at exactly the wrong moment. The edge also
     # exposes /readyz, which reports GeoIP or analytics trouble as "degraded" rather than failing;
@@ -392,7 +392,7 @@ edge:
 # -----------------------------------------------------------------------------
 
 control:
-  # §B.8 profile B: two pods.
+  # Two pods.
   replicaCount: 2
 
   resources:
@@ -513,7 +513,7 @@ migrate:
 # Ingress
 # -----------------------------------------------------------------------------
 # Routes on `host` (mirrors deploy/Caddyfile):
-#   /.well-known/jwks.json                       → control (public signing keys, §B.7)
+#   /.well-known/jwks.json                       → control (public signing keys)
 #   /.well-known/*                               → edge    (AASA, assetlinks.json)
 #   /api /v1 /admin /scalar /openapi             → control
 #   everything else, i.e. /{slug}, /{slug}/qr    → edge
@@ -574,7 +574,7 @@ ingress:
 # Network policy (on by default)
 # -----------------------------------------------------------------------------
 # edge:    ingress only from the ingress controller (and Prometheus when serviceMonitor.enabled);
-#          egress ONLY to cluster DNS, PostgreSQL and Valkey — NFR-14: no outbound call to any
+#          egress ONLY to cluster DNS, PostgreSQL and Valkey: no outbound call to any
 #          third party from the resolve path. Add an OTLP collector via edge.extraEgress.
 # control: ingress only from the ingress controller; egress unrestricted by default because the
 #          control plane delivers webhooks to tenant URLs and validates OIDC metadata.

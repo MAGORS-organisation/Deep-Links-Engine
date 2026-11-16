@@ -5,13 +5,13 @@ using Xunit;
 namespace Dle.UnitTests.Abuse;
 
 /// <summary>
-/// TC-161 and TC-162, threats T-01 and T-02. A link shortener is an SSRF primitive and an XSS
+/// A link shortener is an SSRF primitive and an XSS
 /// primitive unless the target is constrained at write time. Everything below is a rejection the
 /// product depends on, not a nicety.
 /// </summary>
 public sealed class TargetUrlPolicyTests
 {
-    // ================================================================ TC-161: dangerous schemes
+    // ================================================================ dangerous schemes
 
     [Theory]
     [InlineData("javascript:alert(1)")]
@@ -136,7 +136,7 @@ public sealed class TargetUrlPolicyTests
         Assert.Contains("credentials", verdict.Reason!, StringComparison.OrdinalIgnoreCase);
     }
 
-    // ================================================================ TC-162: forbidden addresses
+    // ================================================================ forbidden addresses
 
     [Theory]
     [InlineData("http://169.254.169.254/latest/meta-data/")]          // AWS / Azure / DO metadata

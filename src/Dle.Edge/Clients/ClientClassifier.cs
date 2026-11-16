@@ -15,7 +15,7 @@ namespace Dle.Edge.Clients;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The classification budget in §B.6.1 is 1.5 ms for user agent parsing and the geographic lookup
+/// The classification budget is 1.5 ms for user agent parsing and the geographic lookup
 /// together, out of a 5.5 ms p50. User agent parsing is a cascade of regular expressions and would
 /// eat most of that on its own, so the parse result is memoised: real traffic sends a few thousand
 /// distinct user agent strings, and the same handful account for the overwhelming majority of
@@ -31,7 +31,7 @@ namespace Dle.Edge.Clients;
 /// <para>
 /// Crawler <em>detection</em> happens here, crawler <em>confirmation</em> does not: confirming a
 /// claim needs DNS, and this interface is synchronous by contract. The pipeline calls
-/// <see cref="IBotVerifier"/> afterwards and rewrites the two flags, which is what TC-107 checks.
+/// <see cref="IBotVerifier"/> afterwards and rewrites the two flags.
 /// </para>
 /// </remarks>
 public sealed class ClientClassifier : IClientClassifier
@@ -319,7 +319,7 @@ public sealed class ClientClassifier : IClientClassifier
     /// Reduces the referrer to its host.
     /// </summary>
     /// <remarks>
-    /// Only the host is ever kept. SHARED-KERNEL §17.5 forbids retaining a full referrer, which can
+    /// Only the host is ever kept. A full referrer is never retained, because it can
     /// carry a path and a query string belonging to a page the visitor was reading, and the host is
     /// the only part any report or routing rule uses.
     /// </remarks>

@@ -103,7 +103,7 @@ public static class CreateWebhook
 
         if (existing >= current.MaxSubscriptionsPerTenant)
         {
-            // A soft quota in the sense of §E.9: it blocks creating another subscription and never
+            // A soft quota: it blocks creating another subscription and never
             // blocks a delivery of one that already exists.
             return DleProblemResults.Conflict(
                 ProblemCodes.RateLimited,

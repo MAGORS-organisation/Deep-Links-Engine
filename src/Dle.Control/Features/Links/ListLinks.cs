@@ -8,8 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Links;
 
 /// <summary>
-/// <c>GET /api/v1/links</c> and <c>GET /api/v1/links/{id}</c> — search, tag filter and paging
-///.
+/// <c>GET /api/v1/links</c> and <c>GET /api/v1/links/{id}</c> — search, tag filter and paging.
 /// </summary>
 /// <remarks>
 /// Paging is by cursor rather than by page number. A link list is ordered newest first and is
@@ -114,8 +113,7 @@ public static class ListLinks
     /// <returns>200 with the link, or 404.</returns>
     /// <remarks>
     /// A link belonging to another tenant is not in the queryable at all, so it arrives here as an
-    /// ordinary miss and leaves as 404 — never 403, which would confirm the identifier exists
-    ///.
+    /// ordinary miss and leaves as 404 — never 403, which would confirm the identifier exists.
     /// </remarks>
     public static async Task<IResult> GetAsync(
         string id,

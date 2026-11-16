@@ -1,5 +1,5 @@
 # =============================================================================
-# Release — on a `v*` tag (requirement S-06, threat T-14).
+# Release — on a `v*` tag.
 #
 #   version ─┬─ ci (reusable: build, format, all four suites, coverage gate)
 #            ├─ sbom (reusable: SBOM ×3 + CBOM, schema-validated)
@@ -334,7 +334,7 @@ jobs:
           skip-setup-trivy: true
 
       - name: Smoke — edge stays up with PostgreSQL down, control reports not-ready
-        # The edge serves from cache and must not fall over with the database (§B.8, chaos tests
+        # The edge serves from cache and must not fall over with the database (chaos tests
         # in Dle.IntegrationTests); /readyz on control gates on the database and must say so.
         run: |
           docker compose $COMPOSE_FILES stop postgres
@@ -364,7 +364,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: k6 — §D.5 resolve profile against the staging target
+      - name: k6 — resolve load profile against the staging target
         id: k6
         env:
           DLE_CONTROL_URL: ${{ secrets.DLE_LOADTEST_CONTROL_URL }}
@@ -373,7 +373,7 @@ jobs:
           DLE_LINK_HOST: ${{ secrets.DLE_LOADTEST_LINK_HOST }}
         run: |
           if [ "$HAS_LOADTEST_TARGET" != "true" ]; then
-            echo "::warning title=k6 load profile skipped::DLE_LOADTEST_* secrets are not configured; no §D.5 evidence for this tag. The GitHub release will be marked pre-release."
+            echo "::warning title=k6 load profile skipped::DLE_LOADTEST_* secrets are not configured; no load-test evidence for this tag. The GitHub release will be marked pre-release."
             echo "result=skipped" >> "$GITHUB_OUTPUT"
             { echo "### k6 load profile"; echo; echo "**SKIPPED** — no staging target configured (DLE_LOADTEST_CONTROL_URL / API_KEY / DOMAIN_ID / LINK_HOST). Release is marked pre-release."; } >> "$GITHUB_STEP_SUMMARY"
             exit 0
@@ -522,9 +522,9 @@ jobs:
             echo "- Trivy (CRITICAL/HIGH with a fix available) against the released images (linux/amd64): passed; SLSA provenance and per-image SBOM attached to each index"
             echo "- Compose smoke and OWASP ZAP baseline against the released images: passed"
             if [ "$LOADTEST" = "ran" ]; then
-              echo "- k6 §D.5 resolve profile: passed (thresholds in tests/load/resolve.js)"
+              echo "- k6 resolve load profile: passed (thresholds in tests/load/resolve.js)"
             else
-              echo "- k6 §D.5 resolve profile: **NOT RUN** (no staging target configured) — this release is marked pre-release for that reason"
+              echo "- k6 resolve load profile: **NOT RUN** (no staging target configured) — this release is marked pre-release for that reason"
             fi
             echo
           } > notes.md

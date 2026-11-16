@@ -335,7 +335,7 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
         Fixture fixture = await SeedAsync("templates-apply");
         using HttpClient client = fixture.Host.CreateDirectClient();
 
-        // FR-108: a template is a campaign's prefilled UTM parameters and routing rules. The
+        // A template is a campaign's prefilled UTM parameters and routing rules. The
         // target stays the caller's: every link still names where it goes.
         using HttpResponseMessage template = await fixture.Key.PostRawAsync(
             client,

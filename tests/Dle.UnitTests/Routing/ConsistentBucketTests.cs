@@ -5,7 +5,7 @@ using Xunit;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// FR-125: the A/B bucket is derived from the click id, never from a random source. If the mapping
+/// The A/B bucket is derived from the click id, never from a random source. If the mapping
 /// were not stable, one visitor could see variant A on the interstitial and variant B in the store
 /// referrer, and the experiment would be unreadable.
 /// </summary>

@@ -28,10 +28,10 @@ using Xunit;
 namespace Dle.UnitTests.Edge;
 
 /// <summary>
-/// The resolve pipeline of §B.6.1 driven directly, with fakes in place of the store, the crawler
+/// The resolve pipeline driven directly, with fakes in place of the store, the crawler
 /// confirmation and the click sink. There is no server and no network here: the point is the two
-/// decisions that cannot be observed from the outside — what a forged crawler claim is turned into
-///, and whether two different reasons for a 404 are distinguishable.
+/// decisions that cannot be observed from the outside — what a forged crawler claim is turned into,
+/// and whether two different reasons for a 404 are distinguishable.
 /// </summary>
 [SuppressMessage(
     "Reliability",
@@ -117,7 +117,7 @@ public sealed class SpoofedCrawlerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// TC-107. A user agent claiming to be Googlebot whose reverse DNS does not confirm the claim is
+    /// A user agent claiming to be Googlebot whose reverse DNS does not confirm the claim is
     /// served as the ordinary browser it actually is — a redirect, not an Open Graph document — and
     /// the click is recorded with <c>is_bot=false</c> and <c>spoofed_bot=true</c>. Both halves
     /// matter: a forged user agent must not be a free switch for keeping clicks out of, or pushing
@@ -144,7 +144,7 @@ public sealed class SpoofedCrawlerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The other half of TC-107: a claim the verifier does confirm keeps its crawler treatment — an
+    /// The other half: a claim the verifier does confirm keeps its crawler treatment — an
     /// Open Graph document and <c>is_bot=true</c>.
     /// </summary>
     [Fact]
@@ -168,7 +168,7 @@ public sealed class SpoofedCrawlerTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// TC-102 and TC-166. A slug that never existed and a slug whose link lives on another tenant's
+    /// A slug that never existed and a slug whose link lives on another tenant's
     /// host must produce the same answer — the same status and the same bytes — because anything
     /// else is an oracle that says which slugs exist.
     /// </summary>
@@ -245,7 +245,7 @@ public sealed class SpoofedCrawlerTests : IAsyncLifetime
 
         RenderedPage page = await ResolveAsync("go.example", "abc123", BrowserUserAgent, preview: true);
 
-        // FR-166: the whole pipeline runs, and the campaign's numbers do not move.
+        // A preview request: the whole pipeline runs, and the campaign's numbers do not move.
         Assert.Equal(StatusCodes.Status302Found, page.Status);
         Assert.Empty(_sink.Events);
     }
@@ -258,7 +258,7 @@ public sealed class SpoofedCrawlerTests : IAsyncLifetime
 
         RenderedPage page = await ResolveAsync("go.example", "abc123", BrowserUserAgent);
 
-        // §D.6: an unavailable dependency is 503, because that is a difference every load balancer
+        // An unavailable dependency is 503, because that is a difference every load balancer
         // and every client retry policy acts on.
         Assert.Equal(StatusCodes.Status503ServiceUnavailable, page.Status);
     }
@@ -329,7 +329,7 @@ public sealed class SpoofedCrawlerTests : IAsyncLifetime
         return new RenderedPage(context.Response.StatusCode, context.Response.Headers, body.ToArray());
     }
 
-    /// <summary>Captures what the pipeline decided to record, which is half of TC-107.</summary>
+    /// <summary>Captures what the pipeline decided to record, which is half of the spoofed-crawler case.</summary>
     private sealed class RecordingClickSink : IClickEventSink
     {
         private readonly List<ClickEvent> _events = [];

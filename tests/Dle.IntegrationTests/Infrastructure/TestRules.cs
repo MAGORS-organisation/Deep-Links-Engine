@@ -28,7 +28,7 @@ public static class TestRules
     public static string WebDefault() => ToJson(DefaultWeb());
 
     /// <summary>
-    /// The set TC-101 needs: iOS goes to the App Store, everything else falls through to the web.
+    /// iOS goes to the App Store, everything else falls through to the web.
     /// </summary>
     /// <param name="storeUrl">The App Store URL, carrying its <c>pt</c> and <c>ct</c> parameters.</param>
     /// <param name="deeplinkPath">Path handed to the application when it is installed.</param>

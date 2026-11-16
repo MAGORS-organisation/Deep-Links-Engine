@@ -52,7 +52,7 @@ public sealed record UpdateAppRequest
 /// The secret appears here and nowhere else, exactly as for a control-plane key. Unlike one, this
 /// key ships inside an APK or IPA and must be assumed extractable, which is why the scheme it
 /// authenticates carries a policy that reaches only the two SDK ingestion routes and can never write
-/// configuration (§E.2.1, TB2).
+/// configuration.
 /// </remarks>
 public sealed record SdkKeyCreatedResponse
 {

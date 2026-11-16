@@ -30,7 +30,7 @@ public sealed class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
             .IsRequired();
 
         // Argon2id output. Compared with CryptographicOperations.FixedTimeEquals, never with
-        // equality (shared kernel §17.6).
+        // equality.
         builder.Property(k => k.Hash)
             .HasColumnName("hash")
             .IsRequired();

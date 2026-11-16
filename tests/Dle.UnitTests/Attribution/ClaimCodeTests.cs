@@ -4,7 +4,7 @@ using Xunit;
 namespace Dle.UnitTests.Attribution;
 
 /// <summary>
-/// FR-184 and TC-148. The claim code is read off an interstitial by a human and typed into an
+/// The claim code is read off an interstitial by a human and typed into an
 /// application, so the alphabet deliberately omits every confusable glyph. "O" must not be silently
 /// mapped onto "0": the code the user reads never contains either, and a quiet mapping would turn a
 /// typo into someone else's attribution.

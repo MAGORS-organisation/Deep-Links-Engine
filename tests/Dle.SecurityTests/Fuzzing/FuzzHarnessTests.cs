@@ -122,9 +122,9 @@ public sealed class FuzzHarnessTests
     [Trait("Tool", "fuzz")]
     public void RoutingRules_SurvivesMutationsOfRealDocuments()
     {
-        // T-12. Random bytes never reach the object graph; a mutated real document does, which is the
-        // only way the deserializer's own branches — a wrong member type, a missing required member, a
-        // nested object where a scalar was declared — get exercised at all.
+        // Deserialization attacks. Random bytes never reach the object graph; a mutated real document
+        // does, which is the only way the deserializer's own branches — a wrong member type, a missing
+        // required member, a nested object where a scalar was declared — get exercised at all.
         Gen.Select(Gen.Int[0, RoutingRuleSeeds.Length - 1], Gen.Int[0, 4095], Gen.Byte).Sample(
             mutation =>
             {
@@ -163,9 +163,9 @@ public sealed class FuzzHarnessTests
     [Trait("Tool", "fuzz")]
     public void UserAgent_SurvivesMutationsOfRealHeaders()
     {
-        // T-10 through the classifier: the header is attacker chosen, the parser is a set of compiled
-        // regular expressions, and catastrophic backtracking on a hot path is a denial of service that
-        // costs the attacker one request.
+        // Regular-expression denial of service through the classifier: the header is attacker chosen,
+        // the parser is a set of compiled regular expressions, and catastrophic backtracking on a hot
+        // path is a denial of service that costs the attacker one request.
         // The hang threshold is about steady-state parsing, not about the one-off cost of the parser
         // compiling its regular-expression set on first use, which on a cold two-vCPU CI runner has
         // been measured above the threshold. Pay that cost once, outside the timed loop.

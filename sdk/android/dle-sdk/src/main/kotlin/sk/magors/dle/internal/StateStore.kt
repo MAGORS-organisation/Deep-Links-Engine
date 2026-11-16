@@ -88,7 +88,7 @@ internal data class CachedResolve(
  *
  * `SharedPreferences` backed with JSON values, so a field added later is ignored by an older SDK
  * and defaulted by a newer one. Every write is committed synchronously: a resolve that ran but
- * was not remembered would run again on the next launch, which is exactly what TC-143 forbids.
+ * was not remembered would run again on the next launch, and a resolve must run only once.
  *
  * @param prefs the backing store, a private file of the SDK.
  * @param json the serializer.

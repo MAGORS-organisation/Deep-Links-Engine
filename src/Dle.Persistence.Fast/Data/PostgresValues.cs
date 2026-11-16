@@ -4,7 +4,7 @@ using System.Net;
 namespace Dle.Persistence.Fast.Data;
 
 /// <summary>
-/// Conversions between Postgres column values and the shared-kernel types, done by hand.
+/// Conversions between Postgres column values and the shared kernel types, done by hand.
 /// </summary>
 /// <remarks>
 /// <para>

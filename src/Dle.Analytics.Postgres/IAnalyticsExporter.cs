@@ -43,7 +43,7 @@ public interface IAnalyticsExporter
         IReadOnlyList<BreakdownRow> rows,
         CancellationToken ct);
 
-    /// <summary>Writes the attribution quality report behind the ADR-008 dashboard panel.</summary>
+    /// <summary>Writes the attribution quality report behind the dashboard panel.</summary>
     /// <param name="destination">Stream to write to. Left open.</param>
     /// <param name="rows">The rows, in the order the store returned them.</param>
     /// <param name="ct">Cancellation token.</param>

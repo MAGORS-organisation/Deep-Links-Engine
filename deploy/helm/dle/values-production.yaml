@@ -1,5 +1,5 @@
 # =============================================================================
-# Deep Link Engine (DLE) — production overrides for Profile B.
+# Deep Link Engine (DLE) — production overrides for Kubernetes.
 #
 #   helm upgrade --install dle deploy/helm/dle -n dle --create-namespace \
 #     -f deploy/helm/dle/values-production.yaml --set ingress.host=go.example.com
@@ -38,7 +38,7 @@ config:
     consentMode: aggregate_only
     ipStorage: hash_only
   telemetry:
-    # An OpenTelemetry Collector on YOUR network (§B.8: OTel collector → Prometheus/Grafana/Tempo).
+    # An OpenTelemetry Collector on YOUR network (OTel collector → Prometheus/Grafana/Tempo).
     # The edge's egress policy must allow it: see networkPolicy.edge.extraEgress below.
     otlpEndpoint: ""      # e.g. http://otel-collector.observability.svc:4317
 
@@ -70,7 +70,7 @@ edge:
       # One hop = the ingress controller. +1 for each CDN/WAF/L7 balancer in front that appends.
       forwardLimit: 2
     geoIp:
-      # A PVC you fill with the MaxMind mmdb yourself (never downloaded by the edge, NFR-14).
+      # A PVC you fill with the MaxMind mmdb yourself (never downloaded by the edge: no third-party egress).
       existingClaim: ""   # e.g. dle-geoip
       path: ""            # e.g. /geoip/GeoLite2-Country.mmdb
     botDetection:
@@ -153,7 +153,7 @@ networkPolicy:
     namespaceSelector: {}
     podSelector: {}
   edge:
-    # The OTLP collector, if config.telemetry.otlpEndpoint is set. Nothing else: NFR-14.
+    # The OTLP collector, if config.telemetry.otlpEndpoint is set. Nothing else: no third-party egress.
     extraEgress: []
     #  - to:
     #      - namespaceSelector:

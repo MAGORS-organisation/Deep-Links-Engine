@@ -1,8 +1,7 @@
 namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
-/// Response to <c>POST /api/v1/webhooks</c>. The shared secret appears here and nowhere else
-/// (§B.5.2, §E.4.1 K4).
+/// Response to <c>POST /api/v1/webhooks</c>. The shared secret appears here and nowhere else.
 /// </summary>
 /// <remarks>
 /// Shown exactly once, like an API key. The stored copy is encrypted and the engine needs it to

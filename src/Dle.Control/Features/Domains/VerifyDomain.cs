@@ -8,8 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Domains;
 
 /// <summary>
-/// <c>POST /api/v1/domains/{id}/verify</c> and <c>GET /api/v1/domains/{id}/verifications</c>
-///.
+/// <c>POST /api/v1/domains/{id}/verify</c> and <c>GET /api/v1/domains/{id}/verifications</c>.
 /// </summary>
 public static class VerifyDomain
 {
@@ -176,7 +175,7 @@ public static class VerifyDomain
 
         // The edge caches the generated association files per host. A verification run is the moment
         // the operator expects the engine's own files to be regenerated, so the cached copies go
-        // (TC-125: invalidated within fifteen minutes, and immediately is within fifteen minutes).
+        // (they must be invalidated within fifteen minutes, and immediately is within fifteen minutes).
         await cache.InvalidateHostAsync(domain.Host, cancellationToken);
 
         return TypedResults.Ok(run.Response);

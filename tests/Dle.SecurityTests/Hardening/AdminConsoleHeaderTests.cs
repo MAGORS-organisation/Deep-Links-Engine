@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace Dle.SecurityTests.Hardening;
 
 /// <summary>
-/// T-11: the administration console is served under a Content-Security-Policy that keeps foreign
+/// The administration console is served under a Content-Security-Policy that keeps foreign
 /// scripts off the origin that holds an owner-capable key.
 /// </summary>
 public sealed class AdminConsoleHeaderTests : IDisposable

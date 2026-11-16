@@ -15,8 +15,7 @@ namespace Dle.Control.Features.Analytics;
 public readonly record struct AnalyticsQueryBinding(AnalyticsQuery? Query, IResult? Problem);
 
 /// <summary>
-/// Turns the query string of a reporting request into an <see cref="AnalyticsQuery"/> (FR-202,
-/// FR-205).
+/// Turns the query string of a reporting request into an <see cref="AnalyticsQuery"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -33,7 +32,7 @@ public readonly record struct AnalyticsQueryBinding(AnalyticsQuery? Query, IResu
 ///   </item>
 ///   <item>
 ///     <description>
-///     <b>Bots are excluded unless explicitly asked for.</b> FR-205 is blunt about why: a crawler's
+///     <b>Bots are excluded unless explicitly asked for.</b> The reason is blunt: a crawler's
 ///     click is a real row and belongs in the stream, but counting it in a campaign inflates every
 ///     number a marketer makes a decision on. The default is therefore off, and turning it on is a
 ///     conscious <c>include_bots=true</c>.
@@ -117,7 +116,7 @@ public static class AnalyticsQueryBinder
                 Country = Trimmed(query["country"]),
                 Platform = Trimmed(query["platform"]),
 
-                // FR-205, TC-106: off unless the caller says otherwise, in as many words.
+                // Off unless the caller says otherwise, in as many words.
                 IncludeBots = ReadBoolean(query, "include_bots"),
                 Limit = limit,
             },
@@ -256,7 +255,7 @@ public static class AnalyticsQueryBinder
     /// <remarks>
     /// The allowlist lives in the analytics module because it is the module that maps a name onto a
     /// SQL expression. Checking it here means an unknown dimension is a 400 with the list of valid
-    /// ones rather than a 500 from a query that could not be built (CA2100, §17).
+    /// ones rather than a 500 from a query that could not be built (CA2100).
     /// </remarks>
     public static bool TryResolveDimension(string? dimension, out string resolved, out IResult? problem)
     {

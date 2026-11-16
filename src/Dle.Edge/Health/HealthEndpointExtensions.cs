@@ -38,7 +38,7 @@ public static class HealthEndpointExtensions
     /// </para>
     /// <para>
     /// Readiness asks whether this instance should receive traffic, and its checks are chosen to say
-    /// yes through exactly the failures §D.6 requires the edge to survive.
+    /// yes through exactly the failures the edge is required to survive.
     /// </para>
     /// <para>
     /// Both paths are reserved slugs, so <see cref="SlugPolicy.Reserved"/> already keeps a link from

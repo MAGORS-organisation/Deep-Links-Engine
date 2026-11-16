@@ -35,8 +35,7 @@ public enum ClaimCodeStatus
 public sealed record ClaimCodeRedemption(ClaimCodeStatus Status, ClaimCodeRecord? Record);
 
 /// <summary>
-/// Issues and redeems the six characters shown on the interstitial page (S3, FR-184, §E.4.1 K3,
-/// T-17).
+/// Issues and redeems the six characters shown on the interstitial page (S3).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -151,8 +150,7 @@ public sealed class ClaimCodeService
     /// The lookup is by keyed hash, and the deciding comparison is still
     /// <see cref="ClaimCodeGenerator.Verify"/>, which is constant time. The database equality that
     /// found the row compares 32 bytes of HMAC output, from which no timing signal about the code
-    /// itself can be extracted; the in-process comparison is what the security property rests on
-    ///.
+    /// itself can be extracted; the in-process comparison is what the security property rests on.
     /// </remarks>
     public async Task<ClaimCodeRedemption> InspectAsync(string? presentedCode, CancellationToken cancellationToken)
     {

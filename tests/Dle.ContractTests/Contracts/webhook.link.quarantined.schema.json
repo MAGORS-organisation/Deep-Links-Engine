@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DLE webhook payload: link.quarantined",
-  "description": "A link was withdrawn from service following an abuse decision. Envelope per docs/zadanie.md B.7.4.",
+  "description": "A link was withdrawn from service following an abuse decision.",
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -6,12 +6,12 @@ using Dle.Edge.Rendering;
 namespace Dle.SecurityTests.OpenRedirect;
 
 /// <summary>
-/// T-01 / CWE-601 / TC-164: no request-supplied value may ever steer a redirect.
+/// CWE-601: no request-supplied value may ever steer a redirect.
 /// </summary>
 /// <remarks>
 /// <para>
-/// A link engine is a redirector, and §E.1 is blunt about what that means: "every redirector is, in
-/// essence, a machine for bypassing reputation filters". The whole value of the domain is that a
+/// A link engine is a redirector, and every redirector is, in essence, a machine for bypassing
+/// reputation filters. The whole value of the domain is that a
 /// recipient trusts it, and one query parameter that reaches the <c>Location</c> header spends that
 /// trust on whoever found it.
 /// </para>
@@ -120,7 +120,7 @@ public sealed class OpenRedirectTests
     [MemberData(nameof(SampledCorpus))]
     public async Task Resolve_HostileValueInTheReferrer_DoesNotInfluenceTheDestination(string hostile)
     {
-        // The referrer is attacker controlled on any page that links here, and §E.6.3 already limits
+        // The referrer is attacker controlled on any page that links here, and the engine already limits
         // what may be stored from it. It must not reach the response either.
         using HttpClient client = _edge.Factory.CreateClientFrom("198.18.0.13");
 
@@ -202,9 +202,9 @@ public sealed class OpenRedirectTests
     {
         // SafeUrl is the last gate before a value reaches a Location header or an href, and it is a
         // scheme and shape gate rather than a host gate: an operator is entitled to point a link at any
-        // public host, so a hostile *stored* target is E.3's problem and not this one. What SafeUrl must
-        // never do is hand on something that is not an absolute http or https URL - a protocol-relative
-        // value, a javascript: value, or anything carrying a control character.
+        // public host, so a hostile *stored* target is the write-time check's problem and not this one.
+        // What SafeUrl must never do is hand on something that is not an absolute http or https URL - a
+        // protocol-relative value, a javascript: value, or anything carrying a control character.
         List<string> accepted = [];
 
         foreach (string hostile in HostileUrlCorpus.Values)

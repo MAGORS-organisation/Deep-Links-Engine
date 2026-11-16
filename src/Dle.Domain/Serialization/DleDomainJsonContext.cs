@@ -7,7 +7,7 @@ namespace Dle.Domain.Serialization;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Reflection based serialization is forbidden on the hot path (shared kernel §0). Resolve time
+/// Reflection based serialization is forbidden on the hot path. Resolve time
 /// code therefore serializes through this context, for example
 /// <c>JsonSerializer.Serialize(snapshot, DleDomainJsonContext.Default.LinkSnapshot)</c>, which is
 /// allocation free at start up and safe to trim and to compile ahead of time.

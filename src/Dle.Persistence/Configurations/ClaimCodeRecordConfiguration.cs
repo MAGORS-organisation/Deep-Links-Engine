@@ -20,7 +20,7 @@ public sealed class ClaimCodeRecordConfiguration : IEntityTypeConfiguration<Clai
             .IsRequired();
 
         // Only the hash: the code is six characters from a 26 symbol alphabet, so a leaked table
-        // must not hand an attacker a set of valid claims (§E.4.1, K3).
+        // must not hand an attacker a set of valid claims.
         builder.Property(c => c.CodeHash)
             .HasColumnName("code_hash")
             .IsRequired();

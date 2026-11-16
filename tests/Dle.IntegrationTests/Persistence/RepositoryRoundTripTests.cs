@@ -20,7 +20,7 @@ namespace Dle.IntegrationTests.Persistence;
 /// routing rules and the evidence, <c>text[]</c> for tags and scopes, <c>numeric(3,2)</c> for a
 /// confidence, <c>citext</c> for a slug, <c>bytea</c> for a hash. A provider that stored all of them
 /// as strings would pass a round trip written against itself and fail against the schema — which is
-/// why §D.4 rules an in-memory provider out for this suite.
+/// why an in-memory provider is ruled out for this suite.
 /// </remarks>
 public sealed class RepositoryRoundTripTests(DleInfrastructureFixture infrastructure)
     : DleIntegrationTest(infrastructure)

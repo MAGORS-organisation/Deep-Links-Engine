@@ -7,9 +7,9 @@ namespace Dle.Control.Features.Attribution;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The two instruments §C.6 names are <c>dle_attribution_total</c>, tagged by match type, and
-/// <c>dle_attribution_confidence</c> as a histogram. Together they are the honest dashboard ADR-008
-/// asks for: "78 % of attributions deterministic, 14 % probabilistic at average confidence 0.71,
+/// The two instruments are <c>dle_attribution_total</c>, tagged by match type, and
+/// <c>dle_attribution_confidence</c> as a histogram. Together they are the honest dashboard
+/// the product shows: "78 % of attributions deterministic, 14 % probabilistic at average confidence 0.71,
 /// 8 % unmatched". A counter without the confidence distribution would let a deployment quietly
 /// drift towards guessing and still look healthy.
 /// </para>

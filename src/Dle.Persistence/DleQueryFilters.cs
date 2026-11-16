@@ -7,7 +7,7 @@ namespace Dle.Persistence;
 /// <para>
 /// EF Core 10 allows several named filters per entity type. Before that there was one anonymous
 /// slot, so a second filter overwrote the first and the two concerns fought over it: adding a soft
-/// delete filter silently removed the tenant filter, which is precisely the leak T-09 describes.
+/// delete filter silently removed the tenant filter, which is precisely a cross-tenant leak.
 /// With names the two coexist and — just as importantly — can be dropped one at a time, so
 /// "show me the quarantined links as well" no longer means "and every other tenant's links too".
 /// </para>

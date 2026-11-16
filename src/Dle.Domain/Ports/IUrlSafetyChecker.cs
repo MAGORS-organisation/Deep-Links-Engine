@@ -9,7 +9,7 @@ namespace Dle.Domain.Ports;
 /// </summary>
 /// <remarks>
 /// It runs when a link is created and again on the nightly re-check, because changing the target
-/// after approval is the oldest trick in the trade (§E.3, point 5).
+/// after approval is the oldest trick in the trade.
 /// </remarks>
 public interface IUrlSafetyChecker
 {

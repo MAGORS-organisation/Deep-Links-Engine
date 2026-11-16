@@ -2,7 +2,7 @@
 
   <!--
     Control-plane persistence: EF Core DbContext, entity configurations and
-    migrations against PostgreSQL 18. ADR-003 / ADR-004, docs/zadanie.md §B.5.2.
+    migrations against PostgreSQL 18.
   -->
 
   <PropertyGroup>

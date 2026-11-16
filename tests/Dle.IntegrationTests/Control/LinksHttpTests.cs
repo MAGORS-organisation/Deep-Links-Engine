@@ -9,9 +9,9 @@ using Dle.Domain.Contracts;
 namespace Dle.IntegrationTests.Control;
 
 /// <summary>
-/// The link routes of the control plane through HTTP against a real PostgreSQL (§B.7.1, FR-101 to
-/// FR-108): create with a custom or generated slug, read, list with filters and keyset paging,
-/// update with its revision history, archive, delete, and the idempotent write of §B.7.3.
+/// The link routes of the control plane through HTTP against a real PostgreSQL: create with a
+/// custom or generated slug, read, list with filters and keyset paging,
+/// update with its revision history, archive, delete, and the idempotent write.
 /// </summary>
 /// <remarks>
 /// Every failure branch the write service can take is walked once, because each is a distinct

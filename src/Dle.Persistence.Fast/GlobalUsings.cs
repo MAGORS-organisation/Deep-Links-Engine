@@ -1,8 +1,8 @@
 // Global usings for the hot-path persistence module.
 //
 // Only namespaces that genuinely appear in almost every file live here: the invariant culture that
-// SHARED-KERNEL §0 mandates for every parse and format, the Npgsql surface every query and every
-// COPY writer touches, and the shared-kernel folders this module implements ports from.
+// every parse and format must use, the Npgsql surface every query and every
+// COPY writer touches, and the shared kernel folders this module implements ports from.
 
 global using System.Collections.ObjectModel;
 global using System.Globalization;

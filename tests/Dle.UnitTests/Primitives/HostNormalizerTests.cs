@@ -6,7 +6,7 @@ namespace Dle.UnitTests.Primitives;
 /// <summary>
 /// The normalised host is the tenant lookup key on the hot path. Two spellings of one host that
 /// normalise differently are two links; two different hosts that normalise the same are a tenant
-/// boundary violation. SHARED-KERNEL section 1.
+/// boundary violation.
 /// </summary>
 public sealed class HostNormalizerTests
 {

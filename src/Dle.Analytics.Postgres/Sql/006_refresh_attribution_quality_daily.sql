@@ -1,4 +1,4 @@
--- Recomputes whole days of the attribution quality rollup — the ADR-008 dashboard panel.
+-- Recomputes whole days of the attribution quality rollup behind the dashboard panel of that name.
 --
 -- Parameters: @from, @to (day-aligned, half open), @now.
 --

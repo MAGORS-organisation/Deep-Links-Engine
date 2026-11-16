@@ -22,7 +22,7 @@ public sealed record UrlSafetyVerdict
     public string? Reason { get; init; }
 
     /// <summary>When the check ran, in UTC. Used to decide when a target needs re-checking,
-    /// because targets are routinely changed after a link is approved (§E.3, point 5).</summary>
+    /// because targets are routinely changed after a link is approved.</summary>
     public DateTimeOffset? CheckedAt { get; init; }
 
     /// <summary>Creates a passing verdict.</summary>

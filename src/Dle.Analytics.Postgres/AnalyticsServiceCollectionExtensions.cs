@@ -14,7 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// </summary>
 /// <remarks>
 /// <para>
-/// This is the seam ADR-006 exists for. <c>Dle:Analytics:Provider</c> chooses between the
+/// This is the provider seam. <c>Dle:Analytics:Provider</c> chooses between the
 /// partitioned PostgreSQL tables a self-hoster already has and a ClickHouse cluster an
 /// installation past roughly fifty million events a month can move to. Both satisfy
 /// <see cref="IClickAnalyticsStore"/> identically, so the decision stays configuration.

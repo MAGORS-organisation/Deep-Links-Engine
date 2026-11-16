@@ -229,7 +229,7 @@ public sealed class DomainRepository
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The configuration, or <see langword="null"/> when the host is unknown.</returns>
     /// <remarks>
-    /// This is one of the places where the repository returns a shared-kernel type rather than an
+    /// This is one of the places where the repository returns a shared kernel type rather than an
     /// entity: <see cref="DomainRuntimeConfig"/> carries the tenant's consent mode alongside the
     /// domain's override, because the effective mode is the narrower of the two and neither row
     /// alone can answer it.

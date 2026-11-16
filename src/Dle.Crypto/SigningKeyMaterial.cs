@@ -54,8 +54,8 @@ public sealed class SigningKeyMaterial
     /// Returns a copy that no longer signs and stops being accepted at a given instant.
     /// </summary>
     /// <param name="notAfter">End of the acceptance window. Rotation sets this in the future,
-    /// never in the past: a signature made a moment before the rotation has to keep verifying
-    ///.</param>
+    /// never in the past: a signature made a moment before the rotation has to keep verifying.
+    /// </param>
     /// <returns>The retired copy.</returns>
     public SigningKeyMaterial Retire(DateTimeOffset notAfter) => new()
     {

@@ -117,8 +117,8 @@ internal abstract class HtmlPageResult : IResult
     /// Base64url rather than base64, and that is not cosmetic. Plain base64 emits <c>+</c>, <c>/</c> and
     /// <c>=</c>, and an HTML encoder is free to escape some of those and not others; the nonce would then
     /// occupy a different number of bytes in the document from one response to the next. On the 404 page
-    /// that difference is the whole ballgame: TC-102 and TC-166 require a missing slug and another
-    /// tenant's slug to be indistinguishable, and a <c>Content-Length</c> that wobbles by a few bytes is
+    /// that difference is the whole ballgame: a missing slug and another
+    /// tenant's slug must be indistinguishable, and a <c>Content-Length</c> that wobbles by a few bytes is
     /// exactly the kind of signal an attacker measures. With this alphabet every character survives
     /// encoding unchanged, so the rendered length is a function of the page alone.
     /// </para>
@@ -204,7 +204,7 @@ internal abstract class HtmlPageResult : IResult
     /// read <c>'self' https:</c>, which allowed every image on the web on every page, including the
     /// status pages that reference no remote image at all: a scheme is not a source, and an
     /// injected <c>&lt;img&gt;</c> pointing anywhere would have loaded and leaked the visit in its
-    /// request. §E.8 S-04.
+    /// request.
     /// </remarks>
     private string BuildContentSecurityPolicy(string nonce) => string.Concat(
         "default-src 'none'; base-uri 'none'; form-action ",

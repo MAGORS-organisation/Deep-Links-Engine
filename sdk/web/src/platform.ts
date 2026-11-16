@@ -164,7 +164,7 @@ export function isInAppChannel(channel: Channel): boolean {
 /**
  * Whether opening the native app requires a **real user tap on an anchor element**.
  *
- * Spec §A.2.6: an in-app WebView (Facebook, Instagram, TikTok, …) does not run OS-level
+ * An in-app WebView (Facebook, Instagram, TikTok, …) does not run OS-level
  * Universal Link / App Link interception when a page loads, and on iOS a
  * `window.location.href` assignment from JavaScript does not count as a user gesture. Only
  * a genuine tap on an `<a href="https://…">` can hand the navigation to the operating

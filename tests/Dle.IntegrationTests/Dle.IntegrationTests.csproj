@@ -3,7 +3,7 @@
   <!--
     End-to-end tests against real infrastructure started with Testcontainers:
     PostgreSQL 18 and Valkey. Covers the resolve path, partitioned event writes,
-    cache invalidation and the attribution pipeline. docs/zadanie.md §D.1.
+    cache invalidation and the attribution pipeline.
   -->
 
   <ItemGroup>

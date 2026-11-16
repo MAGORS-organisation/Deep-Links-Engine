@@ -1,8 +1,8 @@
 {{- /*
-dle-edge — the data plane (§B.8 profile B: HPA 3–20 pods behind the Ingress).
+dle-edge — the data plane (HPA 3–20 pods behind the Ingress).
 
-Probes: liveness AND readiness hit /healthz, which runs no dependency checks. NFR-06 / §D.6:
-resolves must keep working from cache (L1 + Valkey) while PostgreSQL is down, so a readiness
+Probes: liveness AND readiness hit /healthz, which runs no dependency checks.
+Resolves must keep working from cache (L1 + Valkey) while PostgreSQL is down, so a readiness
 probe that failed on the database would pull the whole fleet out of rotation at exactly the
 wrong moment. See edge.probes in values.yaml before changing this.
 
@@ -78,7 +78,7 @@ spec:
                 secretKeyRef:
                   name: {{ include "dle.secretName" . }}
                   key: {{ .Values.secrets.keys.postgresConnectionString }}
-            # Optional read replica (§B.8: the edge reads from a replica). Absent key = primary.
+            # Optional read replica (the edge reads from a replica). Absent key = primary.
             - name: ConnectionStrings__PostgresRead
               valueFrom:
                 secretKeyRef:

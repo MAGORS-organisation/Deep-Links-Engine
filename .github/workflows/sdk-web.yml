@@ -2,8 +2,8 @@
 # Web SDK (sdk/web, @magors/dle-web) — lint, typecheck, build, test, bundle-size budget.
 #
 # Path-filtered. The step list is exactly package.json's prepublishOnly, so what passes here is
-# what `npm publish` would run. `npm run size` (scripts/size-check.mjs) is the budget from
-# docs/zadanie.md §C.5: an SDK's bytes are every customer's bytes.
+# what `npm publish` would run. `npm run size` (scripts/size-check.mjs) is the bundle-size budget:
+# an SDK's bytes are every customer's bytes.
 # =============================================================================
 name: Web SDK
 

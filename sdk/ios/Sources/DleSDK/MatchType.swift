@@ -21,8 +21,8 @@ public enum DleMatchType: String, Sendable, Hashable, CaseIterable, Codable {
     /// A statistical match inside the configured window. Opt-in, consent-gated, and always
     /// accompanied by a confidence below 1.0.
     case probabilistic = "probabilistic"
-    /// The app was already installed and the OS opened it straight from a Universal Link
-    ///. Reported by the SDK, not inferred by the server.
+    /// The app was already installed and the OS opened it straight from a Universal Link.
+    /// Reported by the SDK, not inferred by the server.
     case directOpen = "direct_open"
 
     /// `true` for match types that identify the click exactly, with no statistical inference.

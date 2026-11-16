@@ -5,7 +5,7 @@ using Xunit;
 namespace Dle.UnitTests.WellKnown;
 
 /// <summary>
-/// FR-141, FR-142, TC-122. Apple and Google read these files literally: the keys "/", "#", "?" and
+/// Apple and Google read these files literally: the keys "/", "#", "?" and
 /// "appIDs" are the format, not a naming style, and no serializer policy may rewrite them. An empty
 /// document is worse than a 404 — Apple caches an empty association for about a week.
 /// </summary>
@@ -19,7 +19,7 @@ public sealed class WellKnownBuilderTests
         Sha256CertFingerprints = ["AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"],
     };
 
-    // ================================================================ TC-122: nothing means nothing
+    // ================================================================ nothing means nothing
 
     [Fact]
     public void BuildAasa_NoIosApplication_ReturnsNullSoTheEdgeCanAnswer404()

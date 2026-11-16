@@ -135,8 +135,7 @@ internal sealed class IdempotencyFilter : IEndpointFilter
         {
             // The reservation is released before the exception is allowed to propagate, so a
             // failure never leaves a key permanently poisoned. The exception itself is not
-            // swallowed; the host's exception handler still turns it into a problem document
-            //.
+            // swallowed; the host's exception handler still turns it into a problem document.
             await store.AbandonAsync(key, endpoint, CancellationToken.None);
             throw;
         }

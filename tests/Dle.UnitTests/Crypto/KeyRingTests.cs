@@ -15,7 +15,7 @@ namespace Dle.UnitTests.Crypto;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Two properties carry the weight here. The first is S-12: rotating a key must never invalidate a
+/// Two properties carry the weight here. The first is that rotating a key must never invalidate a
 /// signature made a moment earlier, so the outgoing key stays acceptable for the whole overlap
 /// window rather than being closed at the instant it stops signing. The second is that the ring can
 /// sign before any store has answered, because a control plane that cannot start until a database
@@ -160,7 +160,7 @@ public sealed class KeyRingTests
     [Fact]
     public void GetJwks_SymmetricSigningKey_PublishesNothing()
     {
-        // T-15: an HS256 key is the same secret on both sides. Publishing it would hand out the
+        // An HS256 key is the same secret on both sides. Publishing it would hand out the
         // signing key, so the ring must answer with an empty document rather than a key.
         using KeyRing ring = Create(OptionsFor(SignatureAlgorithms.Hs256), new FakeKeyStore(), new CryptoTestClock(Now));
 
@@ -315,7 +315,7 @@ public sealed class KeyRingTests
         Assert.NotNull(ring.CurrentSigner);
     }
 
-    // ------------------------------------------------------------------ rotation, S-12
+    // ------------------------------------------------------------------ rotation
 
     [Fact]
     public async Task RotateAsync_MintsANewSigningKeyAndStoresIt()
@@ -335,7 +335,7 @@ public sealed class KeyRingTests
     [Fact]
     public async Task RotateAsync_RetiresTheOutgoingKeyOneOverlapWindowIntoTheFuture()
     {
-        // S-12 stated as arithmetic: the outgoing key stops being accepted at now + overlap,
+        // The rotation overlap stated as arithmetic: the outgoing key stops being accepted at now + overlap,
         // never at now.
         FakeKeyStore store = new();
         CryptoTestClock clock = new(Now);
@@ -352,13 +352,13 @@ public sealed class KeyRingTests
 
         Assert.Equal(outgoing, kid);
         Assert.Equal(Now.AddDays(7), notAfter);
-        Assert.True(notAfter > Now, "A retirement that closed the window immediately would break S-12.");
+        Assert.True(notAfter > Now, "A retirement that closed the window immediately would break recent signatures.");
     }
 
     [Fact]
     public async Task RotateAsync_ASignatureMadeBeforeTheRotation_StillVerifiesAfterIt()
     {
-        // The property S-12 actually protects, asserted end to end rather than through the store.
+        // The property the overlap actually protects, asserted end to end rather than through the store.
         FakeKeyStore store = new();
         CryptoTestClock clock = new(Now);
 

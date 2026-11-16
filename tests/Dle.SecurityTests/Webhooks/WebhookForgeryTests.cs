@@ -8,13 +8,13 @@ using Dle.Control.Features.Webhooks;
 namespace Dle.SecurityTests.Webhooks;
 
 /// <summary>
-/// T-13 / TC-165: a delivery a customer did not receive from us must not verify.
+/// A delivery a customer did not receive from us must not verify.
 /// </summary>
 /// <remarks>
 /// <para>
 /// A forged webhook is a fraudulent conversion, and the customer's own systems act on it: it credits
-/// a partner, moves a payout, marks an install as attributed. §B.7.4's answer is a signature over the
-/// timestamp and the exact transmitted body, and §E.2.2 adds a five-minute tolerance so that a
+/// a partner, moves a payout, marks an install as attributed. The answer is a signature over the
+/// timestamp and the exact transmitted body, plus a five-minute tolerance so that a
 /// genuine delivery captured once cannot be replayed forever.
 /// </para>
 /// <para>
@@ -25,7 +25,7 @@ namespace Dle.SecurityTests.Webhooks;
 /// </remarks>
 public sealed class WebhookForgeryTests
 {
-    /// <summary>The tolerance §B.7.4 specifies.</summary>
+    /// <summary>The replay tolerance.</summary>
     private static readonly TimeSpan Tolerance = TimeSpan.FromMinutes(5);
 
     private static readonly DateTimeOffset SignedAt = new(2026, 9, 3, 10, 0, 0, TimeSpan.Zero);
@@ -138,7 +138,7 @@ public sealed class WebhookForgeryTests
     {
         // The obvious attack on a naive scheme where `t` is a transport detail rather than signed
         // material: take yesterday's capture, put today's timestamp on it, send it. It fails because
-        // the timestamp is inside the signing input, which is exactly why §B.7.4 puts it there.
+        // the timestamp is inside the signing input, which is exactly why it is there.
         string header = WebhookSignature.Create(Body, Secret, signer: null, SignedAt);
 
         string restamped = ReplaceTimestamp(header, SignedAt.AddHours(6).ToUnixTimeSeconds());
@@ -162,7 +162,7 @@ public sealed class WebhookForgeryTests
     [InlineData("t=1756900000, v1=!!!not-base64!!!")]
     public void Verify_AMalformedHeader_FailsClosed(string? header)
     {
-        // §17.9 again: a header the parser cannot make sense of is a refusal, never a pass. A
+        // Deny by default again: a header the parser cannot make sense of is a refusal, never a pass. A
         // signature scheme whose parse failure means "no signature required" is not a signature scheme.
         Assert.False(WebhookSignature.VerifySymmetric(header, Body, Secret, SignedAt, Tolerance));
     }
@@ -183,11 +183,11 @@ public sealed class WebhookForgeryTests
     [Fact]
     public void Verify_UsesAConstantTimeComparison()
     {
-        // S-03 asks that every signature be verified in constant time, and T-17 says why: an equality
+        // Every signature must be verified in constant time, because an equality
         // comparison on a MAC leaks it one byte at a time to anybody who can measure the response.
         //
-        // Timing cannot demonstrate that here — the assertion would be a microbenchmark, and §D.1
-        // rules those out as a gate. What can be demonstrated is the shape a leak would have: with a
+        // Timing cannot demonstrate that here — the assertion would be a microbenchmark, and those
+        // are ruled out as a gate. What can be demonstrated is the shape a leak would have: with a
         // byte-by-byte comparison, a signature agreeing with the expected one on its first fifteen
         // bytes is distinguishable from one that differs in the first, and both must be refused
         // identically. This is the behavioural half; the implementation half is a code review item,
@@ -237,7 +237,7 @@ public sealed class WebhookForgeryTests
     public void VerifySymmetric_AgreesWithAnIndependentImplementation()
     {
         // The signing input is published as t + "." + body, and a receiver in another language will
-        // implement exactly that. Recomputing it here from the specification rather than from the
+        // implement exactly that. Recomputing it here from the published definition rather than from the
         // product is what makes this a check of the contract and not of the code's agreement with
         // itself.
         string header = WebhookSignature.Create(Body, Secret, signer: null, SignedAt);

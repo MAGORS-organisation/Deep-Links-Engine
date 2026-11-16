@@ -121,8 +121,7 @@ public static class SubmitAbuseReport
             metrics.ReportAccepted(reason, matched: false);
 
             // Logged at information without the reported URL: the submission is attacker controlled
-            // text, and a full URL in an operational log is a query string in an operational log
-            //.
+            // text, and a full URL in an operational log is a query string in an operational log.
             if (logger.IsEnabled(LogLevel.Information))
             {
                 logger.LogInformation(

@@ -11,7 +11,7 @@ namespace Dle.Control.Identity;
 
 /// <summary>
 /// Authenticates a control-plane API key: public prefix for the lookup, Argon2id for the
-/// verification (FR-242, K5).
+/// verification.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -28,8 +28,7 @@ namespace Dle.Control.Identity;
 /// </para>
 /// <para>
 /// Nothing here logs the presented value, the <c>Authorization</c> header or the caller's address.
-/// The non-secret prefix is the identifier that appears in logs and in the audit trail
-///.
+/// The non-secret prefix is the identifier that appears in logs and in the audit trail.
 /// </para>
 /// </remarks>
 public sealed class DleApiKeyAuthenticationHandler
@@ -49,7 +48,7 @@ public sealed class DleApiKeyAuthenticationHandler
     /// <param name="encoder">URL encoder.</param>
     /// <param name="store">Cross-tenant credential lookup.</param>
     /// <param name="cache">Short-lived verification cache.</param>
-    /// <param name="limiter">The §E.9 authentication attempt limiter.</param>
+    /// <param name="limiter">The authentication attempt limiter.</param>
     /// <param name="decoy">Hash verified against when no candidate row exists.</param>
     /// <param name="timeProvider">Clock used for expiry and for the last-used stamp.</param>
     public DleApiKeyAuthenticationHandler(

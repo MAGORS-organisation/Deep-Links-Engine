@@ -89,8 +89,8 @@ public struct DleConfig: Sendable {
     public var maxQueuedEvents: Int
 
     /// Debounce, in seconds, between an event being queued and the automatic flush. Batching
-    /// keeps the SDK inside the engine's budget of 60 events per minute per installation
-    ///. Default 3.
+    /// keeps the SDK inside the engine's budget of 60 events per minute per installation.
+    /// Default 3.
     public var flushDelay: TimeInterval
 
     /// Events older than this, in seconds, are discarded instead of sent: the engine refuses

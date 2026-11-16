@@ -10,7 +10,7 @@ namespace Dle.Edge.Clients;
 /// <para>
 /// A deployment that does not ship a GeoLite2 file is a supported configuration, not a broken one.
 /// Country stays <see langword="null"/>, a routing rule with a <c>country</c> condition simply never
-/// matches, and evaluation falls through to the default rule that FR-127 guarantees exists. That is
+/// matches, and evaluation falls through to the default rule, which always exists. That is
 /// the same observable behaviour as a missing database file, reached deliberately rather than
 /// by accident.
 /// </para>

@@ -2,7 +2,7 @@ namespace Dle.Edge.Rendering;
 
 /// <summary>
 /// Where the pages the edge renders take their branding from
-/// (<c>Dle:Edge:Interstitial:Branding</c>, §C.4, FR-163).
+/// (<c>Dle:Edge:Interstitial:Branding</c>).
 /// </summary>
 public enum BrandingSource
 {

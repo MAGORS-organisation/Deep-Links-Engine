@@ -1,7 +1,7 @@
 namespace Dle.UnitTests.Edge;
 
 /// <summary>
-/// A clock the test drives. SHARED-KERNEL §17.2 forbids reading the machine clock in engine code;
+/// A clock the test drives. Engine code may not read the machine clock;
 /// a test that depends on wall-clock time is a defect for the same reason.
 /// </summary>
 internal sealed class EdgeTestClock : TimeProvider

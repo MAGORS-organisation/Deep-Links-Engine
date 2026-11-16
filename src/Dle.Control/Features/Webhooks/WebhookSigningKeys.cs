@@ -13,12 +13,12 @@ namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
 /// The key material behind the asymmetric slot of a webhook signature, and the source that
-/// publishes it at <c>/.well-known/jwks.json</c> (§B.7.4, §E.4.1 K4, S-12).
+/// publishes it at <c>/.well-known/jwks.json</c>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Webhook keys are bound to the <see cref="SigningKeyPurposes.Webhook"/> purpose and are not the
-/// token keys. That separation is §B.5.2's, and it earns its keep in exactly one scenario: a key
+/// token keys. That separation is deliberate, and it earns its keep in exactly one scenario: a key
 /// that leaks from the signing path of an outbound HTTP client must not also be a key that mints
 /// click tokens the edge will accept.
 /// </para>
@@ -202,7 +202,7 @@ public sealed partial class WebhookSigningKeys : IJwksContributor, IDisposable
     /// <remarks>
     /// HKDF-SHA-256 under a webhook specific label, so this key and the token key are independent:
     /// recovering one tells an attacker nothing about the other, which is the property the purpose
-    /// separation in §B.5.2 is trying to buy.
+    /// separation is trying to buy.
     /// </remarks>
     private static SigningKeyMaterial Derive(string masterSecret)
     {

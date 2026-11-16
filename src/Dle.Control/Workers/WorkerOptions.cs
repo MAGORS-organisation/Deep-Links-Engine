@@ -16,7 +16,7 @@ namespace Dle.Control.Workers;
 /// </para>
 /// <para>
 /// The intervals are deliberately coarse. None of these jobs is latency sensitive: the nightly
-/// checks are nightly because §C.8 says nightly, the rollup follows the click stream by minutes
+/// checks run once a day, the rollup follows the click stream by minutes
 /// because the watermark already refuses to aggregate a bucket that is still filling, and the
 /// dispatcher polls in seconds because a webhook that arrives a minute late is a webhook a customer
 /// notices.
@@ -70,7 +70,7 @@ public sealed class WorkerOptions
     /// <summary>Nightly re-check of the targets of active links.</summary>
     public UrlReputationWorkerOptions UrlReputation { get; set; } = new();
 
-    /// <summary>Out of band refresh of the GeoIP database (§C.4 <c>Dle:Edge:GeoIp</c>).</summary>
+    /// <summary>Out of band refresh of the GeoIP database (<c>Dle:Edge:GeoIp</c>).</summary>
     public GeoIpUpdateWorkerOptions GeoIpUpdate { get; set; } = new();
 }
 
@@ -95,7 +95,7 @@ public class ScheduledWorkerOptions
 /// <summary>Settings of the nightly domain verification worker.</summary>
 public sealed class DomainVerificationWorkerOptions : ScheduledWorkerOptions
 {
-    /// <summary>Creates the options with the nightly default of §C.8.</summary>
+    /// <summary>Creates the options with a nightly default.</summary>
     public DomainVerificationWorkerOptions()
     {
         IntervalMinutes = 24 * 60;
@@ -142,7 +142,7 @@ public sealed class DomainVerificationWorkerOptions : ScheduledWorkerOptions
 /// <summary>Settings of the nightly URL reputation re-check.</summary>
 public sealed class UrlReputationWorkerOptions : ScheduledWorkerOptions
 {
-    /// <summary>Creates the options with the nightly default of §E.3 step 5.</summary>
+    /// <summary>Creates the options with a nightly default.</summary>
     public UrlReputationWorkerOptions()
     {
         IntervalMinutes = 24 * 60;

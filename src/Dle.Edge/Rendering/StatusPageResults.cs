@@ -193,7 +193,7 @@ internal sealed class GonePageResult : StatusPageResult
         else
         {
             // Neither channel is configured. The page says where to go instead of rendering a control
-            // that leads nowhere (SHARED-KERNEL §17.9: the branch has an explicit safe outcome).
+            // that leads nowhere: the branch has an explicit safe outcome.
             Paragraph(html, strings.GoneAppealUnconfigured);
         }
 

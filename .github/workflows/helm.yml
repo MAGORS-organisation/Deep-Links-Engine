@@ -6,7 +6,7 @@
 # `helm dependency update`, `helm lint` and `helm template`, for the three ways the chart is meant
 # to be deployed:
 #
-#   external  — managed PostgreSQL and Valkey handed in as connection strings (§B.8 profile B)
+#   external  — managed PostgreSQL and Valkey handed in as connection strings
 #   bundled   — the bitnami sub-charts, for a single-node evaluation install
 #   production — values-production.yaml with an existing Secret
 #

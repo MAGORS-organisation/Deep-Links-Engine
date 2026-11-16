@@ -4,7 +4,7 @@ using Xunit;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// FR-126. The window is half open: inclusive at From, exclusive at To, so two adjacent campaign
+/// The window is half open: inclusive at From, exclusive at To, so two adjacent campaign
 /// windows never both match one instant. Hours and days are UTC sets, not ranges.
 /// </summary>
 public sealed class TimeWindowPredicateTests

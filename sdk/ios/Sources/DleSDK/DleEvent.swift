@@ -1,7 +1,7 @@
 import Foundation
 
 /// Kind of a client event. Raw values are the wire names accepted by `POST /v1/events`
-/// (`SdkEventNames`, spec §B.7.2).
+/// (`SdkEventNames`).
 public enum DleEventType: String, Sendable, Hashable, CaseIterable, Codable {
     /// The application was opened through one of the engine's links.
     /// This is the event that makes a direct open measurable at all.

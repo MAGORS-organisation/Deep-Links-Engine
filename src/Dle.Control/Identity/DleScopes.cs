@@ -56,7 +56,7 @@ public static class DleScopes
     /// </summary>
     /// <remarks>
     /// It appears in no other policy. A credential holding it and nothing else can reach
-    /// <c>/v1/resolve</c> and <c>/v1/events</c>, and that is the whole of its reach (§E.2.1, TB2).
+    /// <c>/v1/resolve</c> and <c>/v1/events</c>, and that is the whole of its reach.
     /// </remarks>
     public const string SdkIngest = "sdk:ingest";
 

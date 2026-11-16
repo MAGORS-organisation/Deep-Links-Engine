@@ -2,7 +2,7 @@ namespace Dle.Domain.Privacy;
 
 /// <summary>
 /// Operating mode of the tenant with respect to ePrivacy article 5(3) and the EDPB
-/// guidelines 2/2023 (specification §E.6.2). The values are ordered from the most to the least
+/// guidelines 2/2023. The values are ordered from the most to the least
 /// restrictive, which is what makes <c>min()</c> the correct way to combine a tenant mode with a
 /// domain override.
 /// </summary>

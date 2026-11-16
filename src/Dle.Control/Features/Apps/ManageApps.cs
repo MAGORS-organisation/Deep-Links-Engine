@@ -395,8 +395,7 @@ public static class ManageApps
         };
 
     /// <summary>
-    /// Produces the Play App Signing warning when a fingerprint does not look Play-signed
-    ///.
+    /// Produces the Play App Signing warning when a fingerprint does not look Play-signed.
     /// </summary>
     /// <param name="app">The application.</param>
     /// <returns>The warnings, empty when there is nothing to say.</returns>

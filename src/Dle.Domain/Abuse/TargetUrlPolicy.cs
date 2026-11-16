@@ -7,14 +7,14 @@ using Dle.Domain.Primitives;
 namespace Dle.Domain.Abuse;
 
 /// <summary>
-/// Syntactic and network level validation of link targets (threats T-01 and T-02, TC-161 to
-/// TC-164). This is the gate that decides whether the product survives its first year or ends up
+/// Syntactic and network level validation of link targets, the defence against open redirects and
+/// SSRF. This is the gate that decides whether the product survives its first year or ends up
 /// on blocklists.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The checks here are pure and offline. <see cref="ValidateSyntax(string?)"/> is step one of
-/// §E.3: scheme, length, credentials and host shape, plus the address checks that can be made
+/// target validation: scheme, length, credentials and host shape, plus the address checks that can be made
 /// without a network round trip when the host is an IP literal. Step two, resolving the host and
 /// checking every resulting address, is what actually stops SSRF and DNS rebinding; it needs a
 /// resolver and therefore lives behind <c>IUrlSafetyChecker</c>, which calls

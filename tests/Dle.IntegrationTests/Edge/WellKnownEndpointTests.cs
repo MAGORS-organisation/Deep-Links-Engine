@@ -9,8 +9,7 @@ using Dle.Edge.WellKnown;
 namespace Dle.IntegrationTests.Edge;
 
 /// <summary>
-/// The two association files, served per host from the applications registered on the link domain
-///.
+/// The two association files, served per host from the applications registered on the link domain.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -21,7 +20,7 @@ namespace Dle.IntegrationTests.Edge;
 /// </para>
 /// <para>
 /// The documents are checked with the product's own <see cref="WellKnownValidator"/>, which is the
-/// same code the nightly domain verification of FR-143 runs against a customer's live domain. If the
+/// same code the nightly domain verification runs against a customer's live domain. If the
 /// validator and the builder ever disagree, the customer finds out; here, the test does.
 /// </para>
 /// </remarks>
@@ -87,7 +86,7 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     [RequiresDockerFact]
     public async Task Aasa_OnADomainWithNoIosApp_Is404AndNotAnEmptyDocument()
     {
-        // TC-122 is the whole reason the handler answers 404: Apple accepts an empty but well formed
+        // This is the whole reason the handler answers 404: Apple accepts an empty but well formed
         // document as a valid negative answer and caches it for about a week, during which the
         // domain's universal links are simply dead. A 404 is retried.
         string host = TestSeed.UniqueHost("tc122");
@@ -122,7 +121,7 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     [RequiresDockerFact]
     public async Task AssetLinks_OnADomainWithAnAndroidApp_Is200WithThePlaySigningFingerprintFirst()
     {
-        // FR-144: with Play App Signing the certificate that matters on a device is the one Google
+        // With Play App Signing the certificate that matters on a device is the one Google
         // re-signs with. Publishing only the local upload certificate is the single most common
         // reason App Links work in a debug build and fail in production.
         string host = TestSeed.UniqueHost("assetlinks");

@@ -15,7 +15,7 @@ namespace Dle.Control.Features.Analytics;
 /// <para>
 /// Every handler here goes through <see cref="IClickAnalyticsStore"/> and therefore works
 /// identically on the PostgreSQL rollups a self-hoster already has and on a ClickHouse cluster an
-/// installation past roughly fifty million events a month moves to. That is the whole of ADR-006 as
+/// installation past roughly fifty million events a month moves to. That is the whole of the provider choice as
 /// far as the API is concerned: the provider is a configuration value and no endpoint knows which
 /// one is behind it.
 /// </para>

@@ -4,8 +4,8 @@ namespace Dle.Domain.Links;
 /// Why a link may or may not be served right now.
 /// </summary>
 /// <remarks>
-/// The distinction between <see cref="NotFound"/> and <see cref="Gone"/> is deliberate and is covered by
-/// TC-103: a withdrawn link answers <c>410</c> with an explanation, while everything else — a missing
+/// The distinction between <see cref="NotFound"/> and <see cref="Gone"/> is deliberate:
+/// a withdrawn link answers <c>410</c> with an explanation, while everything else — a missing
 /// slug, a deactivated link, or a link belonging to another tenant — answers an indistinguishable
 /// <c>404</c> so that no enumeration oracle exists.
 /// </remarks>

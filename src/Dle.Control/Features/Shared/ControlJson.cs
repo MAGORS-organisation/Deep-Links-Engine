@@ -6,7 +6,7 @@ using Dle.Domain.Abuse;
 namespace Dle.Control.Features.Shared;
 
 /// <summary>
-/// Reads and writes the <c>jsonb</c> columns that hold shared-kernel shapes.
+/// Reads and writes the <c>jsonb</c> columns that hold shared domain shapes.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -15,8 +15,7 @@ namespace Dle.Control.Features.Shared;
 /// preference: it is the only way the control plane can guarantee a stored document round trips.
 /// If the API wrote a rule set through one serializer configuration and the edge read it through
 /// another, a difference in enumeration spelling would turn a stored <c>app_or_store</c> action
-/// into an unreadable one, and the edge answers an unreadable rule set with 404 (SHARED-KERNEL
-/// §17.3, §13).
+/// into an unreadable one, and the edge answers an unreadable rule set with 404.
 /// </para>
 /// <para>
 /// The HTTP wire format is a separate question and is configured once in

@@ -50,8 +50,7 @@ export interface InstallIdOptions {
   readonly store: KeyValueStore;
   /**
    * Consent gate. While this returns `false` the id is kept **in memory only** and any
-   * previously stored id is deleted: no persistent identifier without attribution consent
-   *.
+   * previously stored id is deleted: no persistent identifier without attribution consent.
    */
   readonly mayPersist: () => boolean;
   readonly logger?: Logger | undefined;

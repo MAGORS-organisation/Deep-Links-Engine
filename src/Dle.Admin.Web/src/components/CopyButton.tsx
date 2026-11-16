@@ -9,8 +9,8 @@ export interface CopyButtonProps {
 }
 
 /**
- * Writes to the clipboard. The console never reads the clipboard (FR-227 applies to the SDK,
- * but the same restraint costs nothing here).
+ * Writes to the clipboard. The console never reads the clipboard (the SDK must never read it,
+ * and the same restraint costs nothing here).
  */
 export function CopyButton({ value, label, small = true, className }: CopyButtonProps) {
   const t = useT();

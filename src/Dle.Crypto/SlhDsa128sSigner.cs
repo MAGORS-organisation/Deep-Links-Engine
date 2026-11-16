@@ -9,8 +9,8 @@ namespace Dle.Crypto;
 /// </summary>
 /// <remarks>
 /// Its security rests only on the hash function, with none of the lattice assumptions behind
-/// ML-DSA, which is what makes it the conservative choice for the one artefact class in §E.4.1
-/// with a multi-year lifetime: release signing (K7). The price is bluntly stated so nobody
+/// ML-DSA, which is what makes it the conservative choice for the one artefact class
+/// with a multi-year lifetime: release signing. The price is bluntly stated so nobody
 /// discovers it in production — the <c>s</c> parameter set trades signing speed for signature
 /// size, so a signature takes on the order of a second to produce and is roughly 7.8 kB. It
 /// belongs on artefacts signed by the hundred, never on request path tokens.

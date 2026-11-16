@@ -47,9 +47,9 @@ public sealed class SigningKeyFactoryTests
     // ------------------------------------------------------------------ the published set
 
     [Fact]
-    public void SupportedAlgorithms_AreExactlyTheSetE42Publishes()
+    public void SupportedAlgorithms_AreExactlyThePublishedSet()
     {
-        // §E.4.2 fixes the set. Adding one is a contract change; dropping one breaks every token
+        // The set is fixed. Adding one is a contract change; dropping one breaks every token
         // already in circulation that carries it in its alg segment.
         string[] expected =
         [
@@ -99,7 +99,7 @@ public sealed class SigningKeyFactoryTests
     [InlineData(SignatureAlgorithms.Hs256, false)]
     [InlineData(SignatureAlgorithms.Ed25519, false)]
     [InlineData(null, false)]
-    public void IsPostQuantum_MatchesTheE53Phasing(string? algorithm, bool expected)
+    public void IsPostQuantum_IsTrueOnlyForThePostQuantumAlgorithms(string? algorithm, bool expected)
     {
         Assert.Equal(expected, SigningKeyFactory.IsPostQuantum(algorithm));
     }
@@ -175,7 +175,7 @@ public sealed class SigningKeyFactoryTests
     [Fact]
     public void CreateSigner_MaterialWithoutAPrivateKey_Throws()
     {
-        // T-15: the edge verifies and never signs, so it holds material with no private half.
+        // The edge verifies and never signs, so it holds material with no private half.
         SigningKeyMaterial verifyOnly = new()
         {
             Kid = "verify-only",
@@ -426,7 +426,7 @@ public sealed class SigningKeyFactoryTests
     [Fact]
     public void CreateVerificationKey_SymmetricKey_IsNotPublishableAsAJwk()
     {
-        // T-15 again, from the other side: an HS256 "public" key is the signing secret.
+        // The same again, from the other side: an HS256 "public" key is the signing secret.
         SigningKeyMaterial material = SigningKeyFactory.Generate(
             SignatureAlgorithms.Hs256, SigningKeyPurposes.Token, Now, null);
 

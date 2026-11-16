@@ -3,8 +3,7 @@ using Dle.Domain.Analytics;
 namespace Dle.Domain.Ports;
 
 /// <summary>
-/// Writes batches of click events drained from <see cref="IClickEventSink"/> to durable storage
-///.
+/// Writes batches of click events drained from <see cref="IClickEventSink"/> to durable storage.
 /// </summary>
 public interface IClickEventWriter
 {

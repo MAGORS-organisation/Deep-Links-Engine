@@ -15,7 +15,7 @@ namespace Dle.Edge.Telemetry;
 /// </para>
 /// <para>
 /// Every <c>Start…</c> method returns a nullable <see cref="Activity"/>. With no listener attached —
-/// the common case, since §C.6 samples a fraction of traces — <c>StartActivity</c> returns
+/// the common case, since only a fraction of traces is sampled — <c>StartActivity</c> returns
 /// <see langword="null"/> and costs nothing, which is the property that lets the hot path be
 /// instrumented at all.
 /// </para>

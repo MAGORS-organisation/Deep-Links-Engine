@@ -14,7 +14,7 @@ namespace Dle.IntegrationTests.Persistence;
 /// The point of these tests is that no handler compares a tenant identifier. Isolation is a named
 /// query filter attached to every tenant-owned entity type in the model, which means it holds for
 /// queries nobody has written yet — and it means a deliberately crafted foreign identifier is
-/// indistinguishable from one that never existed, which is the whole of TC-166.
+/// indistinguishable from one that never existed, which is the whole point.
 /// </para>
 /// <para>
 /// Two tenants are seeded, one row of each kind is created for each, and every read is then made in

@@ -12,7 +12,7 @@ namespace Dle.Edge.Rendering;
 /// Every member is optional and every member has already been checked against
 /// <see cref="SafeUrl"/> by the time an instance exists. Nothing that reaches a page from this type can
 /// carry a scheme, a colour syntax or a data URI that the renderer did not intend, which is what keeps
-/// tenant-controlled configuration out of the T-11 threat surface.
+/// tenant-controlled configuration out of the stored cross-site scripting surface.
 /// </remarks>
 internal sealed record PageBranding
 {

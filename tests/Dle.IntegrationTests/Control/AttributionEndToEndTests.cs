@@ -13,14 +13,13 @@ namespace Dle.IntegrationTests.Control;
 
 /// <summary>
 /// The deferred attribution path end to end: a click in the partitioned stream, an install referrer
-/// carrying its identifier, and the attribution that follows (TC-141, TC-142, TC-143, TC-144,
-/// TC-149).
+/// carrying its identifier, and the attribution that follows.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The click identifier is minted by the host's own <see cref="IClickIdCodec"/> and then decoded
 /// again, so the click event is written at exactly the instant the identifier claims — which is what
-/// makes the bounded lookup of §B.6.3 find it, and what makes the test independent of how much time
+/// makes the time-bounded click lookup find it, and what makes the test independent of how much time
 /// passes while it runs.
 /// </para>
 /// <para>
@@ -38,7 +37,7 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
 {
     /// <summary>
     /// The consent object an SDK sends once the host application has recorded attribution consent.
-    /// The tenants below run in <c>full</c> mode, and under §E.6.2 that mode only unlocks click-id
+    /// The tenants below run in <c>full</c> mode, and that mode only unlocks click-id
     /// linking — the deterministic strategies included — when the request carries this; without it
     /// the gate answers <c>match_type=none</c> with reason <c>consent_missing</c>.
     /// </summary>
@@ -243,10 +242,10 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
     [RequiresDockerFact]
     public async Task Events_WithALinkOpenForOneOfOurLinks_ProducesADirectOpenAttribution()
     {
-        // TC-149. When the association files verify and the application is installed, the operating
+        // When the association files verify and the application is installed, the operating
         // system opens it and no HTTP request reaches the engine at all — so without this event the
-        // click is never counted and re-engagement is understated exactly where it worked best
-        //. The application reports the URL it was handed, which is deterministic evidence,
+        // click is never counted and re-engagement is understated exactly where it worked best.
+        // The application reports the URL it was handed, which is deterministic evidence,
         // hence confidence 1.00.
         Fixture fixture = await SeedAsync();
 

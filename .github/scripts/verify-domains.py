@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Nightly re-verification of every registered domain's AASA / assetlinks (docs/zadanie.md §C.8
-"nightly", §D.7 criterion 7).
+"""Nightly re-verification of every registered domain's AASA / assetlinks.
 
 Talks to the control plane only through its public API (snake_case JSON):
 

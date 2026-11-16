@@ -19,11 +19,11 @@ using Xunit;
 namespace Dle.UnitTests.Control;
 
 /// <summary>
-/// <c>POST /v1/resolve</c> — the deferred deep linking decision (§B.6.2, §B.6.3, FR-182 to FR-188).
+/// <c>POST /v1/resolve</c> — the deferred deep linking decision.
 /// Three properties are enforced by the use case rather than hoped for: consent is an input and not
 /// a filter, one installation gets one attribution, and one click is worth one installation. Every
 /// decision, including every refusal, has to leave behind an evidence document that explains it —
-/// §B.5.3 exists because a disputed attribution has no other defence.
+/// the evidence exists because a disputed attribution has no other defence.
 /// </summary>
 public sealed class ResolveInstallTests : IDisposable
 {
@@ -53,9 +53,8 @@ public sealed class ResolveInstallTests : IDisposable
     public void Dispose() => _metrics.Dispose();
 
     /// <summary>
-    /// TC-141. The Android install referrer carries <c>dl_cid</c>, the click exists and belongs to
-    /// the caller: a deterministic match at confidence exactly 1.00, never an approximation
-    ///.
+    /// The Android install referrer carries <c>dl_cid</c>, the click exists and belongs to
+    /// the caller: a deterministic match at confidence exactly 1.00, never an approximation.
     /// </summary>
     [Fact]
     public async Task Resolve_InstallReferrerCarryingAClickId_IsADeterministicMatch()
@@ -89,7 +88,7 @@ public sealed class ResolveInstallTests : IDisposable
         Assert.Equal("summer-2026", response.Link?.Campaign);
         Assert.Equal("google-play", response.Params["utm_source"]);
 
-        // §B.5.3: the row has to explain itself afterwards.
+        // The row has to explain itself afterwards.
         Dictionary<string, string> evidence = EvidenceOf(Assert.Single(_store.Attributions));
 
         Assert.Equal(AttributionStrategyNames.InstallReferrer, evidence[AttributionEvidence.StrategyKey]);
@@ -137,7 +136,7 @@ public sealed class ResolveInstallTests : IDisposable
 
         _ = await ResolveAsync(Request(referrer: Referrer(clickId)));
 
-        // §B.6.3: the identifier carries its own timestamp so the query can prune partitions. A
+        // The identifier carries its own timestamp so the query can prune partitions. A
         // lookup without a time bound is the debt that only becomes visible after months of data.
         Assert.Equal(1, _clicks.ClickIdLookups);
         Assert.NotNull(_clicks.LastClickIdWindow);
@@ -148,7 +147,7 @@ public sealed class ResolveInstallTests : IDisposable
         Assert.Equal(clickedAt.AddMinutes(_options.ClickWindowMinutes), to);
     }
 
-    /// <summary>TC-142. An organic install is not an error; the application simply carries on.</summary>
+    /// <summary>An organic install is not an error; the application simply carries on.</summary>
     [Fact]
     public async Task Resolve_ReferrerWithoutAClickId_IsNoneAndNotAnError()
     {
@@ -185,7 +184,7 @@ public sealed class ResolveInstallTests : IDisposable
     }
 
     /// <summary>
-    /// TC-167 / T-05. A mutated click identifier fails its integrity check, is never matched, and is
+    /// A mutated click identifier fails its integrity check, is never matched, and is
     /// recorded as tampered rather than as an ordinary miss.
     /// </summary>
     [Fact]
@@ -229,7 +228,7 @@ public sealed class ResolveInstallTests : IDisposable
         Assert.Equal(AttributionReasons.ForeignTenant, evidence["refused." + AttributionStrategyNames.InstallReferrer]);
     }
 
-    /// <summary>TC-143. The second call for one installation re-reads the decision; it never writes a second one.</summary>
+    /// <summary>The second call for one installation re-reads the decision; it never writes a second one.</summary>
     [Fact]
     public async Task Resolve_SameInstallTwice_IsIdempotentAndWritesOneAttribution()
     {
@@ -260,7 +259,7 @@ public sealed class ResolveInstallTests : IDisposable
         Assert.Equal(first.Response.Link?.Id, second.Response.Link?.Id);
     }
 
-    /// <summary>TC-144. One click is worth one installation, and the first one wins.</summary>
+    /// <summary>One click is worth one installation, and the first one wins.</summary>
     [Fact]
     public async Task Resolve_TwoInstallsPresentingOneClickId_OnlyTheFirstIsAttributed()
     {
@@ -298,7 +297,7 @@ public sealed class ResolveInstallTests : IDisposable
     }
 
     /// <summary>
-    /// TC-145. The probabilistic module is off, and the caller sent signals anyway. They are
+    /// The probabilistic module is off, and the caller sent signals anyway. They are
     /// discarded with the request: nothing reads them, so nothing can store them.
     /// </summary>
     [Fact]
@@ -333,7 +332,7 @@ public sealed class ResolveInstallTests : IDisposable
         Assert.DoesNotContain(evidence.Keys, key => key.StartsWith(AttributionEvidence.SignalKeyPrefix, StringComparison.Ordinal));
     }
 
-    /// <summary>TC-146. The module is on, but the visitor refused attribution consent. Same answer.</summary>
+    /// <summary>The module is on, but the visitor refused attribution consent. Same answer.</summary>
     [Fact]
     public async Task Resolve_WithoutAttributionConsent_ProcessesNoSignalsAndLooksUpNoClick()
     {
@@ -388,7 +387,7 @@ public sealed class ResolveInstallTests : IDisposable
     }
 
     /// <summary>
-    /// TC-147. A candidate outside the window scores exactly zero, so the answer is <c>none</c> and
+    /// A candidate outside the window scores exactly zero, so the answer is <c>none</c> and
     /// never a weak match. The window is enforced twice — the query asks for it and the scorer
     /// insists on it — and this test defeats the first to prove the second.
     /// </summary>
@@ -467,7 +466,7 @@ public sealed class ResolveInstallTests : IDisposable
     }
 
     /// <summary>
-    /// TC-148. A claim code the user typed after it expired earns a typed error that says so, not a
+    /// A claim code the user typed after it expired earns a typed error that says so, not a
     /// silent fall-through to a weaker strategy. The user asked a deterministic question.
     /// </summary>
     [Fact]

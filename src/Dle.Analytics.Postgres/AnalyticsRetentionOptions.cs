@@ -3,15 +3,14 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Analytics.Postgres;
 
 /// <summary>
-/// Retention policy of the analytics data, bound from <c>Dle:Privacy:Retention</c>
-///.
+/// Retention policy of the analytics data, bound from <c>Dle:Privacy:Retention</c>.
 /// </summary>
 /// <remarks>
-/// The defaults are the ones the specification names: thirty days of raw, hash-only click stream
+/// The defaults are thirty days of raw, hash-only click stream
 /// and two years of aggregates. Raw events are never stored with an IP address in the first place
 /// — <c>ip_hash</c> is an HMAC under a daily rotating salt, and <c>ip_prefix</c> exists only under
 /// consent = full — so retention here is about deleting rows, not about de-identifying them after
-/// the fact, which §E.6.2 rejects as "write it now and erase it later".
+/// the fact, which would be "write it now and erase it later".
 /// </remarks>
 public sealed class AnalyticsRetentionOptions : IValidatableObject
 {

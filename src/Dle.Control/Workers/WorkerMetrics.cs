@@ -9,7 +9,7 @@ namespace Dle.Control.Workers;
 /// <para>
 /// A background job that fails silently is worse than one that does not exist, because the
 /// deployment believes it is protected. Every pass of every worker therefore reports an outcome,
-/// and <c>dle_domain_verification_failures</c> — the gauge §C.6 names and asks to be alerted on —
+/// and <c>dle_domain_verification_failures</c> — the gauge an alert watches —
 /// is published from here rather than from the worker, so that a worker which crashes on its first
 /// line still leaves the last known value visible instead of leaving a blank panel.
 /// </para>

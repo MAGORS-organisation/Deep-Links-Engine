@@ -9,7 +9,7 @@ namespace Dle.UnitTests.Crypto;
 
 /// <summary>
 /// An IP address is personal data (Breyer, C-582/14), so the engine stores only two derived forms:
-/// a keyed hash under a rotating salt, and a truncated network prefix (§B.5.3, FR-247, K9). The
+/// a keyed hash under a rotating salt, and a truncated network prefix. The
 /// rotation is a privacy control rather than key hygiene — once the salt changes, yesterday's
 /// hashes can no longer be linked to today's, so the correlation window is bounded by construction.
 /// </summary>

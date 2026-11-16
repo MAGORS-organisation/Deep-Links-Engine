@@ -8,7 +8,7 @@ using Xunit.v3;
 [assembly: AssemblyFixture(typeof(DleInfrastructureFixture))]
 
 // Serial. These tests share two containers, two of them take a database server away on purpose to
-// assert the chaos behaviour of §D.6, and several assert on process-wide state — the bounded click
+// assert the behaviour under a dependency outage, and several assert on process-wide state — the bounded click
 // event channel, its drop counter, and the shadow ban budget. Running them in parallel would make
 // each of those a coin toss.
 [assembly: Parallelization(Mode = ParallelMode.None)]

@@ -13,7 +13,7 @@ namespace Dle.Control.Identity;
 /// forget.
 /// </para>
 /// <para>
-/// The consequence is the answer TC-166 asks for. A caller presenting another tenant's link
+/// The consequence is that a foreign resource is a plain miss. A caller presenting another tenant's link
 /// identifier does not hit an ownership check that returns 403; the row simply is not in the
 /// queryable, the lookup returns <see langword="null"/>, and the handler answers 404 exactly as it
 /// would for an identifier nobody ever issued. The two are indistinguishable from outside because

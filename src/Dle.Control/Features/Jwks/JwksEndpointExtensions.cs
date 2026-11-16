@@ -101,7 +101,7 @@ public static class JwksEndpointExtensions
         List<JsonWebKey> published = [.. keys.Values];
         published.Sort(static (left, right) => string.CompareOrdinal(left.Kid, right.Kid));
 
-        // Source generated metadata rather than reflection, as the shared kernel requires of every
+        // Source generated metadata rather than reflection, as is required of every
         // document the product emits.
         string json = JsonSerializer.Serialize(
             new JwksDocument(published),

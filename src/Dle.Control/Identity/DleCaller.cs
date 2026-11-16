@@ -11,7 +11,7 @@ namespace Dle.Control.Identity;
 /// <param name="Role">The role from <see cref="DleRoles"/>.</param>
 /// <param name="Scopes">Granted scopes; empty means the role alone governs.</param>
 /// <param name="KeyPrefix">Non-secret prefix of the presented key, safe to log.</param>
-/// <param name="TenantCreatedAt">When the tenant was provisioned, for the §E.9 new-tenant limit.</param>
+/// <param name="TenantCreatedAt">When the tenant was provisioned, for the new-tenant rate limit.</param>
 public sealed record DleCaller(
     Guid TenantId,
     Guid? ActorId,

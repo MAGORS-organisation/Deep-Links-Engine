@@ -23,7 +23,7 @@ public sealed record ContractChange(ContractChangeKind Kind, string Location, st
 }
 
 /// <summary>
-/// Compares two contract projections and classifies every difference (§C.8 "main: contract tests").
+/// Compares two contract projections and classifies every difference.
 /// </summary>
 /// <remarks>
 /// <para>

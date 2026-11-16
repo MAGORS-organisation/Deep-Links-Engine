@@ -10,7 +10,7 @@ namespace Dle.SecurityTests.Infrastructure;
 /// rather than only on the response.
 /// </summary>
 /// <remarks>
-/// TC-167 and T-05 are about what is <em>recorded</em>, not about what is returned: a tampered click
+/// Click-id tampering is about what is <em>recorded</em>, not about what is returned: a tampered click
 /// identifier has to be visible in the event as tampered, because the whole point of the flag is that
 /// a partner payout can be recomputed without it.
 /// </remarks>

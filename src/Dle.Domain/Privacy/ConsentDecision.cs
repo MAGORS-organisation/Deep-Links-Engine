@@ -2,7 +2,7 @@ namespace Dle.Domain.Privacy;
 
 /// <summary>
 /// The outcome of the consent gate. It is an <em>input</em> to the decision pipeline and not a
-/// post hoc filter (specification §B.1/5): a signal that must not be processed is never collected,
+/// post hoc filter: a signal that must not be processed is never collected,
 /// rather than collected and deleted later.
 /// </summary>
 public sealed record ConsentDecision

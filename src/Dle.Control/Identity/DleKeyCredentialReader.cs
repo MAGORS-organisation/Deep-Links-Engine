@@ -83,7 +83,7 @@ public static class DleKeyCredentialReader
     }
 
     /// <summary>
-    /// Reduces the caller address to the coarse prefix the §E.9 limiters partition on.
+    /// Reduces the caller address to the coarse prefix the rate limiters partition on.
     /// </summary>
     /// <param name="address">The remote address, or <see langword="null"/> when there is none.</param>
     /// <returns>A /24 for IPv4 and a /48 for IPv6, or <see langword="null"/>.</returns>

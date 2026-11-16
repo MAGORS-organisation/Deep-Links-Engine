@@ -1,6 +1,6 @@
 {{- /*
 dle-control — the control plane: admin console (/admin), API (/api, /v1), Scalar, OpenAPI,
-workers (domain verifier, roll-ups, webhook dispatcher, retention). §B.8 profile B: two pods.
+workers (domain verifier, roll-ups, webhook dispatcher, retention). Two pods.
 
 Probes: liveness /healthz (process only), readiness /readyz (gates on PostgreSQL — a control pod
 that cannot reach the database would answer 503 anyway, so it leaves the Service until it can).

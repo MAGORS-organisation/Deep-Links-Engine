@@ -6,8 +6,8 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace Dle.Persistence;
 
 /// <summary>
-/// The control-plane database context. Owns the schema for every table in §B.5.2 and,
-/// through its migrations, for the partitioned click stream of §B.5.3 as well.
+/// The control-plane database context. Owns the schema for every control-plane table and,
+/// through its migrations, for the partitioned click stream as well.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -48,7 +48,7 @@ public sealed class DleDbContext : DbContext
     private static readonly Dictionary<Type, string> TenantExemptEntityTypes = new()
     {
         [typeof(AppDomainEntity)] =
-            "Join table of apps and domains (§B.5.2 has no tenant_id on it). Both sides are " +
+            "Join table of apps and domains (the table has no tenant_id). Both sides are " +
             "tenant filtered, and AppRepository only ever reaches it through them.",
         [typeof(LinkVersion)] =
             "History rows hang off links.id and carry no tenant column. LinkRepository always " +
@@ -202,8 +202,8 @@ public sealed class DleDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         // citext gives case insensitive slugs and hosts without a lower() functional index on every
-        // lookup, which matters because the resolve index has to stay usable for an index only scan
-        //. pg_partman is deliberately not declared here: it is optional, and a missing
+        // lookup, which matters because the resolve index has to stay usable for an index only scan.
+        // pg_partman is deliberately not declared here: it is optional, and a missing
         // extension must degrade to a warning rather than fail the migration.
         modelBuilder.HasPostgresExtension("citext");
 
@@ -255,8 +255,8 @@ public sealed class DleDbContext : DbContext
         Scope<AuditLogEntry>(e => e.TenantId == TenantFilterValue);
         Scope<IdempotencyRecord>(r => r.TenantId == TenantFilterValue);
 
-        // A signing key with no tenant is the instance wide key every tenant verifies against
-        //, so the filter admits it alongside the tenant's own keys.
+        // A signing key with no tenant is the instance wide key every tenant verifies against,
+        // so the filter admits it alongside the tenant's own keys.
         Scope<SigningKeyRecord>(k => k.TenantId == null || k.TenantId == TenantFilterValue);
 
         VerifyEveryEntityTypeIsClassified(modelBuilder, filtered);

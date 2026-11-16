@@ -56,7 +56,7 @@ public sealed record CreateApiKeyRequest
 
 /// <summary>
 /// Response to key creation. The secret appears here and nowhere else: only an Argon2id hash is
-/// stored, so a lost key is replaced, never recovered (FR-242, K5 in §E.4.1).
+/// stored, so a lost key is replaced, never recovered.
 /// </summary>
 public sealed record ApiKeyCreatedResponse
 {

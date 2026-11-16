@@ -22,7 +22,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.SecurityTests.Tenancy;
 
 /// <summary>
-/// T-09: a request is scoped to exactly the tenant it is authorised as.
+/// A request is scoped to exactly the tenant it is authorised as.
 /// </summary>
 /// <remarks>
 /// <para>

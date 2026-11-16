@@ -14,7 +14,7 @@
 //     --host link.example.com \
 //     --total 10000 --hot 100
 //
-// The counts default to the profile's own needs: a hundred hot links, because §D.5 says the hot set
+// The counts default to the profile's own needs: a hundred hot links, because the hot set
 // is the top hundred, and ten thousand in total so that the 15 % "random existing" stream is spread
 // widely enough to actually miss the cache sometimes. A corpus of a few hundred would sit entirely
 // in L1 and the run would report a cache hit rate of 100 % that means nothing.
@@ -50,7 +50,7 @@ const PREFIX = args['prefix'] ?? 'k6load';
  * Builds one link's creation request.
  *
  * The rule set is deliberately non-trivial: a platform-scoped rule and a default, which is the
- * shape §B.5.4 documents and the shape a real campaign has. A corpus of links whose rule set is a
+ * shape a real campaign has. A corpus of links whose rule set is a
  * single default would measure the evaluator's fastest path and nothing else.
  */
 function linkRequest(index) {
@@ -219,7 +219,7 @@ const corpus = {
   host: HOST,
   created_at: new Date().toISOString(),
   prefix: PREFIX,
-  // §D.5: 80 % of traffic goes to the top hundred. They are simply the first HOT slugs; which links
+  // 80 % of traffic goes to the top hundred. They are simply the first HOT slugs; which links
   // are hot does not matter, only that the same small set is hot for the whole run, because that is
   // what a cache hit rate of 95 % depends on.
   hot: slugs.slice(0, HOT),

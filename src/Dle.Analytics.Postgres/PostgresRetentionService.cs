@@ -73,7 +73,7 @@ public sealed partial class PostgresRetentionService : IRetentionService
         "Design",
         "CA1031:Do not catch general exception types",
         Justification =
-            "§E.6.3 requires the retention job's own execution to be auditable, which includes the "
+            "The retention job's own execution has to be auditable, which includes the "
             + "runs that fail: the audit row has to be written whatever went wrong. The exception "
             + "is logged and rethrown, so nothing is swallowed and the caller still fails.")]
     public async Task<RetentionRunResult> RunAsync(CancellationToken ct)

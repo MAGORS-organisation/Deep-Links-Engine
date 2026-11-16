@@ -33,7 +33,7 @@ public data class SafeDeepLink(
 )
 
 /**
- * Allowlist based deep link parser (spec §E.7 rule 1).
+ * Allowlist based deep link parser.
  *
  * A deep link is untrusted input even when the operating system delivered it: any application can
  * register the same custom scheme, a web page can craft an App Link with any path and any query,

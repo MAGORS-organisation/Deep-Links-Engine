@@ -6,7 +6,7 @@ namespace Dle.Control.Features.Links;
 /// <remarks>
 /// <para>
 /// The simulator answers a human question — "why did rule 2 lose?" — so its output is prose and
-/// therefore user-facing text, which NFR-15 requires in both languages. The alternative, a machine
+/// therefore user-facing text, which has to exist in both languages (EN and SK). The alternative, a machine
 /// readable diff the UI would have to render into sentences, moves the same translation problem
 /// into the front end and duplicates it per client.
 /// </para>

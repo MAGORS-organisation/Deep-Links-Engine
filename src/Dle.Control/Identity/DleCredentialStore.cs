@@ -13,7 +13,7 @@ namespace Dle.Control.Identity;
 /// <param name="Hash">Argon2id hash of the key, in PHC form, as stored.</param>
 /// <param name="ExpiresAt">Expiry instant, or <see langword="null"/> for a key that never expires.</param>
 /// <param name="TenantStatus">Lifecycle status of the tenant.</param>
-/// <param name="TenantCreatedAt">When the tenant was provisioned, for the §E.9 new-tenant limit.</param>
+/// <param name="TenantCreatedAt">When the tenant was provisioned, for the new-tenant rate limit.</param>
 public sealed record ApiKeyCandidate(
     Guid KeyId,
     Guid TenantId,

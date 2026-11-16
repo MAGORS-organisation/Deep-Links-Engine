@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createDle, isDeterministic } from '../src/index';
 import type { DleClient } from '../src/types';
-import { B72, createFetchMock, jsonResponse } from './helpers';
+import { WIRE, createFetchMock, jsonResponse } from './helpers';
 
-const UNMATCHED = JSON.parse(B72.RESOLVE_RESPONSE_UNMATCHED) as Record<string, unknown>;
+const UNMATCHED = JSON.parse(WIRE.RESOLVE_RESPONSE_UNMATCHED) as Record<string, unknown>;
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 

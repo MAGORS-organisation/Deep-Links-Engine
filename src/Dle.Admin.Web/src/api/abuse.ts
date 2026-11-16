@@ -24,7 +24,7 @@ export const abuse = {
     });
   },
 
-  /** TC-103: the link answers 410 from the next resolve on. */
+  /** The link answers 410 from the next resolve on. */
   quarantine(linkId: string, body: QuarantineDecisionRequest): Promise<void> {
     return api(`/api/v1/admin/links/${encodeURIComponent(linkId)}/quarantine`, { method: 'POST', body });
   },

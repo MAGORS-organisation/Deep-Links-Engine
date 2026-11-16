@@ -11,8 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace Dle.Control.Features.Abuse;
 
 /// <summary>
-/// The default <see cref="IUrlSafetyChecker"/>: syntax, then the resolved address, then reputation
-/// (§E.3 steps 1 to 3, T-01, T-02).
+/// The default <see cref="IUrlSafetyChecker"/>: syntax, then the resolved address, then reputation.
 /// </summary>
 /// <remarks>
 /// <para>

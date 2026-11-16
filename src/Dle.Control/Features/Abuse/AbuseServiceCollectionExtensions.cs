@@ -24,7 +24,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 public static class AbuseServiceCollectionExtensions
 {
     /// <summary>
-    /// Name of the rate limiter policy applied to the public abuse form (§E.9: five per hour per
+    /// Name of the rate limiter policy applied to the public abuse form (five per hour per
     /// IP address).
     /// </summary>
     public const string ReportRateLimitPolicy = "dle-abuse-report";
@@ -94,7 +94,7 @@ public static class AbuseServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <remarks>
     /// <para>
-    /// A fixed window keyed by the caller's address, with the value from §E.9. Fixed rather than
+    /// A fixed window keyed by the caller's address, five per hour. Fixed rather than
     /// sliding because the limit exists to stop a flood, not to smooth a legitimate burst: nobody
     /// files five genuine abuse reports a minute apart.
     /// </para>
@@ -109,7 +109,7 @@ public static class AbuseServiceCollectionExtensions
     {
         services.AddRateLimiter(options =>
         {
-            // §E.9 answers a rejected request with 429 and a Retry-After, never with 503, which is
+            // A rejected request is answered with 429 and a Retry-After, never with 503, which is
             // the framework default and would tell a caller to try again immediately.
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 

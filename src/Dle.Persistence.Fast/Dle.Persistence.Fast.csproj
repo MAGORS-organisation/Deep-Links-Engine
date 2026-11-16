@@ -3,7 +3,6 @@
   <!--
     Hot-path persistence: hand-written Dapper queries for the resolve path and
     NpgsqlBinaryImporter (COPY) for batched click/SDK event writes.
-    ADR-004, docs/zadanie.md §C.3.1 and §C.3.2.
 
     Blocking I/O other than one cache hit and one DB query is forbidden here
 .
@@ -28,7 +27,7 @@
 
   <ItemGroup>
     <!--
-      Raw Npgsql only. ADR-004 names Dapper for this layer, but its object
+      Raw Npgsql only. Dapper was the original choice for this layer, but its object
       materializer emits IL at run time and would forfeit the AOT profile above, so
       every read goes through NpgsqlCommand and is mapped by ordinal in Links/,
       WellKnown/ and Attribution/. The Dapper* class names are historical.

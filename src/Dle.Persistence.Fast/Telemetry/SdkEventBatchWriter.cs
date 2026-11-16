@@ -4,7 +4,7 @@ namespace Dle.Persistence.Fast.Telemetry;
 
 /// <summary>
 /// Writes batches of SDK reported events with <c>COPY … FROM STDIN (FORMAT BINARY)</c>
-/// (<c>POST /v1/events</c>, §B.7.2, §C.3.2).
+/// (<c>POST /v1/events</c>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -20,7 +20,7 @@ namespace Dle.Persistence.Fast.Telemetry;
 /// because nothing downstream will notice it.
 /// </para>
 /// <para>
-/// The table this writes into is not spelled out in §B.5.3, which only defines <c>click_events</c>.
+/// The table this writes into has no reference DDL of its own, unlike <c>click_events</c>.
 /// The column list below is therefore the contract the control plane's migration has to match:
 /// <c>sdk_events (id uuid, occurred_at timestamptz, tenant_id uuid, app_id uuid, install_id text,
 /// event_type text, event_name text, url text, event_value numeric, currency char(3), link_id bigint,

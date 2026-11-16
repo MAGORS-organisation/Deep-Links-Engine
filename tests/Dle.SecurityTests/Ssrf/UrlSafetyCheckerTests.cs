@@ -12,8 +12,8 @@ namespace Dle.SecurityTests.Ssrf;
 /// <remarks>
 /// <para>
 /// <see cref="TargetUrlPolicyTests"/> covers what can be decided from the string.
-/// <see cref="DefaultUrlSafetyChecker"/> is the piece that adds the step §E.3 actually calls the SSRF
-/// defence — "resolve and check the resulting IP, not just the hostname" — and
+/// <see cref="DefaultUrlSafetyChecker"/> is the piece that adds the actual SSRF
+/// defence — resolve and check the resulting IP, not just the hostname — and
 /// <see cref="WebhookDestinationPolicy"/> is the same judgement applied to the other customer-supplied
 /// URL the deployment fetches on a schedule.
 /// </para>
@@ -91,11 +91,11 @@ public sealed class UrlSafetyCheckerTests : IDisposable
     public async Task Blocklist_AHostTheOperatorListed_IsRefusedAndAttributedToTheBlocklist()
     {
         // Asserted against the reputation provider directly rather than through the composed checker,
-        // and that is a statement about the product's own ordering rather than a convenience. §E.3
+        // and that is a statement about the product's own ordering rather than a convenience. The check
         // runs syntax, then the resolved address, then reputation, and it stops at the first refusal —
         // so a blocklisted host that does not resolve is refused by the address step and never reaches
-        // the blocklist at all. Driving the provider is the only way to assert what TC-163 actually
-        // asks for: that the rejection is attributed, so an operator answering an appeal can say which
+        // the blocklist at all. Driving the provider is the only way to assert what actually
+        // matters: that the rejection is attributed, so an operator answering an appeal can say which
         // source objected.
         string blocklist = await WriteBlocklistAsync(["phish.example", "malware.example"]);
 

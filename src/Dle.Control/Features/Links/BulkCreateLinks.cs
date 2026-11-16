@@ -30,7 +30,7 @@ namespace Dle.Control.Features.Links;
 /// </para>
 /// <para>
 /// Concurrency is bounded to two batches per tenant by the <c>dle-bulk</c> limiter and the row count
-/// by <c>Dle:Control:BulkMaxRows</c>, which are the two §E.9 numbers for this endpoint.
+/// by <c>Dle:Control:BulkMaxRows</c>, which are the two limits for this endpoint.
 /// </para>
 /// </remarks>
 public static class BulkCreateLinks

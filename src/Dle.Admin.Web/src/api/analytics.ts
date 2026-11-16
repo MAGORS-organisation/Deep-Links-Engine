@@ -33,7 +33,7 @@ export const analytics = {
     return api(`${base}/breakdown`, { query: { ...toQuery(query), dimension }, signal });
   },
 
-  /** ADR-008. Deterministic vs probabilistic vs unmatched, with the mean confidence of the guesses. */
+  /** Deterministic vs probabilistic vs unmatched, with the mean confidence of the guesses. */
   attributionQuality(query: AnalyticsQuery, signal?: AbortSignal): Promise<AttributionQualityResponse> {
     return api(`${base}/attribution-quality`, { query: toQuery(query), signal });
   },

@@ -13,7 +13,7 @@ package sk.magors.dle
  *   sees a recorded decision, one with [timestampMillis].
  * - `analytics == false` means behavioural events (`first_open`, `session`, `conversion`,
  *   `custom`) are dropped at [DleClient.track] time, never buffered. `link_open` is exempt: the
- *   engine treats a direct open as first party measurement of the link itself and FR-223 requires
+ *   engine treats a direct open as first party measurement of the link itself and requires
  *   it to be reported. Set [DleConfig.Builder.requireAnalyticsConsentForEvents] to `false` to lift
  *   the gate when your legal basis does not need it.
  *

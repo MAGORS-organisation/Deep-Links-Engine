@@ -1,13 +1,13 @@
 namespace Dle.SecurityTests.Enumeration;
 
 /// <summary>
-/// TC-108 / T-07: the anti-enumeration budget of §E.9, and its independence from the success budget.
+/// The anti-enumeration budget, and its independence from the success budget.
 /// </summary>
 /// <remarks>
 /// <para>
-/// §E.9 calls the limit on 404 responses the most important one in the table, and says why: it is the
-/// primary defence against slug enumeration and "must be separate from the limit on successful
-/// requests, or a legitimate campaign peak would switch the protection off". Two counters, two budgets, exhaustible
+/// The limit on 404 responses is the most important rate limit, because it is the
+/// primary defence against slug enumeration, and it must be separate from the limit on successful
+/// requests, or a legitimate campaign peak would switch the protection off. Two counters, two budgets, exhaustible
 /// independently — that is the property, and it is the one a single shared counter would quietly
 /// break while every other test still passed.
 /// </para>
@@ -20,7 +20,7 @@ namespace Dle.SecurityTests.Enumeration;
 /// </remarks>
 public sealed class NotFoundBudgetTests : IAsyncLifetime
 {
-    /// <summary>The §E.9 defaults this host runs with: 20 tokens a minute, burst 40, ban 15 minutes.</summary>
+    /// <summary>The shipped defaults this host runs with: 20 tokens a minute, burst 40, ban 15 minutes.</summary>
     private const int Burst = 40;
 
     private const string Slug = "ab3xk9pq";
@@ -36,7 +36,7 @@ public sealed class NotFoundBudgetTests : IAsyncLifetime
 
         // Only the resolve sliding window is lifted, and only so that a test making a few hundred
         // requests from one address does not trip the *other* limit and mask the one under test. The
-        // 404 budget keeps its §E.9 burst and rate per period, which is the whole subject here.
+        // 404 budget keeps its default burst and rate per period, which is the whole subject here.
         _edge.Overrides["Dle:RateLimits:Edge:Resolve:PermitsPerWindow"] = "100000";
 
         // The partitioned token bucket refills continuously, one token every three seconds at the
@@ -72,7 +72,7 @@ public sealed class NotFoundBudgetTests : IAsyncLifetime
 
         // The bucket holds `Burst` tokens, so the first `Burst` misses are ordinary 404s and the one
         // that drains it is answered 429 — once. After that the prefix is shadow banned and every
-        // request looks exactly like an ordinary miss again, which is what §E.9 asks for: the scanner
+        // request looks exactly like an ordinary miss again, which is the point: the scanner
         // must not be handed a reliable "you have been detected" oracle.
         Assert.All(answers.Take(Burst), status => Assert.Equal(HttpStatusCode.NotFound, status));
         Assert.Equal(HttpStatusCode.TooManyRequests, answers[Burst]);
