@@ -268,9 +268,9 @@ The request-body field lists are the `Create*Request` records in `src/Dle.Domain
 
 ## Errors — RFC 9457 Problem Details
 
-Every error is `application/problem+json` with `type`, `title`, `status`, `detail`, `instance`, plus extensions where noted. The `type` URI is an identifier — integrators branch on it — and is stable within a major version. Source of truth: `src/Dle.Domain/Contracts/ProblemCodes.cs`; the OpenAPI document enumerates the same list.
+Every error is `application/problem+json` with `type`, `title`, `status`, `detail`, `instance`, plus extensions where noted. The problem code — the last path segment of `type`, such as `rate-limited` — is the identifier integrators branch on; it is stable within a major version. Do not compare the whole `type` URI: the host it is published under may change. The SDKs expose the codes as `PROBLEM_CODES` / `DleError.problemCode` (web), `ProblemDocument.CODE_*` / `ProblemDocument.code` (Android) and `DleProblem.Code` / `DleProblem.code` (iOS). Source of truth: `src/Dle.Domain/Contracts/ProblemCodes.cs`; the OpenAPI document enumerates the same list.
 
-| `type` (prefix `https://docs.dle.dev/problems/`) | HTTP | When | Extensions |
+| Code (last path segment of `type`, currently under `https://docs.dle.dev/problems/`) | HTTP | When | Extensions |
 |---|---|---|---|
 | `validation-failed` | 400 | Body or query failed validation | `errors[]` |
 | `slug-taken` | 409 | Slug already used on that domain | |

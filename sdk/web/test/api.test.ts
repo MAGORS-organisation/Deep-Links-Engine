@@ -125,6 +125,9 @@ describe('api client', () => {
     expect(problemCodeOf('https://docs.example/')).toBe('docs.example');
     expect(problemCodeOf('')).toBeUndefined();
     expect(problemCodeOf(undefined)).toBeUndefined();
+    expect(problemCodeOf(null)).toBeUndefined();
+    expect(problemCodeOf(123)).toBeUndefined();
+    expect(new DleError('http', 'x', { problem: { type: null } as never }).problemCode).toBeUndefined();
   });
 
   it('times out with AbortController and reports a retriable timeout', async () => {

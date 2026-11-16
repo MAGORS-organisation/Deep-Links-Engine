@@ -31,9 +31,12 @@ export const PROBLEM_CODES = {
   dependencyUnavailable: 'dependency-unavailable',
 } as const;
 
-/** The code of a problem `type` URI — its last path segment — or `undefined`. */
-export function problemCodeOf(type: string | undefined): string | undefined {
-  if (type === undefined) return undefined;
+/**
+ * The code of a problem `type` URI — its last path segment — or `undefined`. Never throws: a
+ * missing or wrongly typed `type` in a server body is simply no code, as in the native SDKs.
+ */
+export function problemCodeOf(type: unknown): string | undefined {
+  if (typeof type !== 'string') return undefined;
   const path = (type.split(/[?#]/, 1)[0] ?? '').replace(/\/+$/, '');
   const code = path.slice(path.lastIndexOf('/') + 1);
   return code.length > 0 ? code : undefined;
