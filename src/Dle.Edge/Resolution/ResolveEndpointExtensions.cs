@@ -21,8 +21,11 @@ public static class ResolveEndpointExtensions
     /// </remarks>
     public const string RoutePattern = "/{slug:minlength(1):maxlength(64)}";
 
+    /// <summary>Route of the zero-JS deferred attribution consent submission form on interstitials.</summary>
+    public const string ConsentRoutePattern = "/_dl/consent";
+
     /// <summary>
-    /// Maps <c>GET /{slug}</c> and <c>HEAD /{slug}</c>.
+    /// Maps <c>GET /{slug}</c>, <c>HEAD /{slug}</c>, and <c>POST /_dl/consent</c>.
     /// </summary>
     /// <param name="app">The endpoint route builder.</param>
     /// <returns>The same builder, for chaining.</returns>
@@ -53,6 +56,21 @@ public static class ResolveEndpointExtensions
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
             .AllowAnonymous();
 
+        app.MapPost(ConsentRoutePattern, HandleConsentAsync)
+            .WithName("ResolveConsent")
+            .WithTags("resolve")
+            .WithSummary("Record deferred attribution consent from an interstitial")
+            .WithDescription(
+                "Validates the single-use signed token emitted by an interstitial page on a full-consent " +
+                "domain, writes the consented click event and optional iOS claim code, and re-renders the " +
+                "interstitial with attributed store targets enabled.")
+            .Produces(StatusCodes.Status200OK, contentType: "text/html")
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .Produces(StatusCodes.Status404NotFound, contentType: "text/html")
+            .Produces(StatusCodes.Status429TooManyRequests, contentType: "text/html")
+            .ProducesProblem(StatusCodes.Status503ServiceUnavailable)
+            .AllowAnonymous();
+
         return app;
     }
 
@@ -63,4 +81,11 @@ public static class ResolveEndpointExtensions
         LinkResolver resolver,
         CancellationToken cancellationToken) =>
         resolver.ResolveAsync(context, slug, cancellationToken);
+
+    /// <summary>Handles a zero-JS deferred consent submission from an interstitial form.</summary>
+    private static Task<IResult> HandleConsentAsync(
+        HttpContext context,
+        LinkResolver resolver,
+        CancellationToken cancellationToken) =>
+        resolver.HandleConsentAsync(context, cancellationToken);
 }

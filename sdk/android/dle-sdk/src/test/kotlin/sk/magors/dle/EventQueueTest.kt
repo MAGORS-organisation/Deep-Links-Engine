@@ -1,5 +1,6 @@
 package sk.magors.dle
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -63,6 +64,62 @@ class EventQueueTest {
 
         assertEquals(3, queue.size)
         assertEquals(listOf("e3", "e4", "e5"), queue.snapshot().map { it.name })
+    }
+
+    @Test
+    fun anOverflowDuringDeliveryDoesNotResendTheBatch() = runTest {
+        val sent = ArrayList<List<String?>>()
+        lateinit var queue: EventQueue
+        queue = EventQueue(
+            directory = dir,
+            maxSize = 3,
+            flushDelayMillis = 60_000L,
+            sender = { batch ->
+                sent += batch.map { it.name }
+                // Evicts e1 while the batch carrying it is on the wire.
+                if (sent.size == 1) queue.enqueue(DleEvent.custom("e4"))
+            },
+            scope = this,
+            log = silentLog(),
+            clock = clock,
+        )
+        for (i in 1..3) queue.enqueue(DleEvent.custom("e$i"))
+
+        queue.flush()
+        advanceUntilIdle()
+
+        assertEquals(listOf(listOf("e1", "e2", "e3"), listOf("e4")), sent)
+        assertEquals(0, queue.size)
+    }
+
+    @Test
+    fun flushDoesNotAbortADeliveryInFlight() = runTest {
+        val server = CompletableDeferred<Unit>()
+        var attempts = 0
+        val queue = EventQueue(
+            directory = dir,
+            maxSize = 10,
+            flushDelayMillis = 1_000L,
+            sender = {
+                attempts++
+                server.await()
+            },
+            scope = this,
+            log = silentLog(),
+            clock = clock,
+        )
+        queue.enqueue(DleEvent.session())
+        advanceTimeBy(1_001L)
+        runCurrent()
+        assertEquals(1, attempts, "the scheduled flush is waiting for the server")
+
+        queue.flush()
+        runCurrent()
+        server.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(1, attempts, "the batch went out once")
+        assertEquals(0, queue.size)
     }
 
     @Test

@@ -193,23 +193,76 @@ public static class RoutingRuleValidator
     /// A deep link path is a path, never a URL. Accepting an absolute or protocol-relative value here
     /// would turn <c>deeplink_path</c> into an open redirect that bypasses the target URL policy (T-01).
     /// </summary>
-    private static void ValidateDeeplinkPath(string? deeplinkPath, int index, List<RoutingValidationError> errors)
+    /// <summary>
+    /// Validates a deep-link relative path against open-redirect, scheme smuggling, whitespace, and
+    /// path-traversal payloads (T-01).
+    /// </summary>
+    /// <param name="deeplinkPath">Candidate deep-link path.</param>
+    /// <returns>
+    /// <see langword="null"/> when the value is null, empty, or valid; otherwise a human-readable
+    /// error message explaining why it was refused.
+    /// </returns>
+    public static string? ValidateDeeplinkPath(string? deeplinkPath)
     {
         if (string.IsNullOrEmpty(deeplinkPath))
         {
-            return;
+            return null;
         }
 
-        bool looksAbsolute =
-            deeplinkPath.Contains("://", StringComparison.Ordinal)
-            || deeplinkPath.StartsWith("//", StringComparison.Ordinal)
-            || deeplinkPath.StartsWith("\\\\", StringComparison.Ordinal);
-
-        if (looksAbsolute)
+        if (deeplinkPath.Length > 2048)
         {
-            errors.Add(new RoutingValidationError(
-                RulePath(index, ".then.deeplink_path"),
-                "The deeplink path must be a path such as \"/product/123\", not an absolute or protocol-relative URL."));
+            return "The deep link path must be at most 2048 characters.";
+        }
+
+        foreach (char c in deeplinkPath)
+        {
+            if (char.IsControl(c) || char.IsWhiteSpace(c))
+            {
+                return "The deep link path must not contain control characters or whitespace.";
+            }
+        }
+
+        if (deeplinkPath.Contains('\\', StringComparison.Ordinal)
+            || deeplinkPath.Contains("://", StringComparison.Ordinal)
+            || deeplinkPath.StartsWith("//", StringComparison.Ordinal))
+        {
+            return "The deep link path must be a path such as \"/product/123\", not an absolute or "
+                + "protocol-relative URL.";
+        }
+
+        int colon = deeplinkPath.IndexOf(':');
+        int delimiter = deeplinkPath.IndexOfAny(['/', '?', '#']);
+
+        if (colon >= 0 && (delimiter < 0 || colon < delimiter))
+        {
+            return "The deep link path must not begin with a URL scheme.";
+        }
+
+        string pathOnly = delimiter >= 0 && deeplinkPath[delimiter] != '/'
+            ? deeplinkPath[..delimiter]
+            : deeplinkPath.Split(['?', '#'], 2)[0];
+
+        foreach (string segment in pathOnly.Split('/'))
+        {
+            if (segment.Equals("..", StringComparison.Ordinal)
+                || segment.Equals("%2e%2e", StringComparison.OrdinalIgnoreCase)
+                || segment.Equals(".%2e", StringComparison.OrdinalIgnoreCase)
+                || segment.Equals("%2e.", StringComparison.OrdinalIgnoreCase))
+            {
+                return "The deep link path must not contain path traversal segments.";
+            }
+        }
+
+        return null;
+    }
+
+    private static void ValidateDeeplinkPath(string? deeplinkPath, int index, List<RoutingValidationError> errors)
+    {
+        string? error = ValidateDeeplinkPath(deeplinkPath);
+
+        if (error is not null)
+        {
+            errors.Add(new RoutingValidationError(RulePath(index, ".then.deeplink_path"), error));
         }
     }
 

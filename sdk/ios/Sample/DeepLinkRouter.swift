@@ -47,12 +47,18 @@ final class DeepLinkRouter: ObservableObject {
     }
 
     /// The once-per-installation resolve. Safe to call on every launch: after the first one the
-    /// SDK answers from its persisted state without a request.
+    /// SDK answers from its persisted state without a request. That stored answer comes back on
+    /// every launch, so a match is routed only when it was not already stored.
     func resolveDeferredLinkIfNeeded() async {
         guard let dle = try? Dle.shared else { return }
         do {
+            let delivered = dle.deferredLink?.matched == true
             let link = try await dle.resolve()
-            apply(link)
+            if delivered {
+                resolveSummary = "matched=\(link.matched) type=\(link.matchType.rawValue) (already routed)"
+            } else {
+                apply(link)
+            }
         } catch {
             // No connectivity on first launch, or the engine refused. The app continues with
             // its normal onboarding; nothing about this is user-facing.

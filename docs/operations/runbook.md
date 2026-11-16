@@ -77,14 +77,11 @@ domain will stop opening the app for new installs within days.
 
 **Meaning.** Someone reported a link as phishing or malware. The specification's SLA is a reaction within
 four hours ([§E.3](../zadanie.md)).
-1. Open the triage queue; the report has the link id, reason and reporter hash. The public form
-   (`POST /abuse-reports`) is not reachable from outside today — Caddy and the Helm ingress route that
-   path to the edge, which does not serve it — so reports sent from outside do not arrive here
-   ([README — Known gaps](../../README.md#known-gaps)).
+1. Open the triage queue; the report has the link id, reason and reporter hash. Reports arrive through
+   `POST /abuse-reports`, which Caddy and the Helm ingress route to the control plane.
 2. If plausible, **quarantine** the link. Nothing is deleted, so the record survives for the
-   notice-and-action trail. The link does **not** answer 410 immediately: quarantine does not
-   invalidate the edge cache, so it keeps redirecting to its old target for up to
-   `Dle:Edge:Cache:L2Minutes + L1Seconds` (10 min 30 s by default) before the 410 page appears.
+   notice-and-action trail. Quarantine invalidates the edge caches through Valkey, so the link answers
+   410 on its next resolve — within `Dle:Edge:Cache:L1Seconds` (30 s) if Valkey is down.
 3. Record the decision with a note. That note is what a later complaint is answered from.
 
 ### Analytics rollup or retention worker failing on every run
@@ -107,11 +104,42 @@ tables and functions; it is idempotent. Restart nothing — the next worker run 
 schema. Grant the runtime role `CREATE` on the schema if every future upgrade should apply
 its own changes.
 
+### Background workers stopped running, or ran twice
+
+**Symptom.** `dle.worker.runs` for a job reports only `outcome=not_leader` on every replica: nothing
+is rolled up, retained, re-verified or dispatched, and nothing is logged, because losing the
+election is normal. (Log events 5601/5602 mean the database could not be reached at all.) Or the
+same pass shows up as completed on two replicas at once.
+
+**Cause.** The control-plane workers elect a leader per pass with a PostgreSQL **session** advisory
+lock (`pg_try_advisory_lock`, `src/Dle.Control/Workers/PostgresLeaderLock.cs`). The lock belongs
+to one server connection and is held on that connection, idle, for the whole pass. Two things
+break it:
+
+- **A pooler in transaction or statement mode** (PgBouncer `pool_mode = transaction`, most managed
+  "transaction poolers"). The lock is taken on whatever server connection served that statement,
+  and the unlock may land on another one. The lock then stays held by a backend other clients
+  share, so every replica's `try` fails and the jobs silently stop — or, when a later `try` lands
+  on that same backend, it succeeds again and two replicas run the same pass. The control plane
+  must reach PostgreSQL directly or through a pooler in **session** mode.
+- **The lock connection dying mid-pass** (`idle_session_timeout`, a firewall or load balancer
+  dropping idle TCP, `pg_terminate_backend`). PostgreSQL releases the lock at once while the pass
+  carries on over its other connections, so another replica can start the same pass. Leave
+  `idle_session_timeout` at 0 (or above the longest pass) for the control-plane role.
+
+**Action.** Point the control plane's `ConnectionStrings__Postgres` at the database or at a
+session-mode pool. A lock stranded on a pooler's server connection outlives a control-plane
+restart: find it with `SELECT pid FROM pg_locks WHERE locktype = 'advisory'` and end that backend
+with `pg_terminate_backend(pid)`, or restart the pooler.
+
 ### GeoIP database missing or stale
 
 **Meaning.** Country is `null` on every click; geo rules fall through to their default.
-1. Check the edge volume for `GeoLite2-City.mmdb` and the update worker's last run.
-2. Re-download and restart the update worker; the edge reloads without a restart.
+1. Check that the file `DLE_GEOIP_PATH` names (`Dle:Edge:GeoIp:Path`, e.g. `/geoip/GeoLite2-Country.mmdb`)
+   exists in the edge's `/geoip` mount.
+2. Replace the file there; the edge reloads it without a restart. The control plane's `GeoIpUpdate`
+   worker is off by default and needs a volume shared with the edge, which compose and the Helm chart
+   do not provide.
 3. Campaigns with country rules ran with the default rule during the gap — tell the marketer.
 
 ## Release and Staging Operations

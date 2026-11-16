@@ -34,10 +34,10 @@ import kotlin.coroutines.resumeWithException
  * turned into [DleException.Http] with the RFC 9457 problem document parsed and `Retry-After`
  * honoured; a 2xx body the SDK cannot use is [DleException.Malformed].
  *
- * Privacy rule enforced here and nowhere else: the `signals` object is attached to a resolve
- * request **only** when the operator opted in ([DleConfig.probabilisticSignals]) **and** the user
- * consented ([DleConsent.allowsDeviceSignals]). Otherwise the member is absent, not empty
- * (TC-145, TC-146).
+ * Privacy rules enforced here: the `signals` object is attached to a resolve request **only** when
+ * the operator opted in ([DleConfig.probabilisticSignals]) **and** the user consented
+ * ([DleConsent.allowsDeviceSignals]), and the Install Referrer only with [DleConsent.attribution].
+ * Otherwise the member is absent, not empty (TC-145, TC-146).
  *
  * @param config the SDK configuration.
  * @param signalsProvider collects the coarse device signals on demand. Invoked only when both
@@ -68,7 +68,8 @@ internal class DleApi(
      * @param installId the persisted installation identifier.
      * @param appVersion host application version.
      * @param osVersion `Build.VERSION.RELEASE`.
-     * @param referrer the raw Install Referrer, already clipped; `null` when unavailable.
+     * @param referrer the raw Install Referrer; `null` when unavailable. Dropped without
+     * attribution consent.
      * @param options explicit evidence from the application; the claim code is already normalised.
      * @param consent the consent state at call time.
      */
@@ -86,7 +87,7 @@ internal class DleApi(
             platform = PLATFORM_ANDROID,
             appVersion = appVersion,
             osVersion = osVersion,
-            referrer = InstallReferrerParser.clip(referrer),
+            referrer = if (consent.attribution) InstallReferrerParser.clip(referrer) else null,
             claimCode = options.claimCode?.takeIf { it.isNotBlank() },
             loginKey = options.loginKey?.takeIf { it.isNotBlank() },
             signals = signals,
@@ -119,6 +120,23 @@ internal class DleApi(
      * @throws DleException on any failure. [DleException.isRetriable] tells the queue whether to
      * keep the batch.
      */
+    /**
+     * `POST /v1/resolve-link`. Same response shape as `/v1/resolve`: `matched` with `match_type`
+     * `direct_open` and the link's `deeplink_path`, or `matched: false`.
+     */
+    suspend fun resolveLink(request: ResolveLinkRequest): DeferredLink {
+        val body = DleJson.encodeToString(ResolveLinkRequest.serializer(), request)
+        val text = post(RESOLVE_LINK_PATH, body)
+        val response = try {
+            DleJson.decodeFromString(ResolveResponse.serializer(), text)
+        } catch (e: SerializationException) {
+            throw DleException.Malformed("resolve-link response is not a ResolveResponseDto", e)
+        } catch (e: IllegalArgumentException) {
+            throw DleException.Malformed("resolve-link response is not a ResolveResponseDto", e)
+        }
+        return response.toDeferredLink()
+    }
+
     suspend fun sendEvents(batch: EventBatch): EventBatchAccepted {
         if (batch.events.isEmpty() || batch.events.size > MAX_EVENTS_PER_BATCH) {
             throw DleException.InvalidArgument("a batch carries 1 to $MAX_EVENTS_PER_BATCH events, not ${batch.events.size}")
@@ -158,7 +176,7 @@ internal class DleApi(
             }
             log.debug("POST $path -> ${r.code}")
             if (r.isSuccessful) {
-                if (text.isBlank() && path == RESOLVE_PATH) {
+                if (text.isBlank() && (path == RESOLVE_PATH || path == RESOLVE_LINK_PATH)) {
                     throw DleException.Malformed("HTTP ${r.code} without a JSON body")
                 }
                 return text
@@ -200,6 +218,7 @@ internal class DleApi(
 
     internal companion object {
         const val RESOLVE_PATH: String = "/v1/resolve"
+        const val RESOLVE_LINK_PATH: String = "/v1/resolve-link"
         const val EVENTS_PATH: String = "/v1/events"
         const val USER_AGENT: String = "dle-android/" + sk.magors.dle.BuildConfig.SDK_VERSION
 

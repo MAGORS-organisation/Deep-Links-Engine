@@ -32,8 +32,40 @@ export default function WebhooksPage() {
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<WebhookResponse | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
+  const [replayingId, setReplayingId] = useState<string | null>(null);
+  const [replayingDead, setReplayingDead] = useState(false);
+  const [confirmReplayDead, setConfirmReplayDead] = useState(false);
   const [testResult, setTestResult] = useState<{ hook: WebhookResponse; result: TestWebhookResponse } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const replayOne = async (deliveryId: string) => {
+    setReplayingId(deliveryId);
+    try {
+      const res = await webhooks.replayDelivery(deliveryId);
+      toast.success(t('webhooks.deliveries.replayedToast', { count: res.replayed_count }));
+      deliveries.reload();
+    } catch (error) {
+      toast.error(describeError(t, error));
+    } finally {
+      setReplayingId(null);
+    }
+  };
+
+  const replayDead = async () => {
+    setReplayingDead(true);
+    try {
+      const res = await webhooks.replayDead();
+      toast.success(t('webhooks.deliveries.replayedToast', { count: res.replayed_count }));
+      setConfirmReplayDead(false);
+      deliveries.reload();
+    } catch (error) {
+      toast.error(describeError(t, error));
+    } finally {
+      setReplayingDead(false);
+    }
+  };
+
+  const deadCount = (deliveries.data ?? []).filter((d) => d.status === 'dead').length;
 
   const test = async (hook: WebhookResponse) => {
     setTesting(hook.id);
@@ -53,7 +85,7 @@ export default function WebhooksPage() {
     setBusy(true);
     try {
       await webhooks.remove(deleting.id);
-      toast.success(t('webhooks.deleted'));
+      toast.success(t('webhooks.deactivated'));
       setDeleting(null);
       list.reload();
     } catch (error) {
@@ -99,9 +131,11 @@ export default function WebhooksPage() {
           <button type="button" className="btn btn-sm" onClick={() => void test(row)} disabled={testing === row.id}>
             {testing === row.id ? t('state.loading') : t('action.test')}
           </button>
-          <button type="button" className="btn btn-sm btn-ghost" onClick={() => setDeleting(row)}>
-            {t('action.delete')}
-          </button>
+          {row.is_active && (
+            <button type="button" className="btn btn-sm btn-ghost" onClick={() => setDeleting(row)}>
+              {t('action.deactivate')}
+            </button>
+          )}
         </span>
       ),
     },
@@ -145,9 +179,19 @@ export default function WebhooksPage() {
           <h2 className="card-title" style={{ marginBottom: 0 }}>
             {t('webhooks.deliveries.title')}
           </h2>
-          <button type="button" className="btn btn-sm" onClick={deliveries.reload}>
-            {t('action.refresh')}
-          </button>
+          <span className="row" style={{ gap: 6 }}>
+            <button
+              type="button"
+              className="btn btn-sm"
+              disabled={replayingDead || deadCount === 0}
+              onClick={() => setConfirmReplayDead(true)}
+            >
+              {replayingDead ? t('state.loading') : t('webhooks.deliveries.replayDead', { count: deadCount })}
+            </button>
+            <button type="button" className="btn btn-sm" onClick={deliveries.reload}>
+              {t('action.refresh')}
+            </button>
+          </span>
         </div>
         {deliveries.error ? <ErrorNotice error={deliveries.error} onRetry={deliveries.reload} compact /> : null}
         <DataTable
@@ -169,6 +213,23 @@ export default function WebhooksPage() {
             },
             { key: 'next', header: t('webhooks.deliveries.col.next'), optional: true, width: '1%', render: (d) => <span className="small muted" style={{ whiteSpace: 'nowrap' }}>{d.next_attempt_at ? formatDate(d.next_attempt_at) : '—'}</span> },
             { key: 'created', header: t('label.created'), width: '1%', render: (d) => <span className="small muted" style={{ whiteSpace: 'nowrap' }}>{formatDate(d.created_at)}</span> },
+            {
+              key: 'actions',
+              header: <span className="sr-only">{t('label.actions')}</span>,
+              width: '1%',
+              align: 'right',
+              render: (d) =>
+                d.status === 'failed' || d.status === 'dead' ? (
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    disabled={replayingId === d.id}
+                    onClick={() => void replayOne(d.id)}
+                  >
+                    {replayingId === d.id ? t('state.loading') : t('webhooks.deliveries.replay')}
+                  </button>
+                ) : null,
+            },
           ]}
           rows={deliveries.data}
           rowKey={(d) => d.id}
@@ -177,6 +238,16 @@ export default function WebhooksPage() {
           empty={<span className="muted">{t('webhooks.deliveries.empty')}</span>}
         />
       </section>
+
+      <ConfirmDialog
+        open={confirmReplayDead}
+        busy={replayingDead}
+        title={t('webhooks.deliveries.replayDeadConfirmTitle')}
+        detail={t('webhooks.deliveries.replayDeadConfirmDetail', { count: deadCount })}
+        confirmLabel={t('webhooks.deliveries.replayDead', { count: deadCount })}
+        onConfirm={replayDead}
+        onCancel={() => setConfirmReplayDead(false)}
+      />
 
       <CreateWebhookDrawer
         open={creating}
@@ -223,9 +294,9 @@ export default function WebhooksPage() {
         open={deleting !== null}
         danger
         busy={busy}
-        title={t('webhooks.delete.title')}
-        detail={deleting ? t('webhooks.delete.detail', { url: deleting.url }) : undefined}
-        confirmLabel={t('action.delete')}
+        title={t('webhooks.deactivate.title')}
+        detail={deleting ? t('webhooks.deactivate.detail', { url: deleting.url }) : undefined}
+        confirmLabel={t('action.deactivate')}
         onConfirm={remove}
         onCancel={() => setDeleting(null)}
       />

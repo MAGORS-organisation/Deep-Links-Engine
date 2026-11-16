@@ -91,6 +91,7 @@ public sealed partial class ResolveInstall
     private readonly TimeProvider _timeProvider;
     private readonly AttributionOptions _options;
     private readonly ILogger<ResolveInstall> _logger;
+    private readonly ILoginHintStore? _loginHints;
 
     /// <summary>
     /// Creates the use case.
@@ -106,6 +107,7 @@ public sealed partial class ResolveInstall
     /// <param name="timeProvider">Clock (SHARED-KERNEL §17.2).</param>
     /// <param name="options">Attribution options.</param>
     /// <param name="logger">Logger.</param>
+    /// <param name="loginHints">Optional indexed <c>O(1)</c> login-hint store consulted before scanning raw click candidates.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public ResolveInstall(
         IAttributionStore store,
@@ -118,7 +120,8 @@ public sealed partial class ResolveInstall
         AttributionMetrics metrics,
         TimeProvider timeProvider,
         IOptions<AttributionOptions> options,
-        ILogger<ResolveInstall> logger)
+        ILogger<ResolveInstall> logger,
+        ILoginHintStore? loginHints = null)
     {
         ArgumentNullException.ThrowIfNull(store);
         ArgumentNullException.ThrowIfNull(clicks);
@@ -143,6 +146,7 @@ public sealed partial class ResolveInstall
         _timeProvider = timeProvider;
         _options = options.Value;
         _logger = logger;
+        _loginHints = loginHints;
     }
 
     /// <summary>
@@ -411,6 +415,64 @@ public sealed partial class ResolveInstall
         byte[] hash = _loginKeys.Hash(request.LoginKey);
         TimeSpan window = TimeSpan.FromHours(_options.LoginWindowHours);
 
+        if (_loginHints is not null)
+        {
+            ClickLoginHint? hint = await _loginHints.FindLatestAsync(
+                caller.TenantId,
+                hash,
+                now - window,
+                now,
+                cancellationToken);
+
+            if (hint is not null)
+            {
+                long? linkId = hint.LinkId;
+                DateTimeOffset occurredAt = hint.OccurredAt;
+                string? deeplinkPath = hint.DeeplinkPath;
+
+                if (linkId is null && _clickIds.TryDecode(hint.ClickId, out DateTimeOffset clickAt, out _))
+                {
+                    ClickRecord? click = await _clicks.FindByClickIdAsync(
+                        hint.ClickId,
+                        clickAt.AddMinutes(-1),
+                        clickAt.AddMinutes(1),
+                        cancellationToken);
+
+                    if (click is not null && click.TenantId == caller.TenantId)
+                    {
+                        linkId = click.LinkId;
+                        occurredAt = click.OccurredAt;
+                        deeplinkPath ??= click.DeeplinkPath;
+                    }
+                }
+
+                if (linkId is long resolvedLinkId)
+                {
+                    ClickRecord matchedClick = new()
+                    {
+                        Id = hint.Id,
+                        OccurredAt = occurredAt,
+                        TenantId = caller.TenantId,
+                        LinkId = resolvedLinkId,
+                        ClickId = hint.ClickId,
+                        DeeplinkPath = deeplinkPath,
+                    };
+
+                    AttributionEvidence evidence = new AttributionEvidence(strategy)
+                        .With(AttributionEvidence.ClickOccurredAtKey, occurredAt)
+                        .With(AttributionEvidence.ElapsedMinutesKey, (long)(now - occurredAt).TotalMinutes)
+                        .With(AttributionEvidence.CandidatesKey, 1);
+
+                    return Matched(
+                        MatchType.Login,
+                        DeterministicConfidence,
+                        matchedClick,
+                        evidence,
+                        (int)window.TotalSeconds);
+                }
+            }
+        }
+
         IReadOnlyList<ClickRecord> candidates = await _clicks.FindCandidatesAsync(
             caller.TenantId,
             now - window,
@@ -480,6 +542,20 @@ public sealed partial class ResolveInstall
         if (record.TenantId != caller.TenantId)
         {
             return Refused(strategy, AttributionReasons.ForeignTenant);
+        }
+
+        // Spent here, atomically, before the code is allowed to produce anything. "Single use" is a
+        // property of the conditional UPDATE (consumed_at IS NULL), not of the inspection above: two
+        // installations racing with the same code both inspect it as valid, and only the one whose
+        // UPDATE changed the row may use it. The other is answered exactly as for a spent code.
+        if (!await _claimCodes.TryConsumeAsync(record, cancellationToken))
+        {
+            return new StrategyOutcome(
+                AttributionResult.NoMatch(AttributionReasons.NoClaimCode),
+                MatchedClickId: null,
+                WindowSeconds: null,
+                ClaimCode: null,
+                ClaimCodeStatus.Consumed);
         }
 
         AttributionEvidence evidence = new AttributionEvidence(strategy)
@@ -636,11 +712,9 @@ public sealed partial class ResolveInstall
 
             if (upgrade.Outcome != AttributionOutcome.Created || upgrade.Record is null)
             {
-                await SpendClaimCodeAsync(outcome, cancellationToken);
                 return await RespondAsync(upgrade.Record ?? stored, cancellationToken);
             }
 
-            await SpendClaimCodeAsync(outcome, cancellationToken);
             await AnnounceAsync(upgrade.Record, install, caller, cancellationToken);
 
             record = upgrade.Record;
@@ -652,8 +726,6 @@ public sealed partial class ResolveInstall
         }
 
         AttributionWriteResult write = await _store.TryCreateAttributionAsync(record, cancellationToken);
-
-        await SpendClaimCodeAsync(outcome, cancellationToken);
 
         switch (write.Outcome)
         {
@@ -729,15 +801,6 @@ public sealed partial class ResolveInstall
         _metrics.Decision(MatchTypeNames.None, 0m);
 
         return NoMatchResponse();
-    }
-
-    /// <summary>Spends the claim code that produced a decision, whatever the decision was.</summary>
-    private async Task SpendClaimCodeAsync(StrategyOutcome outcome, CancellationToken cancellationToken)
-    {
-        if (outcome.ClaimCode is { } record)
-        {
-            await _claimCodes.ConsumeAsync(record, cancellationToken);
-        }
     }
 
     /// <summary>Puts <c>attribution.created</c> on the webhook outbox (§B.7.4).</summary>

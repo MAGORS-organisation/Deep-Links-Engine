@@ -46,9 +46,23 @@ work best are the ones most under-counted. Hand every incoming `Intent` to `Dle.
 attribution with `match_type: "direct_open"`, confidence 1.0.
 
 What your app gets on a direct open is the short URL as tapped (`https://link.example.com/aB3xK9pQ`),
-not the link's `deeplink_path`: nothing on the SDK plane expands a slug, and an SDK key cannot read
-`/api/v1/links`. The app can open the right screen only if the operator uses readable slugs the app
-parses itself, as the sample does with `/promo/…` and `/p/…` ([Known gaps](../../README.md#known-gaps)).
+not the link's `deeplink_path`. Ask the engine for the screen with `resolveLink`:
+
+```kotlin
+override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+    val open = Dle.handleIntent(intent) ?: return            // reports link_open
+    lifecycleScope.launch {
+        val link = Dle.resolveLink(open)                     // POST /v1/resolve-link
+        if (link.matched) link.link?.deeplinkPath?.let { router.open(it) }
+    }
+}
+```
+
+The answer has `MatchType.DIRECT_OPEN`, confidence 1.0, and in `link.deeplinkPath` the path the link's routing
+rules choose for Android. `resolveLink` records nothing itself, so the open is counted once; Java
+callers use `Dle.resolveLink(open, callback)`.
 
 Every `ACTION_VIEW` intent with `http`/`https` data is reported (scheme, host and path only). The SDK
 has no host list of its own; which hosts reach it is decided by your intent filter. A custom-scheme

@@ -34,7 +34,9 @@ namespace Dle.Control.Features.Webhooks;
 [JsonSerializable(typeof(WebhookResponse))]
 [JsonSerializable(typeof(List<WebhookResponse>))]
 [JsonSerializable(typeof(WebhookCreatedResponse))]
+[JsonSerializable(typeof(WebhookDeliveryResponse))]
 [JsonSerializable(typeof(List<WebhookDeliveryResponse>))]
+[JsonSerializable(typeof(WebhookDeliveryReplayResponse))]
 [JsonSerializable(typeof(TestWebhookResponse))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
 public sealed partial class WebhookJsonContext : JsonSerializerContext;

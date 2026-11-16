@@ -193,6 +193,38 @@ export function buildResolveRequest(input: ResolveRequestInput): ResolveRequestW
   });
 }
 
+export interface LoginHintRequestInput {
+  readonly loginKey: string;
+  readonly clickId?: string | undefined;
+  readonly url?: string | undefined;
+  readonly deeplinkPath?: string | undefined;
+  readonly consent?: ConsentWire | undefined;
+}
+
+/** Build a `LoginHintRequestDto` body in contract order. */
+export function buildLoginHintRequest(input: LoginHintRequestInput): LoginHintRequestWire {
+  return compact({
+    login_key: input.loginKey,
+    click_id: input.clickId,
+    url: input.url,
+    deeplink_path: input.deeplinkPath,
+    consent: input.consent,
+  });
+}
+
+/**
+ * `value` as an ISO-8601 UTC timestamp the server's `DateTimeOffset` reader accepts, or
+ * `undefined` when it is not a date. One unreadable `ts` would otherwise fail the whole body.
+ */
+export function toIsoTimestamp(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const at = Date.parse(value);
+  if (!Number.isFinite(at)) return undefined;
+  const iso = new Date(at).toISOString();
+  // Years outside 0000-9999 come out as `+275760-…`, which the server cannot read.
+  return /^\d{4}-/.test(iso) ? iso : undefined;
+}
+
 /** Translate one public event into an `EventDto`, in contract member order. */
 export function toEventWire(event: DleEvent): EventWire {
   return compact({
@@ -349,9 +381,26 @@ export interface SendOptions {
   readonly keepalive?: boolean;
 }
 
+/** `LoginHintRequestDto`. */
+export interface LoginHintRequestWire {
+  readonly login_key: string;
+  readonly click_id?: string;
+  readonly url?: string;
+  readonly deeplink_path?: string;
+  readonly consent?: ConsentWire;
+}
+
+/** `LoginHintResponseDto`. */
+export interface LoginHintAcceptedWire {
+  readonly accepted: boolean;
+  readonly expires_at?: string;
+}
+
 export interface ApiClient {
   /** `POST /v1/resolve`. Returns the parsed body; the caller validates it. */
   resolve(body: ResolveRequestWire): Promise<unknown>;
+  /** `POST /v1/login-hints`. Resolves on 202. */
+  sendLoginHint(body: LoginHintRequestWire): Promise<LoginHintAcceptedWire>;
   /** `POST /v1/events`. Resolves on 202. */
   sendEvents(body: EventBatchWire, options?: SendOptions): Promise<EventBatchAcceptedWire>;
 }
@@ -385,62 +434,73 @@ export function createApiClient(options: ApiClientOptions): ApiClient {
       throw new DleError('network', 'fetch is not available', { retriable: true });
     }
     const controller = typeof AbortController === 'function' ? new AbortController() : undefined;
+    // The timeout covers the body as well as the headers: a body that stalls must not leave
+    // the caller (or the queue's in-flight flush) pending forever.
     const timer = controller && setTimeout(() => controller.abort(), options.timeoutMs);
-    let response: Response;
+    const aborted = (): boolean => controller?.signal.aborted === true;
+    const timedOut = (cause: unknown): DleError =>
+      new DleError('timeout', `request timed out after ${options.timeoutMs} ms`, { retriable: true, cause });
     try {
-      response = await fetchImpl(base + path, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          accept: 'application/json, application/problem+json',
-          authorization: `Bearer ${options.sdkKey}`,
-          traceparent: createTraceparent(),
-        },
-        body: JSON.stringify(body),
-        credentials: 'omit',
-        cache: 'no-store',
-        // A bearer key must never be replayed to wherever a misconfigured proxy points.
-        redirect: 'error',
-        keepalive,
-        signal: controller?.signal,
+      let response: Response;
+      try {
+        response = await fetchImpl(base + path, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            accept: 'application/json, application/problem+json',
+            authorization: `Bearer ${options.sdkKey}`,
+            traceparent: createTraceparent(),
+          },
+          body: JSON.stringify(body),
+          credentials: 'omit',
+          cache: 'no-store',
+          // A bearer key must never be replayed to wherever a misconfigured proxy points.
+          redirect: 'error',
+          keepalive,
+          signal: controller?.signal,
+        });
+      } catch (cause) {
+        if (aborted()) throw timedOut(cause);
+        throw new DleError('network', 'network request failed', { retriable: true, cause });
+      }
+
+      let json: unknown;
+      try {
+        const text = await response.text();
+        json = text === '' ? undefined : JSON.parse(text);
+      } catch (cause) {
+        if (aborted()) throw timedOut(cause);
+        json = undefined;
+      }
+
+      const status = response.status;
+      if (response.ok) {
+        if (json === undefined) throw new DleError('malformed', `HTTP ${status} without a JSON body`);
+        return json;
+      }
+      const problem = isRecord(json) ? (json as ProblemDocument) : undefined;
+      // Status codes only — the key, the body and the problem detail never reach the console.
+      options.logger?.debug(`POST ${path} -> ${status}`);
+      throw new DleError('http', problem?.title ?? `HTTP ${status}`, {
+        status,
+        problem,
+        retryAfterMs: parseRetryAfter(response.headers.get('retry-after')),
+        retriable: status === 429 || status === 408 || status >= 500,
       });
-    } catch (cause) {
-      const timedOut = controller?.signal.aborted === true;
-      throw new DleError(
-        timedOut ? 'timeout' : 'network',
-        timedOut ? `request timed out after ${options.timeoutMs} ms` : 'network request failed',
-        { retriable: true, cause },
-      );
     } finally {
       clearTimeout(timer);
     }
-
-    let json: unknown;
-    try {
-      const text = await response.text();
-      json = text === '' ? undefined : JSON.parse(text);
-    } catch {
-      json = undefined;
-    }
-
-    const status = response.status;
-    if (response.ok) {
-      if (json === undefined) throw new DleError('malformed', `HTTP ${status} without a JSON body`);
-      return json;
-    }
-    const problem = isRecord(json) ? (json as ProblemDocument) : undefined;
-    // Status codes only — the key, the body and the problem detail never reach the console.
-    options.logger?.debug(`POST ${path} -> ${status}`);
-    throw new DleError('http', problem?.title ?? `HTTP ${status}`, {
-      status,
-      problem,
-      retryAfterMs: parseRetryAfter(response.headers.get('retry-after')),
-      retriable: status === 429 || status === 408 || status >= 500,
-    });
   }
 
   return {
     resolve: (body) => post('/v1/resolve', body, false),
+    sendLoginHint: async (body) => {
+      const json = await post('/v1/login-hints', body, false);
+      return {
+        accepted: isRecord(json) && json.accepted === true,
+        expires_at: isRecord(json) && typeof json.expires_at === 'string' ? json.expires_at : undefined,
+      };
+    },
     sendEvents: async (body, sendOptions = {}) => {
       const json = await post('/v1/events', body, sendOptions.keepalive === true);
       const n = (k: string): number => {

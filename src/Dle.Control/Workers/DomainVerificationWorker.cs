@@ -141,6 +141,10 @@ public sealed partial class DomainVerificationWorker : LeaderElectedBackgroundSe
             // never one (T-09).
             using IDisposable tenantScope = tenants.BeginScope(domain.TenantId);
 
+            // Read before this pass overwrites it. Whether the host was being served the last time it
+            // was looked at is what tells a takeover from a host nobody has finished setting up.
+            bool servedBefore = WasServed(domain);
+
             DomainVerificationRun run = await verifier.VerifyAsync(domain, cancellationToken);
 
             foreach (DomainVerification record in run.Runs)
@@ -157,7 +161,7 @@ public sealed partial class DomainVerificationWorker : LeaderElectedBackgroundSe
 
             failing++;
 
-            bool takeoverRisk = options.ReportUnresolvableAsTakeoverRisk && LooksLikeTakeover(domain, run.Response);
+            bool takeoverRisk = options.ReportUnresolvableAsTakeoverRisk && LooksLikeTakeover(servedBefore, run.Response);
 
             if (takeoverRisk)
             {
@@ -178,9 +182,25 @@ public sealed partial class DomainVerificationWorker : LeaderElectedBackgroundSe
     }
 
     /// <summary>
+    /// Whether a host was reachable and answering at its last check: any of its TLS or association
+    /// file checks passed. A host that has never had DNS has none of them.
+    /// </summary>
+    /// <param name="domain">The domain as stored, before the current pass.</param>
+    /// <returns><see langword="true"/> when at least one check had passed.</returns>
+    internal static bool WasServed(LinkDomain domain)
+    {
+        ArgumentNullException.ThrowIfNull(domain);
+
+        return string.Equals(domain.TlsStatus, DomainVerificationService.OkStatus, StringComparison.Ordinal)
+            || string.Equals(domain.AasaStatus, DomainVerificationService.OkStatus, StringComparison.Ordinal)
+            || string.Equals(domain.AssetlinksStatus, DomainVerificationService.OkStatus, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Whether a failure looks like a subdomain takeover rather than a misconfiguration (T-04).
     /// </summary>
-    /// <param name="domain">The domain as it stood before this pass.</param>
+    /// <param name="servedBefore">Whether the host was being served when it was last checked
+    /// (<see cref="WasServed"/>, read before this pass recorded anything).</param>
     /// <param name="response">What this pass found.</param>
     /// <returns><see langword="true"/> when a previously verified host has stopped resolving.</returns>
     /// <remarks>
@@ -190,9 +210,11 @@ public sealed partial class DomainVerificationWorker : LeaderElectedBackgroundSe
     /// links, is a record whose target has been removed. The second case is the one where somebody
     /// else can claim the name at the provider and inherit the association files.
     /// </remarks>
-    private static bool LooksLikeTakeover(LinkDomain domain, DomainVerificationResponse response)
+    internal static bool LooksLikeTakeover(bool servedBefore, DomainVerificationResponse response)
     {
-        if (domain.LastVerifiedAt is null)
+        // Not "was it ever checked": every pass stamps the check time, failed ones included, so that
+        // would call a host that has never had DNS a takeover from its second night onwards.
+        if (!servedBefore)
         {
             return false;
         }

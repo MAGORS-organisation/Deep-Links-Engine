@@ -91,6 +91,8 @@ public static class DlePersistenceServiceCollectionExtensions
         });
 
         services.TryAddScoped<TenantRepository>();
+        services.TryAddScoped<ITenantLookup>(
+            provider => provider.GetRequiredService<TenantRepository>());
         services.TryAddScoped<DomainRepository>();
         services.TryAddScoped<AppRepository>();
         services.TryAddScoped<LinkRepository>();
@@ -98,7 +100,12 @@ public static class DlePersistenceServiceCollectionExtensions
         services.TryAddScoped<AttributionRepository>();
         services.TryAddScoped<AbuseRepository>();
         services.TryAddScoped<WebhookRepository>();
+        services.TryAddScoped<IWebhookReplayStore>(
+            provider => provider.GetRequiredService<WebhookRepository>());
         services.TryAddScoped<AuditLogWriter>();
+        services.TryAddScoped<IAuditLogWriter>(
+            provider => provider.GetRequiredService<AuditLogWriter>());
+        services.TryAddScoped<IPrivacyErasureStore, PrivacyErasureStore>();
         services.TryAddScoped<IdempotencyStore>();
 
         // The outbox is a persistence concern: enqueueing a delivery is a row, and it has to join

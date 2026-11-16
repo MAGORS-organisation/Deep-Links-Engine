@@ -153,15 +153,13 @@ public static class AppSdkKeys
     /// <param name="apps">Application storage, which scopes the lookup to the tenant.</param>
     /// <param name="db">The control-plane context.</param>
     /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="credentialCache">Drops any cached verification entry for the revoked key.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>204, or 404.</returns>
     /// <remarks>
     /// The row is kept and switched off rather than deleted, so that the audit entries referring to
     /// it keep referring to something that exists. The authentication lookup requires
-    /// <c>is_active</c>, so a revoked key stops authenticating as soon as the lookup runs again:
-    /// within <c>Dle:Identity:CredentialCacheSeconds</c> (60 by default) for a key that was in use,
-    /// and at once for one that was not. An operator who needs revocation to bite immediately sets
-    /// that to 0 and pays a credential verification per request.
+    /// <c>is_active</c> and revocations invalidate the verification cache immediately.
     /// </remarks>
     public static async Task<IResult> RevokeAsync(
         Guid id,
@@ -170,12 +168,14 @@ public static class AppSdkKeys
         AppRepository apps,
         DleDbContext db,
         AuditLogWriter audit,
+        DleCredentialCache credentialCache,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(http);
         ArgumentNullException.ThrowIfNull(apps);
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(audit);
+        ArgumentNullException.ThrowIfNull(credentialCache);
 
         DleCaller caller = http.RequireDleCaller();
 
@@ -194,6 +194,8 @@ public static class AppSdkKeys
 
         key.IsActive = false;
         await db.SaveChangesAsync(cancellationToken);
+
+        await credentialCache.InvalidateKeyAsync(key.Id, cancellationToken);
 
         await AdministrativeAudit.RecordAsync(
             audit,

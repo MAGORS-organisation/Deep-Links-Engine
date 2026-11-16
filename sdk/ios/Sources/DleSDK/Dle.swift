@@ -237,7 +237,8 @@ public final class Dle: Sendable {
     }
 
     /// Submits the claim code the user typed (S3, FR-184). Equivalent to
-    /// ``resolve(claimCode:loginKey:)`` with `claimCode` only.
+    /// ``resolve(claimCode:loginKey:)`` with `claimCode` only. The engine redeems the code only
+    /// under ``DleConsent/attribution``; without it the answer is unmatched and the code unspent.
     public func submitClaimCode(_ code: String) async throws -> DeferredLink {
         try await resolve(claimCode: code)
     }
@@ -382,6 +383,32 @@ public final class Dle: Sendable {
     @discardableResult
     public func handle(url: URL) -> URL? {
         links.handle(url: url)
+    }
+
+    /// Resolves the screen a short link the app was opened with should lead to (FR-223, §B.6.4).
+    ///
+    /// A verified Universal Link opens the app with the short URL itself — for example
+    /// `https://go.example.com/AbC12345` — which does not say which screen to show. This asks the
+    /// engine: the answer has `match_type` `direct_open`, confidence 1.0, and the link's
+    /// ``DeferredLink/deeplinkPath`` after the link's routing rules were applied for this platform.
+    /// Call it after ``handle(url:)`` or ``handle(_:)``, which report the open; this call records
+    /// nothing by itself, so an open is never counted twice.
+    ///
+    /// - Returns: ``DeferredLink/unmatched`` for a URL that is not on ``DleConfig/linkHosts`` or
+    ///   does not name a link of this application's tenant.
+    /// - Throws: The transport and HTTP failures of ``DleError``.
+    public func resolveLink(_ url: URL) async throws -> DeferredLink {
+        guard DleLinkPolicy.isReportable(url, hosts: links.linkHosts),
+              let reported = DleUniversalLink.reportable(url)
+        else {
+            return .unmatched
+        }
+        let body = ResolveLinkRequestBody(
+            url: reported,
+            installId: installIdLoaded.persisted ? installIdLoaded.id : nil,
+            platform: DlePlatform.wireName,
+            appVersion: config.appVersion)
+        return try await api.resolveLink(body)
     }
 
     /// Handles the user activities of a cold start (`UIScene.ConnectionOptions.userActivities`).

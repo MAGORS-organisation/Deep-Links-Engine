@@ -42,9 +42,6 @@ public sealed class EdgeApiFactory : WebApplicationFactory<EdgeOptions>
     /// </remarks>
     public const string ClientAddressHeader = "X-Dle-Test-Client-Ip";
 
-    /// <summary>Guards the process-wide environment while a host is being built.</summary>
-    private static readonly object EnvironmentLock = new();
-
     /// <summary>The in-memory link store the tests seed.</summary>
     public FakeLinkStore Links { get; } = new();
 
@@ -53,6 +50,9 @@ public sealed class EdgeApiFactory : WebApplicationFactory<EdgeOptions>
 
     /// <summary>Everything the host logged.</summary>
     public CapturingLoggerProvider Logs { get; } = new();
+
+    /// <summary>The claim codes the interstitial persisted.</summary>
+    public RecordingClaimCodeWriter ClaimCodes { get; } = new();
 
     /// <summary>Whether a user agent claiming to be a crawler is confirmed.</summary>
     /// <remarks>
@@ -138,25 +138,7 @@ public sealed class EdgeApiFactory : WebApplicationFactory<EdgeOptions>
             applied[key] = value;
         }
 
-        lock (EnvironmentLock)
-        {
-            try
-            {
-                foreach ((string key, string? value) in applied)
-                {
-                    Environment.SetEnvironmentVariable(EnvironmentName(key), value);
-                }
-
-                return base.CreateHost(builder);
-            }
-            finally
-            {
-                foreach (string key in applied.Keys)
-                {
-                    Environment.SetEnvironmentVariable(EnvironmentName(key), null);
-                }
-            }
-        }
+        return TestHostEnvironment.RunWithEnvironment(applied, () => base.CreateHost(builder));
     }
 
     /// <inheritdoc />
@@ -175,6 +157,7 @@ public sealed class EdgeApiFactory : WebApplicationFactory<EdgeOptions>
         {
             services.AddSingleton<ILinkStore>(Links);
             services.AddSingleton<IClickEventSink>(Clicks);
+            services.AddSingleton<IClaimCodeWriter>(ClaimCodes);
             services.AddSingleton<IDomainConfigStore, FakeDomainConfigStore>();
 
             if (ConfirmCrawlers)
@@ -194,11 +177,6 @@ public sealed class EdgeApiFactory : WebApplicationFactory<EdgeOptions>
                 ServiceDescriptor.Singleton<IStartupFilter, ClientAddressStartupFilter>());
         });
     }
-
-    /// <summary>Renders a configuration key the way the environment variable provider spells it.</summary>
-    /// <param name="key">The configuration key, colon separated.</param>
-    /// <returns>The environment variable name.</returns>
-    private static string EnvironmentName(string key) => key.Replace(":", "__", StringComparison.Ordinal);
 
     /// <summary>
     /// Inserts the address-spoofing middleware at the head of the pipeline.

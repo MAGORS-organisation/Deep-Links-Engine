@@ -1,4 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+
+using Dle.Domain.Abuse;
 
 namespace Dle.Control.Features.Shared;
 
@@ -76,6 +79,32 @@ internal static class ControlJson
         og is null
             ? EmptyObject
             : JsonSerializer.Serialize(og, DleDomainJsonContext.Default.OgMeta);
+
+    /// <summary>
+    /// Validates Open Graph metadata before persisting it to a link, domain, or template.
+    /// </summary>
+    /// <param name="og">Metadata supplied on write, or <see langword="null"/>.</param>
+    /// <param name="error">Reason the image URL was refused.</param>
+    /// <returns><see langword="true"/> when absent or safe to render.</returns>
+    internal static bool TryValidateOgMeta(OgMeta? og, [NotNullWhen(false)] out string? error)
+    {
+        if (og is null || string.IsNullOrWhiteSpace(og.ImageUrl))
+        {
+            error = null;
+            return true;
+        }
+
+        UrlSafetyVerdict verdict = TargetUrlPolicy.ValidateSyntax(og.ImageUrl);
+
+        if (verdict.Level != UrlSafetyLevel.Safe)
+        {
+            error = verdict.Reason ?? "The Open Graph image URL must be an absolute public http or https URL.";
+            return false;
+        }
+
+        error = null;
+        return true;
+    }
 
     /// <summary>Reads Open Graph metadata, treating a malformed document as none.</summary>
     /// <param name="json">The stored document.</param>

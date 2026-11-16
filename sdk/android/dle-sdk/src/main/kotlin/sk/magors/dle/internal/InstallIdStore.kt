@@ -14,7 +14,9 @@ import java.util.UUID
  * the engine's deletion endpoint erases what it holds about this device (spec §E.6.3).
  *
  * It is random, never derived from a hardware identifier, the advertising identifier or anything
- * else about the device (FR-227). Uninstalling the application discards it.
+ * else about the device (FR-227). Uninstalling the application discards it, and a backup restore
+ * does not bring it back: [sk.magors.dle.DleClient] clears it when its no-backup install marker
+ * is missing.
  *
  * @param prefs the backing store. See [open] for how it is chosen.
  */
@@ -44,7 +46,7 @@ internal class InstallIdStore(private val prefs: SharedPreferences) {
          * Opens the store. `androidx.security:security-crypto` is `compileOnly` in the SDK: when the
          * host application ships it and the Android Keystore is usable, the identifier lives in
          * [EncryptedSharedPreferences]; otherwise (library absent, keystore broken or corrupted,
-         * which happens on some devices after a backup restore) plain [SharedPreferences] are used.
+         * for example after a backup restore) plain [SharedPreferences] are used.
          * The fallback is chosen once per process; the two files are distinct, so a device that
          * flips between them mints a new identifier, which merely looks like a reinstall.
          */

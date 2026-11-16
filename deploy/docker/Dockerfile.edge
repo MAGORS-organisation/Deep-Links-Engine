@@ -7,12 +7,12 @@
 #   docker buildx build --platform linux/amd64,linux/arm64 -f deploy/docker/Dockerfile.edge .
 #
 # Stages
-#   build            .NET 10 SDK on the BUILD platform, cross-publishes for TARGETARCH
-#   runtime-chiseled aspnet:10.0-noble-chiseled — no shell, no package manager, no curl; non-root
+#   build            .NET 11 SDK on the BUILD platform, cross-publishes for TARGETARCH
+#   runtime-chiseled aspnet:11.0-resolute-chiseled — no shell, no package manager, no curl; non-root
 #                    by default. Use it (--target runtime-chiseled) where the orchestrator probes
 #                    over HTTP itself (Kubernetes httpGet, deploy/helm); the HEALTHCHECK below is
 #                    absent there because nothing in the image could run it.
-#   runtime (final)  aspnet:10.0-noble + curl for the container HEALTHCHECK that docker compose
+#   runtime (final)  aspnet:11.0-resolute + curl for the container HEALTHCHECK that docker compose
 #                    relies on. Non-root, read-only rootfs capable (compose sets read_only: true).
 #
 # Notes
@@ -25,9 +25,9 @@
 #     CI runs the locked restore on the SDK directly; the image build must not fail on it.
 # =============================================================================
 
-ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0
-ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble
-ARG CHISELED_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled
+ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:11.0
+ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:11.0-resolute
+ARG CHISELED_IMAGE=mcr.microsoft.com/dotnet/aspnet:11.0-resolute-chiseled
 
 # ---- build ---------------------------------------------------------------------------------------
 FROM --platform=$BUILDPLATFORM ${SDK_IMAGE} AS build
@@ -73,7 +73,7 @@ LABEL org.opencontainers.image.title="dle-edge" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled"
+      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:11.0-resolute-chiseled"
 WORKDIR /app
 COPY --from=build --chown=$APP_UID:$APP_UID /app/publish ./
 ENV ASPNETCORE_HTTP_PORTS=8080 \
@@ -97,7 +97,7 @@ LABEL org.opencontainers.image.title="dle-edge" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:10.0-noble"
+      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:11.0-resolute"
 
 # curl only, for HEALTHCHECK. ca-certificates is already in the base image.
 RUN apt-get update \
@@ -111,7 +111,7 @@ COPY --from=build --chown=$APP_UID:$APP_UID /app/publish ./
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     ASPNETCORE_ENVIRONMENT=Production
 # Configuration is environment-only: ConnectionStrings__Postgres, ConnectionStrings__Valkey,
-# Dle__Crypto__MasterSecret (required), Dle__Edge__* … — see src/Dle.Edge/appsettings.json.
+# Dle__Crypto__MasterSecret (required — the EDGE secret, never the control plane's), Dle__Edge__* … — see src/Dle.Edge/appsettings.json.
 
 USER $APP_UID
 EXPOSE 8080

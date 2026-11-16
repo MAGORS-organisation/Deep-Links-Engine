@@ -95,11 +95,13 @@ internal class EventQueue(
         }
     }
 
-    /** Starts a delivery attempt now, unless one is already running. */
+    /**
+     * Starts a delivery attempt now, unless one is already running. A scheduled flush is left
+     * alone: cancelling it mid-request could abort a batch the server already accepted, which
+     * would then be sent twice.
+     */
     fun flush() {
         try {
-            scheduled?.cancel()
-            scheduled = null
             scope.launch { drain() }
         } catch (e: RuntimeException) {
             log.error("flush could not be started", e)
@@ -186,12 +188,11 @@ internal class EventQueue(
 
     private fun removeDelivered(batch: List<EventWire>) {
         synchronized(lock) {
-            // The batch is a prefix of the buffer by identity: nothing is removed from the front
-            // except here, and enqueue appends only.
-            var removed = 0
-            while (removed < batch.size && events.isNotEmpty() && events[0] === batch[removed]) {
-                events.removeAt(0)
-                removed++
+            // The batch was a prefix of the buffer by identity. Since then enqueue may have appended,
+            // and evicted from the front on overflow, so what is left of the batch is still a prefix,
+            // minus the evicted head: skip a member that is gone instead of stopping at it.
+            for (sent in batch) {
+                if (events.isNotEmpty() && events[0] === sent) events.removeAt(0)
             }
             persistLocked()
         }

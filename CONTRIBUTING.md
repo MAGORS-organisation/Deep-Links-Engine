@@ -1,8 +1,10 @@
 # Contributing to Deep Link Engine
 
-DLE is a self-hosted, EU-first deep-linking and attribution engine. It is MIT licensed, there is
-no CLA, and the specification the code is written against is `docs/zadanie.md` — when a pull
-request and the spec disagree, the PR description has to say which one is wrong and why.
+DLE is a self-hosted, EU-first deep-linking and attribution engine. It is MIT licensed and there is
+no CLA. Code comments and test traits cite requirement and threat IDs (`FR-`, `NFR-`, `S-`, `T-`)
+and `§` sections of the project's original specification, which is not published. The IDs a `Spec`
+trait may use are listed in `tests/Dle.ContractTests/Traceability/spec-ids.txt`; `§` references are
+informational only. A new contribution does not need either.
 
 ## Branches
 
@@ -18,7 +20,7 @@ from.
 
 | Area | Needs |
 |---|---|
-| .NET solution | .NET SDK **10.0.400 or later 10.0.x** (`global.json`, roll-forward `latestFeature`) |
+| .NET solution | .NET SDK **11.0.100 or later 11.0.x** (`global.json`, roll-forward `latestFeature`) |
 | Integration tests | Docker (Testcontainers pulls `postgres:18` and `valkey/valkey:8`) |
 | Admin console, Web SDK | Node **22** (Node 20 is the minimum for the console, 18 for the SDK) |
 | Android SDK | JDK 17, Android SDK (compileSdk 35), Gradle **8.11.1** — there is no `gradlew` in the repo; install Gradle or use `gradle/actions/setup-gradle` as CI does |
@@ -89,23 +91,23 @@ deployed, seeded instance and have not been run in this repository's development
 
 ## Definition of Done
 
-From `docs/zadanie.md` §C.7 — the PR template repeats it as a checklist:
+The PR template repeats it as a checklist:
 
 1. Unit tests for domain logic and an integration test (Testcontainers) for the endpoint.
 2. `dotnet format` and analyzers clean (`TreatWarningsAsErrors`, `latest-Recommended`).
-3. Resolve-path latency not regressed (benchmark gate, +5 % tolerance).
+3. Resolve-path latency not regressed. There is no automated benchmark gate yet; if the change is on
+   the resolve path, say what you measured.
 4. OpenAPI description and XML doc comments for public surface.
 5. A CHANGELOG entry; for schema changes, a migration plus a rollback note.
-6. §E.8 security criteria met: no new SAST findings, no new High/Critical CVE.
+6. Security: no new SAST findings (CodeQL), no new High/Critical CVE (Security workflow).
 7. Routing or `/.well-known` changes: **tested by hand on a real iOS and a real Android device.**
    Simulators do not exercise Universal Links / App Links verification.
 
 ## Architecture decisions
 
 Decisions that constrain future work are recorded as ADRs. The code and tests already cite them
-by number (ADR-009: 302-not-301 and Open Graph for crawlers, for instance), but the ADR directory
-has not been created yet — the first PR that adds one creates `docs/adr/` and starts with
-`0001-record-architecture-decisions.md`.
+by number (ADR-009: 302-not-301 and Open Graph for crawlers, for instance). ADRs live in
+`docs/adr/`; start from `0000-template.md` and take the next free number.
 
 Process:
 
@@ -114,9 +116,7 @@ Process:
   superseded by NNNN). Keep it to a page.
 - An ADR is proposed in the PR that needs it and accepted by merging that PR. Superseding an ADR
   means a new ADR, not editing the old one.
-- Security-relevant decisions also update the threat model (§E.8 S-09 is a review gate).
-
-`docs/` itself is owned by the specification; ADRs are the one thing contributors add there.
+- Security-relevant decisions also update the threat model.
 
 ## Security
 

@@ -10,13 +10,18 @@ using Dle.Control.Features.Shared;
 using Dle.Control.Features.Tenants;
 using Dle.Control.Infrastructure;
 using Dle.Domain.Ports;
+using Dle.Domain.Primitives;
 using Dle.Persistence.Fast.Caching;
 
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+
+using StackExchange.Redis;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -32,6 +37,11 @@ public static class ControlCoreServiceCollectionExtensions
 {
     /// <summary>Name of the OpenAPI document the control plane publishes.</summary>
     public const string OpenApiDocumentName = "v1";
+
+    /// <summary>
+    /// Name of the CORS policy of the SDK routes under <c>/v1</c>: any origin, header credentials only.
+    /// </summary>
+    public const string SdkCorsPolicy = "dle-sdk";
 
     /// <summary>
     /// Registers the control-plane options, the shared services and the OpenAPI document.
@@ -57,6 +67,48 @@ public static class ControlCoreServiceCollectionExtensions
                 "Dle:Control:MaxPageSize must be at least Dle:Control:DefaultPageSize.")
             .ValidateOnStart();
 
+        // Refused at start-up: with forwarded headers on and no proxy that parses, the framework
+        // would trust X-Forwarded-For from every peer.
+        services.AddOptions<ControlNetworkOptions>()
+            .Bind(configuration.GetSection(ControlNetworkOptions.SectionName))
+            .ValidateDataAnnotations()
+            .Validate(
+                static network => !network.UseForwardedHeaders
+                    || TrustedProxies.TryParse(network.KnownProxies, network.KnownNetworks, out _),
+                ControlNetworkOptions.SectionName + ": UseForwardedHeaders is on, so KnownProxies or "
+                    + "KnownNetworks must name at least one proxy and every entry must parse. With none, "
+                    + "X-Forwarded-For would be trusted from any client.")
+            .ValidateOnStart();
+
+        services.AddOptions<ForwardedHeadersOptions>()
+            .Configure<IOptions<ControlNetworkOptions>>(static (options, configured) =>
+            {
+                ControlNetworkOptions network = configured.Value;
+
+                if (!network.UseForwardedHeaders
+                    || !TrustedProxies.TryParse(network.KnownProxies, network.KnownNetworks, out TrustedProxies? trusted))
+                {
+                    return;
+                }
+
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.ForwardLimit = network.ForwardLimit;
+
+                // Replaced, never merely cleared: two empty lists mean "trust every peer".
+                options.KnownProxies.Clear();
+                options.KnownIPNetworks.Clear();
+
+                foreach (System.Net.IPAddress address in trusted.Addresses)
+                {
+                    options.KnownProxies.Add(address);
+                }
+
+                foreach (System.Net.IPNetwork trustedNetwork in trusted.Networks)
+                {
+                    options.KnownIPNetworks.Add(trustedNetwork);
+                }
+            });
+
         services.AddOptions<ControlPrivacyOptions>()
             .Bind(configuration.GetSection(ControlPrivacyOptions.SectionName))
             .ValidateDataAnnotations()
@@ -64,14 +116,34 @@ public static class ControlCoreServiceCollectionExtensions
 
         services.TryAddSingleton(TimeProvider.System);
 
+        // Two CORS postures, never one for everything. The SDK routes (/v1) are called from customers'
+        // web pages with a publishable key in a header and no cookie, so any origin may call them. The
+        // administration API answers cross-origin only to origins the operator listed; with the list
+        // empty there is no default policy and the browser's same-origin rule stays in force.
+        string[] adminOrigins = configuration
+            .GetSection(DleControlOptions.SectionName + ":" + nameof(DleControlOptions.AdminCorsOrigins))
+            .Get<string[]>() ?? [];
+
         services.AddCors(options =>
         {
-            options.AddDefaultPolicy(policy =>
+            options.AddPolicy(SdkCorsPolicy, policy => policy
+                .AllowAnyOrigin()
+                .WithHeaders("Authorization", "Content-Type", "X-Dle-Sdk-Key", "traceparent", "tracestate")
+                .WithMethods("GET", "POST")
+                .SetPreflightMaxAge(TimeSpan.FromHours(1)));
+
+            string[] origins = adminOrigins
+                .Where(o => !string.IsNullOrWhiteSpace(o))
+                .Select(o => o.Trim().TrimEnd('/'))
+                .ToArray();
+
+            if (origins.Length > 0)
             {
-                policy.AllowAnyOrigin()
-                      .AllowAnyHeader()
-                      .AllowAnyMethod();
-            });
+                options.AddDefaultPolicy(policy => policy
+                    .WithOrigins(origins)
+                    .AllowAnyHeader()
+                    .AllowAnyMethod());
+            }
         });
 
         AddWireFormat(services);
@@ -148,7 +220,8 @@ public static class ControlCoreServiceCollectionExtensions
     {
         services.TryAddSingleton(static provider => new SnowflakeIdGenerator(
             provider.GetRequiredService<TimeProvider>(),
-            provider.GetRequiredService<IOptions<DleControlOptions>>().Value.NodeId));
+            provider.GetRequiredService<IOptions<DleControlOptions>>().Value.NodeId
+                ?? DleControlOptions.DeriveNodeId(Environment.MachineName)));
 
         services.TryAddSingleton<IRoutingEngine, RoutingEngine>();
         services.TryAddSingleton<LinkPresentation>();
@@ -158,6 +231,8 @@ public static class ControlCoreServiceCollectionExtensions
         services.TryAddScoped<AppDomainPairings>();
         services.TryAddScoped<TenantAdministration>();
         services.TryAddScoped<DomainVerificationService>();
+        services.TryAddSingleton<IDnsTxtResolver, UdpDnsTxtResolver>();
+        services.TryAddSingleton<DomainOwnershipVerifier>();
 
         services.AddHybridCache(options => options.ReportTagMetrics = true);
 
@@ -165,6 +240,13 @@ public static class ControlCoreServiceCollectionExtensions
 
         if (!string.IsNullOrWhiteSpace(valkey))
         {
+            services.TryAddSingleton<IConnectionMultiplexer>(_ =>
+            {
+                ConfigurationOptions redisOptions = ConfigurationOptions.Parse(valkey);
+                redisOptions.AbortOnConnectFail = false;
+                return ConnectionMultiplexer.Connect(redisOptions);
+            });
+
             // Valkey speaks the Redis protocol, so the StackExchange.Redis backed IDistributedCache
             // is the shared level; HybridCache picks it up simply by it being registered. Without a
             // connection string the cache is in-process only, which is §B.8 profile A.
@@ -173,9 +255,12 @@ public static class ControlCoreServiceCollectionExtensions
                 redis.Configuration = valkey;
                 redis.InstanceName = "dle:";
             });
+
+            services.AddDleValkeyTokenReplayGuard();
         }
 
         services.TryAddSingleton<ILinkCacheInvalidator, LinkCacheInvalidator>();
+        services.TryAddSingleton<ValkeyRateLimitStore>();
     }
 
     /// <summary>
@@ -228,6 +313,7 @@ public static class ControlCoreServiceCollectionExtensions
     private static void AddOpenApi(IServiceCollection services) =>
         services.AddOpenApi(OpenApiDocumentName, options =>
         {
+            options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_1;
             options.AddDocumentTransformer(static (document, context, cancellationToken) =>
             {
                 document.Info = new()

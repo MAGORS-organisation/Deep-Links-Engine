@@ -1,3 +1,4 @@
+import { toIsoTimestamp } from './api.js';
 import type { DleConsent } from './types.js';
 import type { KeyValueStore } from './storage.js';
 import { readJson, writeJson } from './storage.js';
@@ -49,7 +50,8 @@ export interface ConsentOptions {
 function normalise(value: Partial<DleConsent> | null | undefined, ts?: string): DleConsent {
   const analytics = value?.analytics === true;
   const attribution = value?.attribution === true;
-  const stamp = value?.ts ?? ts;
+  // `ConsentDto.Ts` is a `DateTimeOffset`: an unreadable value would fail the whole resolve body.
+  const stamp = toIsoTimestamp(value?.ts) ?? ts;
   return stamp === undefined ? { analytics, attribution } : { analytics, attribution, ts: stamp };
 }
 

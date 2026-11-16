@@ -34,6 +34,8 @@ namespace Dle.ContractTests.Infrastructure;
 /// </remarks>
 public sealed class ControlApiFactory : WebApplicationFactory<DleControlOptions>
 {
+    private static readonly Lock EnvironmentLock = new();
+
     /// <summary>Configuration the host needs in order to build, with no live dependency behind it.</summary>
     public static IReadOnlyDictionary<string, string?> Settings { get; } =
         new Dictionary<string, string?>(StringComparer.Ordinal)
@@ -41,12 +43,14 @@ public sealed class ControlApiFactory : WebApplicationFactory<DleControlOptions>
             // Parsed by Npgsql at registration, never opened by a contract test.
             ["ConnectionStrings:Postgres"] =
                 "Host=127.0.0.1;Port=1;Database=dle_contract_tests;Username=dle;Password=dle;Timeout=1;Command Timeout=1",
+            ["ConnectionStrings:Valkey"] = " ",
 
             // Deterministic, and only ever used to derive keys whose public halves appear in the
             // published document. Not a secret: this host answers no authenticated request.
             ["Dle:Crypto:MasterSecret"] = "dle-contract-tests-master-secret-0000000000000000",
 
             ["Dle:Workers:Enabled"] = "false",
+            ["Dle:Bootstrap:Enabled"] = "false",
             ["Dle:Control:ServeAdminSpa"] = "false",
             ["Dle:Telemetry:Otlp:Enabled"] = "false",
 
@@ -55,6 +59,34 @@ public sealed class ControlApiFactory : WebApplicationFactory<DleControlOptions>
             ["Logging:LogLevel:Default"] = "Warning",
             ["Logging:LogLevel:Microsoft"] = "Warning",
         };
+
+    /// <inheritdoc />
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        lock (EnvironmentLock)
+        {
+            Dictionary<string, string?> previous = new(StringComparer.Ordinal);
+
+            try
+            {
+                foreach ((string key, string? value) in Settings)
+                {
+                    string envKey = key.Replace(":", "__", StringComparison.Ordinal);
+                    previous.TryAdd(envKey, Environment.GetEnvironmentVariable(envKey));
+                    Environment.SetEnvironmentVariable(envKey, value);
+                }
+
+                return base.CreateHost(builder);
+            }
+            finally
+            {
+                foreach ((string envKey, string? oldValue) in previous)
+                {
+                    Environment.SetEnvironmentVariable(envKey, oldValue);
+                }
+            }
+        }
+    }
 
     /// <inheritdoc />
     protected override void ConfigureWebHost(IWebHostBuilder builder)

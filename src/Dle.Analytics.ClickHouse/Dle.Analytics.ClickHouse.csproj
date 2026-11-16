@@ -13,7 +13,7 @@
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageId>Dle.Analytics.ClickHouse</PackageId>
-    <Description>Deep Link Engine analytics store backed by ClickHouse. Optional provider for deployments that outgrow partitioned PostgreSQL.</Description>
+    <Description>[Experimental v0.2 target] Query-only Deep Link Engine analytics store backed by ClickHouse over an external PostgreSQL-to-ClickHouse CDC mirror.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,7 +22,6 @@
 
   <ItemGroup>
     <PackageReference Include="ClickHouse.Client" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>
 

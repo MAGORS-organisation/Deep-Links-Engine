@@ -39,7 +39,7 @@ public sealed class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
             .HasColumnName("role")
             .IsRequired();
 
-        builder.Property(k => k.Scopes)
+        builder.PrimitiveCollection(k => k.Scopes)
             .HasColumnName("scopes")
             .HasColumnType(PostgresConventions.TextArray)
             .HasDefaultValueSql(PostgresConventions.EmptyTextArrayDefault)

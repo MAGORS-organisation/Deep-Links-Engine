@@ -329,6 +329,53 @@ public sealed class RoutingUrlBuilderTests
         Assert.Equal("myapp://product/123", url);
     }
 
+    // ================================================================ which store
+
+    [Fact]
+    public void BuildStoreUrl_RuleNamesTheAppStore_AnAndroidVisitorGoesToTheAppsPlayListing()
+    {
+        // One rule, no platform condition, one store URL: without this an Android phone is sent to
+        // the App Store, where it can install nothing.
+        LinkSnapshot link = TestLinks.Snapshot(
+            iosStoreUrl: "https://apps.apple.com/app/id123456789",
+            androidStoreUrl: "https://play.google.com/store/apps/details?id=sk.example");
+        RoutingDecision appStoreRule = WebDecision with { StoreUrl = "https://apps.apple.com/app/id123456789" };
+
+        string android = RoutingUrlBuilder.BuildStoreUrl(
+            appStoreRule, link, TestClients.Client(Platform.Android), ClickId, TestClients.NoConsent);
+        string ios = RoutingUrlBuilder.BuildStoreUrl(
+            appStoreRule, link, TestClients.Client(Platform.Ios), ClickId, TestClients.NoConsent);
+
+        Assert.StartsWith("https://play.google.com/store/apps/details", android, StringComparison.Ordinal);
+        Assert.StartsWith("https://apps.apple.com/app/id123456789", ios, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildStoreUrl_RuleNamesTheOtherStoreButTheAppHasNoListingHere_TheRuleStillWins()
+    {
+        // Nothing better is known, so the operator's explicit URL is used as written.
+        LinkSnapshot link = TestLinks.Snapshot(iosStoreUrl: "https://apps.apple.com/app/id123456789");
+        RoutingDecision appStoreRule = WebDecision with { StoreUrl = "https://apps.apple.com/app/id123456789" };
+
+        string android = RoutingUrlBuilder.BuildStoreUrl(
+            appStoreRule, link, TestClients.Client(Platform.Android), ClickId, TestClients.NoConsent);
+
+        Assert.StartsWith("https://apps.apple.com/app/id123456789", android, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildStoreUrl_RuleNamesACustomStorePage_IsNeverReplaced()
+    {
+        LinkSnapshot link = TestLinks.Snapshot(
+            androidStoreUrl: "https://play.google.com/store/apps/details?id=sk.example");
+        RoutingDecision ownPage = WebDecision with { StoreUrl = "https://example.com/get-the-app" };
+
+        string android = RoutingUrlBuilder.BuildStoreUrl(
+            ownPage, link, TestClients.Client(Platform.Android), ClickId, TestClients.NoConsent);
+
+        Assert.StartsWith("https://example.com/get-the-app", android, StringComparison.Ordinal);
+    }
+
     // ================================================================ Android install referrer
 
     [Fact]

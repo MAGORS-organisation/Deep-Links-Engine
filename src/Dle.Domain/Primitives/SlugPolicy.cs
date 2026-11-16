@@ -35,14 +35,26 @@ public static class SlugPolicy
     public const int MaxLength = 64;
 
     /// <summary>
-    /// Path segments that the edge serves itself and that therefore can never be a link slug.
+    /// Path segments that can never be a link slug: the ones the edge serves itself, and the ones
+    /// the reverse proxy sends to the control plane before the edge ever sees them.
     /// </summary>
+    /// <remarks>
+    /// The second group has to match the <c>@control</c> matcher in <c>deploy/Caddyfile</c> and
+    /// <c>ingress.controlPaths</c> in the Helm chart. A slug that is accepted here and routed there
+    /// is a short link that answers with the admin console instead of redirecting.
+    /// </remarks>
     public static readonly string[] Reserved =
     [
         ".well-known",
         "api",
+        "v1",
+        "admin",
+        "scalar",
+        "openapi",
+        "abuse-reports",
         "healthz",
         "readyz",
+        "metrics",
         "abuse",
         "_dl",
         "favicon.ico",

@@ -13,7 +13,7 @@ namespace Dle.Persistence.Repositories;
 /// event whose transaction later rolls back. Writing the delivery row in the same transaction as
 /// the change that caused it makes the two atomic, and the worker picks it up afterwards.
 /// </remarks>
-public sealed class WebhookRepository : IWebhookOutbox
+public sealed class WebhookRepository : IWebhookOutbox, IWebhookReplayStore
 {
     /// <summary>Delivery state of a row waiting to be sent.</summary>
     public const string PendingStatus = "pending";
@@ -309,5 +309,90 @@ public sealed class WebhookRepository : IWebhookOutbox
             .OrderByDescending(d => d.CreatedAt)
             .Take(limit)
             .ToListAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<WebhookSingleReplayResult> ReplayDeliveryAsync(
+        Guid deliveryId,
+        CancellationToken cancellationToken)
+    {
+        WebhookDelivery? delivery = await _db.WebhookDeliveries
+            .FirstOrDefaultAsync(d => d.Id == deliveryId, cancellationToken);
+
+        if (delivery is null)
+        {
+            return new WebhookSingleReplayResult(WebhookReplayStatus.NotFound);
+        }
+
+        bool activeSubscription = await _db.WebhookSubscriptions
+            .AsNoTracking()
+            .AnyAsync(s => s.Id == delivery.SubscriptionId && s.IsActive, cancellationToken);
+
+        if (!activeSubscription)
+        {
+            return new WebhookSingleReplayResult(WebhookReplayStatus.SubscriptionInactive);
+        }
+
+        if (string.Equals(delivery.Status, DeliveredStatus, StringComparison.Ordinal))
+        {
+            return new WebhookSingleReplayResult(WebhookReplayStatus.AlreadyDelivered);
+        }
+
+        delivery.Status = PendingStatus;
+        delivery.Attempt = 0;
+        delivery.NextAttemptAt = _timeProvider.GetUtcNow();
+        delivery.LastError = null;
+        delivery.ResponseCode = null;
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return new WebhookSingleReplayResult(WebhookReplayStatus.Replayed, delivery.Id);
+    }
+
+    /// <inheritdoc />
+    public async Task<WebhookBatchReplayResult> ReplayDeadDeliveriesAsync(
+        Guid? subscriptionId,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        int boundedLimit = Math.Clamp(limit, 1, 500);
+        DateTimeOffset now = _timeProvider.GetUtcNow();
+
+        IQueryable<Guid> activeSubscriptions = _db.WebhookSubscriptions
+            .AsNoTracking()
+            .Where(s => s.IsActive)
+            .Select(s => s.Id);
+
+        if (subscriptionId is { } subId)
+        {
+            activeSubscriptions = activeSubscriptions.Where(id => id == subId);
+        }
+
+        List<WebhookDelivery> candidates = await _db.WebhookDeliveries
+            .Where(d => d.Status == DeadStatus && activeSubscriptions.Contains(d.SubscriptionId))
+            .OrderByDescending(d => d.CreatedAt)
+            .Take(boundedLimit)
+            .ToListAsync(cancellationToken);
+
+        if (candidates.Count == 0)
+        {
+            return new WebhookBatchReplayResult([]);
+        }
+
+        List<Guid> replayedIds = new(candidates.Count);
+
+        foreach (WebhookDelivery delivery in candidates)
+        {
+            delivery.Status = PendingStatus;
+            delivery.Attempt = 0;
+            delivery.NextAttemptAt = now;
+            delivery.LastError = null;
+            delivery.ResponseCode = null;
+            replayedIds.Add(delivery.Id);
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return new WebhookBatchReplayResult(replayedIds);
     }
 }

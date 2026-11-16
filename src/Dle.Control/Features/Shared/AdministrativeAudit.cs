@@ -1,6 +1,7 @@
 using System.Text.Json;
 
 using Dle.Control.Identity;
+using Dle.Domain.Ports;
 
 namespace Dle.Control.Features.Shared;
 
@@ -50,6 +51,9 @@ public static class AuditActions
     /// <summary>A domain verification run was executed.</summary>
     public const string DomainVerified = "domain.verified";
 
+    /// <summary>DNS TXT ownership of a custom domain was proven.</summary>
+    public const string DomainOwnershipVerified = "domain.ownership_verified";
+
     /// <summary>An application was registered.</summary>
     public const string AppCreated = "app.created";
 
@@ -80,6 +84,12 @@ public static class AuditActions
     /// <summary>A control-plane API key was revoked.</summary>
     public const string ApiKeyRevoked = "api_key.revoked";
 
+    /// <summary>One or more failed or dead webhook deliveries were queued for replay.</summary>
+    public const string WebhookDeliveryReplayed = "webhook_delivery.replayed";
+
+    /// <summary>All installation data for an end-user install identifier was erased.</summary>
+    public const string PrivacyInstallErased = "privacy.install_erased";
+
     /// <summary>Subject kind of a link.</summary>
     public const string LinkSubject = "link";
 
@@ -100,6 +110,12 @@ public static class AuditActions
 
     /// <summary>Subject kind of a control-plane API key.</summary>
     public const string ApiKeySubject = "api_key";
+
+    /// <summary>Subject kind of a webhook subscription or delivery batch.</summary>
+    public const string WebhookSubject = "webhook";
+
+    /// <summary>Subject kind of a tenant privacy operation (never an end-user identifier).</summary>
+    public const string PrivacySubject = "privacy";
 }
 
 /// <summary>
@@ -137,7 +153,7 @@ internal static class AdministrativeAudit
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task that completes when the entry has been written.</returns>
     internal static async Task RecordAsync(
-        AuditLogWriter audit,
+        IAuditLogWriter audit,
         DleCaller caller,
         string action,
         string subjectType,

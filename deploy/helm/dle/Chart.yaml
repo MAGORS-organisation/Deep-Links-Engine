@@ -2,7 +2,7 @@ apiVersion: v2
 name: dle
 description: |
   Deep Link Engine (DLE) — self-hosted, EU-first deep linking and attribution engine.
-  Profile B of docs/zadanie.md §B.8: an autoscaled edge (data plane) behind an Ingress, a
+  The Kubernetes deployment profile: an autoscaled edge (data plane) behind an Ingress, a
   two-replica control plane, PostgreSQL primary + read replicas and a Valkey cluster.
 type: application
 version: 0.1.0

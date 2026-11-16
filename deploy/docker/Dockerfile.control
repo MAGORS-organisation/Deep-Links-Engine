@@ -8,18 +8,16 @@
 #
 # Stages
 #   spa              Node 22: `npm ci && npm run build` of src/Dle.Admin.Web → /spa/dist
-#   build            .NET 10 SDK on the BUILD platform: publishes Dle.Control for TARGETARCH and
+#   build            .NET 11 SDK on the BUILD platform: publishes Dle.Control for TARGETARCH and
 #                    produces /app/efbundle (`dotnet ef migrations bundle`, framework-dependent)
-#   runtime-chiseled aspnet:10.0-noble-chiseled, no HEALTHCHECK (no curl) — for Kubernetes
-#   runtime (final)  aspnet:10.0-noble + curl, HEALTHCHECK, non-root
+#   runtime-chiseled aspnet:11.0-resolute-chiseled, no HEALTHCHECK (no curl) — for Kubernetes
+#   runtime (final)  aspnet:11.0-resolute + curl, HEALTHCHECK, non-root
 #
-# The admin SPA and the .NET build are independent stages. The control host serves whatever is
-# in wwwroot: with /app/wwwroot/admin/ present (this image) the SPA, without it the committed
-# wwwroot/index.html fallback console — a .NET-only `dotnet build` outside Docker still works
-# (the CopyAdminSpa target in Dle.Control.csproj is conditional on dist/ existing). Docker
-# copies dist/ into the runtime image directly rather than relying on that build-time target,
-# so the SPA ships regardless of MSBuild item-evaluation order. Set Dle__Control__SpaIndexFile
-# =admin/index.html (docker-compose.yml and the Helm chart do) so client-side routes resolve.
+# The admin SPA and the .NET build are independent stages. The control host serves wwwroot/admin/
+# (Dle:Control:SpaIndexFile defaults to admin/index.html), while a .NET-only `dotnet build` outside
+# Docker still compiles without Node (the CopyAdminSpa target in Dle.Control.csproj is conditional on
+# dist/ existing). Docker copies dist/ into the runtime image directly rather than relying on that
+# build-time target, so the SPA ships regardless of MSBuild item-evaluation order.
 #
 # Migrations: /app/efbundle applies src/Dle.Persistence migrations. It is framework-dependent
 # (runs on the runtime already in the image) and uses DleDesignTimeDbContextFactory, which reads
@@ -32,9 +30,9 @@
 # CI=true is deliberately not set (RestoreLockedMode vs. RID-specific restore; see Dockerfile.edge).
 # =============================================================================
 
-ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:10.0
-ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble
-ARG CHISELED_IMAGE=mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled
+ARG SDK_IMAGE=mcr.microsoft.com/dotnet/sdk:11.0
+ARG RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:11.0-resolute
+ARG CHISELED_IMAGE=mcr.microsoft.com/dotnet/aspnet:11.0-resolute-chiseled
 ARG NODE_IMAGE=node:22-alpine
 
 # ---- spa -----------------------------------------------------------------------------------------
@@ -46,7 +44,7 @@ ENV NODE_ENV=production \
 WORKDIR /spa
 COPY src/Dle.Admin.Web/package.json src/Dle.Admin.Web/package-lock.json ./
 # devDependencies (vite, tsc, eslint) are needed for the build even with NODE_ENV=production.
-RUN npm ci --include=dev
+RUN npm ci --include=dev --ignore-scripts
 COPY src/Dle.Admin.Web/ ./
 # `tsc -b && vite build` (package.json). vite.config.ts sets base: '/admin/'.
 RUN npm run build
@@ -112,7 +110,7 @@ LABEL org.opencontainers.image.title="dle-control" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled"
+      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:11.0-resolute-chiseled"
 WORKDIR /app
 COPY --from=build --chown=$APP_UID:$APP_UID /app/publish ./
 COPY --from=build --chown=$APP_UID:$APP_UID /app/efbundle ./efbundle
@@ -139,7 +137,7 @@ LABEL org.opencontainers.image.title="dle-control" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${VCS_REF}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:10.0-noble"
+      org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:11.0-resolute"
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends curl \

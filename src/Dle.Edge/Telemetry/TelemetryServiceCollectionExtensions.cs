@@ -66,6 +66,17 @@ public static class TelemetryServiceCollectionExtensions
         services.TryAddSingleton(static sp => new EdgeMetrics(
             sp.GetService<System.Diagnostics.Metrics.IMeterFactory>(),
             sp.GetRequiredService<DomainVerificationFailureRegistry>()));
+        services.TryAddSingleton(static _ => new PrometheusMetricsCollector(
+            [
+                EdgeMetrics.MeterName,
+                FastPersistenceMetrics.MeterName,
+                "Microsoft.AspNetCore.Hosting",
+                "System.Runtime",
+            ],
+            new Dictionary<string, double[]>(StringComparer.Ordinal)
+            {
+                ["dle.resolve.duration"] = [0.001d, 0.002d, 0.004d, 0.008d, 0.015d, 0.025d, 0.05d, 0.1d, 0.25d, 0.5d, 1d],
+            }));
 
         string? otlpEndpoint = string.IsNullOrWhiteSpace(options.OtlpEndpoint) ? null : options.OtlpEndpoint.Trim();
 
@@ -160,5 +171,6 @@ public static class TelemetryServiceCollectionExtensions
     private static bool IsProbe(PathString path) =>
         path.StartsWithSegments("/healthz", StringComparison.OrdinalIgnoreCase) ||
         path.StartsWithSegments("/readyz", StringComparison.OrdinalIgnoreCase) ||
-        path.StartsWithSegments("/livez", StringComparison.OrdinalIgnoreCase);
+        path.StartsWithSegments("/livez", StringComparison.OrdinalIgnoreCase) ||
+        path.StartsWithSegments("/metrics", StringComparison.OrdinalIgnoreCase);
 }

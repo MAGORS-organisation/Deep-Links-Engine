@@ -92,11 +92,14 @@ spec:
                   name: {{ include "dle.secretName" . }}
                   key: {{ .Values.secrets.keys.valkeyConnectionString }}
                   optional: true
+            # The edge's own secret, never the control plane's master secret (S12).
             - name: Dle__Crypto__MasterSecret
               valueFrom:
                 secretKeyRef:
                   name: {{ include "dle.secretName" . }}
-                  key: {{ .Values.secrets.keys.masterSecret }}
+                  key: {{ .Values.secrets.keys.edgeSecret }}
+            # GET /metrics: on only for the chart's ServiceMonitor, and then token-protected.
+            {{- include "dle.metricsEnv" . | trim | nindent 12 }}
             {{- with .Values.edge.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

@@ -92,6 +92,19 @@ rather than guessed at. Options: `claimCode`, `loginKey`, `referrer`, `force`.
 The engine limits resolve to 5 calls per hour per install id; the SDK caches the result in
 `sessionStorage` so repeated calls in one tab cost nothing.
 
+## Login hint
+
+On a page where the user is signed in, record which account followed the link, so the app's later
+resolve with the same account key matches it as `login`:
+
+```ts
+const hint = await dle.recordLoginHint({ loginKey: accountId });
+```
+
+`loginKey` is re-keyed on the server. The click comes from `clickId`, or `url`, or the `dl_cid`
+parameter of the page URL when both are omitted. Without attribution consent, or without a click,
+the SDK sends nothing and `hint.accepted` is `false`.
+
 ## Events
 
 ```ts

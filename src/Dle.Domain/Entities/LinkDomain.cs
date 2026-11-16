@@ -51,6 +51,9 @@ public class LinkDomain
     /// <summary>Whether the domain serves. A disabled domain answers 404 like an unknown host.</summary>
     public bool IsActive { get; set; } = true;
 
+    /// <summary>When DNS TXT ownership (<c>_dle-verify.&lt;host&gt;</c>) was confirmed, if required.</summary>
+    public DateTimeOffset? OwnershipVerifiedAt { get; set; }
+
     /// <summary>Creation instant, in UTC.</summary>
     public DateTimeOffset CreatedAt { get; set; }
 }

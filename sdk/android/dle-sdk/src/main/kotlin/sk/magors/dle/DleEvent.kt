@@ -47,7 +47,9 @@ public enum class DleEventType(
 /**
  * A single event queued for `POST /v1/events`. Mirrors `EventDto` (spec §B.7.2). Build instances
  * through the factories in the companion object; they enforce what the server would otherwise
- * reject.
+ * reject, so constructing an invalid event throws `IllegalArgumentException` (a blank name, a
+ * non-finite value, a currency that is not three letters, more than [MAX_PROPERTIES] properties).
+ * [DleClient.trackEvent] itself never throws; validate computed values before building the event.
  *
  * Keep [properties] free of personal data: the engine stores them as sent, and the deletion
  * endpoint keyed on `install_id` is the only remedy afterwards (spec §E.6.3).

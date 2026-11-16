@@ -26,7 +26,7 @@ Fuzz testing in DLE is split into two complementary layers:
 
 ### 1.1 Fuzz Targets (`FuzzTargets.cs`)
 
-Located in [`tests/Dle.SecurityTests/Fuzzing/FuzzTargets.cs`](../tests/Dle.SecurityTests/Fuzzing/FuzzTargets.cs), the four canonical fuzz targets exercise parser hot paths:
+Located in [`tests/Dle.SecurityTests/Fuzzing/FuzzTargets.cs`](../../tests/Dle.SecurityTests/Fuzzing/FuzzTargets.cs), the four canonical fuzz targets exercise parser hot paths:
 
 | Target Name | Component Tested | Security / Correctness Invariants |
 |---|---|---|
@@ -37,7 +37,7 @@ Located in [`tests/Dle.SecurityTests/Fuzzing/FuzzTargets.cs`](../tests/Dle.Secur
 
 ### 1.2 SharpFuzz Driver (`Dle.FuzzDriver`)
 
-[`tests/Dle.FuzzDriver`](../tests/Dle.FuzzDriver/Dle.FuzzDriver.csproj) is a dedicated console application (`OutputType=Exe`) referencing `SharpFuzz` and `Dle.SecurityTests`. It exposes a CLI entry point:
+[`tests/Dle.FuzzDriver`](../../tests/Dle.FuzzDriver/Dle.FuzzDriver.csproj) is a dedicated console application (`OutputType=Exe`) referencing `SharpFuzz` and `Dle.SecurityTests`. It exposes a CLI entry point:
 
 ```bash
 dotnet run --project tests/Dle.FuzzDriver --no-build -- [target]
@@ -73,9 +73,9 @@ Before running the driver, use `sharpfuzz` to rewrite the compiled assemblies wi
 
 ```bash
 # Instrument assemblies under test
-sharpfuzz tests/Dle.FuzzDriver/bin/Release/net10.0/Dle.Domain.dll
-sharpfuzz tests/Dle.FuzzDriver/bin/Release/net10.0/Dle.Edge.dll
-sharpfuzz tests/Dle.FuzzDriver/bin/Release/net10.0/Dle.SecurityTests.dll
+sharpfuzz tests/Dle.FuzzDriver/bin/Release/net11.0/Dle.Domain.dll
+sharpfuzz tests/Dle.FuzzDriver/bin/Release/net11.0/Dle.Edge.dll
+sharpfuzz tests/Dle.FuzzDriver/bin/Release/net11.0/Dle.SecurityTests.dll
 ```
 
 ### Step 4: Run fuzzing with libFuzzer
@@ -88,13 +88,13 @@ echo '[]' > corpus/routing-rules/empty.json
 echo '[{"id":"default","then":{"action":"web","url":"https://example.com"}}]' > corpus/routing-rules/simple.json
 
 # Execute SharpFuzz driver with libFuzzer
-dotnet tests/Dle.FuzzDriver/bin/Release/net10.0/Dle.FuzzDriver.dll routing-rules corpus/routing-rules
+dotnet tests/Dle.FuzzDriver/bin/Release/net11.0/Dle.FuzzDriver.dll routing-rules corpus/routing-rules
 ```
 
 For continuous fuzzing campaigns, specify a timeout and memory limit:
 
 ```bash
-dotnet tests/Dle.FuzzDriver/bin/Release/net10.0/Dle.FuzzDriver.dll url corpus/url \
+dotnet tests/Dle.FuzzDriver/bin/Release/net11.0/Dle.FuzzDriver.dll url corpus/url \
   -max_len=4096 \
   -timeout=5 \
   -rss_limit_mb=2048
@@ -104,7 +104,7 @@ dotnet tests/Dle.FuzzDriver/bin/Release/net10.0/Dle.FuzzDriver.dll url corpus/ur
 
 ## 3. Deterministic Property-Based Execution (`FuzzHarnessTests`)
 
-To ensure fuzz targets are continuously tested on all developer machines and in standard PR builds without requiring native Clang/libFuzzer setup, `Dle.SecurityTests` includes [`FuzzHarnessTests`](../tests/Dle.SecurityTests/Fuzzing/FuzzHarnessTests.cs):
+To ensure fuzz targets are continuously tested on all developer machines and in standard PR builds without requiring native Clang/libFuzzer setup, `Dle.SecurityTests` includes [`FuzzHarnessTests`](../../tests/Dle.SecurityTests/Fuzzing/FuzzHarnessTests.cs):
 
 ```bash
 dotnet run --project tests/Dle.SecurityTests --no-build -- -class "Dle.SecurityTests.Fuzzing.FuzzHarnessTests"

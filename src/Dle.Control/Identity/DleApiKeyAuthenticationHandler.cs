@@ -95,12 +95,25 @@ public sealed class DleApiKeyAuthenticationHandler
 
         if (_cache.TryGet(Scheme.Name, presented, out ApiKeyCandidate? cached) && cached is not null)
         {
-            return Success(cached, prefix);
+            if (cached.ExpiresAt is DateTimeOffset cachedExpiry && cachedExpiry <= _timeProvider.GetUtcNow())
+            {
+                _cache.InvalidateKey(cached.KeyId);
+                return AuthenticateResult.Fail(Refused);
+            }
+
+            if (string.Equals(cached.TenantStatus, TenantStatuses.Active, StringComparison.Ordinal)
+                && DleRoles.IsKnown(cached.Role))
+            {
+                return Success(cached, prefix);
+            }
+
+            _cache.InvalidateKey(cached.KeyId);
         }
 
-        if (!_limiter.TryAcquire(
+        if (!await _limiter.TryAcquireAsync(
                 DleKeyCredentialReader.AddressPrefix(Context.Connection.RemoteIpAddress),
-                prefix))
+                prefix,
+                Context.RequestAborted))
         {
             Logger.LogWarning(
                 "Authentication attempts exhausted for key prefix {KeyPrefix}.", prefix);
@@ -108,6 +121,7 @@ public sealed class DleApiKeyAuthenticationHandler
             return AuthenticateResult.Fail(Refused);
         }
 
+        long snapshotGeneration = _cache.CaptureGeneration();
         ApiKeyCandidate? candidate = await _store.FindApiKeyAsync(prefix, Context.RequestAborted);
 
         // The verification runs even when the prefix is unknown, against a hash that cannot match,
@@ -152,7 +166,14 @@ public sealed class DleApiKeyAuthenticationHandler
             return AuthenticateResult.Fail(Refused);
         }
 
-        _cache.Set(Scheme.Name, presented, candidate);
+        _cache.Set(
+            Scheme.Name,
+            presented,
+            candidate,
+            candidate.KeyId,
+            candidate.TenantId,
+            candidate.ExpiresAt,
+            snapshotGeneration: snapshotGeneration);
         await _store.TouchApiKeyAsync(candidate.KeyId, now, Context.RequestAborted);
 
         return Success(candidate, prefix);

@@ -49,39 +49,6 @@ public sealed class EdgeOptions
 }
 
 /// <summary>
-/// Interstitial behaviour, bound from <c>Dle:Edge:Interstitial</c>.
-/// </summary>
-/// <remarks>
-/// The interstitial exists because an in-app webview only hands a universal link to the operating
-/// system on a real tap; a scripted navigation is not a user gesture (§A.2.6). Switching it off is
-/// supported for a deployment that only ever serves ordinary browsers, and it degrades to a plain
-/// redirect.
-/// </remarks>
-public sealed class InterstitialOptions
-{
-    /// <summary>Configuration section this type binds to.</summary>
-    public const string SectionName = "Dle:Edge:Interstitial";
-
-    /// <summary>Whether an interstitial may be served at all.</summary>
-    public bool Enabled { get; set; } = true;
-
-    /// <summary>
-    /// Delay before the interstitial falls back to the store or web target, in milliseconds.
-    /// </summary>
-    /// <remarks>
-    /// Below roughly half a second the fallback fires before the operating system has had a chance
-    /// to hand the deep link to an installed application, which turns every open into a store visit.
-    /// </remarks>
-    [Range(300, 30_000)]
-    public int AutoRedirectMs { get; set; } = 1_200;
-
-    /// <summary>Where the interstitial takes its branding from: <c>tenant</c> or <c>none</c>.</summary>
-    [Required(AllowEmptyStrings = false)]
-    [RegularExpression("^(tenant|none)$")]
-    public string Branding { get; set; } = "tenant";
-}
-
-/// <summary>
 /// Crawler verification behaviour, bound from <c>Dle:Edge:BotDetection</c>.
 /// </summary>
 public sealed class BotDetectionOptions
@@ -174,18 +141,6 @@ public sealed class SecurityHeaderOptions
 
     /// <summary>Whether the HSTS header covers subdomains.</summary>
     public bool HstsIncludeSubDomains { get; set; } = true;
-
-    /// <summary>
-    /// Sources the interstitial may load images from, in addition to the page origin.
-    /// </summary>
-    /// <remarks>
-    /// Open Graph images are usually served from the tenant's own content delivery network, so the
-    /// default allows any HTTPS origin for images and nothing else. Everything that can execute —
-    /// script, style, frame, connect — is restricted to the page origin plus a per-response nonce,
-    /// with no <c>unsafe-inline</c> anywhere (T-11).
-    /// </remarks>
-    [Required(AllowEmptyStrings = false)]
-    public string ImageSources { get; set; } = "https: data:";
 }
 
 /// <summary>

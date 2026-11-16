@@ -38,6 +38,7 @@ public sealed partial class PostgresRollupService : IRollupService
     private readonly IOptionsMonitor<AnalyticsOptions> _options;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<PostgresRollupService> _logger;
+    private long _lastPartitionMaintenanceTicks;
 
     /// <summary>Creates the service.</summary>
     /// <param name="connections">Factory for analytics database connections.</param>
@@ -68,6 +69,8 @@ public sealed partial class PostgresRollupService : IRollupService
         DateTimeOffset startedAt = _timeProvider.GetUtcNow();
 
         await using NpgsqlConnection connection = await _connections.OpenAsync(ct);
+
+        await EnsureUpcomingPartitionsPeriodicallyAsync(connection, startedAt, ct);
 
         DateTimeOffset hourlyTarget = TruncateHour(
             startedAt.AddMinutes(-options.RollupLagMinutes));
@@ -178,6 +181,30 @@ public sealed partial class PostgresRollupService : IRollupService
             InstallRowsDaily = installDaily,
             AttributionQualityRows = quality,
         };
+    }
+
+    private async Task EnsureUpcomingPartitionsPeriodicallyAsync(
+        NpgsqlConnection connection,
+        DateTimeOffset now,
+        CancellationToken ct)
+    {
+        long nowTicks = now.UtcTicks;
+        long previousTicks = Volatile.Read(ref _lastPartitionMaintenanceTicks);
+        if (previousTicks != 0 && nowTicks - previousTicks < TimeSpan.TicksPerHour)
+        {
+            return;
+        }
+
+        if (Interlocked.CompareExchange(ref _lastPartitionMaintenanceTicks, nowTicks, previousTicks) != previousTicks)
+        {
+            return;
+        }
+
+        await PostgresPartitionMaintenance.EnsureUpcomingAsync(
+            connection,
+            _connections.CommandTimeoutSeconds,
+            _logger,
+            ct);
     }
 
     /// <summary>Truncates an instant down to the start of its UTC hour.</summary>

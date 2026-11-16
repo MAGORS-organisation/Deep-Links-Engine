@@ -18,7 +18,7 @@ body:
     id: proposal
     attributes:
       label: Proposed change
-      description: Behaviour, API shape, configuration key, SDK surface. Reference docs/zadanie.md requirements (FR-/NFR-/S-) if the proposal touches them.
+      description: Behaviour, API shape, configuration key, SDK surface.
     validations:
       required: true
   - type: dropdown

@@ -296,11 +296,19 @@ public sealed class DomainVerificationService
         Uri uri = new(string.Create(CultureInfo.InvariantCulture, $"https://{host}{path}"));
         HttpClient client = _clients.CreateClient(HttpClientName);
 
+        // The client's own timeout stops counting once the headers have arrived, because the body is
+        // read as a stream. A host that answers the headers and then feeds the body a byte at a time
+        // would otherwise hold the whole verification pass, so the fetch as a whole gets a deadline.
+        using CancellationTokenSource deadline =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(client.Timeout);
+        CancellationToken bounded = deadline.Token;
+
         try
         {
             using HttpRequestMessage request = new(HttpMethod.Get, uri);
             using HttpResponseMessage response =
-                await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+                await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, bounded);
 
             int status = (int)response.StatusCode;
             int redirects = status is >= 300 and <= 399 ? 1 : 0;
@@ -309,11 +317,11 @@ public sealed class DomainVerificationService
 
             if (response.Content.Headers.ContentLength is null or <= MaxBodyBytes)
             {
-                using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using Stream stream = await response.Content.ReadAsStreamAsync(bounded);
                 using StreamReader reader = new(stream);
 
                 char[] buffer = new char[MaxBodyBytes];
-                int read = await reader.ReadBlockAsync(buffer, cancellationToken);
+                int read = await reader.ReadBlockAsync(buffer, bounded);
                 body = new string(buffer, 0, read);
             }
 
@@ -338,9 +346,24 @@ public sealed class DomainVerificationService
                     exception.Message);
             }
 
-            return new FetchResult(0, 0, null, null, TransportFailed: true, exception.Message);
+            return new FetchResult(0, 0, null, null, TransportFailed: true, SanitizeTransportError(exception));
         }
-        catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (IOException exception)
+        {
+            // The connection broke off while the body was being read. That is a failed fetch of this
+            // one host, not a reason to abandon every host that comes after it in the pass.
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation(
+                    "Association file fetch broke off for {Host}{Path}: {Reason}.",
+                    host,
+                    path,
+                    exception.Message);
+            }
+
+            return new FetchResult(0, 0, null, null, TransportFailed: true, "The connection was closed before the file was complete.");
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             if (_logger.IsEnabled(LogLevel.Information))
             {
@@ -359,6 +382,20 @@ public sealed class DomainVerificationService
                 "The host did not answer in time.");
         }
     }
+
+    /// <summary>
+    /// Maps transport exceptions to bounded user-safe messages so internal DNS resolvers, socket
+    /// endpoints, or proxy details are never returned to callers.
+    /// </summary>
+    private static string SanitizeTransportError(HttpRequestException exception) => exception.HttpRequestError switch
+    {
+        HttpRequestError.NameResolutionError => "The domain name could not be resolved.",
+        HttpRequestError.ConnectionError => "Could not establish a TCP connection to the host.",
+        HttpRequestError.SecureConnectionError => "The TLS handshake with the host failed.",
+        HttpRequestError.ResponseEnded => "The connection was closed before the response finished.",
+        HttpRequestError.HttpProtocolError => "The host returned an invalid HTTP response.",
+        _ => "The verification request to the host failed.",
+    };
 
     /// <summary>Judges the Apple association file.</summary>
     /// <param name="fetch">What the host answered.</param>

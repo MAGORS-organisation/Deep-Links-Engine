@@ -36,6 +36,39 @@ public sealed class RecordingClickSink : IClickEventSink
 }
 
 /// <summary>
+/// A claim code writer that keeps what the interstitial persisted, and can be told to fail.
+/// </summary>
+public sealed class RecordingClaimCodeWriter : IClaimCodeWriter
+{
+    private readonly ConcurrentQueue<Dle.Domain.Entities.ClaimCodeRecord> _records = new();
+
+    /// <summary>Every record written since the last <see cref="Clear"/>.</summary>
+    public IReadOnlyCollection<Dle.Domain.Entities.ClaimCodeRecord> Records => _records;
+
+    /// <summary>When set, every write throws, as a database outage would.</summary>
+    public bool Fail { get; set; }
+
+    /// <inheritdoc />
+    public ValueTask WriteAsync(Dle.Domain.Entities.ClaimCodeRecord record, CancellationToken cancellationToken)
+    {
+        if (Fail)
+        {
+            throw new InvalidOperationException("Simulated claim code store outage.");
+        }
+
+        _records.Enqueue(record);
+        return ValueTask.CompletedTask;
+    }
+
+    /// <summary>Forgets every recorded write and stops failing.</summary>
+    public void Clear()
+    {
+        _records.Clear();
+        Fail = false;
+    }
+}
+
+/// <summary>
 /// A domain configuration store that answers for one host and nothing else.
 /// </summary>
 /// <remarks>

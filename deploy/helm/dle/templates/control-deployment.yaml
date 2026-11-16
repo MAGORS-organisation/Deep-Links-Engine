@@ -92,6 +92,16 @@ spec:
                 secretKeyRef:
                   name: {{ include "dle.secretName" . }}
                   key: {{ .Values.secrets.keys.masterSecret }}
+            # The three keys the edge also holds derive from the edge's secret, so both sides agree.
+            {{- range (list "ClickIdSecret" "IpHashSecret" "ClaimCodeSecret") }}
+            - name: Dle__Crypto__{{ . }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dle.secretName" $ }}
+                  key: {{ $.Values.secrets.keys.edgeSecret }}
+            {{- end }}
+            # GET /metrics: on only for the chart's ServiceMonitor, and then token-protected.
+            {{- include "dle.metricsEnv" . | trim | nindent 12 }}
             {{- with .Values.control.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

@@ -6,6 +6,7 @@ using Dle.Domain.Entities;
 using Dle.Persistence.Repositories;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 using Xunit;
 
@@ -150,6 +151,55 @@ public sealed class IdempotencyTests
     [Fact]
     public void HeaderName_IsTheDocumentedOne() =>
         Assert.Equal("Idempotency-Key", IdempotencyFilter.HeaderName);
+
+    [Fact]
+    public async Task BufferingMiddleware_KnownOversizedBody_Returns413WithoutCallingNext()
+    {
+        bool calledNext = false;
+        var middleware = new IdempotencyBufferingMiddleware(_ =>
+        {
+            calledNext = true;
+            return Task.CompletedTask;
+        });
+
+        var context = new DefaultHttpContext
+        {
+            RequestServices = new ServiceCollection().BuildServiceProvider(),
+        };
+        context.Request.Method = HttpMethods.Post;
+        context.Request.Path = "/api/v1/links";
+        context.Request.Headers[IdempotencyFilter.HeaderName] = "idem-too-large";
+        context.Request.ContentLength = (1024 * 1024) + 1;
+
+        await middleware.InvokeAsync(context);
+
+        Assert.False(calledNext);
+        Assert.Equal(StatusCodes.Status413PayloadTooLarge, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task BufferingMiddleware_ChunkedBodyExceedingLimit_EnforcesBufferingCap()
+    {
+        var middleware = new IdempotencyBufferingMiddleware(async ctx =>
+        {
+            using var reader = new MemoryStream();
+            await ctx.Request.Body.CopyToAsync(reader, ctx.RequestAborted);
+        });
+
+        byte[] oversized = new byte[(1024 * 1024) + 1];
+        var context = new DefaultHttpContext();
+        context.Request.Method = HttpMethods.Post;
+        context.Request.Path = "/api/v1/links";
+        context.Request.Headers[IdempotencyFilter.HeaderName] = "idem-chunked-too-large";
+        context.Request.Body = new NonSeekableStream(oversized);
+
+        await Assert.ThrowsAsync<IOException>(() => middleware.InvokeAsync(context));
+    }
+
+    private sealed class NonSeekableStream(byte[] data) : MemoryStream(data, writable: false)
+    {
+        public override bool CanSeek => false;
+    }
 
     private static IdempotencyRecord Stored(byte[] requestHash, int status, string? body) => new()
     {

@@ -11,11 +11,13 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 /**
- * Reads the Google Play Install Referrer exactly once per installation (S1, FR-182, spec §A.2.4).
+ * Reads the Google Play Install Referrer once per installation (S1, FR-182, spec §A.2.4).
  *
- * The outcome, whatever it is, is persisted through [StateStore] before it is returned, so no
- * later launch connects to the Play Store again. Play only answers the referrer query for a
- * limited time after installation anyway, and a second read can never say more than the first.
+ * The outcome is persisted through [StateStore] before it is returned. A terminal outcome
+ * ([ReferrerStatus.isTerminal]: an answer, or a Play Store that cannot answer on this device) is
+ * final, so no later launch connects to the Play Store again. A timeout or a transient failure is
+ * not: the next resolve that goes to the server reads again, so one slow Play Store at first
+ * launch does not cost the attribution.
  *
  * Response handling follows the library's documentation: `OK` yields the raw string;
  * `FEATURE_NOT_SUPPORTED`, `DEVELOPER_ERROR` and `PERMISSION_ERROR` are terminal;
@@ -36,10 +38,10 @@ internal class InstallReferrerReader(
     private val context: Context = context.applicationContext
 
     /**
-     * Returns the persisted outcome, performing the read on the first call only.
+     * Returns the persisted outcome when it is terminal, and reads (again) otherwise.
      */
     suspend fun readOnce(): ReferrerOutcome {
-        state.referrerOutcome()?.let { return it }
+        state.referrerOutcome()?.takeIf { it.status.isTerminal }?.let { return it }
         val outcome = if (timeoutMillis <= 0L) {
             ReferrerOutcome(ReferrerStatus.TIMEOUT)
         } else {

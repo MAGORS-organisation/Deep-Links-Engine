@@ -1,6 +1,6 @@
 # Architecture decision records
 
-**What this is:** the thirteen decisions that shape the engine, one file each, plus the process for adding a fourteenth.
+**What this is:** the thirteen accepted decisions that shape the engine and the proposals under review, one file each, plus the process for adding another.
 **Who it is for:** anyone who wants to know *why* before changing *what* — and reviewers checking that the code still matches the decision.
 
 ## Why these exist
@@ -13,7 +13,9 @@ As of 2026-09-24 the repository departs from the specification in these places a
 
 - **The §F.3 GO conditions were not followed.** [§F.3](../zadanie.md#f3-gono-go-odporúčanie) recommended GO on three conditions. The v1 scope includes the iOS SDK and the admin console, which §F.3(2) said to drop (Android-first, API-only). No customer or design partner (§F.3(1)), no monetisation decision (§F.3(3)) and no answers to [§F.2](../zadanie.md#f2-otvorené-otázky-ktoré-musíš-rozhodnúť-ty) Q1–Q3 are recorded in the repository.
 - **T-09, cross-tenant leakage** ([§E.2.2](../zadanie.md#e22-register-hrozieb)) calls for PostgreSQL row-level security in addition to a mandatory `tenant_id` in every query. There are no RLS policies anywhere in the schema; tenant isolation is the EF Core global query filter fed by an ambient tenant scope, plus explicit `tenant_id` predicates in the Dapper, analytics and raw SQL paths.
-- **T-15, signing-key leak** calls for 90-day key rotation and for separating the edge, which does not need to sign, from the control plane. Signing-key rotation is not implemented, and the edge receives the master secret from which the control plane's webhook signing key also derives ([ADR-0013](0013-crypto-agility-from-day-one.md), status note).
+- **T-15, signing-key leak** calls for 90-day key rotation and for separating the edge, which does not need to sign, from the control plane. Signing-key rotation is not implemented. The edge/control separation holds since 2026-11-08: the edge receives only its own secret and holds nothing from which a signing key derives ([ADR-0013](0013-crypto-agility-from-day-one.md), status note).
+
+New records may also cover decisions the specification did not take.
 
 Gaps in what the product does today, as opposed to departures from a decision, are listed in the root README under [Known gaps](../../README.md#known-gaps).
 
@@ -23,7 +25,7 @@ Numbering: the specification writes `ADR-001`; this directory writes `ADR-0001` 
 
 | ADR | Decision | Status |
 |---|---|---|
-| [0001](0001-runtime-dotnet-10-lts.md) | Runtime: .NET 10 LTS (supported to 14 Nov 2028) | Accepted |
+| [0001](0001-runtime-dotnet-10-lts.md) | Runtime: .NET 10 LTS (supported to 14 Nov 2028) | Superseded (2026-11-15) → .NET 11 |
 | [0002](0002-minimal-apis-vertical-slices.md) | Minimal APIs + vertical slices; OpenAPI 3.1 with Scalar | Accepted |
 | [0003](0003-postgresql-as-primary-store.md) | PostgreSQL 18 as the only mandatory store; no NoSQL in the core | Accepted |
 | [0004](0004-split-data-access-efcore-and-dapper.md) | EF Core 10 for the control plane, Dapper/Npgsql for the hot path | Accepted |
@@ -56,7 +58,7 @@ Every record uses the MADR-derived layout in [0000-template.md](0000-template.md
 ```mermaid
 stateDiagram-v2
     [*] --> Proposed
-    Proposed --> Accepted : merged after review
+    Proposed --> Accepted : merged after review, or owner decision
     Proposed --> Rejected : closed, reason recorded
     Accepted --> Deprecated : no longer applies, nothing replaces it
     Accepted --> Superseded : replaced by a newer ADR, both link each other
@@ -65,7 +67,7 @@ stateDiagram-v2
     Rejected --> [*]
 ```
 
-- **Proposed** — a pull request exists. The record is written before the code, not after.
+- **Proposed** — a pull request exists, or the record is merged while it waits for an owner decision that its Status names. The record is written before the code, not after.
 - **Accepted** — merged. Qualifiers are allowed and must be visible in the index: *deviation* (departs from the specification, trade-off recorded), *deferred* (accepted but scheduled for a later version). A dated *status note* in the record says where the code does not match the decision; it changes nothing about the decision itself.
 - **Deprecated** — no longer applies and nothing replaces it. The file stays.
 - **Superseded** — replaced by a newer record. Both files link each other. Never edit an accepted decision into a different one; write a new file.

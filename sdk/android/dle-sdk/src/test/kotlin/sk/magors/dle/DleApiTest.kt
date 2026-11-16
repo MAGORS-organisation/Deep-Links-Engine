@@ -108,9 +108,11 @@ class DleApiTest {
         val request = contractRequest(api, consent)
 
         assertNull(request.signals)
+        assertNull(request.referrer, "the Install Referrer is not transmitted without attribution consent")
         assertEquals(0, signalsRequested, "signals must not even be collected without consent")
         val body = DleJson.encodeToString(ResolveRequest.serializer(), request)
         assertFalse(body.contains("signals"), "the member is absent, not empty: $body")
+        assertFalse(body.contains("referrer"), "the member is absent, not empty: $body")
         assertTrue(body.contains(""""consent":{"analytics":true,"attribution":false,"ts":"2026-09-03T10:00:00+00:00"}"""))
     }
 
@@ -155,7 +157,7 @@ class DleApiTest {
             osVersion = null,
             referrer = longReferrer,
             options = ResolveOptions(claimCode = "ACDEFG", loginKey = "hashed"),
-            consent = DleConsent.denied(),
+            consent = DleConsent.granted(CONTRACT_MOMENT_MILLIS),
         )
 
         assertEquals("ACDEFG", request.claimCode)

@@ -134,6 +134,7 @@ public sealed class SlugPolicyTests
         Assert.Contains("api", SlugPolicy.Reserved);
         Assert.Contains("healthz", SlugPolicy.Reserved);
         Assert.Contains("readyz", SlugPolicy.Reserved);
+        Assert.Contains("metrics", SlugPolicy.Reserved);
         Assert.Contains("abuse", SlugPolicy.Reserved);
         Assert.Contains("_dl", SlugPolicy.Reserved);
         Assert.Contains("favicon.ico", SlugPolicy.Reserved);

@@ -1,4 +1,5 @@
 using Dle.Analytics.Postgres;
+using Dle.Control.Configuration;
 using Dle.Control.Features.Analytics;
 using Dle.Control.Identity;
 using Dle.Domain.Analytics;
@@ -6,6 +7,7 @@ using Dle.Domain.Contracts;
 using Dle.Domain.Ports;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Options;
 
@@ -168,6 +170,23 @@ public static class AnalyticsEndpointExtensions
                 + "leaving the gap to be discovered (FR-249, §E.6.4).")
             .Produces(StatusCodes.Status200OK, contentType: "application/zip")
             .ProducesProblem(StatusCodes.Status404NotFound);
+
+        RouteGroupBuilder privacy = app.MapGroup("/api/v1/privacy")
+            .WithTags("Analytics");
+
+        privacy.MapDelete("/installs/{installId}", EraseInstallData.HandleAsync)
+            .RequireAuthorization(DlePolicies.KeysWrite)
+            .RequireRateLimiting(DleRateLimitPolicies.Write)
+            .WithName("EraseInstallData")
+            .WithSummary("Erases every record tied to one installation identifier (GDPR Art. 17).")
+            .WithDescription(
+                "Removes attributions, installation records and SDK event rows belonging to the "
+                + "given install_id within the authenticated caller's tenant. The administrative audit "
+                + "entry records only aggregate counts and never writes the install_id (§E.6.3).")
+            .Produces<InstallErasureResponse>(StatusCodes.Status200OK, "application/json")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
 
         return app;
     }

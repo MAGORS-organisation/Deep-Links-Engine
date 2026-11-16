@@ -15,10 +15,6 @@ export const apps = {
     return api(base, { signal });
   },
 
-  get(id: string): Promise<AppResponse> {
-    return api(`${base}/${encodeURIComponent(id)}`);
-  },
-
   create(body: CreateAppRequest): Promise<AppResponse> {
     return api(base, { method: 'POST', body });
   },

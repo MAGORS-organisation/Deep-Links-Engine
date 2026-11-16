@@ -20,11 +20,12 @@ export function ErrorNotice({ error, onRetry, compact }: ErrorNoticeProps) {
   const api = error instanceof ApiError ? error : null;
   const fields = api ? Object.entries(api.errors) : [];
   const needsSettings = api?.key === 'no_credential';
+  const headline = describeError(t, error);
 
   return (
     <div role="alert" className="callout callout-bad">
-      <strong>{describeError(t, error)}</strong>
-      {api?.detail && api.key !== 'ValidationFailed' && api.key !== 'UnsafeTarget' && <span>{api.detail}</span>}
+      <strong>{headline}</strong>
+      {api?.detail && api.detail !== headline && <span>{api.detail}</span>}
       {!compact && fields.length > 0 && (
         <ul className="small" style={{ margin: 0, paddingLeft: '1.2em' }}>
           {fields.map(([path, messages]) => (

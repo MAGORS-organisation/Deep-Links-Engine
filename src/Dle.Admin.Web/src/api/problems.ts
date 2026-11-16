@@ -15,12 +15,16 @@ export const ProblemCodes = {
   InvalidRoutingRules: `${PROBLEM_BASE}invalid-routing-rules`,
   DomainNotVerified: `${PROBLEM_BASE}domain-not-verified`,
   DomainTaken: `${PROBLEM_BASE}domain-taken`,
+  DomainInUse: `${PROBLEM_BASE}domain-in-use`,
   IdempotencyConflict: `${PROBLEM_BASE}idempotency-conflict`,
   Unauthorized: `${PROBLEM_BASE}unauthorized`,
   Forbidden: `${PROBLEM_BASE}forbidden`,
   ClaimCodeInvalid: `${PROBLEM_BASE}claim-code-invalid`,
   LinkQuarantined: `${PROBLEM_BASE}link-quarantined`,
   DependencyUnavailable: `${PROBLEM_BASE}dependency-unavailable`,
+  WriteConflict: `${PROBLEM_BASE}write-conflict`,
+  LinkTooLarge: `${PROBLEM_BASE}link-too-large`,
+  AppTaken: `${PROBLEM_BASE}app-taken`,
   /** Emitted by the SPA fallback for an unmatched API route; not in ProblemCodes.All. */
   NotFound: `${PROBLEM_BASE}not-found`,
 } as const;

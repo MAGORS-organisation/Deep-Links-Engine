@@ -15,7 +15,7 @@ flowchart LR
     W[Webhook receivers]
   end
   subgraph Edge tier
-    E["dle-edge<br/>receives the master secret;<br/>reads links, writes clicks"]
+    E["dle-edge<br/>holds only the edge secret;<br/>reads links, writes clicks"]
   end
   subgraph Control tier
     C["dle-control<br/>signing keys, EF Core, workers"]
@@ -31,7 +31,7 @@ flowchart LR
   C --> V
 ```
 
-The edge is meant to hold no signing keys (T-15), but today it receives the master secret, from which the control plane's webhook signing key and the key that encrypts stored webhook secrets also derive ([Known gaps](../../README.md#known-gaps)). It has no egress except PostgreSQL, Valkey and DNS (NFR-14). Tenant isolation is the EF Core global query filter, fed by an ambient tenant scope, plus explicit `tenant_id` predicates in the Dapper, analytics and raw-SQL paths (T-09). There is no PostgreSQL row-level security. A known defect breaks isolation when a request carries an SDK key of one tenant and an API key of another. Until it is fixed, do not host mutually untrusted tenants on one instance ([Known gaps](../../README.md#known-gaps)).
+The edge holds no signing keys (T-15): it never receives the control plane's master secret, only its own `DLE_EDGE_SECRET`, from which it derives the click-identifier, IP-hash and claim-code keys (the control plane receives the same secret for exactly those three). It has no egress except PostgreSQL, Valkey and DNS (NFR-14). Tenant isolation is the EF Core global query filter, fed by an ambient tenant scope, plus explicit `tenant_id` predicates in the Dapper, analytics and raw-SQL paths (T-09). The tenant scope is opened after authorisation, from the principal the endpoint's policy accepted; a request may carry only one credential; and a principal naming two tenants has no tenant (`Dle.SecurityTests.Tenancy.MixedCredentialTests`). There is no PostgreSQL row-level security behind the filter, so isolation is one layer deep: run mutually untrusted customers on separate instances until RLS exists ([Known gaps](../../README.md#known-gaps)).
 
 ## Threat register (STRIDE) with OWASP Top 10:2025
 
@@ -53,7 +53,7 @@ OWASP Top 10:2025 changes reflected here: **SSRF is folded into A01** (Broken Ac
 | T-12 | Tampering | **Deserialisation attack on `routing_rules`** | Schema validation, depth and size limits, `System.Text.Json` source-generated, no polymorphism | A05 |
 | T-13 | Spoofing | **Forged webhooks** towards the customer | Dual signature (HMAC-SHA-256 + Ed25519), timestamp with 5-minute tolerance, JWKS endpoint ([webhooks.md](../integration/webhooks.md)) | A08 |
 | T-14 | Elevation | **Compromised dependency** (npm / NuGet) | Central Package Management with locked versions, `dotnet restore --locked-mode`, per-project lock files, SBOM in CI (`.github/workflows/sbom.yml`), Dependabot with review (weekly, into `develop`), signed release artefacts (`release.yml`; it has not run yet, as no release has been tagged) | **A03 (new)** |
-| T-15 | Information disclosure | **Signing-key leak** | Keys come from configuration (`Dle:Crypto:Keys`) or are derived per purpose (HKDF) from the master secret. Not implemented: KMS/HSM, an encrypted key store (the `signing_keys` table is unused) and rotation (`Dle:Crypto:KeyRotationDays` is read only by code nothing calls; the webhook Ed25519 key never rotates). The edge receives the master secret ([Known gaps](../../README.md#known-gaps)) | A04 |
+| T-15 | Information disclosure | **Signing-key leak** | Keys come from configuration (`Dle:Crypto:Keys`) or are derived per purpose (HKDF) from the master secret. Not implemented: KMS/HSM, an encrypted key store (the `signing_keys` table is unused) and rotation (`Dle:Crypto:KeyRotationDays` is read only by code nothing calls; the webhook Ed25519 key never rotates). The internet-facing edge holds only its own edge secret, so a compromised edge cannot derive any signing key | A04 |
 | T-16 | Denial of service | **Fail-open on error** — a validation failure lets everything through | Explicit `default: deny` in the decision branches; tests on the error paths. Known exception: a URL reputation lookup that fails (for example URLhaus without an Auth-Key) counts as safe | **A10 (new)** |
 | T-17 | Information disclosure | **Timing side-channel** on API-key and claim-code checks | `CryptographicOperations.FixedTimeEquals`, rate limit, short TTLs | A04 |
 
@@ -74,7 +74,7 @@ flowchart LR
     B1["5 nightly re-check of active targets<br/>(targets change after creation)"] --> B2["6 anomaly detection: bursts to one domain,<br/>create-and-blast within 5 minutes<br/>(not implemented)"]
   end
   subgraph Reactively
-    C1["7 public abuse form — DSA art. 16<br/>(not reachable yet)"] --> C2["8 quarantine: HTTP 410 + explanation page,<br/>not silent deletion"] --> C3["9 SLA: critical reports within 4 hours"]
+    C1["7 public abuse endpoint — DSA art. 16<br/>(JSON, no web form)"] --> C2["8 quarantine: HTTP 410 + explanation page,<br/>not silent deletion"] --> C3["9 SLA: critical reports within 4 hours"]
   end
   A4 --> B1
   B2 --> C1
@@ -83,8 +83,8 @@ flowchart LR
 Implementation notes:
 
 - Google Safe Browsing API v5 is licensed for non-commercial use only; a commercial deployment needs the paid **Web Risk API**. **URLhaus** (abuse.ch) is free and unrestricted and is the default source (`Dle:Abuse:UrlHausEnabled`, off until you opt in — it is an outbound call from the control plane, never from the edge). It needs an Auth-Key (`Dle:Abuse:UrlHausAuthKey`); without one every lookup fails and the target is treated as safe. With neither URLhaus nor a local blocklist (`Dle:Abuse:BlocklistPath`) configured — the default — step 3 checks nothing and step 5 re-runs only the scheme and resolved-IP checks. PhishTank is read-only for new participants since 2020.
-- Quarantine keeps the record for forensics: `POST /api/v1/admin/links/{id}/quarantine` and `…/release`; the edge answers `410` with the appeal contact from `Dle:Edge:Interstitial:AppealUrl` / `AppealEmail`. Quarantine does not invalidate the edge cache: the link keeps redirecting to its old target for up to `Dle:Edge:Cache:L2Minutes` + `L1Seconds` (10 min 30 s by default).
-- The abuse form (`POST /abuse-reports`, 5/h per IP) is meant to be the notice-and-action mechanism under DSA Article 16 — see [regulatory-map.md](regulatory-map.md). It is not reachable from outside today: the control plane serves it, but Caddy (Profile A) and the Helm ingress route that path to the edge, which has no such route, and no page links to it ([Known gaps](../../README.md#known-gaps)).
+- Quarantine keeps the record for forensics: `POST /api/v1/admin/links/{id}/quarantine` and `…/release`; the edge answers `410` with the appeal contact from `Dle:Edge:Interstitial:AppealUrl` / `AppealEmail`. Quarantine invalidates the edge caches through Valkey, so every edge answers `410` on its next resolve (within `Dle:Edge:Cache:L1Seconds`, 30 s, if Valkey is down).
+- The abuse form (`POST /abuse-reports`, 5/h per IP) is meant to be the notice-and-action mechanism under DSA Article 16 — see [regulatory-map.md](regulatory-map.md). Caddy (Profile A) and the Helm ingress route it to the control plane. It accepts JSON only; no web form ships, so the operator publishes one or a contact point that feeds it.
 - Not implemented from [§E.3](../zadanie.md#e3-ochrana-proti-zneužitiu-redirektora) / §E.9: step 6 (anomaly detection) and the captcha on the abuse form.
 
 ## Cryptographic inventory (CBOM) — K1…K9
@@ -95,15 +95,15 @@ A CycloneDX 1.6 CBOM is generated in CI and attached to every release (`.github/
 |---|---|---|---|---|
 | K1 | TLS at the edge | ECDHE + AES-256-GCM; **hybrid X25519MLKEM768 when the OS / proxy supports it** | seconds | "harvest now, decrypt later" — **medium**, but the content is low-value |
 | K2 | Click token (`click_id` signature) | HMAC-SHA-256, truncated to 32 bits | ≤ 90 days | **none** (symmetric; 256-bit → 128-bit under Grover) |
-| K3 | Claim code | 30 random bits + TTL (15 min default) + rate limit | minutes | none |
+| K3 | Claim code | 6 characters from a 26-symbol alphabet (~28 bits) + TTL (1 h on the interstitial) + single use + rate limit | minutes | none |
 | K4 | Webhook signature | HMAC-SHA-256 **+ Ed25519** | minutes | **yes for Ed25519** (Shor) — the `v3` slot exists for this |
 | K5 | API keys | 256 random bits, stored as Argon2id hash | years | none |
 | K6 | SDK key | public identifier + bundle/domain binding | years | n/a |
 | K7 | **Release artefact signing** | Sigstore / cosign (ECDSA P-256) | **years** | **yes — highest migration priority** |
 | K8 | Data at rest | AES-256-GCM (database / disk) | years | none |
-| K9 | IP hash salt | HMAC-SHA-256; each 24 h period's salt is an HMAC of the period number under a key derived from the master secret | 24 h per salt, but every past salt can be recomputed by whoever holds the master secret | none |
+| K9 | IP hash salt | HMAC-SHA-256; each 24 h period's salt is an HMAC of the period number under a key derived from the edge secret | 24 h per salt, but every past salt can be recomputed by whoever holds the edge secret | none |
 
-Signed tokens carry `alg` and `kid` (`dlt1.<alg>.<kid>.<payload>.<signature>`, [§E.4.2](../zadanie.md#e42-formát-podpísaného-tokenu)); the verifier accepts a configured **set** of algorithms, the signer uses exactly one. The exception is `click_id` (K2): a bare truncated HMAC with neither `alg` nor `kid`. Master secret handling: `Dle:Crypto:MasterSecret` (≥ 32 characters, environment only) derives the slug permutation key, the `click_id` keys, the IP salt, the claim-code pepper, the bootstrap token-signing key, the webhook Ed25519 key and the key that encrypts stored webhook secrets. Both the edge and the control plane receive it. Back it up with the database; changing it changes every slug.
+Signed tokens carry `alg` and `kid` (`dlt1.<alg>.<kid>.<payload>.<signature>`, [§E.4.2](../zadanie.md#e42-formát-podpísaného-tokenu)); the verifier accepts a configured **set** of algorithms, the signer uses exactly one. The exception is `click_id` (K2): a bare truncated HMAC with neither `alg` nor `kid`. Secret handling: two secrets, environment only, ≥ 32 characters each. `DLE_MASTER_SECRET` (the control plane's `Dle:Crypto:MasterSecret`) derives the slug permutation key, the bootstrap token-signing key, the webhook Ed25519 key and the key that encrypts stored webhook secrets; only the control plane receives it. `DLE_EDGE_SECRET` derives the `click_id` keys, the IP salt and the claim-code pepper; the edge receives it as its `MasterSecret`, the control plane as `ClickIdSecret`, `IpHashSecret` and `ClaimCodeSecret`. Back both up with the database; changing the master secret changes every slug.
 
 Conclusion of the inventory, verbatim in spirit from the specification: post-quantum risk in this system is **concentrated in two places** — long-lived asymmetric signatures (K7, K4) and TLS (K1). The symmetric material is fine. Anyone claiming the whole engine must be rewritten for quantum computers is exaggerating.
 

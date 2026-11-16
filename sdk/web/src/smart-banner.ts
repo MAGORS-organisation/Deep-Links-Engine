@@ -1,5 +1,6 @@
 import type { Logger } from './log.js';
 import type { KeyValueStore } from './storage.js';
+import { isSafeWebUrl } from './url.js';
 import type {
   DevicePlatform,
   DismissReason,
@@ -116,8 +117,10 @@ export function createSmartBanner(options: SmartBannerOptions, context: BannerCo
   const parent = (doc as { body?: HTMLElement | null } | undefined)?.body;
 
   if (options.enabled === false || doc === undefined || parent === null || parent === undefined) return null;
-  if (!/^https?:\/\/\S+$/i.test(options.openUrl)) {
-    logger?.error('smart banner: openUrl must be an http(s) URL; custom schemes are refused');
+  if (!isSafeWebUrl(options.openUrl, options.allowInsecureHttp === true)) {
+    logger?.error(
+      'smart banner: openUrl must be a valid https:// URL (http:// is allowed only for loopback hosts or with allowInsecureHttp)',
+    );
     return null;
   }
   if (options.appName.trim() === '') {
@@ -192,7 +195,7 @@ export function createSmartBanner(options: SmartBannerOptions, context: BannerCo
   const unmount = (): void => {
     if (!mounted) return;
     mounted = false;
-    doc.removeEventListener('keydown', onKeydown);
+    host.removeEventListener('keydown', onKeydown);
     // Do not strand keyboard focus inside a removed subtree (WCAG 2.4.3).
     if (doc.activeElement === host) host.blur();
     host.remove();
@@ -225,7 +228,10 @@ export function createSmartBanner(options: SmartBannerOptions, context: BannerCo
       logger?.error('onOpen threw', error);
     }
   });
-  doc.addEventListener('keydown', onKeydown);
+  // Only while focus is inside the banner: Escape elsewhere belongs to the host page (its
+  // dialogs, its search box) and must not hide the banner for days. Keyboard events are
+  // composed, so a keydown in the shadow tree reaches the host.
+  host.addEventListener('keydown', onKeydown);
 
   parent.appendChild(host);
 

@@ -1,5 +1,9 @@
 using Dle.Analytics.Postgres;
+using Dle.Persistence;
+using Dle.Persistence.Repositories;
+using Dle.Persistence.Tenancy;
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -92,6 +96,23 @@ public sealed partial class RetentionWorker : LeaderElectedBackgroundService
     {
         using IServiceScope scope = _scopes.CreateScope();
 
+        // Two tables outside the click stream that only ever grow otherwise. Both carry their own
+        // expiry, so there is no policy to configure: a claim code is written on every interstitial
+        // an anonymous visitor loads, an idempotency record on every keyed write.
+        int claimCodes = await PruneClaimCodesAsync(
+            scope.ServiceProvider.GetRequiredService<DleDbContext>(),
+            cancellationToken);
+        int loginHints = await PruneLoginHintsAsync(
+            scope.ServiceProvider.GetRequiredService<DleDbContext>(),
+            cancellationToken);
+        int idempotencyRecords = await scope.ServiceProvider
+            .GetRequiredService<IdempotencyStore>()
+            .PruneExpiredAsync(cancellationToken);
+
+        Metrics.Items(Job, "claim_code_deleted", claimCodes);
+        Metrics.Items(Job, "login_hint_deleted", loginHints);
+        Metrics.Items(Job, "idempotency_record_deleted", idempotencyRecords);
+
         IRetentionService retention = scope.ServiceProvider.GetRequiredService<IRetentionService>();
         RetentionRunResult result = await retention.RunAsync(cancellationToken);
 
@@ -124,7 +145,38 @@ public sealed partial class RetentionWorker : LeaderElectedBackgroundService
         return string.Create(
             CultureInfo.InvariantCulture,
             $"{result.PartitionsDropped.Count} partitions removed, {result.RowsAnonymised} rows anonymised, "
-            + $"{result.RollupRowsDeleted} rollup rows deleted (status {result.Status}).");
+            + $"{result.RollupRowsDeleted} rollup rows deleted, {claimCodes} claim codes, {loginHints} login hints and "
+            + $"{idempotencyRecords} idempotency records pruned (status {result.Status}).");
+    }
+
+    /// <summary>Deletes the claim codes of every tenant that expired more than a day ago.</summary>
+    /// <remarks>
+    /// The day of grace keeps the honest answer for somebody who types an old code: "expired", not
+    /// "unknown". After that the row is only a click identifier nobody can redeem.
+    /// </remarks>
+    private async Task<int> PruneClaimCodesAsync(DleDbContext db, CancellationToken cancellationToken)
+    {
+        using CrossTenantScope scope = db.BeginCrossTenantScope(
+            "the retention pass removes the expired claim codes of every tenant");
+
+        DateTimeOffset cutoff = Clock.GetUtcNow().AddDays(-1);
+
+        return await db.ClaimCodes
+            .AcrossTenants()
+            .Where(c => c.ExpiresAt < cutoff)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    private async Task<int> PruneLoginHintsAsync(DleDbContext db, CancellationToken cancellationToken)
+    {
+        using CrossTenantScope scope = db.BeginCrossTenantScope(
+            "Retention worker prunes expired S2 login hints across all tenants.");
+        DateTimeOffset cutoff = Clock.GetUtcNow().AddDays(-1);
+
+        return await db.ClickLoginHints
+            .AcrossTenants()
+            .Where(h => h.ExpiresAt < cutoff)
+            .ExecuteDeleteAsync(cancellationToken);
     }
 
     [LoggerMessage(

@@ -1,7 +1,9 @@
 using Dle.Control.Configuration;
 using Dle.Control.Features.Auth;
+using Dle.Control.Features.Bootstrap;
 using Dle.Control.Features.Shared;
 using Dle.Control.Identity;
+using Dle.Control.Infrastructure;
 
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
@@ -26,17 +28,60 @@ builder.Services
     .AddDleWebhooks(builder.Configuration)
     .AddDleIdentity(builder.Configuration)
     .AddDleWorkers(builder.Configuration)
+    .AddDleBootstrap(builder.Configuration)
     .AddDleControlRateLimiting(builder.Configuration);
 
 WebApplication app = builder.Build();
 
 DleControlOptions control = app.Services.GetRequiredService<IOptions<DleControlOptions>>().Value;
 
+// First, before anything reads an address. Behind Caddy or an ingress every request arrives from the
+// proxy, and that address keys the abuse-report and failed-authentication limiters and feeds
+// probabilistic matching; unresolved, one client spends everybody's budget. Installed only when the
+// deployment names the proxy it sits behind (Dle:Control:Network).
+if (app.Services.GetRequiredService<IOptions<ControlNetworkOptions>>().Value.UseForwardedHeaders)
+{
+    app.UseForwardedHeaders();
+}
+
 // An unhandled exception leaves as an RFC 9457 document like every other failure, so an integrator
 // never has to parse two error formats. UseStatusCodePages turns a bare status — a 405, a 415 the
 // framework produced before any handler ran — into the same shape.
 app.UseExceptionHandler();
 app.UseStatusCodePages();
+
+// Baseline security headers on all control-plane responses (API, health, docs).
+// The admin console applies its full strict CSP in ServeAdminSpaAsync and static file responses.
+app.Use(static (context, next) =>
+{
+    IHeaderDictionary headers = context.Response.Headers;
+    headers.TryAdd("X-Content-Type-Options", "nosniff");
+    headers.TryAdd("X-Frame-Options", "DENY");
+    headers.TryAdd("Referrer-Policy", "no-referrer");
+    return next();
+});
+
+if (control.ServeAdminSpa)
+{
+    // Before routing and authorization, and that ordering is load bearing. A request for a file has
+    // no endpoint, and a request without an endpoint is judged by the fallback policy, which denies
+    // everything: placed after UseAuthorization, the console's own script and stylesheet answered
+    // 401 to a browser that had not signed in yet, which is every browser. Only files that exist
+    // under wwwroot are served here; everything else falls through to the pipeline below.
+    app.UseDefaultFiles();
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        // The console's own files carry its Content-Security-Policy (T-11): the credential it holds
+        // in the browser is only as safe as the guarantee that no foreign script runs on its origin.
+        OnPrepareResponse = static file =>
+        {
+            if (AdminConsoleSecurityHeaders.IsConsolePath(file.Context.Request.Path))
+            {
+                AdminConsoleSecurityHeaders.Apply(file.Context);
+            }
+        },
+    });
+}
 
 app.UseRouting();
 app.UseCors();
@@ -45,21 +90,24 @@ app.UseCors();
 // filters run. It applies only to writes that actually carry an Idempotency-Key (§B.7.3).
 app.UseMiddleware<IdempotencyBufferingMiddleware>();
 
+// At most one credential per request (T-09): two credentials could otherwise authenticate as one
+// tenant and authorise as another. Checked before any authentication scheme runs.
+app.UseMiddleware<DleSingleCredentialMiddleware>();
+
 app.UseAuthentication();
+app.UseAuthorization();
 
 // The whole of tenant isolation: the caller's tenant is pushed into the ambient tenant context and
 // every query filter downstream reads it. No handler compares a tenant identifier, which is what
 // makes a foreign identifier indistinguishable from an unknown one (FR-241, TC-166).
+//
+// It runs AFTER authorization on purpose. An endpoint policy re-authenticates with its own schemes
+// and replaces HttpContext.User with the principal it accepted; the scope must come from that
+// principal, never from the default scheme's, or the request is scoped to one tenant and authorised
+// as another.
 app.UseMiddleware<DleTenantScopeMiddleware>();
 
-app.UseAuthorization();
 app.UseRateLimiter();
-
-if (control.ServeAdminSpa)
-{
-    app.UseDefaultFiles();
-    app.UseStaticFiles();
-}
 
 app.MapLinks();
 app.MapDomains();
@@ -72,21 +120,24 @@ app.MapAbuse();
 app.MapWebhooks();
 app.MapJwks();
 app.MapHealth();
+app.MapMetrics();
 app.MapAuthConfig();
 
-// The document and its reader are anonymous. A published API surface is not a secret — the same
-// document is generated at build time and committed for the contract tests to diff — and requiring a
-// credential to read the reference would only mean every integrator starts by guessing.
-app.MapOpenApi()
-    .AllowAnonymous()
-    .DisableRateLimiting();
+if (app.Environment.IsDevelopment() || control.ExposeApiDocs)
+{
+    // The document and its reader are enabled in Development, or when explicitly opted into via
+    // Dle:Control:ExposeApiDocs (and always subject to read rate limiting).
+    app.MapOpenApi()
+        .AllowAnonymous()
+        .RequireRateLimiting(DleRateLimitPolicies.Read);
 
-app.MapScalarApiReference(options => options
-        .WithTitle("Deep Link Engine — control plane")
-        .WithTheme(ScalarTheme.BluePlanet)
-        .AddDocument(ControlCoreServiceCollectionExtensions.OpenApiDocumentName))
-    .AllowAnonymous()
-    .DisableRateLimiting();
+    app.MapScalarApiReference(options => options
+            .WithTitle("Deep Link Engine — control plane")
+            .WithTheme(ScalarTheme.BluePlanet)
+            .AddDocument(ControlCoreServiceCollectionExtensions.OpenApiDocumentName))
+        .AllowAnonymous()
+        .RequireRateLimiting(DleRateLimitPolicies.Read);
+}
 
 if (control.ServeAdminSpa)
 {
@@ -154,6 +205,7 @@ static async Task ServeAdminSpaAsync(HttpContext context)
     }
 
     context.Response.ContentType = "text/html; charset=utf-8";
+    AdminConsoleSecurityHeaders.Apply(context);
 
     // No-store rather than a long cache: the index page names the hashed asset bundles, so a cached
     // index is how a deployment keeps serving yesterday's application after a release.

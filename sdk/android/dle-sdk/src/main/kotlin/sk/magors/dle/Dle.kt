@@ -26,10 +26,12 @@ import sk.magors.dle.internal.EventQueue
 import sk.magors.dle.internal.InstallIdStore
 import sk.magors.dle.internal.InstallReferrerReader
 import sk.magors.dle.internal.PLATFORM_ANDROID
+import sk.magors.dle.internal.ResolveLinkRequest
 import sk.magors.dle.internal.SdkLog
 import sk.magors.dle.internal.SignalsWire
 import sk.magors.dle.internal.StateStore
 import java.io.File
+import java.io.IOException
 import java.util.Locale
 import java.util.TimeZone
 
@@ -40,10 +42,11 @@ import java.util.TimeZone
  * // Application.onCreate
  * Dle.initialize(this, dleConfig("https://links.example.sk", "dle_pk_…"))
  *
- * // First screen
+ * // First screen. Every later launch gets the stored answer back, so route on a match once.
  * lifecycleScope.launch {
+ *     val delivered = Dle.shared.cachedLink?.matched == true
  *     val link = Dle.resolve()
- *     if (link.isDeterministic) navigateTo(link.link?.deeplinkPath)
+ *     if (!delivered && link.isDeterministic) navigateTo(link.link?.deeplinkPath)
  * }
  * ```
  *
@@ -125,6 +128,15 @@ public object Dle {
     @JvmStatic
     public fun handleIntent(intent: Intent?): AppLinkOpen? = shared.handleIntent(intent)
 
+    /** See [DleClient.resolveLink]. */
+    public suspend fun resolveLink(open: AppLinkOpen): DeferredLink = shared.resolveLink(open)
+
+    /** See [DleClient.resolveLink]. */
+    @JvmStatic
+    public fun resolveLink(open: AppLinkOpen, callback: DleCallback<DeferredLink>) {
+        shared.resolveLink(open, callback)
+    }
+
     /** See [DleClient.setConsent]. */
     @JvmStatic
     public fun setConsent(consent: DleConsent) {
@@ -199,6 +211,8 @@ public class DleClient internal constructor(
      * whose [DeferredLink.expiresIn] has elapsed, and a call carrying new evidence
      * ([ResolveOptions.hasExplicitEvidence]) while the stored answer is not deterministic. An
      * organic installation is not a failure: the engine answers [MatchType.NONE] (TC-142).
+     * Because a match comes back on every later call, route on it only when [cachedLink] was
+     * not already a match before the call.
      *
      * @param options extra evidence: a claim code the user typed (S3) or a login key (S2).
      * @return the answer. Check [DeferredLink.isDeterministic] before acting irreversibly.
@@ -216,12 +230,14 @@ public class DleClient internal constructor(
                 return@withLock cached.link
             }
             val link = withContext(Dispatchers.IO) {
-                val referrer = referrerReader.readOnce()
+                // Without attribution consent the engine links nothing, so the referrer is not
+                // even read: it is read when a resolve with consent goes out.
+                val referrer = if (consent.attribution) referrerReader.readOnce().referrer else null
                 val request = api.resolveRequest(
                     installId = installId,
                     appVersion = appVersion,
                     osVersion = osVersion,
-                    referrer = referrer.referrer,
+                    referrer = referrer,
                     options = evidence,
                     consent = consent,
                 )
@@ -291,6 +307,56 @@ public class DleClient internal constructor(
      * @return the open, or `null` when the intent does not carry an `http(s)` link.
      */
     public fun handleIntent(intent: Intent?): AppLinkOpen? = appLinkHandler.handle(intent)
+
+    /**
+     * Resolves the screen a short link the app was opened with should lead to
+     * (`POST /v1/resolve-link`, FR-223, spec §B.6.4).
+     *
+     * A verified App Link opens the app with the short URL itself — `https://go.example.com/AbC12345`
+     * — which does not say which screen to show. This asks the engine: the answer has
+     * [MatchType.DIRECT_OPEN], confidence 1.0 and the link's [DeferredLink.deeplinkPath] after the
+     * link's routing rules were applied for Android. Call it with the [AppLinkOpen] that
+     * [handleIntent] returned; [handleIntent] already reported the open, and this call records
+     * nothing, so an open is never counted twice.
+     *
+     * @param open the open returned by [handleIntent].
+     * @return the answer; `matched` is `false` when the URL names no link of this app's tenant.
+     * @throws DleException on network, timeout, HTTP and malformed body failures.
+     */
+    public suspend fun resolveLink(open: AppLinkOpen): DeferredLink = withContext(Dispatchers.IO) {
+        api.resolveLink(
+            ResolveLinkRequest(
+                url = open.reportedUrl,
+                installId = installId,
+                platform = PLATFORM_ANDROID,
+                appVersion = appVersion,
+            ),
+        )
+    }
+
+    /**
+     * Java friendly [resolveLink]. Exactly one callback method is invoked, on the main thread.
+     *
+     * @param open the open returned by [handleIntent].
+     * @param callback receives the answer or the failure.
+     */
+    public fun resolveLink(open: AppLinkOpen, callback: DleCallback<DeferredLink>) {
+        scope.launch {
+            val outcome = try {
+                Result.success(resolveLink(open))
+            } catch (e: DleException) {
+                Result.failure(e)
+            } catch (e: RuntimeException) {
+                Result.failure(DleException.Internal("resolveLink failed unexpectedly", e))
+            }
+            onMain {
+                outcome.fold(
+                    onSuccess = { callback.onSuccess(it) },
+                    onFailure = { callback.onFailure(it as DleException) },
+                )
+            }
+        }
+    }
 
     /**
      * Records the user's decision (spec §E.6.2). The decision is persisted, sent with the next
@@ -374,7 +440,11 @@ public class DleClient internal constructor(
     /** Observes activities so App Link opens are reported without any call from the host. */
     private inner class OpenReporter : Application.ActivityLifecycleCallbacks {
         override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-            if (savedInstanceState == null) handleIntent(activity.intent)
+            if (savedInstanceState == null) {
+                handleIntent(activity.intent)
+            } else {
+                appLinkHandler.markReported(activity.intent)
+            }
         }
 
         override fun onActivityResumed(activity: Activity) {
@@ -395,6 +465,7 @@ public class DleClient internal constructor(
     internal companion object {
         private const val MILLIS_PER_MINUTE = 60_000
         private const val QUEUE_DIRECTORY = "sk.magors.dle"
+        private const val INSTALL_MARKER = "sk.magors.dle.installed"
 
         /** Wires the client together. */
         fun create(application: Context, config: DleConfig): DleClient {
@@ -405,11 +476,18 @@ public class DleClient internal constructor(
             )
             val installIdStore = InstallIdStore.open(application, log)
             val state = StateStore(application.getSharedPreferences(StateStore.FILE, Context.MODE_PRIVATE))
+            if (claimInstallMarker(application, log)) {
+                // First process of this installation on this device. Auto Backup may have restored
+                // another installation's id, cached answer and consent; none of them belong here.
+                installIdStore.clear()
+                state.clear()
+            }
             val appVersion = config.appVersion ?: readAppVersion(application)
             val api = DleApi(config, signalsProvider = { collectSignals(application, clock) }, log = log)
             val installId = installIdStore.getOrCreate()
             val queue = EventQueue(
-                directory = File(application.filesDir, QUEUE_DIRECTORY),
+                // Never backed up, so a restore cannot replay another installation's events.
+                directory = File(application.noBackupFilesDir, QUEUE_DIRECTORY),
                 maxSize = config.maxQueueSize,
                 flushDelayMillis = config.flushDelayMillis,
                 sender = { batch ->
@@ -457,6 +535,24 @@ public class DleClient internal constructor(
                 tzOffset = offsetMinutes,
                 deviceModel = Build.MODEL?.takeIf { it.isNotBlank() },
             )
+        }
+
+        /**
+         * Creates the install marker and returns `true` when it was missing. The marker lives in
+         * `noBackupFilesDir`, which Auto Backup and device transfer never copy, so it is missing
+         * after a fresh install and after a restore, while the SharedPreferences holding the
+         * install id and the state may have been restored. A marker that cannot be written
+         * returns `false`, so a broken disk does not rotate the install id on every launch.
+         */
+        private fun claimInstallMarker(application: Context, log: SdkLog): Boolean = try {
+            val marker = File(application.noBackupFilesDir, INSTALL_MARKER)
+            !marker.exists() && marker.createNewFile()
+        } catch (e: IOException) {
+            log.warn("install marker could not be written", e)
+            false
+        } catch (e: SecurityException) {
+            log.warn("install marker could not be written", e)
+            false
         }
 
         private fun readAppVersion(context: Context): String? = try {

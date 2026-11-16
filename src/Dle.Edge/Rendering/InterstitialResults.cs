@@ -136,6 +136,7 @@ internal static class InterstitialResults
     /// <param name="deeplinkUrl">The deep link URL, or <see langword="null"/> when the link has none.</param>
     /// <param name="domain">The link domain's runtime configuration, for branding and language.</param>
     /// <param name="claimCode">The one-time code issued for this click, or <see langword="null"/> (FR-184).</param>
+    /// <param name="consentToken">Single-use token allowing deferred attribution opt-in on <c>POST /_dl/consent</c>, or <see langword="null"/>.</param>
     /// <returns>A 200 HTML response, or the 404 page when nothing safe can be offered.</returns>
     /// <remarks>
     /// This is the overload the resolve pipeline uses. It exists so that the URLs are built exactly once,
@@ -150,7 +151,8 @@ internal static class InterstitialResults
         string fallbackUrl,
         string? deeplinkUrl,
         DomainRuntimeConfig? domain = null,
-        string? claimCode = null)
+        string? claimCode = null,
+        string? consentToken = null)
     {
         ArgumentNullException.ThrowIfNull(link);
         ArgumentNullException.ThrowIfNull(decision);
@@ -183,7 +185,8 @@ internal static class InterstitialResults
             ClassifyFallback(safeFallback, decision),
             client,
             domain,
-            claimCode);
+            claimCode,
+            consentToken);
     }
 
     /// <summary>

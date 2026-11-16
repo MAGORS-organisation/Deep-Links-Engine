@@ -203,3 +203,35 @@ public sealed record EventBatchAcceptedDto
     /// <summary>How many were rejected, for example for an unknown type or a stale timestamp.</summary>
     public int Rejected { get; init; }
 }
+
+/// <summary>
+/// Body of <c>POST /v1/login-hints</c>: binds a signed-in user account hash to a click or short
+/// link URL so S2 login attribution resolves in <c>O(1)</c> without scanning raw click partitions.
+/// </summary>
+public sealed record LoginHintRequestDto
+{
+    /// <summary>Client-hashed or opaque account identifier (re-keyed server-side with HMAC-SHA256).</summary>
+    public required string LoginKey { get; init; }
+
+    /// <summary>Public click identifier carried by <c>dl_cid</c>, if known.</summary>
+    public string? ClickId { get; init; }
+
+    /// <summary>Short link URL (<c>https://host/slug</c>), resolved when <see cref="ClickId"/> is absent.</summary>
+    public string? Url { get; init; }
+
+    /// <summary>Optional override application deep-link path.</summary>
+    public string? DeeplinkPath { get; init; }
+
+    /// <summary>End-user consent state evaluated by <c>ConsentGate</c>.</summary>
+    public ConsentDto? Consent { get; init; }
+}
+
+/// <summary>Acknowledgement of <c>POST /v1/login-hints</c>.</summary>
+public sealed record LoginHintResponseDto
+{
+    /// <summary>Whether consent permitted storing the hint for S2 attribution.</summary>
+    public required bool Accepted { get; init; }
+
+    /// <summary>Expiry instant in UTC (or current timestamp when declined by consent).</summary>
+    public required DateTimeOffset ExpiresAt { get; init; }
+}

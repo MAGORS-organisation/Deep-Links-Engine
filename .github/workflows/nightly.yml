@@ -1,6 +1,6 @@
 # =============================================================================
-# Nightly — docs/zadanie.md §C.8 "nightly: overenie všetkých registrovaných domén (AASA/assetlinks)
-# + upstream CVE feed", §D.4 fuzzing.
+# Nightly — verification of every registered domain (AASA / assetlinks), the upstream CVE feed,
+# and fuzzing.
 #
 #   verify-domains   .github/scripts/verify-domains.py against a running control plane. Needs the
 #                    repository secrets DLE_URL (control-plane base URL) and DLE_API_KEY (key with
@@ -8,11 +8,11 @@
 #                    they are not configured; there is no instance to check yet.
 #   cve-recheck      security.yml with sca-only=true: NuGet / npm / Trivy fs against today's feeds,
 #                    on an unchanged tree. Catches CVEs published after the last push.
-#   fuzz-harness     SharpFuzz is NOT wired up: tests/Dle.SecurityTests/Fuzzing/FuzzTargets.cs
-#                    documents that it needs a console driver project, an instrumentation pass
-#                    and libFuzzer, none of which exist in this repository yet. Until they do,
-#                    the nightly runs the deterministic property-based driver of the same three
-#                    targets (FuzzHarnessTests, CsCheck) with a much larger budget than a PR run.
+#   fuzz-harness     SharpFuzz is NOT run here. The console driver exists (tests/Dle.FuzzDriver,
+#                    docs/dev/fuzzing.md), but coverage-guided fuzzing also needs a `sharpfuzz`
+#                    instrumentation pass and libFuzzer, which no workflow sets up. Instead the
+#                    nightly runs the deterministic property-based driver of the same targets
+#                    (FuzzHarnessTests, CsCheck) with a much larger budget than a PR run.
 # =============================================================================
 name: Nightly
 
@@ -96,10 +96,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up .NET 10
+      - name: Set up .NET 11
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 11.0.x
           cache: true
           cache-dependency-path: "**/packages.lock.json"
 

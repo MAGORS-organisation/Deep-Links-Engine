@@ -164,6 +164,35 @@ struct ResolveRequestBody: Encodable, Sendable, Hashable {
     }
 }
 
+/// `ResolveLinkRequestDto`: the short URL an installed app was opened with. Absent optional members
+/// are omitted, never written as `null`.
+struct ResolveLinkRequestBody: Encodable, Sendable, Hashable {
+    /// `url`, without its fragment.
+    var url: String
+    /// `install_id`. Present whenever the installation id is available: it is the rate-limit
+    /// partition; without it the engine falls back to a much smaller per-network budget.
+    var installId: String?
+    /// `platform`.
+    var platform: String
+    /// `app_version`.
+    var appVersion: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case url
+        case installId = "install_id"
+        case platform
+        case appVersion = "app_version"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(url, forKey: .url)
+        try c.encodeIfPresent(installId, forKey: .installId)
+        try c.encode(platform, forKey: .platform)
+        try c.encodeIfPresent(appVersion, forKey: .appVersion)
+    }
+}
+
 /// `EventBatchDto`.
 struct EventBatchBody: Encodable, Sendable, Hashable {
     /// `install_id`.
@@ -228,6 +257,8 @@ struct DleAPI: Sendable {
     static let maxReferrerLength = 1024
     /// Path of the resolve endpoint.
     static let resolvePath = "/v1/resolve"
+    /// Path of the direct-open resolve endpoint.
+    static let resolveLinkPath = "/v1/resolve-link"
     /// Path of the events endpoint.
     static let eventsPath = "/v1/events"
 
@@ -241,6 +272,12 @@ struct DleAPI: Sendable {
     /// `confidence` is a ``DleError/malformedResponse(_:)``.
     func resolve(_ body: ResolveRequestBody) async throws -> DeferredLink {
         try await post(Self.resolvePath, body: body)
+    }
+
+    /// `POST /v1/resolve-link`. Same response shape as `/v1/resolve`: `matched` with
+    /// `match_type` `direct_open` and the link's `deeplink_path`, or `matched: false`.
+    func resolveLink(_ body: ResolveLinkRequestBody) async throws -> DeferredLink {
+        try await post(Self.resolveLinkPath, body: body)
     }
 
     /// `POST /v1/events`. Resolves on 202 with the accepted and rejected counts.

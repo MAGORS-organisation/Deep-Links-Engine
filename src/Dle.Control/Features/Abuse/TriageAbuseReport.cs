@@ -91,10 +91,23 @@ public static class TriageAbuseReport
                 });
         }
 
+        string trimmedNote = request.ResolutionNote.Trim();
+
+        if (trimmedNote.Length > 4000)
+        {
+            return DleProblemResults.ValidationFailed(
+                "The statement of reasons is too long.",
+                new Dictionary<string, string[]>(StringComparer.Ordinal)
+                {
+                    ["resolution_note"] =
+                        ["A resolution note must be at most 4000 characters."],
+                });
+        }
+
         bool updated = await reports.ResolveReportAsync(
             reportId,
             status,
-            request.ResolutionNote,
+            trimmedNote,
             cancellationToken);
 
         if (!updated)
@@ -113,7 +126,7 @@ public static class TriageAbuseReport
                 Dictionary<string, string> metadata = new(StringComparer.Ordinal)
                 {
                     ["status"] = status,
-                    ["note"] = request.ResolutionNote,
+                    ["note"] = trimmedNote,
                 };
 
                 await audit.WriteAsync(

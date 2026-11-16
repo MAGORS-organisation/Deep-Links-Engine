@@ -10,6 +10,7 @@ export { tenants } from './tenants';
 export { apiKeys } from './apiKeys';
 export { analytics } from './analytics';
 export { webhooks } from './webhooks';
+export { privacy } from './privacy';
 export { abuse } from './abuse';
 export { getAuthConfig, initiateOidcLogin, handleOidcCallback } from './auth';
 export type { AuthConfig } from './auth';

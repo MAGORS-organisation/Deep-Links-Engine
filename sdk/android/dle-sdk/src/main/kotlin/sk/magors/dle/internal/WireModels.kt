@@ -67,6 +67,18 @@ internal data class ResolveRequest(
     @SerialName("consent") val consent: ConsentWire? = null,
 )
 
+/**
+ * `ResolveLinkRequestDto`: the short URL an installed app was opened with. `install_id` is the
+ * rate-limit partition; without it the engine falls back to a much smaller per-network budget.
+ */
+@Serializable
+internal data class ResolveLinkRequest(
+    @SerialName("url") val url: String,
+    @SerialName("install_id") val installId: String? = null,
+    @SerialName("platform") val platform: String,
+    @SerialName("app_version") val appVersion: String? = null,
+)
+
 /** `ResolveLinkDto`. */
 @Serializable
 internal data class LinkWire(

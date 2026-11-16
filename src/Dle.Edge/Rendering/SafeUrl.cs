@@ -59,11 +59,62 @@ internal static class SafeUrl
             return null;
         }
 
-        return Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed) &&
-               (parsed.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
-                parsed.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
-            ? url
+        return Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed)
+               && string.IsNullOrEmpty(parsed.UserInfo)
+               && !string.IsNullOrEmpty(parsed.Host)
+               && (parsed.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
+                   parsed.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
+            ? AsciiForm(parsed, url!)
             : null;
+    }
+
+    /// <summary>
+    /// Returns a URL in a form that may be written into a response header.
+    /// </summary>
+    /// <remarks>
+    /// A target such as <c>https://obchod.sk/košík</c> or <c>https://müller.de/</c> is a perfectly
+    /// good link, but Kestrel refuses a header value with a character outside ASCII, so handing it to
+    /// <c>Location</c> or to the content security policy as typed turns the request into a 500. An
+    /// ASCII URL is returned untouched; otherwise the path and query are percent-encoded and the host
+    /// is converted to its IDN form, which is the same address every browser would have requested.
+    /// </remarks>
+    /// <param name="parsed">The URL, parsed.</param>
+    /// <param name="original">The URL as stored.</param>
+    /// <returns>An ASCII URL, or <see langword="null"/> when none can be produced.</returns>
+    private static string? AsciiForm(Uri parsed, string original)
+    {
+        if (System.Text.Ascii.IsValid(original))
+        {
+            return original;
+        }
+
+        string absolute = parsed.AbsoluteUri;
+
+        if (!System.Text.Ascii.IsValid(absolute))
+        {
+            // Everything but the host has been escaped by now; the host may still be Unicode.
+            string host = parsed.Host;
+            int authorityStart = parsed.Scheme.Length + Uri.SchemeDelimiter.Length;
+            int authorityEnd = absolute.AsSpan(authorityStart).IndexOfAny('/', '?', '#');
+
+            authorityEnd = authorityEnd < 0 ? absolute.Length : authorityStart + authorityEnd;
+
+            int userInfoEnd = absolute.AsSpan(authorityStart, authorityEnd - authorityStart).LastIndexOf('@');
+            int hostStart = userInfoEnd < 0 ? authorityStart : authorityStart + userInfoEnd + 1;
+
+            if (hostStart + host.Length > authorityEnd
+                || !absolute.AsSpan(hostStart, host.Length).Equals(host, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            absolute = string.Concat(
+                absolute.AsSpan(0, hostStart),
+                parsed.IdnHost,
+                absolute.AsSpan(hostStart + host.Length));
+        }
+
+        return System.Text.Ascii.IsValid(absolute) ? absolute : null;
     }
 
     /// <summary>
@@ -79,9 +130,11 @@ internal static class SafeUrl
             return null;
         }
 
-        return Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed) &&
-               parsed.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
-            ? url
+        return Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed)
+               && string.IsNullOrEmpty(parsed.UserInfo)
+               && !string.IsNullOrEmpty(parsed.Host)
+               && parsed.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+            ? AsciiForm(parsed, url!)
             : null;
     }
 
@@ -104,7 +157,9 @@ internal static class SafeUrl
             return web;
         }
 
-        if (!IsSane(url) || !Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed))
+        if (!IsSane(url)
+            || !Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed)
+            || !string.IsNullOrEmpty(parsed.UserInfo))
         {
             return null;
         }
@@ -125,7 +180,10 @@ internal static class SafeUrl
 
             if (parsed.Scheme.Equals(candidate, StringComparison.OrdinalIgnoreCase))
             {
-                return url;
+                // A custom-scheme URL has no host to convert; escaping is all that can be done.
+                return System.Text.Ascii.IsValid(url)
+                    ? url
+                    : System.Text.Ascii.IsValid(parsed.AbsoluteUri) ? parsed.AbsoluteUri : null;
             }
         }
 

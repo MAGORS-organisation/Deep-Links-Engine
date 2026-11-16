@@ -1,14 +1,15 @@
-using System.Globalization;
-using System.Net;
 using System.Threading.RateLimiting;
 
 using Dle.Control.Configuration;
 using Dle.Control.Identity;
 using Dle.Control.Infrastructure;
+using Dle.Domain.Primitives;
+using Dle.Persistence.Fast.Caching;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.DependencyInjection;
@@ -47,6 +48,8 @@ public static class ControlRateLimitingServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
+
+        services.TryAddSingleton<ValkeyRateLimitStore>();
 
         services.AddOptions<DleRateLimitOptions>()
             .Bind(configuration.GetSection(DleRateLimitOptions.SectionName))
@@ -90,18 +93,17 @@ public static class ControlRateLimitingServiceCollectionExtensions
             bool isNewTenant = IsNewTenant(caller, httpContext, limits);
             int permit = isNewTenant ? limits.NewTenantLinkCreatePerMinute : limits.LinkCreatePerMinute;
             string tier = isNewTenant ? "new" : "established";
+            ValkeyRateLimitStore? store = httpContext.RequestServices.GetService<ValkeyRateLimitStore>();
+            string partition = string.Create(CultureInfo.InvariantCulture, $"create|{tier}|{PartitionKey(httpContext, caller)}");
 
-            return RateLimitPartition.GetSlidingWindowLimiter(
-                string.Create(CultureInfo.InvariantCulture, $"create|{tier}|{PartitionKey(httpContext, caller)}"),
-                _ => new SlidingWindowRateLimiterOptions
-                {
-                    PermitLimit = permit,
-                    Window = TimeSpan.FromMinutes(1),
-                    SegmentsPerWindow = 6,
-                    QueueLimit = 0,
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    AutoReplenishment = true,
-                });
+            return RateLimitPartition.Get(
+                partition,
+                key => ValkeyBackedRateLimiter.SlidingWindow(
+                    "ctrl:" + key,
+                    permit,
+                    TimeSpan.FromMinutes(1),
+                    segments: 6,
+                    store));
         });
     }
 
@@ -147,20 +149,20 @@ public static class ControlRateLimitingServiceCollectionExtensions
         {
             DleRateLimitOptions limits = Limits(httpContext);
             DleCaller? caller = httpContext.User.GetDleCaller();
+            ValkeyRateLimitStore? store = httpContext.RequestServices.GetService<ValkeyRateLimitStore>();
+            int permitLimit = permits(limits);
+            string partition = string.Create(
+                CultureInfo.InvariantCulture,
+                $"{policyName}|{PartitionKey(httpContext, caller)}");
 
-            return RateLimitPartition.GetSlidingWindowLimiter(
-                string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"{policyName}|{PartitionKey(httpContext, caller)}"),
-                _ => new SlidingWindowRateLimiterOptions
-                {
-                    PermitLimit = permits(limits),
-                    Window = TimeSpan.FromMinutes(1),
-                    SegmentsPerWindow = 6,
-                    QueueLimit = 0,
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    AutoReplenishment = true,
-                });
+            return RateLimitPartition.Get(
+                partition,
+                key => ValkeyBackedRateLimiter.SlidingWindow(
+                    "ctrl:" + key,
+                    permitLimit,
+                    TimeSpan.FromMinutes(1),
+                    segments: 6,
+                    store));
         });
     }
 
@@ -195,20 +197,19 @@ public static class ControlRateLimitingServiceCollectionExtensions
 
             DleRateLimitOptions limits = Limits(httpContext);
             DleCaller? caller = httpContext.User.GetDleCaller();
+            ValkeyRateLimitStore? store = httpContext.RequestServices.GetService<ValkeyRateLimitStore>();
+            string partition = string.Create(
+                CultureInfo.InvariantCulture,
+                $"unclassified|{PartitionKey(httpContext, caller)}");
 
-            return RateLimitPartition.GetSlidingWindowLimiter(
-                string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"unclassified|{PartitionKey(httpContext, caller)}"),
-                _ => new SlidingWindowRateLimiterOptions
-                {
-                    PermitLimit = limits.ReadPerMinute,
-                    Window = TimeSpan.FromMinutes(1),
-                    SegmentsPerWindow = 6,
-                    QueueLimit = 0,
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    AutoReplenishment = true,
-                });
+            return RateLimitPartition.Get(
+                partition,
+                key => ValkeyBackedRateLimiter.SlidingWindow(
+                    "ctrl:" + key,
+                    limits.ReadPerMinute,
+                    TimeSpan.FromMinutes(1),
+                    segments: 6,
+                    store));
         });
 
     /// <summary>Answers a refused request with an RFC 9457 document and a <c>Retry-After</c>.</summary>
@@ -232,7 +233,7 @@ public static class ControlRateLimitingServiceCollectionExtensions
             .RateLimited(
                 retryAfter,
                 "The request was refused by a rate limit. The Retry-After header says when to try "
-                + "again; the limits are configurable per deployment and are documented in §E.9.")
+                + "again; the limits are configurable per deployment.")
             .ExecuteAsync(context.HttpContext));
     }
 
@@ -289,25 +290,8 @@ public static class ControlRateLimitingServiceCollectionExtensions
                 ?? caller.TenantId.ToString();
         }
 
-        IPAddress? address = httpContext.Connection.RemoteIpAddress;
-
-        if (address is null)
-        {
-            return "anonymous";
-        }
-
-        if (address.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6)
-        {
-            return address.ToString();
-        }
-
-        Span<byte> bytes = stackalloc byte[16];
-
-        if (!address.TryWriteBytes(bytes, out int written) || written != 16)
-        {
-            return address.ToString();
-        }
-
-        return string.Create(CultureInfo.InvariantCulture, $"{Convert.ToHexStringLower(bytes[..8])}::/64");
+        return IpAddressNormalization.PartitionKey64(
+            httpContext.Connection.RemoteIpAddress,
+            "anonymous");
     }
 }

@@ -15,6 +15,25 @@ public static class ManageTenants
     /// <summary>Longest tenant name accepted.</summary>
     private const int MaxNameLength = 200;
 
+    /// <summary>Whether a tenant is the one whose owners administer the instance.</summary>
+    private static bool IsOperatorTenant(HttpContext http, Guid id) =>
+        http.RequestServices.GetRequiredService<DleInstanceOperator>().IsOperator(id);
+
+    /// <summary>
+    /// The refusal for suspending or deleting the operator tenant.
+    /// </summary>
+    /// <remarks>
+    /// Tenant administration is only open to owners of the operator tenant, and a tenant that is not
+    /// active cannot authenticate at all. Taking the operator tenant out would therefore leave no
+    /// credential able to undo it, short of editing the database.
+    /// </remarks>
+    private static IResult OperatorTenantIsProtected(string what) =>
+        DleProblem.Conflict(
+            ProblemCodes.WriteConflict,
+            "The operator tenant cannot be " + what + ".",
+            "This tenant administers the instance. Name another operator tenant first "
+            + "(Dle:Control:InstanceTenantId), then repeat the request.");
+
     /// <summary>Most tenants returned in one listing.</summary>
     private const int ListLimit = 500;
 
@@ -99,6 +118,8 @@ public static class ManageTenants
     /// <param name="administration">Cross-tenant tenant storage, for the slug uniqueness check.</param>
     /// <param name="audit">The administrative audit trail (FR-246).</param>
     /// <param name="privacyOptions">The privacy options, for default consent mode configuration.</param>
+    /// <param name="controlOptions">Control-plane options, for single-tenant self-service limits.</param>
+    /// <param name="operatorRegistry">Knows whether an explicit operator tenant is configured.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>201 with the tenant, or a problem document.</returns>
     /// <remarks>
@@ -113,6 +134,8 @@ public static class ManageTenants
         TenantAdministration administration,
         AuditLogWriter audit,
         IOptions<ControlPrivacyOptions> privacyOptions,
+        IOptions<DleControlOptions> controlOptions,
+        DleInstanceOperator operatorRegistry,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -121,8 +144,25 @@ public static class ManageTenants
         ArgumentNullException.ThrowIfNull(administration);
         ArgumentNullException.ThrowIfNull(audit);
         ArgumentNullException.ThrowIfNull(privacyOptions);
+        ArgumentNullException.ThrowIfNull(controlOptions);
+        ArgumentNullException.ThrowIfNull(operatorRegistry);
 
         DleCaller caller = http.RequireDleCaller();
+
+        if (!operatorRegistry.IsConfigured && controlOptions.Value.AllowTenantSelfService)
+        {
+            int existingCount = await tenants.CountAsync(includeDeleted: false, cancellationToken);
+
+            if (existingCount >= 1)
+            {
+                return DleProblem.Conflict(
+                    ProblemCodes.Base + "single-tenant-limit",
+                    "This instance is restricted to a single tenant.",
+                    "Single-tenant self-service mode allows only one active tenant. Configure "
+                    + "Dle:Control:InstanceTenantId to operate a multi-tenant instance.");
+            }
+        }
+
         Dictionary<string, string[]> errors = new(StringComparer.Ordinal);
 
         if (!SlugPolicy.TryNormalize(request.Slug, out string slug) || slug.Length < SlugPolicy.MinCustomLength)
@@ -209,8 +249,10 @@ public static class ManageTenants
     /// <param name="request">The fields to change.</param>
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="administration">Cross-tenant tenant storage.</param>
+    /// <param name="tenants">Tenant storage, used to enumerate domain hosts for cache invalidation.</param>
     /// <param name="audit">The administrative audit trail (FR-246).</param>
     /// <param name="cache">Drops the cached configuration of every host of the tenant.</param>
+    /// <param name="credentialCache">Drops cached credentials belonging to the updated tenant.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>200 with the tenant, or a problem document.</returns>
     /// <remarks>
@@ -223,15 +265,19 @@ public static class ManageTenants
         UpdateTenantRequest request,
         HttpContext http,
         TenantAdministration administration,
+        TenantRepository tenants,
         AuditLogWriter audit,
         ILinkCacheInvalidator cache,
+        DleCredentialCache credentialCache,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(http);
         ArgumentNullException.ThrowIfNull(administration);
+        ArgumentNullException.ThrowIfNull(tenants);
         ArgumentNullException.ThrowIfNull(audit);
         ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(credentialCache);
 
         DleCaller caller = http.RequireDleCaller();
 
@@ -287,6 +333,11 @@ public static class ManageTenants
             status = request.Status.Trim().ToLowerInvariant();
         }
 
+        if (string.Equals(status, TenantStatuses.Suspended, StringComparison.Ordinal) && IsOperatorTenant(http, id))
+        {
+            return OperatorTenantIsProtected("suspended");
+        }
+
         Tenant? tenant = await administration.UpdateAsync(
             id,
             name,
@@ -325,12 +376,24 @@ public static class ManageTenants
             metadata,
             cancellationToken);
 
-        if (consentMode is not null)
+        if (consentMode is not null || status is not null)
         {
             // The effective consent mode is baked into every cached link snapshot, so a change has to
             // drop them all. A tightened mode that kept being ignored until the cache expired would
             // be a privacy setting that does not take effect when it is set (§E.6.2, TC-145).
+            // A status change is the same: the edge only resolves the links of an active tenant, and
+            // a suspension that waited for the cache to expire would not be one.
             await cache.InvalidateTenantAsync(tenant.Id, cancellationToken);
+
+            foreach (string host in await tenants.ListDomainHostsAsync(tenant.Id, cancellationToken))
+            {
+                await cache.InvalidateHostAsync(host, cancellationToken);
+            }
+        }
+
+        if (status is not null)
+        {
+            await credentialCache.InvalidateTenantAsync(tenant.Id, cancellationToken);
         }
 
         return TypedResults.Ok(Project(tenant));
@@ -342,6 +405,7 @@ public static class ManageTenants
     /// <param name="tenants">Tenant storage.</param>
     /// <param name="audit">The administrative audit trail (FR-246).</param>
     /// <param name="cache">Drops the cached configuration of every host of the tenant.</param>
+    /// <param name="credentialCache">Drops cached credentials belonging to the deleted tenant.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>204, or 404.</returns>
     /// <remarks>
@@ -355,14 +419,21 @@ public static class ManageTenants
         TenantRepository tenants,
         AuditLogWriter audit,
         ILinkCacheInvalidator cache,
+        DleCredentialCache credentialCache,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(http);
         ArgumentNullException.ThrowIfNull(tenants);
         ArgumentNullException.ThrowIfNull(audit);
         ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(credentialCache);
 
         DleCaller caller = http.RequireDleCaller();
+
+        if (IsOperatorTenant(http, id))
+        {
+            return OperatorTenantIsProtected("deleted");
+        }
 
         if (!await tenants.SoftDeleteAsync(id, cancellationToken))
         {
@@ -379,6 +450,13 @@ public static class ManageTenants
             cancellationToken);
 
         await cache.InvalidateTenantAsync(id, cancellationToken);
+
+        foreach (string host in await tenants.ListDomainHostsAsync(id, cancellationToken))
+        {
+            await cache.InvalidateHostAsync(host, cancellationToken);
+        }
+
+        await credentialCache.InvalidateTenantAsync(id, cancellationToken);
 
         return TypedResults.NoContent();
     }

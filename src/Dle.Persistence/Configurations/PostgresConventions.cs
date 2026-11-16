@@ -15,7 +15,11 @@ internal static class PostgresConventions
     /// <summary>Binary JSON. Every JSON column in the schema is <c>jsonb</c>, never <c>json</c>.</summary>
     internal const string Jsonb = "jsonb";
 
-    /// <summary>An array of text, mapped from <see cref="List{T}"/> of <see cref="string"/>.</summary>
+    /// <summary>
+    /// An array of text, mapped from <see cref="List{T}"/> of <see cref="string"/>. Configure such
+    /// a column with <c>PrimitiveCollection()</c>, not <c>Property()</c>: EF Core 11 maps the latter
+    /// as a scalar, and <c>Contains</c> over it can no longer be translated to SQL.
+    /// </summary>
     internal const string TextArray = "text[]";
 
     /// <summary>Fixed precision confidence, <c>numeric(3,2)</c> per §B.5.3.</summary>

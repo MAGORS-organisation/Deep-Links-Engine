@@ -1,6 +1,7 @@
 using System.Net;
 
 using Dle.Crypto;
+using Dle.Domain.Primitives;
 
 namespace Dle.Control.Identity;
 
@@ -93,14 +94,16 @@ public static class DleKeyCredentialReader
     /// </remarks>
     public static string? AddressPrefix(IPAddress? address)
     {
-        if (address is null)
+        IPAddress? canonical = IpAddressNormalization.Canonicalize(address);
+
+        if (canonical is null)
         {
             return null;
         }
 
         Span<byte> bytes = stackalloc byte[16];
 
-        if (!address.TryWriteBytes(bytes, out int written))
+        if (!canonical.TryWriteBytes(bytes, out int written))
         {
             return null;
         }

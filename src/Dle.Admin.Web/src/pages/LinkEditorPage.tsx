@@ -7,7 +7,7 @@ import { JsonView } from '../components/JsonView';
 import { PageHeader } from '../components/PageHeader';
 import { useToast } from '../components/ToastContext';
 import { appendUtm, fromLocalInput, parseList, toLocalInput } from '../domain/format';
-import { defaultRule, hasDefaultRule, normalizeRules, platformFallbackRules, validateRules } from '../domain/routingRules';
+import { defaultRule, hasDefaultRule, isDefaultRule, normalizeRules, platformFallbackRules, validateRules } from '../domain/routingRules';
 import { useAsync } from '../hooks/useAsync';
 import { useI18n } from '../i18n';
 import { RuleBuilder } from './links/RuleBuilder';
@@ -128,6 +128,22 @@ export default function LinkEditorPage() {
 
   const patch = <K extends keyof LinkForm>(key: K, value: LinkForm[K]) => setForm((f) => ({ ...f, [key]: value }));
 
+  // The default web rule's URL is what the edge serves to a browser, so it follows the target URL
+  // while it is empty or still equal to it, as the server does for a PATCH without routing_rules.
+  const setTargetUrl = (value: string) =>
+    setForm((f) => ({
+      ...f,
+      target_url: value,
+      routing_rules: f.routing_rules.map((r) => {
+        const url = r.then.url?.trim() ?? '';
+        const follows = isDefaultRule(r) && r.then.action === 'web' && (!url || url === f.target_url.trim());
+        return follows ? { ...r, then: { ...r.then, url: value } } : r;
+      }),
+    }));
+
+  // PATCH treats null as "unchanged" and cannot clear an instant, so emptying one would be a silent no-op.
+  const clearedDate = (key: 'starts_at' | 'expires_at') => (!isNew && Boolean(existing.data?.[key]) && !form[key] ? t('editor.field.dateCannotClear') : undefined);
+
   const applyFallbacks = () => {
     const generated = platformFallbackRules(fallbacks.ios, fallbacks.android, form.deeplink_path || undefined);
     if (generated.length === 0) return;
@@ -142,7 +158,7 @@ export default function LinkEditorPage() {
   const save = async () => {
     setSubmitted(true);
     setServerError(null);
-    if (problems.length > 0 || !form.target_url.trim() || (isNew && !form.domain_id)) {
+    if (problems.length > 0 || !form.target_url.trim() || (isNew && !form.domain_id) || clearedDate('starts_at') || clearedDate('expires_at')) {
       toast.error(t('editor.fixErrors'));
       return;
     }
@@ -172,18 +188,19 @@ export default function LinkEditorPage() {
         toast.success(t('links.created'));
         void navigate(`/links/${saved.id}`, { replace: true });
       } else {
+        // PATCH reads null as "unchanged"; an empty string (or an empty og object) is what clears.
         const body: UpdateLinkRequest = {
-          title: form.title.trim() || null,
-          description: form.description.trim() || null,
+          title: form.title.trim(),
+          description: form.description.trim(),
           target_url: form.target_url.trim(),
-          deeplink_path: form.deeplink_path.trim() || null,
+          deeplink_path: form.deeplink_path.trim(),
           routing_rules: rules,
-          og,
+          og: og ?? {},
           utm: utmRecord(form.utm),
           tags: parseList(form.tags),
           starts_at: fromLocalInput(form.starts_at),
           expires_at: fromLocalInput(form.expires_at),
-          expired_url: form.expired_url.trim() || null,
+          expired_url: form.expired_url.trim(),
           is_active: form.is_active,
           change_note: form.change_note.trim() || null,
         };
@@ -301,7 +318,7 @@ export default function LinkEditorPage() {
           <h2 className="card-title">{t('editor.section.target')}</h2>
           <div className="form-grid">
             <Field label={t('editor.field.targetUrl')} hint={t('editor.field.targetUrlHint')} error={fieldError('target_url') ?? (submitted && !form.target_url.trim() ? t('rules.err.webNeedsUrl') : undefined)} className="span-2">
-              {(p) => <input {...p} className="input mono" type="url" required value={form.target_url} onChange={(e) => patch('target_url', e.target.value)} placeholder="https://" />}
+              {(p) => <input {...p} className="input mono" type="url" required value={form.target_url} onChange={(e) => setTargetUrl(e.target.value)} placeholder="https://" />}
             </Field>
             <Field label={t('editor.field.deeplinkPath')} hint={t('editor.field.deeplinkPathHint')} error={fieldError('deeplink_path')} optionalText={t('label.optional')}>
               {(p) => <input {...p} className="input mono" value={form.deeplink_path} onChange={(e) => patch('deeplink_path', e.target.value)} placeholder="/product/123" />}
@@ -416,10 +433,10 @@ export default function LinkEditorPage() {
             {t('editor.validity.hint')}
           </p>
           <div className="form-grid">
-            <Field label={t('editor.field.startsAt')} error={fieldError('starts_at')} optionalText={t('label.optional')}>
+            <Field label={t('editor.field.startsAt')} error={fieldError('starts_at') ?? clearedDate('starts_at')} optionalText={t('label.optional')}>
               {(p) => <input {...p} className="input" type="datetime-local" value={form.starts_at} onChange={(e) => patch('starts_at', e.target.value)} />}
             </Field>
-            <Field label={t('editor.field.expiresAt')} error={fieldError('expires_at')} optionalText={t('label.optional')}>
+            <Field label={t('editor.field.expiresAt')} error={fieldError('expires_at') ?? clearedDate('expires_at')} optionalText={t('label.optional')}>
               {(p) => <input {...p} className="input" type="datetime-local" value={form.expires_at} onChange={(e) => patch('expires_at', e.target.value)} />}
             </Field>
             <Field label={t('editor.field.expiredUrl')} hint={t('editor.field.expiredUrlHint')} error={fieldError('expired_url')} optionalText={t('label.optional')}>

@@ -16,7 +16,7 @@ namespace Dle.Crypto;
 /// existing hash unverifiable the moment the policy changed.
 /// </para>
 /// <para>
-/// Comparison goes through <see cref="CryptographicOperations.FixedTimeEquals"/>, without
+/// Comparison goes through <see cref="CryptographicOperations.FixedTimeEquals(ReadOnlySpan{byte}, ReadOnlySpan{byte})"/>, without
 /// exception (T-17, S-03, SHARED-KERNEL §17.6).
 /// </para>
 /// </remarks>

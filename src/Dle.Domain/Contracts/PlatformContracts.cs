@@ -53,6 +53,15 @@ public sealed record DomainResponse
     /// <summary>Consent mode override, when one is set.</summary>
     public string? ConsentModeOverride { get; init; }
 
+    /// <summary>When DNS TXT ownership was verified, or <see langword="null"/> if pending.</summary>
+    public DateTimeOffset? OwnershipVerifiedAt { get; init; }
+
+    /// <summary>DNS TXT host name to publish for multi-tenant ownership verification.</summary>
+    public string? OwnershipTxtHost { get; init; }
+
+    /// <summary>Expected DNS TXT record value (<c>dle-verify=...</c>) for this tenant and host.</summary>
+    public string? OwnershipTxtValue { get; init; }
+
     /// <summary>Creation instant.</summary>
     public required DateTimeOffset CreatedAt { get; init; }
 }

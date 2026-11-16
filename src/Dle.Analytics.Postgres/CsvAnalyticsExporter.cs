@@ -76,8 +76,8 @@ public sealed class CsvAnalyticsExporter : IAnalyticsExporter
             await WriteLineAsync(
                 writer,
                 [
-                    dimension,
-                    row.Key,
+                    NeutralizeFormula(dimension),
+                    NeutralizeFormula(row.Key),
                     Number(row.Clicks),
                     Number(row.Installs),
                     row.Value is { } value ? Number(value) : string.Empty,
@@ -105,11 +105,40 @@ public sealed class CsvAnalyticsExporter : IAnalyticsExporter
         {
             await WriteLineAsync(
                 writer,
-                [row.MatchType, Number(row.Count), Number(row.AverageConfidence)],
+                [NeutralizeFormula(row.MatchType), Number(row.Count), Number(row.AverageConfidence)],
                 ct);
         }
 
         await writer.FlushAsync(ct);
+    }
+
+    /// <summary>
+    /// Neutralizes spreadsheet formula prefixes (<c>=</c>, <c>+</c>, <c>-</c>, <c>@</c>, tab, or CR,
+    /// including after leading spaces) on non-numeric text cells before RFC 4180 quoting.
+    /// </summary>
+    /// <param name="value">The raw text field value.</param>
+    /// <returns>The formula-safe text value.</returns>
+    internal static string NeutralizeFormula(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return value;
+        }
+
+        if (value[0] is '=' or '+' or '-' or '@' or '\t' or '\r')
+        {
+            return string.Concat("'", value);
+        }
+
+        ReadOnlySpan<char> trimmedStart = value.AsSpan().TrimStart(' ');
+        if (trimmedStart.Length < value.Length
+            && !trimmedStart.IsEmpty
+            && trimmedStart[0] is '=' or '+' or '-' or '@')
+        {
+            return string.Concat("'", value);
+        }
+
+        return value;
     }
 
     /// <summary>

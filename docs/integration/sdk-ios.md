@@ -29,11 +29,15 @@ So the design offers three **deterministic** paths on iOS and one honest probabi
 | Login reconciliation | `login` | 1.0 | Signs in; the app sends a hashed account key |
 | Probabilistic (opt-in) | `probabilistic` | 0.3–0.9 | Nothing — and consent is required |
 
-**Today none of the deterministic paths delivers a deferred deep link.** The edge never issues or shows
-a claim code (the interstitial is rendered without one), and login matching reads a click field that
-nothing writes, so `claim_code` and `login` do not match in practice. Direct open works, but it is not
-deferred — the app is already installed — and it carries no link context (see below). See
-[Known gaps](../../README.md#known-gaps).
+What works today, and under which conditions:
+
+- **Direct open** works in every consent mode: `handle(url:)` reports the open and
+  `resolveLink(url)` returns the screen (see [Universal Links](#universal-links)).
+- **Claim code** works when the tenant's consent mode is `full`: the store-bound interstitial then
+  shows a code (and only then — under `aggregate_only` and `off` it could never be redeemed, so none is
+  shown), and the app redeems it with the user's attribution consent.
+- **Login reconciliation** never matches yet: the strategy looks for a hashed account key on the click,
+  and nothing records one there ([Known gaps](../../README.md#known-gaps)).
 
 ## First launch
 
@@ -42,14 +46,15 @@ let link = try await Dle.shared.resolve(claimCode: userTypedCode)   // claimCode
 ```
 
 `POST /v1/resolve` is sent once with `install_id` (a UUID kept in the Keychain), `platform: "ios"`, the
-app and OS versions, and the claim code or login key when you have one (neither can match today, see
-above). The result is persisted; later calls return it without a request, and the server rate-limits
+app and OS versions, the consent you recorded with `updateConsent`, and the claim code or login key
+when you have one (see above for when each can match). The result is persisted; later calls return it without a request, and the server rate-limits
 the endpoint to 5 per hour per install.
 
 The claim code alphabet is `ACDEFGHJKLMNPQRTUVWXY34679` — confusable characters removed — and the SDK
-normalises input exactly as the server does, so `k7qp-2m` and `K7QP2M` are the same code. A code
-expires after `Dle:Attribution:ClaimCode:TtlMinutes` (15 minutes in the shipped configuration); an
-expired code returns a typed error with `can_reissue` so you can offer a fresh one
+normalises input exactly as the server does, so `k7qp-2m` and `K7QP2M` are the same code. A code shown
+on the interstitial is valid for one hour and can be redeemed once (a second redemption, even a
+concurrent one, answers `consumed`); an expired or spent code returns a typed error with `can_reissue`
+so you can offer a fresh one
 ([api.md](api.md#errors--rfc-9457-problem-details)).
 
 ## Universal Links
@@ -60,9 +65,21 @@ expired code returns a typed error with `can_reissue` so you can offer a fresh o
   `link_open` and hands you the URL to route. Without the report the direct open is invisible to
   analytics ([FR-223](../zadanie.md)).
 - That URL is the short link as tapped (`https://link.example.com/aB3xK9pQ`), not the link's
-  `deeplink_path`: nothing on the SDK plane expands a slug, and an SDK key cannot read `/api/v1/links`.
-  The app can open the right screen only if the operator uses readable slugs the app parses itself, as
-  the sample does with `/promo/…` and `/p/…` ([Known gaps](../../README.md#known-gaps)).
+  `deeplink_path`. Ask the engine for the screen with `resolveLink`:
+
+  ```swift
+  .onOpenURL { url in
+      guard let shortURL = Dle.shared.handle(url: url) else { return }   // reports link_open
+      Task {
+          let link = try await Dle.shared.resolveLink(shortURL)          // POST /v1/resolve-link
+          if link.matched, let path = link.deeplinkPath { router.open(path) }
+      }
+  }
+  ```
+
+  The answer has `matchType == .directOpen`, confidence 1.0, and the `deeplink_path` the link's
+  routing rules choose for iOS. `resolveLink` records nothing itself, so the open is counted once.
+  A URL that is not on `linkHosts`, or not a link of your tenant, answers ``DeferredLink/unmatched``.
 - **Remove `?mode=developer`** from the entitlement before App Store submission. It bypasses Apple's
   CDN cache during development and is rejected in review ([§A.2.1](../zadanie.md)).
 - Apple fetches your `apple-app-site-association` through its CDN within about 24 hours and devices

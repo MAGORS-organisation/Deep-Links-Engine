@@ -62,7 +62,7 @@ public struct DleEvent: Sendable, Hashable, Codable {
     }
 
     /// A `link_open` report for a URL the operating system handed to the app (FR-223).
-    /// The fragment is dropped: it never reaches a server and can carry client-side state.
+    /// Userinfo, query parameters, and fragment are stripped to match Android's `AppLinkHandler`.
     public static func linkOpen(url: URL, at timestamp: Date? = nil) -> DleEvent {
         DleEvent(type: .linkOpen, url: DleUniversalLink.reportable(url), timestamp: timestamp)
     }

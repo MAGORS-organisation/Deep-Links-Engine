@@ -195,9 +195,10 @@ export default function AppsPage() {
           setCreating(false);
           setManaging(null);
         }}
-        onSaved={() => {
+        onSaved={(saved, keepOpen) => {
+          // An app saved with warnings (or whose follow-up call failed) stays open, now as that app.
           setCreating(false);
-          setManaging(null);
+          setManaging(keepOpen ? saved : null);
           list.reload();
         }}
       />
@@ -217,7 +218,19 @@ export default function AppsPage() {
   );
 }
 
-function AppDrawer({ open, app, domainOptions, onClose, onSaved }: { open: boolean; app: AppResponse | null; domainOptions: DomainResponse[]; onClose: () => void; onSaved: () => void }) {
+function AppDrawer({
+  open,
+  app,
+  domainOptions,
+  onClose,
+  onSaved,
+}: {
+  open: boolean;
+  app: AppResponse | null;
+  domainOptions: DomainResponse[];
+  onClose: () => void;
+  onSaved: (saved: AppResponse, keepOpen: boolean) => void;
+}) {
   const { t } = useI18n();
   const toast = useToast();
   const [form, setForm] = useState<AppForm>(EMPTY_FORM);
@@ -240,19 +253,21 @@ function AppDrawer({ open, app, domainOptions, onClose, onSaved }: { open: boole
   const save = async () => {
     setBusy(true);
     setError(undefined);
+    let saved: AppResponse | undefined;
     try {
       const fingerprints = parseList(form.fingerprints).map((f) => f.toUpperCase());
-      let saved: AppResponse;
       if (app) {
+        // PATCH reads null as "unchanged" and '' as "clear". The team ID is required on iOS, and
+        // min_app_version is not in AppResponse, so the form cannot show it: an empty box keeps it.
         saved = await apps.update(app.id, {
           team_id: android ? null : form.team_id.trim() || null,
           cert_fingerprints: android ? fingerprints : null,
           play_signing_fingerprints: android && form.play_signing ? fingerprints : null,
-          store_id: form.store_id.trim() || null,
-          store_url: form.store_url.trim() || null,
-          custom_scheme: form.custom_scheme.trim() || null,
+          store_id: form.store_id.trim(),
+          store_url: form.store_url.trim(),
+          custom_scheme: form.custom_scheme.trim(),
           min_app_version: form.min_app_version.trim() || null,
-          app_clip_bundle_id: android ? null : form.app_clip_bundle_id.trim() || null,
+          app_clip_bundle_id: android ? null : form.app_clip_bundle_id.trim(),
           domain_ids: form.domain_ids,
         });
         toast.success(t('apps.updated'));
@@ -269,17 +284,20 @@ function AppDrawer({ open, app, domainOptions, onClose, onSaved }: { open: boole
           app_clip_bundle_id: android ? null : form.app_clip_bundle_id.trim() || null,
           domain_ids: form.domain_ids,
         });
+        toast.success(t('apps.created'));
+        // From here on this drawer manages the new app; keep the form, error and warnings as they are.
+        setLoadedFor(saved.id);
         if (android && form.play_signing && fingerprints.length > 0) {
           saved = await apps.update(saved.id, { play_signing_fingerprints: fingerprints });
         }
-        toast.success(t('apps.created'));
       }
       setWarnings(saved.warnings);
-      if (saved.warnings.length === 0) {
-        onSaved();
-      }
+      onSaved(saved, saved.warnings.length > 0);
     } catch (err) {
       setError(err);
+      if (saved && !app) {
+        onSaved(saved, true);
+      }
     } finally {
       setBusy(false);
     }

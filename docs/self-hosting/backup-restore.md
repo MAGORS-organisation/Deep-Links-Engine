@@ -19,9 +19,10 @@ below, set up by you, or a managed PostgreSQL that provides it.
 | Asset | Where | Loss means | Method |
 |---|---|---|---|
 | **PostgreSQL** — tenants, domains, apps, links, keys, installs, attributions, audit log, webhook queue, click-event partitions | the `postgres` service / your managed cluster | Everything | Continuous WAL archiving plus a daily base backup (`pg_basebackup`), or your operator's equivalent. This is what meets a 5-minute RPO; a nightly `pg_dump` or a volume copy does not. Profile A ships neither — see above |
-| **`Dle:Crypto:MasterSecret`** | your secret store (`.env`, Kubernetes Secret, vault) | Stored slugs keep resolving, but the slug permutation changes, so new slugs may collide with existing ones. Click ids already issued stop decoding. IP hashes no longer match earlier ones. The webhook signing key changes, and stored webhook secrets can no longer be decrypted, so deliveries fail until the subscriptions are recreated | Store it in the secret manager you use for everything else, and in an offline copy. It is small; losing it is the single worst outcome |
+| **`DLE_MASTER_SECRET`** (control plane `Dle:Crypto:MasterSecret`) | your secret store (`.env`, Kubernetes Secret, vault) | Stored slugs keep resolving, but the slug permutation changes. The webhook signing key changes, and stored webhook secrets can no longer be decrypted, so deliveries fail until the subscriptions are recreated | Store it in the secret manager you use for everything else, and in an offline copy. It is small; losing it is the single worst outcome |
+| **`DLE_EDGE_SECRET`** (edge `MasterSecret`, control `ClickIdSecret` / `IpHashSecret` / `ClaimCodeSecret`) | the same secret store | Click ids already issued stop decoding (deferred attribution of in-flight installs fails), IP hashes no longer match earlier ones, outstanding claim codes stop verifying | Back it up next to the master secret |
 | **Signing keys** | The webhook Ed25519 key is derived from the master secret; any others are configured under `Dle:Crypto:Keys`. The `signing_keys` table exists but nothing reads or writes it | Webhook receivers cannot verify deliveries; JWKS changes | Covered by backing up the master secret and the configuration |
-| **GeoIP database** (`GeoLite2-City.mmdb`) | edge volume | Country-based routing rules fall through to the default rule; `dle_geoip_available` drops to 0 (no alert ships — see [operations/runbook.md](../operations/runbook.md)) | Re-downloadable from MaxMind; do not treat it as data |
+| **GeoIP database** (`GeoLite2-Country.mmdb`, the file `DLE_GEOIP_PATH` names) | edge volume | Country-based routing rules fall through to the default rule; `dle_geoip_available` drops to 0 (no alert ships — see [operations/runbook.md](../operations/runbook.md)) | Re-downloadable from MaxMind; do not treat it as data |
 | **Valkey** | `valkey` service | Nothing. It is a cache and refills from PostgreSQL | Do not back up |
 | **Uploaded assets** (interstitial branding images, QR logos, if configured) | control volume or object store | Cosmetic | Include in the file-level backup |
 
@@ -34,8 +35,8 @@ partitions older than the retention window — they are dropped by the retention
 1. Provision PostgreSQL at the same major version and restore the base backup plus WAL up to the
    chosen point in time (on an unmodified Profile A: the `postgres_data` volume copy, which restores
    to the moment it was taken).
-2. Provision the secret store with the **same** `Dle:Crypto:MasterSecret` and any configured signing
-   keys. Verify before starting services: a wrong master secret will not error, and links restored
+2. Provision the secret store with the **same** `DLE_MASTER_SECRET` and `DLE_EDGE_SECRET` and any
+   configured signing keys. Verify before starting services: a wrong master secret will not error, and links restored
    from the backup still resolve with it — it silently changes new slugs, click ids and every other
    derived key. The `kid` check in step 4 catches it: the webhook key and its `kid` are derived from
    the master secret.

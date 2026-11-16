@@ -7,11 +7,12 @@
 
 | Directory | What is in it | Start with |
 |---|---|---|
+| [user-guide](user-guide) | Marketing and operator guide for the web administration console (SK) | [admin-console.md](user-guide/admin-console.md) |
 | [self-hosting](self-hosting) | Quick start, configuration, domains, upgrading, backup, troubleshooting | [quickstart.md](self-hosting/quickstart.md) — the first 30 minutes |
 | [integration](integration) | HTTP API, the three SDKs, webhooks, migrating from Firebase Dynamic Links | the API reference; the live one is served at `/scalar/v1` on the control host |
 | [compliance](compliance) | Privacy model, DPIA and RoPA templates, regulatory map, security overview | the privacy model — it explains the three consent modes |
 | [operations](operations) | Runbook, release checklist, device test matrix | the runbook |
-| [adr](adr) | The thirteen architecture decisions, the one deviation from the specification recorded as a decision (the licence), and the departures that are not recorded as decisions | [adr/README.md](adr/README.md) — process, status lifecycle, index, departures |
+| [adr](adr) | The thirteen accepted architecture decisions, the one deviation from the specification recorded as a decision (the licence), and the departures that are not recorded as decisions | [adr/README.md](adr/README.md) — process, status lifecycle, index, departures |
 | [architecture](architecture) | The three product layers, two deployment units, request flows, data model, routing-rule language, trust boundaries, observability, performance targets | [architecture/README.md](architecture/README.md) |
 | [dev](dev) | [SHARED-KERNEL.md](dev/SHARED-KERNEL.md), the binding contract every project codes against; [API-INVENTORY.md](dev/API-INVENTORY.md); per-project working notes | SHARED-KERNEL.md |
 | [zadanie.md](zadanie.md) | The Slovak specification everything traces back to. Every document here links the exact section it derives from | §0 (management summary) and [§F.3](zadanie.md#f3-gono-go-odporúčanie) (go/no-go) |
@@ -28,6 +29,7 @@ Outside `docs/` but part of the same set:
 
 | I want to… | Read, in this order |
 |---|---|
+| manage links & campaigns | [user-guide/admin-console.md](user-guide/admin-console.md) |
 | run it | [self-hosting/quickstart.md](self-hosting/quickstart.md) → [../deploy/README.md](../deploy/README.md) → self-hosting configuration and domains |
 | integrate an app | integration (API, then the SDK for your platform, then webhooks) → [architecture/request-flows.md](architecture/request-flows.md) so you know what happens on a click |
 | write routing rules | [architecture/routing-rules.md](architecture/routing-rules.md) |

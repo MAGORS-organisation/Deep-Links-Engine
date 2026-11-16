@@ -1,9 +1,9 @@
-using System.Globalization;
 using System.Net;
 using System.Threading.RateLimiting;
 
 using Dle.Control.Features.Abuse;
 using Dle.Domain.Ports;
+using Dle.Domain.Primitives;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
@@ -59,6 +59,9 @@ public static class AbuseServiceCollectionExtensions
         services.AddOptions<AbuseOptions>()
             .Bind(configuration.GetSection(AbuseOptions.SectionName))
             .ValidateDataAnnotations()
+            .Validate(
+                static options => !options.UrlHausEnabled || !string.IsNullOrWhiteSpace(options.UrlHausAuthKey),
+                AbuseOptions.MissingUrlHausAuthKeyMessage)
             .ValidateOnStart();
 
         services.TryAddSingleton(TimeProvider.System);
@@ -142,27 +145,6 @@ public static class AbuseServiceCollectionExtensions
     /// misconfigured proxy — shares one bucket, which fails towards the limit rather than around
     /// it. The key never reaches a log (SHARED-KERNEL §17.5).
     /// </remarks>
-    private static string PartitionKey(IPAddress? address)
-    {
-        if (address is null)
-        {
-            return "unknown";
-        }
-
-        if (address.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6)
-        {
-            return address.ToString();
-        }
-
-        Span<byte> bytes = stackalloc byte[16];
-
-        if (!address.TryWriteBytes(bytes, out int written) || written != 16)
-        {
-            return address.ToString();
-        }
-
-        return string.Create(
-            CultureInfo.InvariantCulture,
-            $"{Convert.ToHexStringLower(bytes[..8])}::/64");
-    }
+    private static string PartitionKey(IPAddress? address) =>
+        IpAddressNormalization.PartitionKey64(address, "unknown");
 }

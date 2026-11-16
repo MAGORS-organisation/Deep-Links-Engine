@@ -152,11 +152,16 @@ export interface SmartBannerOptions {
   /** App name shown as the banner headline. */
   readonly appName: string;
   /**
-   * Destination of the call-to-action. MUST be an `http(s)` URL — normally the DLE short
-   * link. A custom URI scheme is rejected: never transport codes or tokens over one
-   * (spec §A.2.3 / §E.7).
+   * Destination of the call-to-action. MUST be an `https:` URL (`http:` is permitted only for
+   * loopback hosts or when `allowInsecureHttp` is explicitly enabled). A custom URI scheme is
+   * rejected: never transport codes or tokens over one (spec §A.2.3 / §E.7).
    */
   readonly openUrl: string;
+  /**
+   * Allow plain `http:` for {@link openUrl} on non-loopback hosts in local testing environments.
+   * Defaults to `false`.
+   */
+  readonly allowInsecureHttp?: boolean;
   /** Optional app icon. Only `https:` and `data:image/*` sources are accepted. */
   readonly iconUrl?: string;
   /** Secondary line. Provide `{ en, sk }` to localise. */
@@ -198,8 +203,13 @@ export interface SmartBannerHandle {
 
 /** SDK configuration passed to `createDle`. */
 export interface DleConfig {
-  /** Base URL of the DLE SDK plane (`dle-control`, default port 8081). */
+  /** Base URL of the DLE SDK plane (`dle-control`, default port 8081). Must use `https:` (or loopback `http:`). */
   readonly endpoint: string;
+  /**
+   * Allow plain `http:` for {@link endpoint} on non-loopback hosts in local testing environments.
+   * Defaults to `false`.
+   */
+  readonly allowInsecureHttp?: boolean;
   /**
    * Publishable SDK key, sent as `Authorization: Bearer <sdkKey>`. It is embedded in page
    * source by design and is not a secret; server-side authorisation is what protects data.
@@ -252,6 +262,8 @@ export interface DleClient {
   readonly version: string;
   /** Ask the engine which link brought this browser here. */
   resolve(options?: ResolveOptions): Promise<ResolveResult>;
+  /** Register an indexed S2 login hint for O(1) reconciliation after install. */
+  recordLoginHint(options: LoginHintOptions): Promise<LoginHintResult>;
   /** Queue an event. Dropped without a network call when analytics consent is absent. */
   track(event: DleEvent | readonly DleEvent[]): void;
   /** Flush the queue now. Resolves to `true` when the queue is empty afterwards. */
@@ -282,4 +294,22 @@ export interface PlatformInfo {
   readonly isCrawler: boolean;
   /** Coarse OS version, e.g. `17.5` or `14`. Absent when the UA does not state one. */
   readonly osVersion?: string;
+}
+
+/** Options for `recordLoginHint` (`POST /v1/login-hints`). */
+export interface LoginHintOptions {
+  /** Account identifier or client-side hash, re-keyed server-side. */
+  readonly loginKey: string;
+  /** Public click identifier (`dl_cid`), auto-extracted from the page URL when omitted. */
+  readonly clickId?: string;
+  /** Short link URL fallback when `clickId` is absent. */
+  readonly url?: string;
+  /** Optional deep-link path override. */
+  readonly deeplinkPath?: string;
+}
+
+/** Result of `recordLoginHint`. */
+export interface LoginHintResult {
+  readonly accepted: boolean;
+  readonly expiresAt?: string;
 }

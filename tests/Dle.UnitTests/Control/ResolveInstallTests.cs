@@ -541,6 +541,35 @@ public sealed class ResolveInstallTests : IDisposable
         Assert.Single(_store.ConsumedClaimCodes);
     }
 
+    [Fact]
+    [Trait("TestCase", "TC-148")]
+    public async Task Resolve_ClaimCodeAlreadySpentByAnotherInstall_IsRefusedAsConsumed()
+    {
+        _options.Strategies.Add(AttributionStrategyNames.ClaimCode);
+
+        ClaimCodeCredential credential = _claimCodeGenerator.Create();
+
+        _store.AddClaimCode(new ClaimCodeRecord
+        {
+            TenantId = Tenant,
+            CodeHash = credential.Hash,
+            ClickId = null,
+            LinkId = 77,
+            CreatedAt = Now.AddMinutes(-10),
+            ExpiresAt = Now.AddMinutes(50),
+        });
+
+        _store.AddLink(new AttributedLink(77, Tenant, "/summer", "summer-2026", "Summer sale",
+            new ReadOnlyDictionary<string, string>(new Dictionary<string, string>(StringComparer.Ordinal))));
+
+        ResolveOutcome first = await ResolveAsync(Request(installId: "install-A", claimCode: credential.Code));
+        ResolveOutcome second = await ResolveAsync(Request(installId: "install-B", claimCode: credential.Code));
+
+        Assert.True(first.Response!.Matched);
+        Assert.Equal(ClaimCodeStatus.Consumed, second.ClaimCodeError);
+        Assert.Single(_store.ConsumedClaimCodes);
+    }
+
     [Theory]
     [Trait("TestCase", "TC-148")]
     [InlineData("ACDEFG", ClaimCodeStatus.Unknown)]

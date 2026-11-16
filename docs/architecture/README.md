@@ -50,7 +50,7 @@ Twelve `.csproj` files plus the two front-ends; the specification's layout ([§C
 | `Dle.Domain` | entities, value objects, routing engine, classifier, attribution matcher, problem codes — **no dependencies** | everything |
 | `Dle.Crypto` | `ISigner`/`IVerifier`, JWKS, the key ring (its rotation code is not called by the product), provider abstraction ([ADR-0013](../adr/0013-crypto-agility-from-day-one.md)) | both hosts |
 | `Dle.Persistence` | EF Core `DbContext`, configurations, **migrations — the schema's single source of truth** | control |
-| `Dle.Persistence.Fast` | Dapper hot-path queries, `NpgsqlBinaryImporter` batch writer ([ADR-0004](../adr/0004-split-data-access-efcore-and-dapper.md)) | edge, control |
+| `Dle.Persistence.Fast` | Raw Npgsql hot-path queries, `NpgsqlBinaryImporter` batch writer ([ADR-0004](../adr/0004-split-data-access-efcore-and-dapper.md)) | edge, control |
 | `Dle.Analytics.Postgres` · `Dle.Analytics.ClickHouse` | `IClickAnalyticsStore` implementations ([ADR-0006](../adr/0006-analytics-postgres-partitions-clickhouse-optional.md)) | control |
 | `Dle.Edge` | data-plane host: `Resolution/` (Normalize → Lookup → Classify → Consent → Route → Respond), `Clients/`, `Rendering/`, `WellKnown/`, `Telemetry/` | — |
 | `Dle.Control` | control-plane host: `Features/{Links,Domains,Attribution,Analytics,Abuse,…}` vertical slices, `Workers/` | — |

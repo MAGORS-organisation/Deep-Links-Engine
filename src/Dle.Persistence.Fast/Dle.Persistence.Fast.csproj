@@ -28,20 +28,14 @@
 
   <ItemGroup>
     <!--
-      Dapper is the ADR-004 hot-path stack alongside raw Npgsql and stays referenced
-      for the shaped aggregate queries that belong here. Its object materializer is
-      deliberately not used: it emits IL at run time, so it would forfeit the AOT
-      profile above. Reads therefore go through NpgsqlCommand and are mapped by
-      ordinal in Links/, WellKnown/ and Attribution/.
+      Raw Npgsql only. ADR-004 names Dapper for this layer, but its object
+      materializer emits IL at run time and would forfeit the AOT profile above, so
+      every read goes through NpgsqlCommand and is mapped by ordinal in Links/,
+      WellKnown/ and Attribution/. The Dapper* class names are historical.
     -->
-    <PackageReference Include="Dapper" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
 </Project>

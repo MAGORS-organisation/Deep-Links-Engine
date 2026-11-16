@@ -67,7 +67,8 @@ public static class DomainEndpointExtensions
             .Produces<DomainResponse>()
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
         domains.MapDelete("/{id:guid}", ManageDomains.DeleteAsync)
             .RequireAuthorization(DlePolicies.DomainsWrite)
@@ -79,6 +80,16 @@ public static class DomainEndpointExtensions
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict);
+
+        domains.MapPost("/{id:guid}/verify-ownership", VerifyDomain.VerifyOwnershipAsync)
+            .RequireAuthorization(DlePolicies.DomainsWrite)
+            .RequireRateLimiting(DleRateLimitPolicies.Write)
+            .WithName("VerifyDomainOwnership")
+            .WithSummary("Verifies DNS TXT ownership (_dle-verify.<host>) and activates the domain.")
+            .Produces<DomainVerificationResponse>()
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         domains.MapPost("/{id:guid}/verify", VerifyDomain.HandleAsync)
             .RequireAuthorization(DlePolicies.DomainsWrite)

@@ -88,16 +88,23 @@ public sealed class DleSdkKeyAuthenticationHandler
 
         if (_cache.TryGet(Scheme.Name, presented, out SdkKeyCandidate? cached) && cached is not null)
         {
-            return Success(cached, prefix);
+            if (string.Equals(cached.TenantStatus, TenantStatuses.Active, StringComparison.Ordinal))
+            {
+                return Success(cached, prefix);
+            }
+
+            _cache.InvalidateKey(cached.KeyId);
         }
 
-        if (!_limiter.TryAcquire(
+        if (!await _limiter.TryAcquireAsync(
                 DleKeyCredentialReader.AddressPrefix(Context.Connection.RemoteIpAddress),
-                prefix))
+                prefix,
+                Context.RequestAborted))
         {
             return AuthenticateResult.Fail(Refused);
         }
 
+        long snapshotGeneration = _cache.CaptureGeneration();
         SdkKeyCandidate? candidate = await _store.FindSdkKeyAsync(prefix, Context.RequestAborted);
 
         bool verified = ApiKeyHasher.Verify(presented, candidate?.Hash ?? _decoy.Hash);
@@ -112,7 +119,14 @@ public sealed class DleSdkKeyAuthenticationHandler
             return AuthenticateResult.Fail(Refused);
         }
 
-        _cache.Set(Scheme.Name, presented, candidate);
+        _cache.Set(
+            Scheme.Name,
+            presented,
+            candidate,
+            candidate.KeyId,
+            candidate.TenantId,
+            appId: candidate.AppId,
+            snapshotGeneration: snapshotGeneration);
 
         return Success(candidate, prefix);
     }

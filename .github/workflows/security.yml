@@ -1,6 +1,6 @@
 # =============================================================================
 # Security — SCA, licence policy, image and filesystem scanning, ZAP baseline.
-# docs/zadanie.md §C.8 (SCA, licenčná kontrola, ZAP baseline), §E.8 S-04 / S-05, NFR-13, NFR-18, T-14.
+# Requirements S-04 / S-05, NFR-13, NFR-18 and threat T-14.
 #
 #   nuget-vulnerabilities  `dotnet list package --vulnerable` via .github/scripts — HARD gate (>= High)
 #   npm-audit              sdk/web and src/Dle.Admin.Web — HARD gate (>= high)
@@ -52,10 +52,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up .NET 10
+      - name: Set up .NET 11
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 11.0.x
           cache: true
           cache-dependency-path: "**/packages.lock.json"
 
@@ -114,10 +114,10 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Set up .NET 10
+      - name: Set up .NET 11
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: 11.0.x
           cache: true
           cache-dependency-path: "**/packages.lock.json"
 
@@ -152,14 +152,16 @@ jobs:
         # same CLI (--onlyAllow / --failOn take a semicolon-separated list).
         #   production tree  → must be IN the allow-list (these bytes ship to customers / operators)
         #   whole tree       → must not contain anything on the forbidden list (dev tooling included)
+        env:
+          NPM_CONFIG_IGNORE_SCRIPTS: "true"
         run: |
           set -euo pipefail
           for dir in sdk/web src/Dle.Admin.Web; do
             echo "::group::$dir"
             ( cd "$dir"
               npm ci --ignore-scripts
-              npx --yes license-checker-rseidelsohn@5.0.1 --production --excludePrivatePackages --onlyAllow "$ALLOWED_LICENCES" --summary
-              npx --yes license-checker-rseidelsohn@5.0.1 --excludePrivatePackages --failOn "$FORBIDDEN_LICENCES" --summary
+              npx --yes --ignore-scripts license-checker-rseidelsohn@5.0.1 --production --excludePrivatePackages --onlyAllow "$ALLOWED_LICENCES" --summary
+              npx --yes --ignore-scripts license-checker-rseidelsohn@5.0.1 --excludePrivatePackages --failOn "$FORBIDDEN_LICENCES" --summary
             )
             echo "::endgroup::"
           done
@@ -316,7 +318,9 @@ jobs:
       # even when the job fails before the throw-away-secrets step has run. That step overrides both
       # through GITHUB_ENV for the real stack; these values never reach a running container.
       POSTGRES_PASSWORD: placeholder-overridden-before-the-stack-starts
+      VALKEY_PASSWORD: placeholder-overridden-before-the-stack-starts
       DLE_MASTER_SECRET: placeholder-overridden-before-the-stack-starts-32chars
+      DLE_EDGE_SECRET: placeholder-overridden-before-the-stack-starts-edge-32
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -351,10 +355,12 @@ jobs:
       - name: Throw-away secrets for this stack
         # Both are required by the compose file (:? interpolation). Random, masked, never reused.
         run: |
-          pg="$(openssl rand -hex 24)"; ms="$(openssl rand -base64 48 | tr -d '\n')"
-          echo "::add-mask::$pg"; echo "::add-mask::$ms"
+          pg="$(openssl rand -hex 24)"; vk="$(openssl rand -hex 24)"; ms="$(openssl rand -base64 48 | tr -d '\n')"; es="$(openssl rand -base64 48 | tr -d '\n')"
+          echo "::add-mask::$pg"; echo "::add-mask::$vk"; echo "::add-mask::$ms"; echo "::add-mask::$es"
           echo "POSTGRES_PASSWORD=$pg" >> "$GITHUB_ENV"
+          echo "VALKEY_PASSWORD=$vk" >> "$GITHUB_ENV"
           echo "DLE_MASTER_SECRET=$ms" >> "$GITHUB_ENV"
+          echo "DLE_EDGE_SECRET=$es" >> "$GITHUB_ENV"
 
       - name: Start the stack (postgres, valkey, migrate, control, edge, caddy)
         run: |

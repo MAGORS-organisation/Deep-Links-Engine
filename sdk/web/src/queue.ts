@@ -1,4 +1,4 @@
-import { DleError, MAX_EVENTS_PER_BATCH } from './api.js';
+import { DleError, MAX_EVENTS_PER_BATCH, toIsoTimestamp } from './api.js';
 import type { Logger } from './log.js';
 import type { KeyValueStore } from './storage.js';
 import { readJson, writeJson } from './storage.js';
@@ -12,11 +12,15 @@ import type { DleEvent, DleEventType } from './types.js';
  *   burst of events costs one request rather than one each.
  * - Retriable failures (network, timeout, 408, 429, 5xx) keep the events and back off
  *   exponentially, honouring `Retry-After`. Non-retriable failures (400, 401, 403, 413) drop
- *   the batch: a body the server refuses today it will refuse tomorrow.
+ *   the batch: a body the server refuses today it will refuse tomorrow. A 429 also halves the
+ *   batch size for the rest of the page view, because a deployment may set
+ *   `EventsBurstLimit` below 100 and refuses any larger batch outright.
  * - On `pagehide` / hidden tab the queue sends one batch with `fetch` `keepalive`, which is
  *   the only unload-safe transport that can carry the `Authorization` header. The batch is
- *   removed optimistically, because no acknowledgement can be awaited past unload and a
- *   duplicate would inflate counts. Anything left goes out on the next page load.
+ *   kept under the browser's 64 KiB keepalive body cap and removed optimistically, because no
+ *   acknowledgement can be awaited past unload and a duplicate would inflate counts. If the
+ *   page is still alive when the request fails retriably, the batch is put back. Anything left
+ *   goes out on the next page load.
  * - The queue holds events only, never an identifier. `install_id` is attached at send time.
  * - Events older than `maxAgeMs` (30 days, `RecordEvents.PastTolerance`) are pruned: the
  *   server would reject them and they would only spend rate-limit budget.
@@ -29,6 +33,12 @@ export const QUEUE_KEY = 'queue';
 export const DEFAULT_MAX_EVENT_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const MAX_BACKOFF_MS = 5 * 60 * 1000;
+
+/** Event bytes per keepalive batch: the browser caps in-flight keepalive bodies at 64 KiB. */
+const MAX_KEEPALIVE_BYTES = 60_000;
+
+const utf8Length = (value: string): number =>
+  typeof TextEncoder === 'function' ? new TextEncoder().encode(value).length : value.length * 3;
 
 const EVENT_TYPES: readonly DleEventType[] = ['link_open', 'first_open', 'session', 'conversion', 'custom'];
 
@@ -105,6 +115,7 @@ export function createQueue(options: QueueOptions): EventQueue {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let inflight: Promise<boolean> | null = null;
   let attempt = 0;
+  let batchLimit = MAX_EVENTS_PER_BATCH;
   let nextAttemptAt = 0;
   let destroyed = false;
 
@@ -135,18 +146,35 @@ export function createQueue(options: QueueOptions): EventQueue {
     persist();
   };
 
+  /** The oldest events that fit one keepalive body, at least one. */
+  const keepaliveBatch = (): DleEvent[] => {
+    const batch: DleEvent[] = [];
+    let bytes = 0;
+    for (const event of items.slice(0, batchLimit)) {
+      bytes += utf8Length(JSON.stringify(event)) + 1;
+      if (batch.length > 0 && bytes > MAX_KEEPALIVE_BYTES) break;
+      batch.push(event);
+    }
+    return batch;
+  };
+
   async function run(keepalive: boolean): Promise<boolean> {
     while (items.length > 0) {
-      const batch = items.slice(0, MAX_EVENTS_PER_BATCH);
       if (keepalive) {
-        // The page is going away: one keepalive batch (the browser caps in-flight keepalive
-        // bodies at 64 KiB per origin), removed up front — see the module comment.
+        // The page is going away: one keepalive batch, removed up front (see the module comment).
+        const batch = keepaliveBatch();
         remove(batch);
         void send(batch, true).catch((error: unknown) => {
           logger?.debug('keepalive flush failed', error instanceof Error ? error.message : error);
+          // Still running, so the page survived (a hidden tab): put a retriable batch back.
+          if (destroyed || !mayFlush() || (error instanceof DleError && !error.retriable)) return;
+          items = [...batch, ...items].slice(-maxSize);
+          persist();
+          schedule(flushIntervalMs);
         });
         return items.length === 0;
       }
+      const batch = items.slice(0, batchLimit);
       try {
         await send(batch, false);
         remove(batch);
@@ -157,6 +185,9 @@ export function createQueue(options: QueueOptions): EventQueue {
           logger?.warn(`dropping ${batch.length} event(s): ${error.message}`, error.status ?? error.code);
           remove(batch);
           continue;
+        }
+        if (error instanceof DleError && error.status === 429 && batch.length > 1) {
+          batchLimit = Math.ceil(batch.length / 2);
         }
         attempt += 1;
         const fromServer = error instanceof DleError ? error.retryAfterMs : undefined;
@@ -212,7 +243,9 @@ export function createQueue(options: QueueOptions): EventQueue {
   return {
     enqueue(event) {
       if (destroyed) return;
-      const stamped: DleEvent = event.ts === undefined ? { ...event, ts: new Date(now()).toISOString() } : event;
+      // The server reads `ts` as a `DateTimeOffset`; one unreadable value would fail the whole
+      // batch, so anything that is not a date is replaced by the enqueue time.
+      const stamped: DleEvent = { ...event, ts: toIsoTimestamp(event.ts) ?? new Date(now()).toISOString() };
       items.push(stamped);
       if (items.length > maxSize) {
         items.splice(0, items.length - maxSize);

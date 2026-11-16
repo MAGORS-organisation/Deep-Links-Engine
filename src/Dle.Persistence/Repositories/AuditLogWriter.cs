@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+using Dle.Domain.Ports;
+
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
@@ -12,7 +14,7 @@ namespace Dle.Persistence.Repositories;
 /// user identifier. An erasure request therefore only ever touches the click stream and the
 /// attributions, where no retention obligation stands in the way.
 /// </remarks>
-public sealed class AuditLogWriter
+public sealed class AuditLogWriter : IAuditLogWriter
 {
     /// <summary>
     /// Metadata keys that would reintroduce end user data into the audit trail and are refused.

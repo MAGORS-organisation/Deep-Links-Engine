@@ -120,12 +120,22 @@ public static class RoutingUrlBuilder
         ArgumentNullException.ThrowIfNull(client);
         ArgumentNullException.ThrowIfNull(consent);
 
-        string? storeUrl = AbsoluteWebUrl(decision.StoreUrl) ?? client.Platform switch
+        string? ruleStoreUrl = AbsoluteWebUrl(decision.StoreUrl);
+        string? platformStoreUrl = client.Platform switch
         {
             Platform.Ios => AbsoluteWebUrl(link.IosStoreUrl),
             Platform.Android => AbsoluteWebUrl(link.AndroidStoreUrl),
             _ => null,
         };
+
+        // A rule names exactly one store URL, and a rule with no platform condition serves every
+        // platform. When that URL is plainly the other platform's store and the paired application
+        // has a listing for this one, the visitor goes to the store that can install something on
+        // the device in their hand rather than to one that cannot.
+        string? storeUrl = ruleStoreUrl is not null
+            && !(platformStoreUrl is not null && IsOtherPlatformStore(ruleStoreUrl, client.Platform))
+                ? ruleStoreUrl
+                : platformStoreUrl ?? ruleStoreUrl;
 
         if (storeUrl is null)
         {
@@ -357,6 +367,25 @@ public static class RoutingUrlBuilder
         }
 
         Set(parts.Query, ReferrerParameter, encoded);
+    }
+
+    /// <summary>
+    /// Whether a store URL belongs to the store of the platform the client is <em>not</em> on.
+    /// </summary>
+    private static bool IsOtherPlatformStore(string storeUrl, Platform platform)
+    {
+        if (!Uri.TryCreate(storeUrl, UriKind.Absolute, out Uri? uri))
+        {
+            return false;
+        }
+
+        return platform switch
+        {
+            Platform.Android => uri.Host.Equals("apps.apple.com", StringComparison.OrdinalIgnoreCase)
+                || uri.Host.Equals("itunes.apple.com", StringComparison.OrdinalIgnoreCase),
+            Platform.Ios => uri.Host.Equals("play.google.com", StringComparison.OrdinalIgnoreCase),
+            _ => false,
+        };
     }
 
     private static List<string> ExpandReferrer(

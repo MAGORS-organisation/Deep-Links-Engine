@@ -7,8 +7,10 @@ package sk.magors.dle
  * afterwards (spec §E.6.2). For this SDK concretely:
  *
  * - `attribution == false` means the `signals` object is **omitted** from `POST /v1/resolve`
- *   entirely (not sent empty), the Install Referrer is not transmitted, and no click can be linked
- *   to this installation (TC-145, TC-146).
+ *   entirely (not sent empty), the Install Referrer is neither read nor transmitted, and the
+ *   engine links nothing to this installation: it answers `none` with a non-final `expires_in`,
+ *   and a claim code or login key is not redeemed (TC-145, TC-146). Note that the engine only
+ *   sees a recorded decision, one with [timestampMillis].
  * - `analytics == false` means behavioural events (`first_open`, `session`, `conversion`,
  *   `custom`) are dropped at [DleClient.track] time, never buffered. `link_open` is exempt: the
  *   engine treats a direct open as first party measurement of the link itself and FR-223 requires

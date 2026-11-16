@@ -45,4 +45,17 @@ public sealed class EdgeTelemetryOptions
 
     /// <summary>Whether .NET runtime instrumentation is added.</summary>
     public bool InstrumentRuntime { get; set; } = true;
+
+    /// <summary>
+    /// Whether the native Prometheus <c>GET /metrics</c> scrape endpoint is enabled. Off by default:
+    /// the endpoint is anonymous, and an ingress that forwards every path to the edge would publish it.
+    /// </summary>
+    public bool ExposePrometheusMetrics { get; set; }
+
+    /// <summary>
+    /// Bearer token required by <c>GET /metrics</c>. Empty allows unauthenticated scraping when
+    /// <see cref="ExposePrometheusMetrics"/> is <see langword="true"/>, which is safe only when no
+    /// ingress forwards <c>/metrics</c> to this service.
+    /// </summary>
+    public string? PrometheusScrapeToken { get; set; }
 }

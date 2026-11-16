@@ -3,9 +3,9 @@ import {
   apiKeys,
   CONSENT_MODES,
   getAuthConfig,
-  handleOidcCallback,
   initiateOidcLogin,
   isApiError,
+  privacy,
   ROLES,
   setConnection,
   tenants,
@@ -14,6 +14,7 @@ import {
   type AuthConfig,
   type Connection,
   type ConsentMode,
+  type InstallErasureResponse,
   type Role,
   type TenantResponse,
 } from '../api';
@@ -68,6 +69,7 @@ export default function SettingsPage() {
         <>
           {me.data && <TenantSection tenant={me.data} onUpdated={me.reload} />}
           <ApiKeysSection />
+          <PrivacyErasureSection />
           <InstanceSection />
         </>
       ) : null}
@@ -84,29 +86,7 @@ function ConnectionSection({ connection, me }: { connection: Connection | null; 
   const [apiKey, setApiKey] = useState(connection?.apiKey ?? '');
   const [remember, setRemember] = useState(connection?.remember ?? false);
   const [authConfig, setAuthConfig] = useState<AuthConfig | null>(null);
-  const [showCustomOidc, setShowCustomOidc] = useState(false);
-  const [customAuthority, setCustomAuthority] = useState('');
-  const [customClientId, setCustomClientId] = useState('');
   const [isExchangingOidc, setIsExchangingOidc] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    handleOidcCallback()
-      .then((res) => {
-        if (!cancelled && res) {
-          setConnection({ baseUrl: res.baseUrl, apiKey: res.token, remember: false });
-          toast.success(t('connection.oidcSuccess'));
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          toast.error(t('connection.oidcFailed', { error: String(err?.message ?? err) }));
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [t, toast]);
 
   useEffect(() => {
     let cancelled = false;
@@ -129,9 +109,15 @@ function ConnectionSection({ connection, me }: { connection: Connection | null; 
     setApiKey('');
   };
 
-  const startOidc = (authority: string, clientId: string, scopes: string[] = ['openid', 'profile', 'email']) => {
+  // Sign-in is offered only for the provider the control plane is configured to trust: the API
+  // refuses a token from any other issuer, and the console's CSP allows connections only to that one.
+  const oidcAuthority = authConfig?.oidc_enabled ? authConfig.authority : null;
+  const oidcClientId = authConfig?.oidc_enabled ? authConfig.client_id : null;
+
+  const startOidc = (authority: string, clientId: string) => {
     setIsExchangingOidc(true);
-    initiateOidcLogin(baseUrl, authority, clientId, scopes).catch((err) => {
+    const scopes = authConfig?.scopes.length ? authConfig.scopes : undefined;
+    initiateOidcLogin(baseUrl, authority, clientId, scopes, authConfig?.audience ?? null).catch((err) => {
       setIsExchangingOidc(false);
       toast.error(t('connection.oidcFailed', { error: String(err?.message ?? err) }));
     });
@@ -178,60 +164,19 @@ function ConnectionSection({ connection, me }: { connection: Connection | null; 
         </div>
       </form>
 
-      {/* OIDC Single Sign-On */}
-      <div className="stack" style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
-        <h3 className="card-title" style={{ fontSize: '1rem' }}>
-          {t('connection.oidc.title')}
-        </h3>
-        <p className="small muted">{t('connection.oidc.description')}</p>
-
-        {authConfig?.oidc_enabled && authConfig.authority && authConfig.client_id ? (
+      {oidcAuthority && oidcClientId && (
+        <div className="stack" style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+          <h3 className="card-title" style={{ fontSize: '1rem' }}>
+            {t('connection.oidc.title')}
+          </h3>
+          <p className="small muted">{t('connection.oidc.description')}</p>
           <div className="row">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              disabled={isExchangingOidc}
-              onClick={() => startOidc(authConfig.authority!, authConfig.client_id!, authConfig.scopes)}
-            >
+            <button type="button" className="btn btn-secondary" disabled={isExchangingOidc} onClick={() => startOidc(oidcAuthority, oidcClientId)}>
               {t('connection.oidc.signIn')}
             </button>
           </div>
-        ) : (
-          <div className="stack">
-            <button
-              type="button"
-              className="btn btn-ghost"
-              style={{ alignSelf: 'flex-start' }}
-              onClick={() => setShowCustomOidc(!showCustomOidc)}
-            >
-              {showCustomOidc ? '− ' : '+ '}
-              {t('connection.oidc.customToggle')}
-            </button>
-            {showCustomOidc && (
-              <div className="stack" style={{ paddingLeft: '0.5rem' }}>
-                <div className="form-grid">
-                  <Field label={t('connection.oidc.authority')} hint={t('connection.oidc.authorityHint')}>
-                    {(p) => <input {...p} className="input mono" type="url" value={customAuthority} onChange={(e) => setCustomAuthority(e.target.value)} placeholder="https://auth.example.com/realms/dle" spellCheck={false} />}
-                  </Field>
-                  <Field label={t('connection.oidc.clientId')}>
-                    {(p) => <input {...p} className="input mono" type="text" value={customClientId} onChange={(e) => setCustomClientId(e.target.value)} placeholder="dle-admin" spellCheck={false} />}
-                  </Field>
-                </div>
-                <div className="row">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={!customAuthority.trim() || !customClientId.trim() || isExchangingOidc}
-                    onClick={() => startOidc(customAuthority.trim(), customClientId.trim())}
-                  >
-                    {t('connection.oidc.signIn')}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {connection && me.loading && <p className="small muted">{t('connection.checking')}</p>}
       {connection && me.data && (
@@ -240,6 +185,96 @@ function ConnectionSection({ connection, me }: { connection: Connection | null; 
         </p>
       )}
       {connection && me.error ? <ErrorNotice error={me.error} onRetry={me.reload} compact /> : null}
+    </section>
+  );
+}
+
+function PrivacyErasureSection() {
+  const { t } = useI18n();
+  const toast = useToast();
+  const [installId, setInstallId] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>(undefined);
+  const [summary, setSummary] = useState<InstallErasureResponse | null>(null);
+
+  const erase = async () => {
+    const trimmed = installId.trim();
+    if (!trimmed) return;
+    setBusy(true);
+    setError(undefined);
+    try {
+      const res = await privacy.eraseInstall(trimmed);
+      const total = res.erased_installs + res.erased_attributions + res.erased_sdk_events;
+      toast.success(t('settings.privacy.erasedToast', { total }));
+      setSummary(res);
+      setInstallId('');
+      setConfirmOpen(false);
+    } catch (err) {
+      setError(err);
+      setConfirmOpen(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="card stack" aria-labelledby="settings-privacy">
+      <h2 id="settings-privacy" className="card-title">
+        {t('settings.privacy.title')}
+      </h2>
+      <p className="small muted" style={{ margin: 0 }}>
+        {t('settings.privacy.description')}
+      </p>
+      {error !== undefined && <ErrorNotice error={error} compact />}
+      {summary && (
+        <div className="callout callout-ok" role="status">
+          <span>
+            {t('settings.privacy.summary', {
+              installs: summary.erased_installs,
+              attributions: summary.erased_attributions,
+              events: summary.erased_sdk_events,
+            })}
+          </span>
+        </div>
+      )}
+      <form
+        className="row"
+        style={{ alignItems: 'flex-end', gap: 'var(--sp-3)', flexWrap: 'wrap' }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (installId.trim()) setConfirmOpen(true);
+        }}
+      >
+        <div className="grow" style={{ minWidth: 260 }}>
+          <Field label={t('settings.privacy.installId')} hint={t('settings.privacy.installIdHint')}>
+            {(p) => (
+              <input
+                {...p}
+                className="input mono"
+                value={installId}
+                onChange={(e) => setInstallId(e.target.value)}
+                required
+                autoComplete="off"
+                spellCheck={false}
+              />
+            )}
+          </Field>
+        </div>
+        <button type="submit" className="btn" disabled={busy || !installId.trim()}>
+          {t('settings.privacy.erase')}
+        </button>
+      </form>
+      <ConfirmDialog
+        open={confirmOpen}
+        danger
+        busy={busy}
+        title={t('settings.privacy.confirmTitle')}
+        detail={t('settings.privacy.confirmDetail', { installId: installId.trim() })}
+        confirmLabel={t('settings.privacy.erase')}
+        onConfirm={erase}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </section>
   );
 }

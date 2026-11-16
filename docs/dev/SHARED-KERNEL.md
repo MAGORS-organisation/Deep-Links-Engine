@@ -10,8 +10,8 @@
 
 | Pravidlo | Hodnota |
 |---|---|
-| TFM | `net10.0` |
-| `LangVersion` | `latest` (C# 14) |
+| TFM | `net11.0` |
+| `LangVersion` | `latest` (C# 15) |
 | Nullable | `enable` |
 | ImplicitUsings | `enable` |
 | `TreatWarningsAsErrors` | `true` |
@@ -23,7 +23,7 @@
 | Kultúra | všetky `ToString`/`Parse` s `CultureInfo.InvariantCulture` |
 
 `Dle.Domain` **nesmie** referencovať ASP.NET Core, EF Core, Npgsql, Dapper ani žiadny NuGet balík
-okrem `System.Text.Json` (súčasť BCL) a `Microsoft.Extensions.Logging.Abstractions`.
+okrem `System.Text.Json` (súčasť BCL; `Microsoft.Extensions.Logging.Abstractions` je na `net11.0` súčasťou `Microsoft.NETCore.App`).
 
 ---
 

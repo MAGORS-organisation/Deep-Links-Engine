@@ -9,6 +9,7 @@ global using System.Globalization;
 global using System.Text.Json;
 
 global using Dle.Domain.Analytics;
+global using Dle.Domain.Crypto;
 global using Dle.Domain.Links;
 global using Dle.Domain.Ports;
 global using Dle.Domain.Primitives;

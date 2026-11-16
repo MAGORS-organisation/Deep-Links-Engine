@@ -171,6 +171,30 @@ public sealed class SdkWireContractTests
 
     [Fact]
     [Trait("Contract", "B.7.2")]
+    public void ResolveLinkRequestDto_DeserializesTheBodyTheMobileSdksSend()
+    {
+        // The exact literal asserted by the iOS (WireContractTests.swift) and Android
+        // (WireModelsTest.kt) SDK tests for POST /v1/resolve-link.
+        const string body =
+            """{"url":"https://go.example.com/AbC12345","install_id":"9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1","platform":"android","app_version":"3.4.1"}""";
+
+        ResolveLinkRequestDto? request = JsonSerializer.Deserialize<ResolveLinkRequestDto>(body, DleJson.Default);
+
+        Assert.NotNull(request);
+        Assert.Equal("https://go.example.com/AbC12345", request.Url);
+        Assert.Equal("9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1", request.InstallId);
+        Assert.Equal("android", request.Platform);
+        Assert.Equal("3.4.1", request.AppVersion);
+
+        ResolveLinkRequestDto? anonymous = JsonSerializer.Deserialize<ResolveLinkRequestDto>(
+            """{"url":"https://go.example.com/AbC12345","platform":"ios"}""",
+            DleJson.Default);
+
+        Assert.Null(anonymous?.InstallId);
+    }
+
+    [Fact]
+    [Trait("Contract", "B.7.2")]
     public void ResolveResponseDto_OmitsAbsentOptionalMembers()
     {
         // An unmatched install is a 200 with matched=false, and the SDKs treat the absence of

@@ -84,7 +84,7 @@ public sealed partial class DapperClickLookup : IClickLookup
         """;
 
     /// <summary>Key under which the resolved deep link path is carried in <c>click_events.extra</c>.</summary>
-    private const string DeeplinkPathKey = "deeplink_path";
+    public const string DeeplinkPathKey = "deeplink_path";
 
     private readonly NpgsqlDataSource _dataSource;
     private readonly ILogger<DapperClickLookup> _logger;

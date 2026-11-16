@@ -1,6 +1,9 @@
+using Dle.Control.Configuration;
 using Dle.Control.Features.Shared;
 using Dle.Control.Identity;
 using Dle.Control.Infrastructure;
+
+using Microsoft.Extensions.Options;
 
 namespace Dle.Control.Features.Domains;
 
@@ -13,13 +16,97 @@ public static class VerifyDomain
     /// <summary>How many historical runs one request may read.</summary>
     private const int HistoryLimit = 50;
 
+    /// <summary>Verifies DNS TXT ownership (<c>_dle-verify.&lt;host&gt;</c>) and activates the domain.</summary>
+    /// <param name="id">The domain identifier.</param>
+    /// <param name="http">The request, for the authenticated caller.</param>
+    /// <param name="domains">Domain storage.</param>
+    /// <param name="ownership">DNS TXT ownership verifier.</param>
+    /// <param name="audit">Administrative audit trail.</param>
+    /// <param name="cache">Drops any cached domain config the edge holds.</param>
+    /// <param name="clock">Time provider.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Verification result or 404.</returns>
+    public static async Task<IResult> VerifyOwnershipAsync(
+        Guid id,
+        HttpContext http,
+        DomainRepository domains,
+        DomainOwnershipVerifier ownership,
+        AuditLogWriter audit,
+        ILinkCacheInvalidator cache,
+        TimeProvider clock,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(http);
+        ArgumentNullException.ThrowIfNull(domains);
+        ArgumentNullException.ThrowIfNull(ownership);
+        ArgumentNullException.ThrowIfNull(audit);
+        ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(clock);
+
+        DleCaller caller = http.RequireDleCaller();
+        LinkDomain? domain = await domains.GetAsync(id, cancellationToken);
+        if (domain is null)
+        {
+            return DleProblem.NotFound("There is no domain with that identifier.");
+        }
+
+        DateTimeOffset checkedAt = clock.GetUtcNow();
+        bool matched = await ownership.VerifyAsync(domain, cancellationToken);
+        string txtHost = DomainOwnershipVerifier.GetTxtHost(domain.Host);
+
+        if (matched)
+        {
+            domain.OwnershipVerifiedAt ??= checkedAt;
+            domain.IsActive = true;
+            await domains.UpdateAsync(domain, cancellationToken);
+
+            await AdministrativeAudit.RecordAsync(
+                audit,
+                caller,
+                AuditActions.DomainOwnershipVerified,
+                AuditActions.DomainSubject,
+                domain.Id.ToString(),
+                new Dictionary<string, string>(StringComparer.Ordinal) { ["host"] = domain.Host },
+                cancellationToken);
+
+            await cache.InvalidateHostAsync(domain.Host, cancellationToken);
+        }
+
+        VerificationCheckResult check = matched
+            ? new VerificationCheckResult
+            {
+                Kind = "ownership",
+                Status = DomainVerificationService.OkStatus,
+                Detail = $"DNS TXT record verified at {txtHost}.",
+            }
+            : new VerificationCheckResult
+            {
+                Kind = "ownership",
+                Status = DomainVerificationService.FailedStatus,
+                Codes = ["dns.txt_mismatch"],
+                Detail = $"Expected TXT record at {txtHost} with value '{ownership.GetExpectedTxtValue(domain.TenantId, domain.Host)}'.",
+            };
+
+        return TypedResults.Ok(new DomainVerificationResponse
+        {
+            DomainId = domain.Id,
+            Host = domain.Host,
+            Ok = matched,
+            CheckedAt = checkedAt,
+            Checks = [check],
+        });
+    }
+
     /// <summary>Runs every association check against a domain and records the outcome.</summary>
     /// <param name="id">The domain identifier.</param>
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="domains">Domain storage.</param>
     /// <param name="verifier">The verification service.</param>
+    /// <param name="ownership">DNS TXT ownership verifier.</param>
+    /// <param name="controlOptions">Control-plane options.</param>
     /// <param name="audit">The administrative audit trail (FR-246).</param>
     /// <param name="cache">Drops the cached association files the edge serves for the host.</param>
+    /// <param name="clock">Time provider.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>200 with the result, or 404 when there is no such domain.</returns>
     /// <remarks>
@@ -33,15 +120,21 @@ public static class VerifyDomain
         HttpContext http,
         DomainRepository domains,
         DomainVerificationService verifier,
+        DomainOwnershipVerifier ownership,
+        IOptions<DleControlOptions> controlOptions,
         AuditLogWriter audit,
         ILinkCacheInvalidator cache,
+        TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(http);
         ArgumentNullException.ThrowIfNull(domains);
         ArgumentNullException.ThrowIfNull(verifier);
+        ArgumentNullException.ThrowIfNull(ownership);
+        ArgumentNullException.ThrowIfNull(controlOptions);
         ArgumentNullException.ThrowIfNull(audit);
         ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(clock);
 
         DleCaller caller = http.RequireDleCaller();
 
@@ -50,6 +143,15 @@ public static class VerifyDomain
         if (domain is null)
         {
             return DleProblem.NotFound("There is no domain with that identifier.");
+        }
+
+        if (controlOptions.Value.RequireDomainOwnershipVerification
+            && domain.OwnershipVerifiedAt is null
+            && await ownership.VerifyAsync(domain, cancellationToken))
+        {
+            domain.OwnershipVerifiedAt = clock.GetUtcNow();
+            domain.IsActive = true;
+            await domains.UpdateAsync(domain, cancellationToken);
         }
 
         DomainVerificationRun run = await verifier.VerifyAsync(domain, cancellationToken);

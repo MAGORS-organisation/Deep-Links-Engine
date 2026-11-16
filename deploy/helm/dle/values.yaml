@@ -82,17 +82,29 @@ secrets:
   existingSecret: ""
   # Key names inside the Secret (existing or rendered). Optional keys may be absent.
   keys:
-    masterSecret: master-secret                          # required
+    masterSecret: master-secret                          # required, control plane only
+    edgeSecret: edge-secret                              # required, edge (+ three control keys)
     postgresConnectionString: postgres-connection-string # required
     postgresReadConnectionString: postgres-read-connection-string  # optional, edge only
     valkeyConnectionString: valkey-connection-string     # optional (no L2 cache without it)
     clickHouseConnectionString: clickhouse-connection-string  # optional, control only
-  # Dle:Crypto:MasterSecret — at least 32 characters. Every keyed primitive in DLE (slug
-  # permutation, IP hashing salt, webhook bootstrap key, signing key wrapping) derives from it.
+    metricsScrapeToken: metrics-scrape-token             # required when serviceMonitor.enabled
+  # Dle:Crypto:MasterSecret of the CONTROL PLANE — at least 32 characters. The slug permutation
+  # and the token/webhook signing keys derive from it. It is never mounted into the edge.
   # Generate with:  openssl rand -base64 48
   # Changing it later changes the slug permutation: back it up together with the database.
   # Ignored when existingSecret is set.
   masterSecret: ""
+  # The edge's own secret — at least 32 characters, different from masterSecret. The edge derives
+  # the click-identifier, IP-hash and claim-code keys from it; the control plane receives it for
+  # exactly those three keys (Dle:Crypto:ClickIdSecret / IpHashSecret / ClaimCodeSecret), so a
+  # compromised edge pod cannot forge webhooks or tokens. Ignored when existingSecret is set.
+  edgeSecret: ""
+  # Bearer token GET /metrics requires on both services. Required when serviceMonitor.enabled,
+  # because the Ingress would otherwise publish /metrics. Generate with:  openssl rand -base64 32
+  # Ignored when existingSecret is set: put a non-empty token in that Secret under
+  # keys.metricsScrapeToken (the pods refuse to start without the key; an empty value is anonymous).
+  metricsScrapeToken: ""
 
 
 # -----------------------------------------------------------------------------
@@ -435,6 +447,9 @@ control:
       requireHttpsMetadata: true
     analytics:
       # postgres (default) or clickhouse (needs externalClickHouse.connectionString).
+      # clickhouse is EXPERIMENTAL and query-only: the edge still writes clicks to PostgreSQL, you
+      # need your own PostgreSQL -> ClickHouse pipeline, the ClickHouse schema is not applied for
+      # you, and PostgreSQL retention and partition maintenance are switched off.
       provider: postgres
     # Free-form environment for the control plane only.
     extra: {}
@@ -539,12 +554,11 @@ ingress:
       clusterIssuer: ""
       issuer: ""
   # Prefix paths that go to the control plane on `host`. /.well-known/jwks.json is always added.
+  # API documentation (/openapi, /scalar) is disabled in Production unless Dle:Control:ExposeApiDocs=true.
   controlPaths:
     - /api
     - /v1
     - /admin
-    - /scalar
-    - /openapi
     - /abuse-reports
   # Set to false to keep the admin console, API reference and API off the link host entirely
   # (then set controlHost, or reach the control Service another way). jwks.json stays on `host`.
@@ -568,6 +582,10 @@ ingress:
 
 networkPolicy:
   enabled: true
+  # When external PostgreSQL/Valkey/ClickHouse are used without cidrs/namespaceSelector/podSelector,
+  # keep this false to omit unrestricted port-wide egress rules (0.0.0.0/0). Set true only during
+  # temporary cluster setup if the external data store endpoint cannot yet be named.
+  allowUnscopedDataStoreEgress: false
   ingressController:
     namespaceSelector:
       matchLabels:
@@ -621,10 +639,13 @@ networkPolicy:
 # -----------------------------------------------------------------------------
 # Prometheus Operator ServiceMonitor (off by default)
 # -----------------------------------------------------------------------------
-# NOTE: the images export telemetry over OTLP (config.telemetry.otlpEndpoint) and expose NO
-# Prometheus /metrics endpoint today. Enable this only after adding a scrape endpoint to the
-# services; the usual bridge is an OpenTelemetry Collector with a Prometheus exporter, in which
-# case Prometheus should scrape the collector, not these pods.
+# Both pods can serve GET /metrics on port `http` (Dle:Telemetry:ExposePrometheusMetrics, off by
+# default), alongside OTLP export (config.telemetry.otlpEndpoint). Enabling this ServiceMonitor
+# turns /metrics on in both pods and makes it require a bearer token: set
+# secrets.metricsScrapeToken, or that key in secrets.existingSecret. The token is not optional:
+# the Ingress sends every non-control path to the edge, and with ingress.controlHost every path on
+# that host to the control plane, so /metrics is reachable from the internet. Prometheus reads the
+# token from the release's Secret, so keep `namespace` empty unless you copy the Secret there.
 
 serviceMonitor:
   enabled: false

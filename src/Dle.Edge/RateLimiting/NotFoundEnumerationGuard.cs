@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Threading.RateLimiting;
 
 using Dle.Edge.Telemetry;
+using Dle.Persistence.Fast.Caching;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -40,8 +41,12 @@ public sealed partial class NotFoundEnumerationGuard : IDisposable
     private readonly TimeProvider _timeProvider;
     private readonly EdgeMetrics _metrics;
     private readonly ILogger<NotFoundEnumerationGuard> _logger;
+    private readonly ValkeyRateLimitStore? _distributedStore;
     private readonly int _capacity;
     private readonly int _shadowBanMinutes;
+    private readonly int _tokensPerPeriod;
+    private readonly int _burst;
+    private readonly TimeSpan _period;
     private bool _disposed;
 
     /// <summary>Creates the guard.</summary>
@@ -49,12 +54,14 @@ public sealed partial class NotFoundEnumerationGuard : IDisposable
     /// <param name="timeProvider">Clock driving ban expiry (SHARED-KERNEL §17.2).</param>
     /// <param name="metrics">Edge instruments; counts requests answered from the ban list.</param>
     /// <param name="logger">Logger.</param>
+    /// <param name="distributedStore">Optional Valkey store for sharing 404 budgets and shadow bans across replicas.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public NotFoundEnumerationGuard(
         IOptions<EdgeRateLimitOptions> options,
         TimeProvider timeProvider,
         EdgeMetrics metrics,
-        ILogger<NotFoundEnumerationGuard> logger)
+        ILogger<NotFoundEnumerationGuard> logger,
+        ValkeyRateLimitStore? distributedStore = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(timeProvider);
@@ -66,20 +73,21 @@ public sealed partial class NotFoundEnumerationGuard : IDisposable
         _timeProvider = timeProvider;
         _metrics = metrics;
         _logger = logger;
+        _distributedStore = distributedStore;
         _capacity = notFound.TrackedPrefixCapacity;
         _shadowBanMinutes = notFound.ShadowBanMinutes;
         ShadowBanWindow = TimeSpan.FromMinutes(notFound.ShadowBanMinutes);
 
-        int tokensPerPeriod = notFound.TokensPerPeriod;
-        int burst = Math.Max(notFound.Burst, tokensPerPeriod);
-        var period = TimeSpan.FromSeconds(notFound.ReplenishmentPeriodSeconds);
+        _tokensPerPeriod = notFound.TokensPerPeriod;
+        _burst = Math.Max(notFound.Burst, _tokensPerPeriod);
+        _period = TimeSpan.FromSeconds(notFound.ReplenishmentPeriodSeconds);
 
         _budget = PartitionedRateLimiter.Create<string, string>(key =>
             RateLimitPartition.GetTokenBucketLimiter(key, _ => new TokenBucketRateLimiterOptions
             {
-                TokenLimit = burst,
-                TokensPerPeriod = tokensPerPeriod,
-                ReplenishmentPeriod = period,
+                TokenLimit = _burst,
+                TokensPerPeriod = _tokensPerPeriod,
+                ReplenishmentPeriod = _period,
 
                 // No queue. A caller that is out of tokens is told so immediately; making it wait
                 // would hold a request open on the resolve path, which is the one place §17.8 rules
@@ -116,6 +124,81 @@ public sealed partial class NotFoundEnumerationGuard : IDisposable
         // means a prefix that stops scanning stops being tracked without any bookkeeping at all.
         _ = _bans.TryRemove(new KeyValuePair<string, long>(networkKey, expiresAt));
         return false;
+    }
+
+    /// <summary>
+    /// Checks both the in-process shadow ban list and, when configured, the shared Valkey ban key
+    /// for <paramref name="networkKey"/>.
+    /// </summary>
+    /// <param name="networkKey">The client's network prefix.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns><see langword="true"/> when the prefix is banned on this instance or cluster-wide.</returns>
+    public async ValueTask<bool> IsShadowBannedAsync(string networkKey, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(networkKey))
+        {
+            return false;
+        }
+
+        if (IsShadowBanned(networkKey))
+        {
+            return true;
+        }
+
+        if (_distributedStore is not { IsAvailable: true })
+        {
+            return false;
+        }
+
+        bool? remoteBanned = await _distributedStore.IsBannedAsync("nf:" + networkKey, cancellationToken).ConfigureAwait(false);
+        if (remoteBanned == true)
+        {
+            RememberLocalBan(networkKey, log: false);
+            _metrics.RecordShadowBanned();
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Charges one 404 to a network prefix across replicas when Valkey is available and falls back
+    /// to the local token bucket when Valkey is absent or degraded.
+    /// </summary>
+    /// <param name="networkKey">The client's network prefix.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The budget verdict.</returns>
+    public async ValueTask<NotFoundVerdict> RegisterAsync(string networkKey, CancellationToken cancellationToken = default)
+    {
+        if (_disposed || string.IsNullOrEmpty(networkKey))
+        {
+            return NotFoundVerdict.WithinBudget;
+        }
+
+        if (_distributedStore is { IsAvailable: true })
+        {
+            ValkeyRateLimitDecision? decision = await _distributedStore.TryAcquireTokenBucketAsync(
+                "nf:" + networkKey,
+                _burst,
+                _tokensPerPeriod,
+                _period,
+                cost: 1,
+                cancellationToken).ConfigureAwait(false);
+
+            if (decision is { } result)
+            {
+                if (result.IsAcquired)
+                {
+                    return NotFoundVerdict.WithinBudget;
+                }
+
+                await _distributedStore.SetBanAsync("nf:" + networkKey, ShadowBanWindow, cancellationToken).ConfigureAwait(false);
+                RememberLocalBan(networkKey, log: true);
+                return NotFoundVerdict.Exhausted;
+            }
+        }
+
+        return Register(networkKey);
     }
 
     /// <summary>
@@ -163,10 +246,12 @@ public sealed partial class NotFoundEnumerationGuard : IDisposable
     /// The list is capacity bounded because its key space is chosen by the attacker: a scan from a
     /// large IPv6 allocation walks through many prefixes, and an unbounded dictionary would make the
     /// defence into the memory exhaustion primitive it was installed to prevent. Over capacity, expired
-    /// entries are dropped first and the whole list only as a last resort — losing bans is a degraded
-    /// defence, and a process that runs out of memory is no defence at all.
+    /// entries are dropped first and only the earliest-expiring excess entries are evicted so active
+    /// bans stay intact.
     /// </remarks>
-    private void Ban(string networkKey)
+    private void Ban(string networkKey) => RememberLocalBan(networkKey, log: true);
+
+    private void RememberLocalBan(string networkKey, bool log)
     {
         DateTimeOffset now = _timeProvider.GetUtcNow();
 
@@ -179,7 +264,10 @@ public sealed partial class NotFoundEnumerationGuard : IDisposable
 
         if (_bans.TryAdd(networkKey, expiresAt))
         {
-            EdgeLog.ShadowBanned(_logger, networkKey, _shadowBanMinutes);
+            if (log)
+            {
+                EdgeLog.ShadowBanned(_logger, networkKey, _shadowBanMinutes);
+            }
         }
         else
         {
@@ -201,15 +289,33 @@ public sealed partial class NotFoundEnumerationGuard : IDisposable
 
         if (_bans.Count >= _capacity)
         {
-            BanListOverflowed(_logger, _bans.Count);
-            _bans.Clear();
+            int overflow = _bans.Count - _capacity + 1;
+            int evicted = 0;
+
+            foreach (KeyValuePair<string, long> candidate in _bans.OrderBy(static entry => entry.Value))
+            {
+                if (evicted >= overflow)
+                {
+                    break;
+                }
+
+                if (_bans.TryRemove(candidate))
+                {
+                    evicted++;
+                }
+            }
+
+            if (evicted > 0)
+            {
+                BanListOverflowed(_logger, _bans.Count);
+            }
         }
     }
 
     [LoggerMessage(
         EventId = 1006,
         Level = LogLevel.Warning,
-        Message = "The enumeration shadow ban list reached its capacity of {Count} network prefixes and was cleared; a distributed scan is in progress.")]
+        Message = "The enumeration shadow ban list reached capacity ({Count} active network prefixes retained) and evicted oldest entries; a distributed scan is in progress.")]
     private static partial void BanListOverflowed(ILogger logger, int count);
 }
 

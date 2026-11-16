@@ -71,13 +71,6 @@ public sealed class AttributionOptions
     /// </summary>
     public int LoginWindowHours { get; set; } = 24;
 
-    /// <summary>
-    /// How long a verified SDK key stays cached, in seconds. Verification is Argon2id and therefore
-    /// deliberately expensive; without a cache the event endpoint would spend its whole budget on
-    /// it. A revoked key keeps working for at most this long.
-    /// </summary>
-    public int SdkKeyCacheSeconds { get; set; } = 300;
-
     /// <summary>Largest request body accepted by the SDK endpoints, in bytes.</summary>
     public int MaxRequestBytes { get; set; } = 128 * 1024;
 
@@ -186,17 +179,57 @@ public sealed class AttributionRateLimitOptions
     /// <summary>Replenishment period of the event bucket, in seconds.</summary>
     public int EventsPeriodSeconds { get; set; } = 60;
 
-    /// <summary>Credential verifications permitted per caller address and window (§E.9, last row).</summary>
-    public int AuthenticationPermitLimit { get; set; } = 10;
+    /// <summary>
+    /// Wrong claim codes one network prefix may present to one tenant per window before further
+    /// claim code attempts from it are refused.
+    /// </summary>
+    /// <remarks>
+    /// The per-installation resolve limit is keyed on <c>install_id</c>, which the caller chooses and
+    /// can rotate, so it does not bound guessing. This one is keyed on where the guesses come from and
+    /// only counts failures, so people who type their code correctly never spend it.
+    /// </remarks>
+    public int ClaimCodeFailurePermitLimit { get; set; } = 10;
 
-    /// <summary>Width of the authentication window, in seconds.</summary>
-    public int AuthenticationWindowSeconds { get; set; } = 60;
+    /// <summary>Width of the wrong claim code window, in seconds.</summary>
+    public int ClaimCodeFailureWindowSeconds { get; set; } = 60;
 
     /// <summary>Claim codes a caller may have issued per window.</summary>
     public int ClaimCodeIssuePermitLimit { get; set; } = 60;
 
     /// <summary>Width of the claim code issue window, in seconds.</summary>
     public int ClaimCodeIssueWindowSeconds { get; set; } = 60;
+
+    /// <summary>
+    /// Bucket size for <c>POST /v1/resolve-link</c>: direct opens one installation may resolve at once.
+    /// </summary>
+    /// <remarks>
+    /// Direct opens get their own bucket. Sharing the resolve limit (five an hour, sized for a call made
+    /// once per installation) would refuse the sixth link a user taps within an hour.
+    /// </remarks>
+    public int LinkResolveBurstLimit { get; set; } = 60;
+
+    /// <summary>Tokens added to the direct-open bucket each replenishment period.</summary>
+    public int LinkResolveTokensPerPeriod { get; set; } = 30;
+
+    /// <summary>Replenishment period of the direct-open bucket, in seconds.</summary>
+    public int LinkResolvePeriodSeconds { get; set; } = 60;
+
+    /// <summary>
+    /// Direct-open lookups per caller network (<c>/24</c> or <c>/48</c>) and minute for a request that
+    /// names no installation.
+    /// </summary>
+    /// <remarks>
+    /// An SDK key is publishable, so without an installation the network is the only partition left.
+    /// This is what keeps the endpoint from becoming a slug enumeration oracle that bypasses the edge's
+    /// 404 budget.
+    /// </remarks>
+    public int LinkResolveAnonymousPerMinute { get; set; } = 30;
+
+    /// <summary>Login-hint registrations permitted per tenant and network prefix in one window.</summary>
+    public int LoginHintPermitLimit { get; set; } = 60;
+
+    /// <summary>Width of the login-hint registration window, in seconds.</summary>
+    public int LoginHintWindowSeconds { get; set; } = 60;
 }
 
 /// <summary>
@@ -232,7 +265,6 @@ public sealed class AttributionOptionsValidator
         Range(failures, "Dle:Attribution:ClickWindowMinutes", options.ClickWindowMinutes, 1, 1440);
         Range(failures, "Dle:Attribution:MaxReferrerAgeDays", options.MaxReferrerAgeDays, 1, 400);
         Range(failures, "Dle:Attribution:LoginWindowHours", options.LoginWindowHours, 1, 720);
-        Range(failures, "Dle:Attribution:SdkKeyCacheSeconds", options.SdkKeyCacheSeconds, 0, 3600);
         Range(failures, "Dle:Attribution:MaxRequestBytes", options.MaxRequestBytes, 1024, 4 * 1024 * 1024);
         Range(failures, "Dle:Attribution:MaxInstallIdLength", options.MaxInstallIdLength, 8, 512);
         Range(failures, "Dle:Attribution:Probabilistic:WindowMinutes", options.Probabilistic.WindowMinutes, 1, 1440);
@@ -274,10 +306,16 @@ public sealed class AttributionOptionsValidator
         Range(failures, "Dle:RateLimits:EventsBurstLimit", options.EventsBurstLimit, 1, 100_000);
         Range(failures, "Dle:RateLimits:EventsTokensPerPeriod", options.EventsTokensPerPeriod, 1, 100_000);
         Range(failures, "Dle:RateLimits:EventsPeriodSeconds", options.EventsPeriodSeconds, 1, 3600);
-        Range(failures, "Dle:RateLimits:AuthenticationPermitLimit", options.AuthenticationPermitLimit, 1, 10_000);
-        Range(failures, "Dle:RateLimits:AuthenticationWindowSeconds", options.AuthenticationWindowSeconds, 1, 3600);
+        Range(failures, "Dle:RateLimits:ClaimCodeFailurePermitLimit", options.ClaimCodeFailurePermitLimit, 1, 10_000);
+        Range(failures, "Dle:RateLimits:ClaimCodeFailureWindowSeconds", options.ClaimCodeFailureWindowSeconds, 1, 3600);
         Range(failures, "Dle:RateLimits:ClaimCodeIssuePermitLimit", options.ClaimCodeIssuePermitLimit, 1, 100_000);
         Range(failures, "Dle:RateLimits:ClaimCodeIssueWindowSeconds", options.ClaimCodeIssueWindowSeconds, 1, 3600);
+        Range(failures, "Dle:RateLimits:LinkResolveBurstLimit", options.LinkResolveBurstLimit, 1, 100_000);
+        Range(failures, "Dle:RateLimits:LinkResolveTokensPerPeriod", options.LinkResolveTokensPerPeriod, 1, 100_000);
+        Range(failures, "Dle:RateLimits:LinkResolvePeriodSeconds", options.LinkResolvePeriodSeconds, 1, 3600);
+        Range(failures, "Dle:RateLimits:LinkResolveAnonymousPerMinute", options.LinkResolveAnonymousPerMinute, 1, 100_000);
+        Range(failures, "Dle:RateLimits:LoginHintPermitLimit", options.LoginHintPermitLimit, 1, 100_000);
+        Range(failures, "Dle:RateLimits:LoginHintWindowSeconds", options.LoginHintWindowSeconds, 1, 3600);
 
         if (options.EventsTokensPerPeriod > options.EventsBurstLimit)
         {

@@ -55,6 +55,10 @@ control:
   replicaCount: 1
   pdb:
     enabled: false
+  extraEnv:
+    # Tested explicitly by .github/workflows/helm.yml (/openapi/v1.json). Keep false in production.
+    - name: Dle__Control__ExposeApiDocs
+      value: "true"
   resources:
     requests:
       cpu: 50m

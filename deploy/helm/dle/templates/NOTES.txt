@@ -50,11 +50,13 @@ Ingress is disabled: expose the Services yourself and keep /.well-known/* free o
 {{- if .Values.networkPolicy.enabled }}
 {{- if or (not $postgresPeers) (not $valkeyPeers) }}
 
-WARNING — network policy fallback: no peer is configured for
+WARNING — network policy peers missing: no peer is configured for
 {{- if not $postgresPeers }} PostgreSQL (networkPolicy.postgres.cidrs / selectors){{ end }}
 {{- if and (not $postgresPeers) (not $valkeyPeers) }} and{{ end }}
-{{- if not $valkeyPeers }} Valkey (networkPolicy.valkey.cidrs / selectors){{ end }}, so the edge
-may reach ANY destination on that port. Name the instance to keep NFR-14 enforceable.
+{{- if not $valkeyPeers }} Valkey (networkPolicy.valkey.cidrs / selectors){{ end }}.
+{{- if .Values.networkPolicy.allowUnscopedDataStoreEgress }} Unscoped port egress (0.0.0.0/0) is enabled via networkPolicy.allowUnscopedDataStoreEgress. Name explicit peers to keep NFR-14 enforceable.
+{{- else }} Egress rules to unconfigured external data stores have been omitted by default; set networkPolicy.postgres / networkPolicy.valkey peers before pods will be allowed to connect.
+{{- end }}
 {{- end }}
 {{- else }}
 

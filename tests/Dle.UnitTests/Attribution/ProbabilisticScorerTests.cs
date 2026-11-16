@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Dle.Domain.Attribution;
 using Xunit;
 
@@ -111,17 +113,19 @@ public sealed class ProbabilisticScorerTests
     }
 
     [Theory]
-    [InlineData("IpPrefix", 0.45)]
-    [InlineData("OsVersion", 0.20)]
-    [InlineData("Language", 0.15)]
-    [InlineData("Timezone", 0.10)]
-    [InlineData("Screen", 0.10)]
-    public void Score_SingleMatchingSignal_ContributesExactlyItsWeight(string signal, double expected)
+    [InlineData("IpPrefix", "0.45")]
+    [InlineData("OsVersion", "0.20")]
+    [InlineData("Language", "0.15")]
+    [InlineData("Timezone", "0.10")]
+    [InlineData("Screen", "0.10")]
+    public void Score_SingleMatchingSignal_ContributesExactlyItsWeight(string signal, string expected)
     {
         DeviceSignals candidate = OnlyOne(signal);
         DeviceSignals click = OnlyOne(signal);
 
-        Assert.Equal((decimal)expected, ProbabilisticScorer.Score(candidate, click, TimeSpan.Zero, Window));
+        Assert.Equal(
+            decimal.Parse(expected, CultureInfo.InvariantCulture),
+            ProbabilisticScorer.Score(candidate, click, TimeSpan.Zero, Window));
     }
 
     [Fact]

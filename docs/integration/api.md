@@ -51,9 +51,41 @@ The edge never calls a third party while answering — no GeoIP service, no repu
 
 ## Control — SDK endpoints (`:8081`, `/v1`)
 
-Spec: [§B.7.2](../zadanie.md#b72-sdk-api). Authentication: `Authorization: Bearer <sdk_key>` — the SDK key is a public identifier bound to a bundle id / package name / web origin (K6), issued with `POST /api/v1/apps/{id}/sdk-keys`.
+Spec: [§B.7.2](../zadanie.md#b72-sdk-api). Authentication: `Authorization: Bearer <sdk_key>` — the SDK key is a public identifier bound to a bundle id / package name / web origin (K6), issued with `POST /api/v1/apps/{id}/sdk-keys`. The `/v1` routes answer browsers from any origin (CORS), because the key travels in a header, never in a cookie. A request carries **exactly one** credential: `Authorization`, `X-Api-Key` or `X-Dle-Sdk-Key`; a request with two is refused with `400 validation-failed` before any of them is checked.
 
-These three endpoints are the whole SDK plane. None of them expands a slug into its `deeplink_path` and parameters, and an SDK key cannot call `/api/v1/links`: an app opened directly by a Universal Link / App Link gets only the short URL (`https://go.example.com/aB3xK9pQ`) and cannot tell which screen it points to, unless the operator uses readable slugs the app parses itself. `dle-control` has no CORS support either, so a browser page on another origin cannot call these endpoints (the preflight fails; see [sdk-web.md](sdk-web.md)). Both are listed under [Known gaps](../../README.md#known-gaps).
+The SDK plane comprises four endpoints:
+- `POST /v1/resolve-link` (SDK key): the screen behind a short link an installed app was opened with.
+- `POST /v1/resolve` (SDK key): install attribution and the deferred deep link.
+- `POST /v1/events` (SDK key): batched events, `link_open` included.
+- `POST /v1/claim-codes` (**control-plane API key**, `links:read`): issues a claim code for a click through the API. Codes are redeemed through `/v1/resolve` (`claim_code`).
+
+### `POST /v1/resolve-link`
+
+Called when an installed app is opened directly by a Universal Link or App Link (iOS `Dle.shared.resolveLink(url)`, Android `Dle.resolveLink(open)`). The engine looks the link up, evaluates its routing rules for the platform and answers with the link's `deeplink_path` and parameters. It records nothing — the SDK reports the open itself as a `link_open` event — so an open is never counted twice. Rate-limited per `install_id`, or per caller network when `install_id` is absent ([rate limits](#rate-limits-and-quotas)).
+
+```bash
+curl -s -X POST https://go.example.com/v1/resolve-link \
+  -H "Authorization: Bearer dlk_…" -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://go.example.com/aB3xK9pQ",
+    "install_id": "9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1",
+    "platform": "ios",
+    "app_version": "3.4.1"
+  }'
+```
+
+```json
+{
+  "matched": true,
+  "match_type": "direct_open",
+  "confidence": 1.00,
+  "link": { "id": "7286414500000000001", "deeplink_path": "/promo/autumn", "campaign": "autumn26" },
+  "params": { "utm_source": "quickstart", "utm_campaign": "autumn26" },
+  "expires_in": 0
+}
+```
+
+A URL that is not a link of the caller's tenant answers `200` with `"matched": false, "match_type": "none"` — the same as an unknown slug, so the endpoint does not reveal other tenants' links.
 
 ### `POST /v1/resolve`
 
@@ -112,11 +144,11 @@ Events dated more than 5 minutes in the future or more than 30 days in the past 
 
 ### `POST /v1/claim-codes`
 
-The deterministic iOS path (ADR-008, [§B.6.3](../zadanie.md#b63-deferred-deep-link--ios-bez-determinizmu-z-platformy)): exchanges a fresh click for a six-character, single-use code meant to be shown on the interstitial and typed into the app. Only the keyed hash is stored; TTL `Dle:Attribution:ClaimCode:TtlMinutes` (15 in the shipped configuration). Nothing on the click path calls it today: the edge renders the interstitial without a code, so the claim-code path does not work end to end ([Known gaps](../../README.md#known-gaps)). An SDK does not call it either: unlike the other two, it takes an API key with `links:read`, not an SDK key.
+The deterministic iOS path (ADR-008, [§B.6.3](../zadanie.md#b63-deferred-deep-link--ios-bez-determinizmu-z-platformy)): exchanges a fresh click for a six-character, single-use code issued and displayed on the store interstitial. Only the keyed hash is stored; TTL `Dle:Attribution:ClaimCode:TtlMinutes` (15 in the default configuration). The code is rendered on the interstitial page and redeemed by the iOS SDK on first launch via `POST /v1/resolve`.
 
 ## Control — management API (`/api/v1`)
 
-Spec: [§B.7.3](../zadanie.md#b73-control-plane-api-apiv1). Authentication: `Authorization: Bearer <api_key>` (secret shown once at creation, stored as Argon2id — K5). An OIDC bearer token carrying `dle_tenant` and `dle_role` is validated when `Dle:Identity:Oidc` is configured, but its tenant claim (`Dle:Identity:Oidc:TenantClaim`) is never mapped to the claim the control plane reads, so it establishes no tenant and does not work today ([Known gaps](../../README.md#known-gaps)).
+Spec: [§B.7.3](../zadanie.md#b73-control-plane-api-apiv1). Authentication: `Authorization: Bearer <api_key>` (secret shown once at creation, stored as Argon2id — K5). An OIDC bearer token is validated when `Dle:Identity:Oidc` is configured; its configured `TenantClaim` (`dle_tenant`) and `RoleClaim` (`dle_role`) are automatically mapped by `DleOidcClaimMapper` into internal claims. Bootstrap seeding provides the initial root tenant and owner API key on first startup ([deploy/README — First credential](../../deploy/README.md#first-credential-and-onboarding)).
 
 ### Authentication and scopes
 
@@ -158,7 +190,7 @@ An API key has a `role` and optional `scopes`. Scopes observed in the implementa
 | | DELETE | `/webhooks/{id}` | |
 | | POST | `/webhooks/{id}/test` | Sends a signed `webhook.test` and reports the outcome |
 | | GET | `/webhooks/deliveries` | Delivery log with attempt, status, `next_attempt_at` |
-| Abuse | POST | `/abuse-reports` *(root path on the control plane, anonymous, 5/h per IP)* | DSA art. 16 notice-and-action (FR-245). The shipped Caddy and Helm routes send this path to the edge, which has no such route, so it is unreachable from outside today; no page links to it ([Known gaps](../../README.md#known-gaps)) |
+| Abuse | POST | `/abuse-reports` *(root path on the control plane, anonymous, 5/h per IP)* | DSA art. 16 notice-and-action (FR-245). Caddy and the Helm ingress route this path to the control plane. JSON only; no web form ships |
 | | GET | `/abuse-reports` | Reports about the caller's links |
 | | GET | `/admin/abuse-reports`, POST `/admin/abuse-reports/{id}/decision` | Instance triage |
 | | POST | `/admin/links/{link_id}/quarantine`, `…/quarantine/release` | `410` with an explanation page, not deletion ([§E.3](../zadanie.md#e3-ochrana-proti-zneužitiu-redirektora)) |
@@ -224,10 +256,8 @@ curl -s -X POST $DLE/api/v1/webhooks -H "Authorization: Bearer $KEY" -H "Content
   -d '{"url":"https://hooks.example.com/dle","event_types":["attribution.created","link.quarantined"],"is_active":true}'
 curl -s -X POST $DLE/api/v1/webhooks/<WH_ID>/test -H "Authorization: Bearer $KEY"
 
-# Public abuse report (no auth). Only dle-control answers it, and the shipped Caddy / Helm routes send
-# /abuse-reports to the edge, so it is unreachable from outside today (README — Known gaps).
-# From inside the deployment, straight to the control plane:
-curl -s -X POST http://dle-control:8081/abuse-reports -H "Content-Type: application/json" \
+# Public abuse report (no auth). Caddy and the Helm ingress route /abuse-reports to dle-control.
+curl -s -X POST $DLE/abuse-reports -H "Content-Type: application/json" \
   -d '{"url":"https://go.example.com/aB3xK9pQ","reason":"phishing","details":"…","reporter_email":"…"}'
 
 # JWKS
@@ -296,6 +326,8 @@ Defaults from [§E.9](../zadanie.md#e9-rate-limity-a-kvóty--konkrétne-hodnoty)
 | `GET /{slug}` — successful | sliding window | IP /24 (v4) or /48 (v6) | 600 / min | 429 + `Retry-After` |
 | `GET /{slug}` — **404 responses** | token bucket | IP /24 | **20 / min**, burst 40 | 429, then the prefix is shadow-banned for 15 min (404 without a DB query) |
 | `POST /v1/resolve` | fixed window | `install_id` | 5 / h | 429 — a legitimate SDK calls it once per install |
+| `POST /v1/resolve-link` | token bucket | `install_id` | 30 / min, burst 60 | 429 |
+| `POST /v1/resolve-link` without `install_id` | fixed window | tenant + IP /24 (v4) or /48 (v6) | 30 / min | 429 — keeps the publishable SDK key from becoming a slug-enumeration oracle |
 | `POST /v1/events` | token bucket | `install_id` | 60 / min, burst 120 | 429; the SDKs back off exponentially |
 | `POST /api/v1/links` | concurrency + sliding window | API key | 60 / min (new tenant: 10 / min for the first 7 days) | 429 |
 | `POST /api/v1/links/bulk` | concurrency | tenant | 2 concurrent batches, ≤ 10 000 rows each | 429 |
@@ -306,4 +338,4 @@ Defaults from [§E.9](../zadanie.md#e9-rate-limity-a-kvóty--konkrétne-hodnoty)
 
 The 404 budget is the important one: it is the primary defence against slug enumeration (T-07) and is kept **separate** from the success budget so that a viral campaign cannot exhaust the anti-enumeration protection.
 
-Quotas (active links, domains, webhooks per tenant, click-stream retention) are soft limits meant for a hosted variant; exceeding one blocks creation, never resolution.
+The only quota implemented is the number of webhook subscriptions per tenant (`Dle:Webhooks:MaxSubscriptionsPerTenant`, default 20, at most 1000). Exceeding it blocks creating another subscription, never resolution. There is no quota on links, domains, apps or console users: a self-hosted engine has no licence-based limit.

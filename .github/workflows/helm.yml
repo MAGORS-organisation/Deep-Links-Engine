@@ -58,6 +58,7 @@ env:
   # Placeholder inputs for rendering only; nothing here reaches a cluster.
   RENDER_HOST: go.example.test
   RENDER_MASTER_SECRET: render-only-master-secret-0123456789abcdef
+  RENDER_EDGE_SECRET: render-only-edge-secret-fedcba9876543210abcdef
 
 jobs:
   render:
@@ -97,6 +98,7 @@ jobs:
           helm lint "$CHART_DIR" --strict \
             --set ingress.host="$RENDER_HOST" \
             --set secrets.masterSecret="$RENDER_MASTER_SECRET" \
+            --set secrets.edgeSecret="$RENDER_EDGE_SECRET" \
             --set externalPostgres.connectionString='Host=pg-primary.db;Port=5432;Database=dle;Username=dle;Password=render-only;SSL Mode=Require' \
             --set externalPostgres.readConnectionString='Host=pg-ro.db;Port=5432;Database=dle;Username=dle;Password=render-only;SSL Mode=Require' \
             --set externalValkey.connectionString='valkey.cache:6379,ssl=true'
@@ -106,6 +108,7 @@ jobs:
           helm lint "$CHART_DIR" --strict \
             --set ingress.host="$RENDER_HOST" \
             --set secrets.masterSecret="$RENDER_MASTER_SECRET" \
+            --set secrets.edgeSecret="$RENDER_EDGE_SECRET" \
             --set postgresql.enabled=true \
             --set postgresql.auth.password=render-only-postgres \
             --set valkey.enabled=true
@@ -123,6 +126,7 @@ jobs:
           helm template dle "$CHART_DIR" --namespace dle --kube-version "$KUBERNETES_VERSION" \
             --set ingress.host="$RENDER_HOST" \
             --set secrets.masterSecret="$RENDER_MASTER_SECRET" \
+            --set secrets.edgeSecret="$RENDER_EDGE_SECRET" \
             --set externalPostgres.connectionString='Host=pg-primary.db;Port=5432;Database=dle;Username=dle;Password=render-only;SSL Mode=Require' \
             --set externalPostgres.readConnectionString='Host=pg-ro.db;Port=5432;Database=dle;Username=dle;Password=render-only;SSL Mode=Require' \
             --set externalValkey.connectionString='valkey.cache:6379,ssl=true' \
@@ -130,6 +134,7 @@ jobs:
           helm template dle "$CHART_DIR" --namespace dle --kube-version "$KUBERNETES_VERSION" \
             --set ingress.host="$RENDER_HOST" \
             --set secrets.masterSecret="$RENDER_MASTER_SECRET" \
+            --set secrets.edgeSecret="$RENDER_EDGE_SECRET" \
             --set postgresql.enabled=true \
             --set postgresql.auth.password=render-only-postgres \
             --set valkey.enabled=true \
@@ -154,8 +159,45 @@ jobs:
           test "$(grep -c '^kind: Deployment$' rendered/external.yaml)" -eq 2 || { echo "::error::expected exactly two Deployments (edge, control)"; exit 1; }
           # The production profile hands secrets in, so it must not render one of its own.
           if grep -q '^kind: Secret$' rendered/production.yaml; then echo "::error::production profile rendered a Secret despite secrets.existingSecret"; exit 1; fi
-          # And no placeholder value may leak into anything but the Secret of the render profiles.
-          if grep -v '^kind: Secret' rendered/production.yaml | grep -q "$RENDER_MASTER_SECRET"; then echo "::error::master secret rendered outside a Secret"; exit 1; fi
+          # And in the profiles that are handed the placeholder secrets, no document other than a
+          # Secret may carry them (a ConfigMap or a plain env value would publish them).
+          for f in rendered/external.yaml rendered/bundled.yaml; do
+            awk -v m="$RENDER_MASTER_SECRET" -v e="$RENDER_EDGE_SECRET" '
+              BEGIN { RS = "\n---" }
+              $0 !~ /(^|\n)kind: Secret(\n|$)/ && (index($0, m) || index($0, e)) { bad = 1 }
+              END { exit bad }' "$f" || { echo "::error::$f renders a placeholder secret outside a Secret"; exit 1; }
+          done
+
+      - name: Render the ServiceMonitor profile
+        # The Ingress forwards /metrics, so it must never be anonymous: without a scrape token the
+        # chart refuses to render, and with one the ServiceMonitor sends it and both pods require it.
+        run: |
+          set -euo pipefail
+          monitored=(dle "$CHART_DIR" --namespace dle --kube-version "$KUBERNETES_VERSION"
+            --set ingress.host="$RENDER_HOST"
+            --set secrets.masterSecret="$RENDER_MASTER_SECRET"
+            --set secrets.edgeSecret="$RENDER_EDGE_SECRET"
+            --set externalPostgres.connectionString='Host=pg-primary.db;Port=5432;Database=dle;Username=dle;Password=render-only;SSL Mode=Require'
+            --set serviceMonitor.enabled=true)
+          if helm template "${monitored[@]}" > /dev/null 2>&1; then
+            echo "::error::serviceMonitor.enabled rendered without secrets.metricsScrapeToken"; exit 1
+          fi
+          helm template "${monitored[@]}" --set secrets.metricsScrapeToken=render-only-scrape-token \
+            > rendered/monitored.yaml
+          # With an existing Secret the chart cannot see the key, so the pods must refuse to start
+          # without it (optional: false) rather than serve an anonymous /metrics.
+          helm template dle "$CHART_DIR" --namespace dle --kube-version "$KUBERNETES_VERSION" \
+            -f "$CHART_DIR/values-production.yaml" \
+            --set ingress.host="$RENDER_HOST" \
+            --set serviceMonitor.enabled=true \
+            > rendered/monitored-existing-secret.yaml
+          for f in rendered/monitored.yaml rendered/monitored-existing-secret.yaml; do
+            grep -q '^kind: ServiceMonitor$' "$f"
+            grep -q 'type: Bearer' "$f"
+            test "$(grep -c 'name: Dle__Telemetry__ExposePrometheusMetrics$' "$f")" -eq 2
+            test "$(grep -A5 'name: Dle__Telemetry__PrometheusScrapeToken$' "$f" | grep -c 'optional: false')" -eq 2 ||
+              { echo "::error::$f: the scrape token is optional under the ServiceMonitor"; exit 1; }
+          done
 
       - name: Validate manifests (kubeconform)
         run: |
@@ -277,10 +319,13 @@ jobs:
         run: |
           set -euo pipefail
           master_secret="$(openssl rand -base64 48 | tr -d '\n')"
+          edge_secret="$(openssl rand -base64 48 | tr -d '\n')"
           echo "::add-mask::$master_secret"
+          echo "::add-mask::$edge_secret"
           helm install "$RELEASE" "$CHART_DIR" \
             --values "$VALUES_FILE" \
             --set "secrets.masterSecret=$master_secret" \
+            --set "secrets.edgeSecret=$edge_secret" \
             --wait \
             --timeout 12m
           helm status "$RELEASE"
@@ -371,10 +416,13 @@ jobs:
         run: |
           set -euo pipefail
           master_secret="$(kubectl get secret "$RELEASE" -o jsonpath='{.data.master-secret}' | base64 -d)"
+          edge_secret="$(kubectl get secret "$RELEASE" -o jsonpath='{.data.edge-secret}' | base64 -d)"
           echo "::add-mask::$master_secret"
+          echo "::add-mask::$edge_secret"
           helm upgrade "$RELEASE" "$CHART_DIR" \
             --values "$VALUES_FILE" \
             --set "secrets.masterSecret=$master_secret" \
+            --set "secrets.edgeSecret=$edge_secret" \
             --set "control.config.allowTenantSelfService=true" \
             --wait \
             --timeout 8m

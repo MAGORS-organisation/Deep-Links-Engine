@@ -63,10 +63,34 @@ describe('offline event queue (FR-226)', () => {
     expect(store.get(QUEUE_KEY)).toBeNull();
   });
 
-  it('keeps an explicit ts', () => {
+  it('keeps the instant of an explicit ts, in the ISO form the server reads', () => {
     const { queue, store } = harness();
-    queue.enqueue({ type: 'link_open', ts: '2026-09-03T09:00:00+00:00' });
-    expect(JSON.parse(store.get(QUEUE_KEY)!)[0].ts).toBe('2026-09-03T09:00:00+00:00');
+    queue.enqueue({ type: 'link_open', ts: '2026-09-03T11:00:00+02:00' });
+    queue.enqueue({ type: 'session', ts: 'Thu Sep 03 2026 09:30:00 GMT+0000' });
+    const stored = JSON.parse(store.get(QUEUE_KEY)!) as DleEvent[];
+    expect(stored.map((e) => e.ts)).toEqual(['2026-09-03T09:00:00.000Z', '2026-09-03T09:30:00.000Z']);
+  });
+
+  it('replaces a ts that is not a date with the enqueue time instead of sending it', () => {
+    const { queue, store } = harness();
+    queue.enqueue({ type: 'custom', name: 'a', ts: 'yesterday' });
+    queue.enqueue({ type: 'custom', name: 'b', ts: '+275760-09-13T00:00:00.000Z' });
+    const stored = JSON.parse(store.get(QUEUE_KEY)!) as DleEvent[];
+    expect(stored.map((e) => e.ts)).toEqual(['2026-09-03T10:00:00.000Z', '2026-09-03T10:00:00.000Z']);
+  });
+
+  it('halves the batch after a 429, so a burst limit below 100 still drains', async () => {
+    const { queue, sent } = harness(
+      undefined,
+      (call) => (call.events.length > 30 ? Promise.reject(http(429, 1000)) : Promise.resolve()),
+      { maxSize: 1000 },
+    );
+    for (let i = 0; i < 100; i += 1) queue.enqueue({ type: 'session' });
+    await vi.advanceTimersByTimeAsync(1000); // 100 -> 429
+    await vi.advanceTimersByTimeAsync(1000); // 50 -> 429
+    await vi.advanceTimersByTimeAsync(1000); // 25 x 4 -> 202
+    expect(sent.map((s) => s.events.length)).toEqual([100, 50, 25, 25, 25, 25]);
+    expect(queue.size()).toBe(0);
   });
 
   it('splits into batches of at most 100 in order', async () => {
@@ -141,6 +165,39 @@ describe('offline event queue (FR-226)', () => {
     // The remainder stays persisted for the next page load.
     expect(queue.size()).toBe(20);
     expect(JSON.parse(store.get(QUEUE_KEY)!)).toHaveLength(20);
+  });
+
+  it('keeps a keepalive batch under the 64 KiB body cap', async () => {
+    const { queue, sent, win } = harness();
+    const url = `https://example.sk/${'x'.repeat(1000)}`;
+    for (let i = 0; i < 100; i += 1) queue.enqueue({ type: 'link_open', url });
+
+    win.dispatch('pagehide');
+    await Promise.resolve();
+
+    const bytes = JSON.stringify(sent[0]!.events).length;
+    expect(sent[0]!.events.length).toBeLessThan(100);
+    expect(bytes).toBeLessThanOrEqual(60_000);
+    expect(queue.size()).toBe(100 - sent[0]!.events.length);
+  });
+
+  it('puts a keepalive batch back when the request fails and the page is still alive', async () => {
+    const { queue, sent, doc, store } = harness(undefined, (call) =>
+      call.keepalive ? Promise.reject(new DleError('network', 'network request failed', { retriable: true })) : Promise.resolve(),
+    );
+    queue.enqueue({ type: 'session' });
+    doc.visibilityState = 'hidden';
+    doc.dispatch('visibilitychange');
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(sent[0]!.keepalive).toBe(true);
+    expect(queue.size()).toBe(1);
+    expect(JSON.parse(store.get(QUEUE_KEY)!)).toHaveLength(1);
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(sent).toHaveLength(2);
+    expect(sent[1]!.keepalive).toBe(false);
+    expect(queue.size()).toBe(0);
   });
 
   it('treats a hidden tab like pagehide', async () => {

@@ -124,6 +124,9 @@ public sealed class DleDbContext : DbContext
     /// <summary>Claim codes issued on interstitial pages. Table <c>claim_codes</c>.</summary>
     public DbSet<ClaimCodeRecord> ClaimCodes => Set<ClaimCodeRecord>();
 
+    /// <summary>Indexed S2 login reconciliation hints. Table <c>click_login_hints</c>.</summary>
+    public DbSet<ClickLoginHint> ClickLoginHints => Set<ClickLoginHint>();
+
     /// <summary>Abuse reports. Table <c>abuse_reports</c>.</summary>
     public DbSet<AbuseReport> AbuseReports => Set<AbuseReport>();
 
@@ -247,6 +250,7 @@ public sealed class DleDbContext : DbContext
         Scope<Install>(i => i.TenantId == TenantFilterValue);
         Scope<AttributionRecord>(a => a.TenantId == TenantFilterValue);
         Scope<ClaimCodeRecord>(c => c.TenantId == TenantFilterValue);
+        Scope<ClickLoginHint>(h => h.TenantId == TenantFilterValue);
         Scope<AbuseReport>(r => r.TenantId == TenantFilterValue);
         Scope<AuditLogEntry>(e => e.TenantId == TenantFilterValue);
         Scope<IdempotencyRecord>(r => r.TenantId == TenantFilterValue);

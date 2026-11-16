@@ -5,7 +5,9 @@
 
 ## Status
 
-Accepted
+Superseded (2026-11-15) — upgraded to .NET 11 STS
+
+**Status note (2026-11-15).** The solution was upgraded to **.NET 11** (`net11.0`, SDK `11.0.100`) following the .NET 11 GA release on 10 November 2026. Because .NET 11 is an STS release supported until **14 November 2028** (the same end-of-support date as .NET 10 LTS), the support horizon stays unchanged; `Npgsql.EntityFrameworkCore.PostgreSQL` temporarily uses `11.0.0-rc.3` (pinning EF Core `11.0.0-rc.3.26522.148`) until `11.0.0` GA ships on NuGet.org.
 
 ## Date
 

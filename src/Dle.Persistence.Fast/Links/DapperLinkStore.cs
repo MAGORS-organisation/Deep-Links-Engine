@@ -102,6 +102,7 @@ public sealed class DapperLinkStore : ILinkStore
         WHERE d.host = @host::citext
           AND l.slug = @slug::citext
           AND d.is_active
+          AND t.status = 'active'
         """;
 
     private readonly DleReadDataSource _readDataSource;

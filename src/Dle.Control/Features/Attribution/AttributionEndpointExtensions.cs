@@ -7,6 +7,9 @@ using Dle.Control.Identity;
 using Dle.Domain.Attribution;
 using Dle.Domain.Clients;
 using Dle.Domain.Contracts;
+using Dle.Domain.Crypto;
+using Dle.Domain.Entities;
+using Dle.Domain.Ports;
 using Dle.Domain.Privacy;
 using Dle.Domain.Routing;
 
@@ -65,6 +68,7 @@ public static class AttributionEndpointExtensions
         // thousand devices against a limit §E.9 defines per device.
         RouteGroupBuilder sdk = app.MapGroup("/v1")
             .WithTags("SDK")
+            .RequireCors(ControlCoreServiceCollectionExtensions.SdkCorsPolicy)
             .DisableRateLimiting();
 
         sdk.MapPost("/resolve", ResolveAsync)
@@ -90,7 +94,9 @@ public static class AttributionEndpointExtensions
                 "Called when an installed application is opened via a Universal Link or App Link. "
                 + "Accepts the short URL delivered by the operating system, looks up the link, "
                 + "evaluates routing rules for the platform, and answers with the target deeplink_path "
-                + "and link parameters.")
+                + "and link parameters. It records nothing: the SDK reports the open as a link_open "
+                + "event through /v1/events. Rate limited per install_id, or per caller network "
+                + "when install_id is absent.")
             .Accepts<ResolveLinkRequestDto>("application/json")
             .Produces<ResolveResponseDto>(StatusCodes.Status200OK, "application/json")
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -132,6 +138,22 @@ public static class AttributionEndpointExtensions
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status503ServiceUnavailable);
+
+        sdk.MapPost("/login-hints", RecordLoginHintAsync)
+            .RequireAuthorization(DlePolicies.SdkIngest)
+            .WithName("RecordLoginHint")
+            .WithSummary("Registers an indexed O(1) S2 login reconciliation hint.")
+            .WithDescription(
+                "Binds a keyed account identifier from a signed-in web visit to a click identifier "
+                + "or short link URL when attribution consent is active, allowing S2 login attribution "
+                + "to resolve in O(1) without scanning click partitions (FR-185).")
+            .Accepts<LoginHintRequestDto>("application/json")
+            .Produces<LoginHintResponseDto>(StatusCodes.Status202Accepted, "application/json")
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status413PayloadTooLarge)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests);
 
         return app;
     }
@@ -195,6 +217,25 @@ public static class AttributionEndpointExtensions
                     $"An installation may resolve {configured.ResolvePermitLimit} times per {configured.ResolveWindowMinutes} minutes (§E.9); a correct SDK calls this endpoint once in the lifetime of an installation."));
         }
 
+        // The limit above is keyed on install_id, which the caller chooses: it bounds a correct SDK,
+        // not somebody guessing six-letter codes with a fresh install_id per guess. Guessing is
+        // bounded by where it comes from instead, and only wrong codes are charged.
+        string guesserKey = string.Concat(
+            caller.TenantId.ToString("N", CultureInfo.InvariantCulture),
+            "|",
+            DleKeyCredentialReader.AddressPrefix(context.Connection.RemoteIpAddress) ?? "unknown");
+
+        bool presentsClaimCode = !string.IsNullOrWhiteSpace(request.ClaimCode);
+
+        if (presentsClaimCode && await limiters.IsClaimCodeGuessingBlockedAsync(guesserKey, cancellationToken))
+        {
+            metrics.Rejected("rate_limited");
+
+            return AttributionProblem.RateLimited(
+                limiters.ClaimCodeFailureWindow,
+                "Too many claim codes from this network were wrong. Wait a moment and try again.");
+        }
+
         ResolveOutcome outcome = await resolve.ExecuteAsync(
             request,
             caller,
@@ -203,6 +244,11 @@ public static class AttributionEndpointExtensions
 
         if (outcome.ClaimCodeError is { } status)
         {
+            if (status != ClaimCodeStatus.Disabled)
+            {
+                await limiters.RegisterClaimCodeFailureAsync(guesserKey, cancellationToken);
+            }
+
             return ClaimCodeProblem(status);
         }
 
@@ -316,6 +362,7 @@ public static class AttributionEndpointExtensions
     /// <summary>Handles <c>POST /v1/claim-codes</c>.</summary>
     /// <param name="context">The request.</param>
     /// <param name="claimCodes">Claim code issuance.</param>
+    /// <param name="store">The attribution store used to verify link existence.</param>
     /// <param name="limiters">The §E.9 limiters.</param>
     /// <param name="options">Attribution options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -329,6 +376,7 @@ public static class AttributionEndpointExtensions
     private static async Task<IResult> IssueClaimCodeAsync(
         HttpContext context,
         ClaimCodeService claimCodes,
+        IAttributionStore store,
         AttributionRateLimiters limiters,
         IOptionsMonitor<AttributionOptions> options,
         CancellationToken cancellationToken)
@@ -389,6 +437,12 @@ public static class AttributionEndpointExtensions
             return AttributionProblem.RateLimited(
                 AttributionRateLimiters.RetryAfter(lease),
                 "Too many claim codes have been issued for this tenant. Retry shortly.");
+        }
+
+        if (linkId is long requestedLinkId
+            && await store.FindLinkAsync(requestedLinkId, cancellationToken) is null)
+        {
+            return Dle.Control.Infrastructure.DleProblem.NotFound("There is no link with that identifier.");
         }
 
         ClaimCodeResponse response = await claimCodes.IssueAsync(
@@ -539,7 +593,6 @@ public static class AttributionEndpointExtensions
         HttpContext context,
         IAttributionStore store,
         IRoutingEngine routing,
-        RecordEvents events,
         AttributionRateLimiters limiters,
         AttributionMetrics metrics,
         IOptionsMonitor<AttributionOptions> options,
@@ -572,15 +625,26 @@ public static class AttributionEndpointExtensions
             return AttributionProblem.Validation("url is required and must not exceed the maximum URL length.");
         }
 
-        if (!string.IsNullOrWhiteSpace(request.InstallId))
+        // Every call is limited. With an installation the bucket is that installation's own (and not
+        // the once-per-lifetime /v1/resolve budget); without one the SDK key, which is publishable,
+        // identifies nobody, so the tenant and the caller's network are the partition. Otherwise this
+        // endpoint would answer "does slug X exist" without limit and bypass the edge's 404 budget.
+        bool hasInstall = !string.IsNullOrWhiteSpace(request.InstallId);
+
+        if (hasInstall && !TryValidateInstallId(request.InstallId!, current.MaxInstallIdLength, out IResult? invalid))
         {
-            if (!TryValidateInstallId(request.InstallId, current.MaxInstallIdLength, out IResult? invalid))
-            {
-                return invalid;
-            }
+            return invalid;
+        }
 
-            using RateLimitLease lease = await limiters.AcquireResolveAsync(request.InstallId, cancellationToken);
-
+        using (RateLimitLease lease = hasInstall
+                   ? await limiters.AcquireLinkResolveAsync(request.InstallId!, cancellationToken)
+                   : await limiters.AcquireAnonymousLinkResolveAsync(
+                       string.Concat(
+                           caller.TenantId.ToString("N", CultureInfo.InvariantCulture),
+                           "|",
+                           DleKeyCredentialReader.AddressPrefix(context.Connection.RemoteIpAddress) ?? "unknown"),
+                       cancellationToken))
+        {
             if (!lease.IsAcquired)
             {
                 metrics.Rejected("rate_limited");
@@ -588,9 +652,13 @@ public static class AttributionEndpointExtensions
 
                 return AttributionProblem.RateLimited(
                     AttributionRateLimiters.RetryAfter(lease),
-                    string.Create(
-                        CultureInfo.InvariantCulture,
-                        $"An installation may resolve {configured.ResolvePermitLimit} times per {configured.ResolveWindowMinutes} minutes (§E.9)."));
+                    hasInstall
+                        ? string.Create(
+                            CultureInfo.InvariantCulture,
+                            $"An installation may resolve {configured.LinkResolveTokensPerPeriod} direct opens per {configured.LinkResolvePeriodSeconds} seconds.")
+                        : string.Create(
+                            CultureInfo.InvariantCulture,
+                            $"Without install_id a network may resolve {configured.LinkResolveAnonymousPerMinute} direct opens per minute; send install_id."));
             }
         }
 
@@ -607,12 +675,13 @@ public static class AttributionEndpointExtensions
                 AttributionJsonContext.Default.ResolveResponseDto);
         }
 
-        AttributedLink? link = await store.FindLinkByHostAndSlugAsync(
-            reported.Host,
-            reported.Slug,
-            cancellationToken);
+        AttributedLink? link = await FindOwnedLinkByUrlAsync(reported, caller.TenantId, store, cancellationToken);
 
-        if (link is null || link.TenantId != caller.TenantId)
+        // A link the edge would answer 404 or 410 for - switched off, quarantined, not yet started,
+        // expired - is answered exactly like one that does not exist. The operating system opens an
+        // installed app without asking the edge, so this is the only place that rule can be applied
+        // to a direct open.
+        if (link is null)
         {
             return TypedResults.Json(
                 new ResolveResponseDto
@@ -639,21 +708,14 @@ public static class AttributionEndpointExtensions
                 ReceivedAt = DateTimeOffset.UtcNow,
             };
 
-            ConsentDecision consent = ConsentGate.Evaluate(
-                ConsentMode.Full,
-                domainOverride: null,
-                new ConsentSignal
-                {
-                    Analytics = true,
-                    Attribution = true,
-                    Source = "direct_open",
-                    Timestamp = client.ReceivedAt,
-                });
-
+            // Only the destination is wanted here, and the destination never depends on consent: the
+            // consent decision only decides whether a click identifier may be written into a store
+            // referrer, and a direct open has no click. So the rules are evaluated under a decision
+            // that permits nothing.
             RoutingDecision decision = routing.Evaluate(
                 rules,
                 client,
-                consent,
+                ConsentDecision.Denied("direct_open_destination_only"),
                 clickId: string.Empty);
 
             if (!string.IsNullOrWhiteSpace(decision.DeeplinkPath))
@@ -662,27 +724,9 @@ public static class AttributionEndpointExtensions
             }
         }
 
-        if (!string.IsNullOrWhiteSpace(request.InstallId))
-        {
-            _ = await events.ExecuteAsync(
-                new EventBatchDto
-                {
-                    InstallId = request.InstallId,
-                    Platform = request.Platform,
-                    AppVersion = request.AppVersion,
-                    Events =
-                    [
-                        new EventDto
-                        {
-                            Type = SdkEventNames.LinkOpen,
-                            Url = request.Url,
-                        },
-                    ],
-                },
-                caller,
-                cancellationToken);
-        }
-
+        // Deliberately no event here. The SDK reports the open itself as a link_open through
+        // /v1/events (that is what records the direct_open attribution, consent rules and all), and
+        // recording it here as well would count every direct open twice.
         metrics.Decision(MatchTypeNames.DirectOpen, 1.00m);
 
         return TypedResults.Json(
@@ -703,6 +747,225 @@ public static class AttributionEndpointExtensions
                 ExpiresIn = 0,
             },
             AttributionJsonContext.Default.ResolveResponseDto);
+    }
+
+    /// <summary>Handles <c>POST /v1/login-hints</c>.</summary>
+    internal static async Task<IResult> RecordLoginHintAsync(
+        HttpContext context,
+        IAttributionStore store,
+        IClickIdCodec clickIds,
+        IClickLookup clicks,
+        LoginKeyHasher loginKeys,
+        ILoginHintStore loginHints,
+        AttributionRateLimiters limiters,
+        AttributionMetrics metrics,
+        TimeProvider timeProvider,
+        IOptionsMonitor<AttributionOptions> options,
+        IOptionsMonitor<AttributionRateLimitOptions> limits,
+        CancellationToken cancellationToken)
+    {
+        if (!context.TryGetSdkCaller(out SdkCaller caller))
+        {
+            metrics.Rejected("unauthenticated");
+            return AttributionProblem.Unauthenticated();
+        }
+
+        AttributionOptions current = options.CurrentValue;
+
+        BodyResult<LoginHintRequestDto> body = await ReadBodyAsync(
+            context,
+            current.MaxRequestBytes,
+            AttributionJsonContext.Default.LoginHintRequestDto,
+            cancellationToken);
+
+        if (body.Problem is { } problem)
+        {
+            return problem;
+        }
+
+        LoginHintRequestDto request = body.Value!;
+
+        if (string.IsNullOrWhiteSpace(request.LoginKey) || request.LoginKey.Length > 256)
+        {
+            return AttributionProblem.Validation("login_key is required and must be at most 256 characters.");
+        }
+
+        bool hasClickId = !string.IsNullOrWhiteSpace(request.ClickId);
+        bool hasUrl = !string.IsNullOrWhiteSpace(request.Url);
+
+        if (!hasClickId && !hasUrl)
+        {
+            return AttributionProblem.Validation("Either click_id or url is required.");
+        }
+
+        if (hasClickId && request.ClickId!.Trim().Length > 128)
+        {
+            return AttributionProblem.Validation("click_id must be at most 128 characters.");
+        }
+
+        if (hasUrl && request.Url!.Length > TargetUrlPolicy.MaxUrlLength)
+        {
+            return AttributionProblem.Validation("url must not exceed the maximum URL length.");
+        }
+
+        if (RoutingRuleValidator.ValidateDeeplinkPath(request.DeeplinkPath) is { } pathError)
+        {
+            return AttributionProblem.Validation(pathError);
+        }
+
+        string callerKey = string.Concat(
+            caller.TenantId.ToString("N", CultureInfo.InvariantCulture),
+            "|",
+            DleKeyCredentialReader.AddressPrefix(context.Connection.RemoteIpAddress) ?? "unknown");
+
+        using (RateLimitLease lease = await limiters.AcquireLoginHintAsync(callerKey, cancellationToken))
+        {
+            if (!lease.IsAcquired)
+            {
+                metrics.Rejected("rate_limited");
+                AttributionRateLimitOptions configured = limits.CurrentValue;
+
+                return AttributionProblem.RateLimited(
+                    AttributionRateLimiters.RetryAfter(lease),
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"Login hints are limited to {configured.LoginHintPermitLimit} requests per {configured.LoginHintWindowSeconds} seconds."));
+            }
+        }
+
+        DateTimeOffset now = timeProvider.GetUtcNow();
+        ConsentSignal? signal = request.Consent is { } consent
+            ? new ConsentSignal
+            {
+                Analytics = consent.Analytics,
+                Attribution = consent.Attribution,
+                Timestamp = consent.Ts,
+                Source = "sdk",
+            }
+            : null;
+
+        ConsentMode tenantMode = await store.GetTenantConsentModeAsync(caller.TenantId, cancellationToken);
+        ConsentDecision decision = ConsentGate.Evaluate(tenantMode, domainOverride: null, signal);
+
+        if (!decision.AllowClickIdLinking)
+        {
+            return TypedResults.Json(
+                new LoginHintResponseDto { Accepted = false, ExpiresAt = now },
+                AttributionJsonContext.Default.LoginHintResponseDto,
+                statusCode: StatusCodes.Status202Accepted);
+        }
+
+        string resolvedClickId;
+        long? linkId = null;
+        string? deeplinkPath = string.IsNullOrWhiteSpace(request.DeeplinkPath) ? null : request.DeeplinkPath;
+        DateTimeOffset occurredAt = now;
+
+        if (hasClickId)
+        {
+            string trimmedClickId = request.ClickId!.Trim();
+            if (!clickIds.TryDecode(trimmedClickId, out DateTimeOffset clickAt, out _))
+            {
+                return AttributionProblem.Validation("click_id is invalid or tampered.");
+            }
+
+            resolvedClickId = trimmedClickId;
+            occurredAt = clickAt;
+
+            ClickRecord? click = await clicks.FindByClickIdAsync(
+                trimmedClickId,
+                clickAt.AddMinutes(-1),
+                clickAt.AddMinutes(1),
+                cancellationToken);
+
+            if (click is not null)
+            {
+                if (click.TenantId != caller.TenantId)
+                {
+                    return Dle.Control.Infrastructure.DleProblem.NotFound("Click not found.");
+                }
+
+                linkId = click.LinkId;
+                occurredAt = click.OccurredAt;
+                deeplinkPath ??= click.DeeplinkPath;
+            }
+            else if (hasUrl)
+            {
+                if (!LinkUrlParser.TryParse(request.Url!, out ReportedLink reported))
+                {
+                    return AttributionProblem.Validation("url is not a valid short link URL.");
+                }
+
+                AttributedLink? link = await FindOwnedLinkByUrlAsync(
+                    reported,
+                    caller.TenantId,
+                    store,
+                    cancellationToken);
+
+                if (link is null)
+                {
+                    return Dle.Control.Infrastructure.DleProblem.NotFound("Link not found.");
+                }
+
+                linkId = link.Id;
+                deeplinkPath ??= link.DeeplinkPath;
+            }
+        }
+        else
+        {
+            if (!LinkUrlParser.TryParse(request.Url!, out ReportedLink reported))
+            {
+                return AttributionProblem.Validation("url is not a valid short link URL.");
+            }
+
+            AttributedLink? link = await FindOwnedLinkByUrlAsync(
+                reported,
+                caller.TenantId,
+                store,
+                cancellationToken);
+
+            if (link is null)
+            {
+                return Dle.Control.Infrastructure.DleProblem.NotFound("Link not found.");
+            }
+
+            resolvedClickId = string.Concat("lh_", Guid.CreateVersion7(now).ToString("N"));
+            linkId = link.Id;
+            deeplinkPath ??= link.DeeplinkPath;
+        }
+
+        DateTimeOffset expiresAt = now.AddHours(current.LoginWindowHours);
+        ClickLoginHint hint = new()
+        {
+            Id = Guid.CreateVersion7(now),
+            TenantId = caller.TenantId,
+            LoginKeyHash = loginKeys.Hash(request.LoginKey),
+            ClickId = resolvedClickId,
+            LinkId = linkId,
+            DeeplinkPath = deeplinkPath,
+            OccurredAt = occurredAt,
+            ExpiresAt = expiresAt,
+        };
+
+        await loginHints.RecordAsync(hint, cancellationToken);
+
+        return TypedResults.Json(
+            new LoginHintResponseDto { Accepted = true, ExpiresAt = expiresAt },
+            AttributionJsonContext.Default.LoginHintResponseDto,
+            statusCode: StatusCodes.Status202Accepted);
+    }
+
+    private static async Task<AttributedLink?> FindOwnedLinkByUrlAsync(
+        ReportedLink reported,
+        Guid tenantId,
+        IAttributionStore store,
+        CancellationToken cancellationToken)
+    {
+        AttributedLink? link = await store.FindLinkByHostAndSlugAsync(
+            reported.Host,
+            reported.Slug,
+            cancellationToken);
+
+        return link is not null && link.TenantId == tenantId && link.IsServable ? link : null;
     }
 
     private static Platform ParsePlatform(string? value)

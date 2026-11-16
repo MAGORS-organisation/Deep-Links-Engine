@@ -8,7 +8,7 @@
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageId>Dle.Persistence</PackageId>
-    <Description>Deep Link Engine control-plane persistence: EF Core 10 DbContext, entity configurations and PostgreSQL migrations.</Description>
+    <Description>Deep Link Engine control-plane persistence: EF Core 11 DbContext, entity configurations and PostgreSQL migrations.</Description>
     <RootNamespace>Dle.Persistence</RootNamespace>
   </PropertyGroup>
 
@@ -22,14 +22,11 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <!-- PostgresException is inspected directly to tell a unique violation apart (TC-144). -->
     <PackageReference Include="Npgsql" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
     <!--
-      AddDlePersistence(IServiceCollection, IConfiguration) needs IConfiguration and the
-      options binder; neither is part of the Microsoft.NETCore.App shared framework, and
-      EF Core does not bring them transitively.
+      AddDlePersistence(IServiceCollection, IConfiguration) needs the options binder;
+      IConfiguration and ILogger abstractions are part of Microsoft.NETCore.App on net11.0.
     -->
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>
 

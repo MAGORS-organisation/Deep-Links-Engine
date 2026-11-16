@@ -325,7 +325,7 @@ def inventory_component(entry: dict) -> dict:
         "type": "cryptographic-asset",
         "bom-ref": entry["ref"],
         "name": f"{entry['id']} - {entry['name']}",
-        "description": f"docs/zadanie.md section E.4.1 line {entry['id']}",
+        "description": f"Cryptographic inventory entry {entry['id']}",
         "properties": [
             {"name": "dle:inventory-id", "value": entry["id"]},
             {"name": "dle:artefact-lifetime", "value": entry["lifetime"]},
@@ -380,7 +380,7 @@ def main() -> int:
             },
             "properties": [
                 {"name": "dle:cbom-source",
-                 "value": "docs/zadanie.md section E.4.1 + source scan of " + ", ".join(SCAN_DIRS)},
+                 "value": "Project cryptographic inventory + source scan of " + ", ".join(SCAN_DIRS)},
                 {"name": "dle:scanned-lines", "value": str(len(lines))},
             ],
         },

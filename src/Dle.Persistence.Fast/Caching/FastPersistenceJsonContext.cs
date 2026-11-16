@@ -1,5 +1,7 @@
 using System.Text.Json.Serialization;
 
+using Dle.Persistence.Fast.Attribution;
+
 namespace Dle.Persistence.Fast.Caching;
 
 /// <summary>
@@ -20,4 +22,5 @@ namespace Dle.Persistence.Fast.Caching;
 [JsonSerializable(typeof(WellKnownDocument))]
 [JsonSerializable(typeof(DomainRuntimeConfig))]
 [JsonSerializable(typeof(CacheInvalidationMessage))]
+[JsonSerializable(typeof(LoginHintCacheEntry))]
 public sealed partial class FastPersistenceJsonContext : JsonSerializerContext;

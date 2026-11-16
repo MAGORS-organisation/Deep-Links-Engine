@@ -59,26 +59,19 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="FluentValidation" />
-    <PackageReference Include="QRCoder" />
   </ItemGroup>
 
   <ItemGroup Label="Identity">
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
   </ItemGroup>
 
   <ItemGroup Label="Hosting">
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
-    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
-    <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
   </ItemGroup>
 
   <ItemGroup Label="Observability">
-    <PackageReference Include="Serilog.AspNetCore" />
-    <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
@@ -99,8 +92,9 @@
 
     The copy is conditional on the SPA having been built, so a .NET-only build — CI without Node,
     a contributor without npm, the Docker build stage that runs before the SPA stage — still
-    succeeds and still serves the committed wwwroot/index.html fallback console. wwwroot/admin/
-    is build output and is git-ignored; the committed index.html is never touched by this target.
+    succeeds cleanly (with ServeAdminSpa returning a 404 ProblemDetails explaining how to enable
+    or bundle the SPA, or setting ServeAdminSpa=false for headless API deployments). wwwroot/admin/
+    is build output and is git-ignored.
   -->
   <PropertyGroup>
     <AdminSpaDist>$(MSBuildProjectDirectory)\..\Dle.Admin.Web\dist\</AdminSpaDist>
