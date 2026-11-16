@@ -1,5 +1,5 @@
 {
-  "name": "@magors/dle-web",
+  "name": "@kyberware/dle-web",
   "version": "1.0.0",
   "description": "Web SDK for the Deep Link Engine (DLE): smart app banner, web fallback, click-context resolve and event reporting. Self-hosted, EU-first, consent-first. No fingerprinting, no clipboard reads, no third-party calls.",
   "license": "MIT",

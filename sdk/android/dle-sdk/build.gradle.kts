@@ -16,14 +16,14 @@ plugins {
     `maven-publish`
 }
 
-val sdkGroup: String = providers.gradleProperty("dle.sdk.group").getOrElse("sk.magors.dle")
+val sdkGroup: String = providers.gradleProperty("dle.sdk.group").getOrElse("net.kyberware.dle")
 val sdkVersion: String = providers.gradleProperty("dle.sdk.version").getOrElse("0.0.0-SNAPSHOT")
 
 group = sdkGroup
 version = sdkVersion
 
 android {
-    namespace = "sk.magors.dle"
+    namespace = "net.kyberware.dle"
     // Kept at 35 on purpose: AGP 9 requires an app that consumes this library to compile against
     // at least the library's compileSdk, and the SDK needs no API above 35.
     compileSdk = 35

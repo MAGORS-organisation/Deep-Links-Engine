@@ -1,4 +1,4 @@
-# @magors/dle-web
+# @kyberware/dle-web
 
 Web SDK for the [Deep Link Engine](https://github.com/MAGORS-organisation/Deep-Links-Engine) — the
 self-hosted, EU-first deep linking and attribution engine. MIT licensed.
@@ -27,12 +27,12 @@ checkout of the repository and install the tarball:
 ```sh
 cd Deep-Links-Engine/sdk/web
 npm ci && npm run build        # dist/: ESM, CJS and dle.global.js
-npm pack                       # → magors-dle-web-0.1.0.tgz
-cd your-site && npm install /path/to/Deep-Links-Engine/sdk/web/magors-dle-web-0.1.0.tgz
+npm pack                       # → kyberware-dle-web-1.0.0.tgz
+cd your-site && npm install /path/to/Deep-Links-Engine/sdk/web/kyberware-dle-web-1.0.0.tgz
 ```
 
 ```ts
-import { createDle } from '@magors/dle-web';
+import { createDle } from '@kyberware/dle-web';
 
 const dle = createDle({
   endpoint: 'https://links.example.sk',   // your dle-control SDK plane, on this page's origin (no CORS)

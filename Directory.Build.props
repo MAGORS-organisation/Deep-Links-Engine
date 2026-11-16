@@ -7,9 +7,9 @@
 
   <PropertyGroup Label="Identity">
     <Product>Deep Link Engine</Product>
-    <Authors>MAGORS organisation</Authors>
-    <Company>MAGORS organisation</Company>
-    <Copyright>Copyright (c) MAGORS organisation</Copyright>
+    <Authors>Kyberware</Authors>
+    <Company>Kyberware</Company>
+    <Copyright>Copyright (c) Kyberware</Copyright>
     <VersionPrefix>1.0.0</VersionPrefix>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
