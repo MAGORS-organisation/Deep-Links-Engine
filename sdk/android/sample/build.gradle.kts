@@ -6,13 +6,14 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
+    // No org.jetbrains.kotlin.android: AGP 9 compiles Kotlin itself (built-in Kotlin).
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "sk.magors.dle.sample"
-    compileSdk = 35
+    // androidx.core 1.19 requires compiling against API 37. The sample's targetSdk stays at 35.
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "sk.magors.dle.sample"
