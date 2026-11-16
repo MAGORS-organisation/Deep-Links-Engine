@@ -1,7 +1,7 @@
 namespace Dle.Control.Identity;
 
 /// <summary>
-/// Scopes that narrow what a credential may do inside its role (FR-242).
+/// Scopes that narrow what a credential may do inside its role.
 /// </summary>
 /// <remarks>
 /// <para>

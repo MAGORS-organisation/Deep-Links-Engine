@@ -23,7 +23,7 @@ namespace Dle.Edge.Rendering;
 /// keyboard or screen reader user can reach it in time. So the first sign of a user doing anything —
 /// a key, a pointer press, a focus change, or the page being hidden — cancels the navigation outright,
 /// and the visible control is what lets the user confirm that it stayed cancelled. The anchors remain
-/// the primary path in every case (§A.2.6, FR-162, NFR-16).
+/// the primary path in every case.
 /// </para>
 /// </remarks>
 internal static class PageScripts

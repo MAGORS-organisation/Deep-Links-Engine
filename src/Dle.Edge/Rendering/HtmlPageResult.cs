@@ -22,7 +22,7 @@ namespace Dle.Edge.Rendering;
 /// <para>
 /// The policy has no <c>unsafe-inline</c> and no <c>unsafe-eval</c> anywhere, and
 /// <c>default-src 'none'</c> means every fetch directive that is not listed is denied rather than
-/// inherited from a permissive default (T-11, S-04). <c>form-action 'none'</c> matters more than it
+/// inherited from a permissive default. <c>form-action 'none'</c> matters more than it
 /// looks: the pages contain no form, so any form an injection manages to create has nowhere to post to.
 /// </para>
 /// </remarks>

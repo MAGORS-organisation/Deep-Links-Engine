@@ -2,7 +2,7 @@ namespace Dle.Crypto;
 
 /// <summary>
 /// Durable home of the signing keys. The seam between this module and the <c>signing_keys</c>
-/// table (§B.5.2).
+/// table.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -25,7 +25,7 @@ public interface ISigningKeyStore
     /// <param name="purpose">Purpose, one of the constants on <see cref="SigningKeyPurposes"/>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The keys. Retired keys are part of the answer, because a signature made under one
-    /// has to keep verifying until its window closes (S-12).</returns>
+    /// has to keep verifying until its window closes.</returns>
     ValueTask<IReadOnlyList<SigningKeyMaterial>> LoadAsync(string purpose, CancellationToken ct);
 
     /// <summary>Stores a newly generated key and makes it the current one for its purpose.</summary>

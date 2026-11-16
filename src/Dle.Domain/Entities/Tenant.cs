@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// A tenant: the unit of ownership and of data isolation (FR-241). Maps to <c>tenants</c>.
+/// A tenant: the unit of ownership and of data isolation. Maps to <c>tenants</c>.
 /// </summary>
 /// <remarks>
 /// The entities in this namespace are plain objects. They carry no mapping attributes and no
@@ -25,7 +25,7 @@ public class Tenant
 
     /// <summary>Consent mode, stored as text: <c>full</c>, <c>aggregate_only</c> or <c>off</c>.
     /// The default is the middle one, so a fresh tenant never collects more than the legitimate
-    /// interest basis supports (§E.6.2, FR-248).</summary>
+    /// interest basis supports.</summary>
     public string ConsentMode { get; set; } = "aggregate_only";
 
     /// <summary>Free form tenant settings, stored as a JSON document.</summary>

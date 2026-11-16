@@ -34,7 +34,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       # Reverse-DNS bot verification needs outbound DNS to work; on a laptop behind a captive
-      # portal it only adds latency. It is ON in production (FR-161, TC-107).
+      # portal it only adds latency. It is ON in production.
       Dle__Edge__BotDetection__ReverseDnsVerify: "false"
 
   dle-control:

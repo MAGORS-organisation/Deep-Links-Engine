@@ -12,14 +12,14 @@ import sk.magors.dle.ProblemDocument
 import sk.magors.dle.ResolvedLink
 
 /**
- * The wire shapes of `Dle.Domain.Contracts.SdkContracts` (spec §B.7.2), one class per DTO, every
+ * The wire shapes of `Dle.Domain.Contracts.SdkContracts`, one class per DTO, every
  * member in the DTO's declaration order and named with the exact snake_case string the server
  * uses. Bodies produced from these classes are byte comparable with the literals in
  * `tests/Dle.ContractTests/Wire/SdkWireContractTests.cs`; `WireModelsTest` asserts that.
  *
  * Absent optional members are omitted, never written as `null`: the server serialises with
  * `WhenWritingNull` and the SDK mirrors it so a `signals` object that must not be sent is
- * genuinely absent (TC-145, TC-146), not present and empty.
+ * genuinely absent, not present and empty.
  */
 internal val DleJson: Json = Json {
     // A new server may add members; an SDK already in the field must keep working.
@@ -163,7 +163,7 @@ internal data class ProblemWire(
  *
  * @throws DleException.Malformed when `match_type` is not one the SDK knows or `confidence` is
  * not a finite number. An unknown strategy presented as an attribution is exactly the failure
- * mode this product forbids (FR-186, ADR-008), so the body is refused rather than guessed at.
+ * mode this product forbids, so the body is refused rather than guessed at.
  */
 internal fun ResolveResponse.toDeferredLink(): DeferredLink {
     val type = MatchType.fromWireName(matchType)
@@ -182,7 +182,7 @@ internal fun ResolveResponse.toDeferredLink(): DeferredLink {
     )
 }
 
-/** The wire form of a public result, used to persist a cached resolve (TC-143). */
+/** The wire form of a public result, used to persist a cached resolve. */
 internal fun DeferredLink.toWire(): ResolveResponse = ResolveResponse(
     matched = matched,
     matchType = matchType.wireName,

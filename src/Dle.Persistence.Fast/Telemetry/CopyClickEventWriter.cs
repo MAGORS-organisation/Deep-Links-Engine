@@ -3,7 +3,7 @@ using Dle.Persistence.Fast.Data;
 namespace Dle.Persistence.Fast.Telemetry;
 
 /// <summary>
-/// Writes batches of click events with <c>COPY … FROM STDIN (FORMAT BINARY)</c> (§C.3.2, ADR-004).
+/// Writes batches of click events with <c>COPY … FROM STDIN (FORMAT BINARY)</c>.
 /// </summary>
 /// <remarks>
 /// <para>

@@ -25,7 +25,7 @@ public sealed record InstallErasureResponse
 
 /// <summary>
 /// <c>DELETE /api/v1/privacy/installs/{installId}</c> — tenant-scoped GDPR Article 17 / DSAR
-/// erasure of end-user installation records (§E.6.3).
+/// erasure of end-user installation records.
 /// </summary>
 /// <remarks>
 /// Deletes only rows within the authenticated caller's tenant. The immutable administrative audit

@@ -6,9 +6,9 @@
     ADR-004, docs/zadanie.md §C.3.1 and §C.3.2.
 
     Blocking I/O other than one cache hit and one DB query is forbidden here
-    (SHARED-KERNEL §17.8).
+.
 
-    This assembly is kept ahead-of-time friendly on purpose (ADR-012): the edge
+    This assembly is kept ahead-of-time friendly on purpose: the edge
     resolver is the component where AOT pays off, and one reflective dependency in
     its data access would close that door. Consequences visible below and in the
     code: no reflective configuration binder, no reflective JSON, and every row

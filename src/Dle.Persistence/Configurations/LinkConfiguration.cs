@@ -1,9 +1,9 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="Link"/> to the <c>links</c> table (§B.5.2).</summary>
+/// <summary>Maps <see cref="Link"/> to the <c>links</c> table.</summary>
 /// <remarks>
 /// This is the only table on the resolve path, so its indexes are part of the latency budget rather
-/// than an afterthought (§B.6.1).
+/// than an afterthought.
 /// </remarks>
 public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
 {
@@ -113,7 +113,7 @@ public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
         // The version doubles as the optimistic-concurrency token: every write that changes the
         // row bumps it and carries "WHERE version = <read>". A stale edit - one prepared from a
         // read that predates a concurrent edit or an abuse quarantine - is rejected instead of
-        // silently reversing the newer write (T-09, TC-103).
+        // silently reversing the newer write.
         builder.Property(l => l.Version)
             .HasColumnName("version")
             .HasDefaultValue(1)
@@ -137,7 +137,7 @@ public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
             .HasDatabaseName("uq_links_domain_slug");
 
         // The critical index for the hot path: covering, so the resolve query is answered from the
-        // index alone and never touches the heap (§B.5.2).
+        // index alone and never touches the heap.
         //
         // It is deliberately NOT a partial index. Two reasons, and both matter:
         //
@@ -147,7 +147,7 @@ public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
         //   2. A quarantined link must still be found. Abuse handling answers it with 410 Gone and
         //      an explanation, not with 404: hiding the row would turn a withdrawn link into an
         //      unknown one and destroy the distinction the DSA notice-and-action flow depends on
-        //      (TC-103, §E.3).
+        //.
         //
         // Index-only scans additionally need a well maintained visibility map, which is why the
         // migration lowers autovacuum_vacuum_scale_factor on this table to 0.02.
@@ -186,7 +186,7 @@ public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
         builder.HasIndex(l => new { l.TenantId, l.CampaignId })
             .HasDatabaseName("ix_links_tenant_campaign");
 
-        // Tag search (FR-109) is containment over a text[], which is a GIN index, not a btree.
+        // Tag search is containment over a text[], which is a GIN index, not a btree.
         builder.HasIndex(l => l.Tags)
             .HasMethod("gin")
             .HasDatabaseName("ix_links_tags");

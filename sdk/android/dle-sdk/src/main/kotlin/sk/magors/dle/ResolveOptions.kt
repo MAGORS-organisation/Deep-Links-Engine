@@ -3,7 +3,7 @@ package sk.magors.dle
 /**
  * Deterministic evidence handed to [DleClient.resolve] beyond what the SDK collects itself.
  *
- * A plain `resolve()` happens once per installation and its result is persisted (TC-143). A call
+ * A plain `resolve()` happens once per installation and its result is persisted. A call
  * that carries new evidence is a new question and goes to the server again, unless a
  * deterministic match is already stored.
  *

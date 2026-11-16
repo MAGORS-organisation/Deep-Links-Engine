@@ -26,7 +26,7 @@ using StackExchange.Redis;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// The single composition entry point of the control-plane core (SHARED-KERNEL §15, §C.4).
+/// The single composition entry point of the control-plane core.
 /// </summary>
 /// <remarks>
 /// Everything here is either policy the endpoints share — the wire format, the problem document
@@ -190,7 +190,7 @@ public static class ControlCoreServiceCollectionExtensions
             json.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower));
         });
 
-        // A lost PostgreSQL is a 503 with Retry-After, never a 500 (§D.6). Registered ahead of the
+        // A lost PostgreSQL is a 503 with Retry-After, never a 500. Registered ahead of the
         // problem-details fallback, which handles everything this one declines.
         services.AddExceptionHandler<DependencyUnavailableExceptionHandler>();
 
@@ -198,7 +198,7 @@ public static class ControlCoreServiceCollectionExtensions
         {
             // The trace identifier is what turns "it returned 500" into a log query. Nothing else is
             // added: a problem document is returned to a caller who may hold no credential at all,
-            // so it carries no request detail, no header value and no address (SHARED-KERNEL §17.5).
+            // so it carries no request detail, no header value and no address.
             context.ProblemDetails.Extensions["trace_id"] = context.HttpContext.TraceIdentifier;
 
             context.ProblemDetails.Type ??= ProblemCodes.Base
@@ -294,7 +294,7 @@ public static class ControlCoreServiceCollectionExtensions
                 tags: [HealthEndpointExtensions.ReadyTag]);
 
     /// <summary>
-    /// Registers the OpenAPI 3.1 document (§B.7.3).
+    /// Registers the OpenAPI 3.1 document.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <remarks>
@@ -338,7 +338,7 @@ public static class ControlCoreServiceCollectionExtensions
 }
 
 /// <summary>
-/// Publishes the stable RFC 9457 problem type identifiers on the document (§B.7.3).
+/// Publishes the stable RFC 9457 problem type identifiers on the document.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -393,7 +393,7 @@ internal sealed class DleProblemCodeTransformer : Microsoft.AspNetCore.OpenApi.I
 }
 
 /// <summary>
-/// Declares the credential schemes on the OpenAPI document (FR-242).
+/// Declares the credential schemes on the OpenAPI document.
 /// </summary>
 /// <remarks>
 /// Two schemes rather than one, because the two credentials really are different: a control-plane

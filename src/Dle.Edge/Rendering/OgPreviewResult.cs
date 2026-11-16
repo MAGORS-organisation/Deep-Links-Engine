@@ -2,21 +2,21 @@ namespace Dle.Edge.Rendering;
 
 /// <summary>
 /// The crawler preview: HTTP 200 HTML carrying Open Graph and Twitter Card metadata, and never a
-/// redirect (FR-105, FR-161, ADR-009, TC-106).
+/// redirect.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>Why this is not a redirect.</b> Social crawlers follow 30x responses unreliably and run no
 /// JavaScript. A crawler that is redirected either loses the metadata or gives up, and the result is a
 /// link preview that renders as a bare URL — the single most visible failure mode a link shortener has
-/// (§A.2.6). So the crawler gets a complete static document, and it gets it at the short URL itself.
+///. So the crawler gets a complete static document, and it gets it at the short URL itself.
 /// </para>
 /// <para>
 /// <b>Where the metadata comes from.</b> The link's own values layered over the domain's defaults
 /// through <see cref="OgMeta.MergeWith(OgMeta?)"/>, which is what FR-105 means by a fallback: a link
 /// that sets only a title still gets the tenant's image and site name. Every value is authored in the
 /// control plane by an authenticated operator, and every one of them is still encoded on the way out
-/// and, if it is a URL, filtered by <see cref="SafeUrl"/> — a stored value is not a trusted one (T-11).
+/// and, if it is a URL, filtered by <see cref="SafeUrl"/> — a stored value is not a trusted one.
 /// </para>
 /// <para>
 /// <b>Why it is not cacheable.</b> One URL answers a crawler with this document and a browser with a
@@ -45,7 +45,7 @@ internal sealed class OgPreviewResult : HtmlPageResult
     /// </param>
     /// <param name="targetUrl">
     /// Where the visible anchor points. Defaults to the link's own target; the resolve pipeline passes
-    /// the URL it built so that one implementation decides what a target may be (§17.4).
+    /// the URL it built so that one implementation decides what a target may be.
     /// </param>
     internal OgPreviewResult(
         LinkSnapshot link,

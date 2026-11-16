@@ -25,7 +25,6 @@ public sealed class AdminConsoleHeaderTests : IDisposable
 
     [Theory]
     [MemberData(nameof(ConsolePaths))]
-    [Trait("Threat", "T-11")]
     public async Task ConsolePages_CarryAStrictContentSecurityPolicy(string path)
     {
         using HttpClient client = _host.CreateClient();
@@ -47,7 +46,6 @@ public sealed class AdminConsoleHeaderTests : IDisposable
     [Theory]
     [InlineData("/admin/assets/app.js")]
     [InlineData("/admin/assets/app.css")]
-    [Trait("Threat", "T-11")]
     public async Task ConsoleAssets_AreServedWithoutACredential(string path)
     {
         // The browser fetches the bundle before anybody has signed in. The deny-by-default policy

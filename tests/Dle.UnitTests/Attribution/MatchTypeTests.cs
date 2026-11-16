@@ -58,7 +58,6 @@ public sealed class MatchTypeTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-142")]
     public void NoMatch_CarriesTheReasonAndNothingElse()
     {
         AttributionResult result = AttributionResult.NoMatch("no_dl_cid_in_referrer");
@@ -80,7 +79,6 @@ public sealed class MatchTypeTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-141")]
     public void DeterministicMatch_IsExpressedAsConfidenceOne()
     {
         AttributionResult result = new()

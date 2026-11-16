@@ -1,7 +1,7 @@
 namespace Dle.Persistence.Tenancy;
 
 /// <summary>
-/// The tenant every control-plane query and write is scoped to (FR-241, T-09).
+/// The tenant every control-plane query and write is scoped to.
 /// </summary>
 /// <remarks>
 /// <para>

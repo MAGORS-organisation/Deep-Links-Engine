@@ -17,7 +17,7 @@ public interface IClickLookup
     /// The two hints are not an optimisation, they are the point of the method. The click stream
     /// is partitioned by time, and a lookup without a bound on <c>occurred_at</c> has no pruning
     /// predicate and turns into a scan of every partition. The bounds come from the timestamp
-    /// encoded in the click identifier itself (§B.6.3).
+    /// encoded in the click identifier itself.
     /// </remarks>
     ValueTask<ClickRecord?> FindByClickIdAsync(
         string clickId,

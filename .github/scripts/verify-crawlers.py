@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Automated crawler verification check (docs/zadanie.md §D.2.1, TC-106, ADR-009).
+"""Automated crawler verification check.
 
 Verifies that social and messaging crawler user agents:
 1. Receive HTTP 200 with HTML (not a 30x redirect or application/json error).
 2. The HTML contains valid Open Graph meta tags (og:title, og:image, og:url, og:type).
 3. Requests do not pollute campaign click counts or trigger rate limiting.
 
-Crawlers verified (§D.2.1):
+Crawlers verified:
   - facebookexternalhit (Facebook link preview)
   - Twitterbot (X / Twitter link preview)
   - Slackbot / Slack-ImgProxy (Slack link preview)
@@ -134,7 +134,7 @@ def main() -> int:
     summary_path = os.getenv("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a", encoding="utf-8") as f:
-            f.write("### Crawler Verification (§D.2.1)\n\n")
+            f.write("### Crawler Verification\n\n")
             f.write(f"Tested link: `{link_url}`\n\n")
             f.write("| Crawler | Status | Details |\n|---|---|---|\n")
             for name, ok, msg in results:

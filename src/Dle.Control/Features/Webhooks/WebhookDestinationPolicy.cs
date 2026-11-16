@@ -117,7 +117,7 @@ public static class WebhookDestinationPolicy
         {
             // A name that does not resolve is refused rather than accepted optimistically. Default
             // deny: a destination the engine cannot reach today is a destination that produces a
-            // queue of failures tomorrow (SHARED-KERNEL §17.9).
+            // queue of failures tomorrow.
             return WebhookDestinationVerdict.Reject("The destination host could not be resolved.");
         }
 
@@ -134,7 +134,7 @@ public static class WebhookDestinationPolicy
                 // resolves to one public and one link-local address is a name that can be made to
                 // resolve to the link-local one at connection time.
                 return WebhookDestinationVerdict.Reject(
-                    "The destination resolves to an address that is not a permitted target (T-02).");
+                    "The destination resolves to an address that is not a permitted target.");
             }
         }
 
@@ -177,7 +177,7 @@ public static class WebhookDestinationPolicy
             {
                 // The offending value is not echoed back. It is caller supplied text, and a
                 // problem document that repeats it is a reflection point for anything that later
-                // renders these documents (SHARED-KERNEL §17.5); naming the closed set is more
+                // renders these documents; naming the closed set is more
                 // useful to the integrator anyway.
                 reason = string.Create(
                     CultureInfo.InvariantCulture,

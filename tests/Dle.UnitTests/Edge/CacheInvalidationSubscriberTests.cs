@@ -9,7 +9,7 @@ namespace Dle.UnitTests.Edge;
 
 /// <summary>
 /// The cache invalidation subscriber must not fault when the host stops while a subscription to an
-/// unreachable Valkey is still in flight. Valkey being down only costs latency (§D.6); it must not
+/// unreachable Valkey is still in flight. Valkey being down only costs latency; it must not
 /// turn an ordinary shutdown into an error.
 /// </summary>
 public sealed class CacheInvalidationSubscriberTests

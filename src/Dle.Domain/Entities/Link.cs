@@ -1,12 +1,12 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// A short link with its routing rules and metadata (FR-101). Maps to <c>links</c>.
+/// A short link with its routing rules and metadata. Maps to <c>links</c>.
 /// </summary>
 /// <remarks>
 /// <see cref="QuarantinedAt"/> exists instead of a delete flag because an abusive link must be
 /// answered with HTTP 410 and an explanation rather than silently removed: quiet deletion destroys
-/// the forensic trail that a later complaint has to be answered from (§E.3, TC-103).
+/// the forensic trail that a later complaint has to be answered from.
 /// </remarks>
 public class Link
 {
@@ -35,8 +35,8 @@ public class Link
     /// <summary>Path handed to the application, for example <c>/product/123</c>.</summary>
     public string? DeeplinkPath { get; set; }
 
-    /// <summary>Routing rules, stored as a JSON array (§B.5.4). They are data, not code: the
-    /// first matching rule wins and a default rule is mandatory (FR-127, TC-105).</summary>
+    /// <summary>Routing rules, stored as a JSON array. They are data, not code: the
+    /// first matching rule wins and a default rule is mandatory.</summary>
     public string RoutingRules { get; set; } = "[]";
 
     /// <summary>Open Graph metadata, stored as a JSON document.</summary>
@@ -48,19 +48,19 @@ public class Link
     /// <summary>Campaign the link belongs to.</summary>
     public Guid? CampaignId { get; set; }
 
-    /// <summary>Free form tags used for search and filtering (FR-109).</summary>
+    /// <summary>Free form tags used for search and filtering.</summary>
     public List<string> Tags { get; set; } = [];
 
     /// <summary>Whether the link is active. An inactive link answers 404.</summary>
     public bool IsActive { get; set; } = true;
 
-    /// <summary>Instant from which the link serves, in UTC (FR-104).</summary>
+    /// <summary>Instant from which the link serves, in UTC.</summary>
     public DateTimeOffset? StartsAt { get; set; }
 
     /// <summary>Instant at which the link stops serving, in UTC.</summary>
     public DateTimeOffset? ExpiresAt { get; set; }
 
-    /// <summary>Where an expired link sends the visitor instead (TC-104).</summary>
+    /// <summary>Where an expired link sends the visitor instead.</summary>
     public string? ExpiredUrl { get; set; }
 
     /// <summary>When the link was quarantined for abuse, in UTC. A quarantined link answers 410
@@ -77,6 +77,6 @@ public class Link
     public DateTimeOffset UpdatedAt { get; set; }
 
     /// <summary>Monotonic version, incremented on every change and matching the highest
-    /// <see cref="LinkVersion.Version"/> in the history (FR-107).</summary>
+    /// <see cref="LinkVersion.Version"/> in the history.</summary>
     public int Version { get; set; } = 1;
 }

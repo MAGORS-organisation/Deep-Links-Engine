@@ -9,7 +9,7 @@ import type { Channel, DevicePlatform, PlatformInfo } from './types.js';
  *
  * This is deliberately **coarse**: a small ordered table of substring probes, no version
  * matrices, no entropy accumulation. UA parsing for channel routing is not fingerprinting;
- * the SDK never combines these signals into a stable identifier (FR-227).
+ * the SDK never combines these signals into a stable identifier.
  */
 
 /** Every canonical channel name, in `ChannelNames.cs` order. `app` is never produced here. */

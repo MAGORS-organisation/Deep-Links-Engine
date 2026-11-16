@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Control.Configuration;
 
 /// <summary>
-/// Privacy and consent options bound from <c>Dle:Privacy</c> (§C.4, §E.6.2).
+/// Privacy and consent options bound from <c>Dle:Privacy</c>.
 /// </summary>
 public sealed class ControlPrivacyOptions
 {

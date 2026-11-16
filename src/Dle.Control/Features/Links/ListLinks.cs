@@ -9,7 +9,7 @@ namespace Dle.Control.Features.Links;
 
 /// <summary>
 /// <c>GET /api/v1/links</c> and <c>GET /api/v1/links/{id}</c> — search, tag filter and paging
-/// (FR-109).
+///.
 /// </summary>
 /// <remarks>
 /// Paging is by cursor rather than by page number. A link list is ordered newest first and is
@@ -24,7 +24,7 @@ public static class ListLinks
     /// <param name="domainId">Restrict to one domain.</param>
     /// <param name="campaignId">Restrict to one campaign or template.</param>
     /// <param name="isActive">Restrict to switched-on or switched-off links.</param>
-    /// <param name="includeArchived">Include links withdrawn by abuse handling (TC-103).</param>
+    /// <param name="includeArchived">Include links withdrawn by abuse handling.</param>
     /// <param name="limit">Page size.</param>
     /// <param name="cursor">Cursor from the previous page.</param>
     /// <param name="links">Link storage.</param>
@@ -115,7 +115,7 @@ public static class ListLinks
     /// <remarks>
     /// A link belonging to another tenant is not in the queryable at all, so it arrives here as an
     /// ordinary miss and leaves as 404 — never 403, which would confirm the identifier exists
-    /// (TC-166, SHARED-KERNEL §17.7).
+    ///.
     /// </remarks>
     public static async Task<IResult> GetAsync(
         string id,
@@ -145,7 +145,7 @@ public static class ListLinks
         return TypedResults.Ok(presenter.Project(link, domain?.Host ?? string.Empty));
     }
 
-    /// <summary>Reads the revisions of a link, newest first (FR-107).</summary>
+    /// <summary>Reads the revisions of a link, newest first.</summary>
     /// <param name="id">The link identifier.</param>
     /// <param name="limit">How many revisions to read.</param>
     /// <param name="links">Link storage.</param>
@@ -230,7 +230,7 @@ public static class ListLinks
         }
     }
 
-    /// <summary>Splits the comma separated tag filter (FR-109).</summary>
+    /// <summary>Splits the comma separated tag filter.</summary>
     /// <param name="tags">The query value.</param>
     /// <returns>The tags, or <see langword="null"/> when none were supplied.</returns>
     private static List<string>? ParseTags(string? tags)
@@ -259,7 +259,7 @@ public static class ListLinks
 }
 
 /// <summary>
-/// One historical revision of a link, as stored (FR-107).
+/// One historical revision of a link, as stored.
 /// </summary>
 /// <remarks>
 /// <see cref="Snapshot"/> is the raw document written at the time. It is passed through rather than

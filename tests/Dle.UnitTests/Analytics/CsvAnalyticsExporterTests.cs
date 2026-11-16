@@ -8,7 +8,7 @@ using Xunit;
 namespace Dle.UnitTests.Analytics;
 
 /// <summary>
-/// Regression tests for CSV export formula neutralization (M-3).
+/// Regression tests for CSV export formula neutralization.
 /// </summary>
 public sealed class CsvAnalyticsExporterTests
 {

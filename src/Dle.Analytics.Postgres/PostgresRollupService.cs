@@ -43,7 +43,7 @@ public sealed partial class PostgresRollupService : IRollupService
     /// <summary>Creates the service.</summary>
     /// <param name="connections">Factory for analytics database connections.</param>
     /// <param name="options">Monitor over the analytics options.</param>
-    /// <param name="timeProvider">Clock. Never <see cref="DateTime.UtcNow"/> (SHARED-KERNEL §17).</param>
+    /// <param name="timeProvider">Clock. Never <see cref="DateTime.UtcNow"/>.</param>
     /// <param name="logger">Logger for the job's own audit trail.</param>
     public PostgresRollupService(
         IAnalyticsConnectionFactory connections,

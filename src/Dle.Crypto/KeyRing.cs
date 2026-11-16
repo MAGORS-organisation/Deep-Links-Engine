@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Crypto;
 
 /// <summary>
-/// Holds the signing material of a deployment and owns its rotation (§E.4.2, ADR-013).
+/// Holds the signing material of a deployment and owns its rotation.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,7 +18,7 @@ namespace Dle.Crypto;
 /// <see cref="RefreshAsync"/> then folds in whatever the <see cref="ISigningKeyStore"/> holds.
 /// </para>
 /// <para>
-/// Rotation never shortens a window that is still open (S-12). The outgoing key is retired with
+/// Rotation never shortens a window that is still open. The outgoing key is retired with
 /// <c>NotAfter = now + KeyOverlapDays</c>, which has to exceed the lifetime of the longest lived
 /// artefact it signed; until then it stays in the verifier and in the published JWKS, because a
 /// webhook receiver that fetched the key set an hour ago must still be able to check what it
@@ -175,7 +175,7 @@ public sealed class KeyRing : IKeyRing, IDisposable
                 // matched no row. Those copies also have to be retired here, otherwise RefreshAsync
                 // merges the original — unbounded — window straight back in and the key stays
                 // acceptable for ever, which would make rotating away from a leaked bootstrap key
-                // impossible (S-12).
+                // impossible.
                 RetireConfiguredKey(outgoingKid, outgoingNotAfter);
             }
 

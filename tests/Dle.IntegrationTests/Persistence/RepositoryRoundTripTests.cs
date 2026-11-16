@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Dle.IntegrationTests.Persistence;
 
 /// <summary>
-/// Every control-plane repository writes a row and reads the same values back (§B.5.2).
+/// Every control-plane repository writes a row and reads the same values back.
 /// </summary>
 /// <remarks>
 /// The interesting half is the columns PostgreSQL types differently from C#: <c>jsonb</c> for the
@@ -154,7 +154,6 @@ public sealed class RepositoryRoundTripTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-107")]
     public async Task LinkRepository_RoundTripsALinkWithItsRevisionAndSnapshot()
     {
         string host = TestSeed.UniqueHost("link-rt");
@@ -326,7 +325,7 @@ public sealed class RepositoryRoundTripTests(DleInfrastructureFixture infrastruc
 
         Assert.True(await abuse.QuarantineLinkAsync(linkId, Ct));
 
-        // Quarantined, not deleted: the row has to stay so the edge can answer 410 (TC-103).
+        // Quarantined, not deleted: the row has to stay so the edge can answer 410.
         Assert.NotNull(
             await Sql.ScalarAsync<DateTime?>(
                 Database.DataSource,
@@ -374,7 +373,6 @@ public sealed class RepositoryRoundTripTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "E.6.3")]
     public async Task AuditLogWriter_RoundTripsAnEntryAndItsJsonbMetadata()
     {
         Guid tenantId = await TestSeed.TenantAsync(Database, "audit-rt", cancellationToken: Ct);
@@ -401,7 +399,6 @@ public sealed class RepositoryRoundTripTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "ADR-007")]
     public async Task SlugSequenceAllocator_HandsOutStrictlyIncreasingValuesAcrossBlocks()
     {
         Guid tenantId = await TestSeed.TenantAsync(Database, "slug-seq", cancellationToken: Ct);
@@ -421,7 +418,6 @@ public sealed class RepositoryRoundTripTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("Threat", "T-09")]
     public async Task LinkRepository_RefusesAnUpdatePreparedFromAReadThatAQuarantineOvertook()
     {
         // The dangerous race: an operator's PATCH is prepared from a read, abuse enforcement
@@ -456,7 +452,6 @@ public sealed class RepositoryRoundTripTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-103")]
     public async Task AbuseRepository_QuarantineAndReleaseAreVersionedAndInTheHistory()
     {
         string host = TestSeed.UniqueHost("link-quarantine");
@@ -518,7 +513,6 @@ public sealed class RepositoryRoundTripTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.7.3")]
     public async Task IdempotencyStore_ReplaysAStoredResponseForTheSameKey()
     {
         Guid tenantId = await TestSeed.TenantAsync(Database, "idem-rt", cancellationToken: Ct);

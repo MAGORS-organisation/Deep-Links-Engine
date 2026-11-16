@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Control.Configuration;
 
 /// <summary>
-/// Observability configuration bound from <c>Dle:Telemetry</c> (§C.6).
+/// Observability configuration bound from <c>Dle:Telemetry</c>.
 /// </summary>
 public sealed class DleTelemetryOptions
 {

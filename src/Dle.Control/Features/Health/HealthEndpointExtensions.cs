@@ -8,7 +8,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// Maps the health probes (SHARED-KERNEL §15, §D.6).
+/// Maps the health probes.
 /// </summary>
 /// <remarks>
 /// <para>

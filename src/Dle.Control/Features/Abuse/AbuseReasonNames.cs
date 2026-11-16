@@ -6,7 +6,7 @@ namespace Dle.Control.Features.Abuse;
 /// The wire spellings of <see cref="AbuseReason"/> and <see cref="AbuseReportStatus"/>.
 /// </summary>
 /// <remarks>
-/// The columns hold text rather than an integer (SHARED-KERNEL §12), so these strings are both the
+/// The columns hold text rather than an integer, so these strings are both the
 /// API contract and the stored value. They are written once, here, so that a report submitted
 /// through the public form, a row in the database and a line in the triage queue always agree.
 /// </remarks>

@@ -6,14 +6,14 @@ namespace Dle.Control.Features.Links;
 
 /// <summary>
 /// <c>PATCH /api/v1/links/{id}</c>, <c>POST /api/v1/links/{id}/archive</c> and
-/// <c>DELETE /api/v1/links/{id}</c> (FR-101, FR-104, FR-107).
+/// <c>DELETE /api/v1/links/{id}</c>.
 /// </summary>
 /// <remarks>
 /// Archiving and deleting are different operations on purpose. Archiving switches a link off and
 /// keeps it, which is what a marketer means by "take the campaign down"; the slug stays reserved and
 /// the history stays readable. Deleting removes the row, and is for a link created by mistake. A
 /// link withdrawn for abuse is neither: it is quarantined by the abuse module, which keeps it
-/// answering 410 with an explanation (§E.3, TC-103).
+/// answering 410 with an explanation.
 /// </remarks>
 public static class UpdateLink
 {
@@ -23,7 +23,7 @@ public static class UpdateLink
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="writer">Validation and the write itself.</param>
     /// <param name="presenter">Builds the short URL and the QR URL.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops the edge's cached copy of the link.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>200 with the updated link, or a problem document.</returns>
@@ -80,12 +80,12 @@ public static class UpdateLink
         return TypedResults.Ok(presenter.Project(link, host));
     }
 
-    /// <summary>Switches a link off without removing it (FR-104).</summary>
+    /// <summary>Switches a link off without removing it.</summary>
     /// <param name="id">The link identifier.</param>
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="writer">Validation and the write itself.</param>
     /// <param name="presenter">Builds the short URL and the QR URL.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops the edge's cached copy of the link.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>200 with the archived link, or a problem document.</returns>
@@ -146,7 +146,7 @@ public static class UpdateLink
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="links">Link storage.</param>
     /// <param name="domains">Domain storage, used to resolve the host for the cache drop.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops the edge's cached copy of the link.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>204, or 404 when there is no such link.</returns>
@@ -222,7 +222,7 @@ public static class UpdateLink
     /// <remarks>
     /// Names only. The audit trail records that the target URL changed, not what it changed to: the
     /// old value is in the link revision, which is where a forensic question belongs, and keeping the
-    /// trail free of payload keeps it small enough to retain for years (FR-107, FR-246).
+    /// trail free of payload keeps it small enough to retain for years.
     /// </remarks>
     private static string ChangedFields(UpdateLinkRequest request)
     {
@@ -303,7 +303,7 @@ public static class UpdateLink
 /// <remarks>
 /// A link identifier is a 64 bit Snowflake and travels as text, because JSON numbers above 2^53 are
 /// not safe in every client. A value that is not a number is not an error: it is an identifier that
-/// does not exist, and it gets the same 404 as one that does not exist (T-07).
+/// does not exist, and it gets the same 404 as one that does not exist.
 /// </remarks>
 internal static class LinkRoute
 {

@@ -6,7 +6,7 @@ namespace Dle.Domain.Links;
 /// <remarks>
 /// Social crawlers do not follow redirects reliably and do not run JavaScript, so a link shared on a
 /// social network is only ever as good as the static HTML the edge returns to the crawler
-/// (§A.2.6, ADR-009, FR-161). These values are that HTML's entire content.
+///. These values are that HTML's entire content.
 /// </remarks>
 public sealed record OgMeta
 {

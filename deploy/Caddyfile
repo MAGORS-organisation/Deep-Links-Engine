@@ -1,5 +1,5 @@
 # =============================================================================
-# Deep Link Engine (DLE) — Caddy front door for Profile A (docs/zadanie.md §B.8).
+# Deep Link Engine (DLE) — Caddy front door for Profile A.
 #
 # Environment (set by docker-compose.yml from .env):
 #   DLE_DOMAIN  public host name of the links, e.g. go.example.com
@@ -12,7 +12,7 @@
 #   /api/*  /v1/*  /admin*  /abuse-reports*      → dle-control  (API, admin console; API reference disabled in Production by default)
 #   everything else, i.e. /{slug}, /{slug}/qr    → dle-edge
 #
-# !!! /.well-known RESPONSES MUST NEVER BE REDIRECTED (docs/zadanie.md §A.2.1, TC-124) !!!
+# !!! /.well-known RESPONSES MUST NEVER BE REDIRECTED !!!
 # Apple's CDN and Google's verifier refuse an apple-app-site-association / assetlinks.json that
 # answers with any 3xx — HTTP→HTTPS, trailing slash, www canonicalisation, all of them. Therefore:
 #   - `auto_https disable_redirects` switches off Caddy's automatic HTTP→HTTPS redirect for the

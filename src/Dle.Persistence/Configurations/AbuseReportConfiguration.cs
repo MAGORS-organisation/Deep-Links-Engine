@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="AbuseReport"/> to the <c>abuse_reports</c> table (FR-245, §E.3).</summary>
+/// <summary>Maps <see cref="AbuseReport"/> to the <c>abuse_reports</c> table.</summary>
 public sealed class AbuseReportConfiguration : IEntityTypeConfiguration<AbuseReport>
 {
     /// <inheritdoc />

@@ -17,7 +17,7 @@ using Microsoft.Extensions.Hosting;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// The single composition entry point of the edge data plane (SHARED-KERNEL §15).
+/// The single composition entry point of the edge data plane.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -162,8 +162,8 @@ public static class EdgeCoreServiceCollectionExtensions
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The client address is not cosmetic here: it is the rate limiting partition key (§E.9), the input
-    /// to the hashed identifier in the click stream (FR-247) and the geographic lookup key. Honouring
+    /// The client address is not cosmetic here: it is the rate limiting partition key, the input
+    /// to the hashed identifier in the click stream and the geographic lookup key. Honouring
     /// <c>X-Forwarded-For</c> from an arbitrary peer would let any client choose its own rate limit
     /// bucket and its own country, so the header is only trusted when the immediate peer is a
     /// configured proxy.

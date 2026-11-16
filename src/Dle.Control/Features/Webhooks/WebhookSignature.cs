@@ -7,7 +7,7 @@ using Dle.Domain.Crypto;
 namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
-/// Builds and checks the two headers a delivery carries (§B.7.4, §E.5.3, T-13, TC-165).
+/// Builds and checks the two headers a delivery carries.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -41,7 +41,7 @@ namespace Dle.Control.Features.Webhooks;
 /// <b>What is signed.</b> The signing input is the ASCII decimal Unix timestamp, a full stop, and
 /// then the response body <em>exactly as transmitted</em>: <c>t + "." + body</c>. The body bytes
 /// are the bytes stored in the outbox and handed to the HTTP client unchanged, so a retry
-/// reproduces them byte for byte and a modified body fails verification (TC-165). Binding the
+/// reproduces them byte for byte and a modified body fails verification. Binding the
 /// timestamp into the signed material is what stops a captured delivery from being replayed with a
 /// fresh <c>t</c>: rewriting it invalidates both signatures.
 /// </para>
@@ -123,7 +123,7 @@ public static class WebhookSignature
     /// <para>
     /// The comparison is <see cref="CryptographicOperations.FixedTimeEquals(ReadOnlySpan{byte}, ReadOnlySpan{byte})"/>. An equality
     /// comparison on a MAC leaks it one byte at a time to anyone who can measure the response
-    /// (SHARED-KERNEL §17.6, T-17).
+    ///.
     /// </para>
     /// </remarks>
     public static bool VerifySymmetric(
@@ -169,7 +169,7 @@ public static class WebhookSignature
     /// signature slot.</returns>
     /// <remarks>
     /// Unknown members are ignored rather than refused, which is what makes adding <c>v3</c> a
-    /// non-breaking change (§E.5.3).
+    /// non-breaking change.
     /// </remarks>
     public static bool TryParse(string? headerValue, out WebhookSignatureHeader header)
     {
@@ -237,7 +237,7 @@ public static class WebhookSignature
         if (!Utf8Formatter.TryFormat(unixSeconds, timestamp, out int written))
         {
             // Cannot happen: twenty bytes hold every long. Fail closed rather than sign a
-            // truncated timestamp (SHARED-KERNEL §17.9).
+            // truncated timestamp.
             throw new InvalidOperationException("The delivery timestamp could not be formatted.");
         }
 

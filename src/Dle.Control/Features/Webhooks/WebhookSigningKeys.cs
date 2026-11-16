@@ -35,7 +35,7 @@ namespace Dle.Control.Features.Webhooks;
 /// Every key inside its validity window is published, retired ones included. That is what makes
 /// rotation invisible to a receiver: the new key appears before it signs, the old one stays until
 /// nothing signed under it can still be in flight, and a verifier that refreshes on an unrecognised
-/// <c>kid</c> never sees a gap (S-12).
+/// <c>kid</c> never sees a gap.
 /// </para>
 /// </remarks>
 public sealed partial class WebhookSigningKeys : IJwksContributor, IDisposable
@@ -71,7 +71,7 @@ public sealed partial class WebhookSigningKeys : IJwksContributor, IDisposable
     /// </summary>
     /// <param name="store">Durable home of the key material.</param>
     /// <param name="crypto">Crypto options, read for the master secret.</param>
-    /// <param name="timeProvider">Clock (SHARED-KERNEL §17.2).</param>
+    /// <param name="timeProvider">Clock.</param>
     /// <param name="logger">Logger.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     /// <remarks>
@@ -177,7 +177,7 @@ public sealed partial class WebhookSigningKeys : IJwksContributor, IDisposable
             {
                 // Nothing durable can sign right now, so the derived key stays in the set. It is
                 // added rather than substituted, so a store that holds retired keys keeps
-                // publishing them and a receiver can still verify an older delivery (S-12).
+                // publishing them and a receiver can still verify an older delivery.
                 material.Add(_derived);
                 LogUsingDerivedKey(_logger, _derived.Kid);
             }

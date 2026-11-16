@@ -9,7 +9,7 @@ namespace Dle.Domain.Abuse;
 /// <summary>
 /// Syntactic and network level validation of link targets (threats T-01 and T-02, TC-161 to
 /// TC-164). This is the gate that decides whether the product survives its first year or ends up
-/// on blocklists (§E.3).
+/// on blocklists.
 /// </summary>
 /// <remarks>
 /// <para>

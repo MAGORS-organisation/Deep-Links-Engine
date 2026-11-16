@@ -1,7 +1,7 @@
 namespace Dle.Persistence.Fast.Caching;
 
 /// <summary>
-/// Cache invalidation message published across edge replicas via Valkey pub/sub (ADR-005).
+/// Cache invalidation message published across edge replicas via Valkey pub/sub.
 /// </summary>
 public sealed record CacheInvalidationMessage(
     string Type,

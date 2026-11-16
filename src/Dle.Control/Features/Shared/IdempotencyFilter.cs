@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Routing.Patterns;
 namespace Dle.Control.Features.Shared;
 
 /// <summary>
-/// Makes a write replayable through the <c>Idempotency-Key</c> header (§B.7.3).
+/// Makes a write replayable through the <c>Idempotency-Key</c> header.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -136,7 +136,7 @@ internal sealed class IdempotencyFilter : IEndpointFilter
             // The reservation is released before the exception is allowed to propagate, so a
             // failure never leaves a key permanently poisoned. The exception itself is not
             // swallowed; the host's exception handler still turns it into a problem document
-            // (SHARED-KERNEL §17.9).
+            //.
             await store.AbandonAsync(key, endpoint, CancellationToken.None);
             throw;
         }
@@ -397,7 +397,7 @@ internal sealed class IdempotencyBufferingMiddleware
     /// <remarks>
     /// Both known-length and chunked bodies (<c>Content-Length</c> absent) are buffered up to
     /// <see cref="MaxBufferedBodyBytes"/> so a chunked caller cannot bypass body-hash binding for an
-    /// idempotency key. The streamed bulk import is excluded by name (FR-103).
+    /// idempotency key. The streamed bulk import is excluded by name.
     /// </remarks>
     private static bool ShouldBuffer(HttpRequest request)
     {

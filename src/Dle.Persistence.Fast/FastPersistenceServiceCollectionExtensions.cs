@@ -18,7 +18,7 @@ using StackExchange.Redis;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Registers the hot-path persistence module (SHARED-KERNEL §15).
+/// Registers the hot-path persistence module.
 /// </summary>
 /// <remarks>
 /// This is the module's entire public composition surface: one call, everything declarative, nothing
@@ -43,7 +43,7 @@ public static class FastPersistenceServiceCollectionExtensions
     /// <exception cref="InvalidOperationException">
     /// The primary connection string is missing, or an option is malformed or out of range. Validation
     /// happens here rather than through <c>ValidateOnStart</c> because the data annotations validator is
-    /// reflective and this assembly stays ahead-of-time friendly (ADR-012); the effect is the same, the
+    /// reflective and this assembly stays ahead-of-time friendly; the effect is the same, the
     /// process refuses to start.
     /// </exception>
     /// <remarks>

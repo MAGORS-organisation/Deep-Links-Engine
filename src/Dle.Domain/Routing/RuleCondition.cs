@@ -26,29 +26,29 @@ public sealed record RuleCondition
     /// </summary>
     public string[]? Platform { get; init; }
 
-    /// <summary>Constraint on the operating system version reported by the client (FR-124).</summary>
+    /// <summary>Constraint on the operating system version reported by the client.</summary>
     public VersionPredicate? OsVersion { get; init; }
 
-    /// <summary>Constraint on the host application version reported by the SDK (FR-124).</summary>
+    /// <summary>Constraint on the host application version reported by the SDK.</summary>
     public VersionPredicate? AppVersion { get; init; }
 
-    /// <summary>Countries the rule applies to, as ISO-3166-1 alpha-2 codes in upper case, for example <c>"SK"</c> (FR-122).</summary>
+    /// <summary>Countries the rule applies to, as ISO-3166-1 alpha-2 codes in upper case, for example <c>"SK"</c>.</summary>
     public string[]? Country { get; init; }
 
-    /// <summary>Sub-national regions the rule applies to, in the notation produced by the GeoIP provider (FR-122).</summary>
+    /// <summary>Sub-national regions the rule applies to, in the notation produced by the GeoIP provider.</summary>
     public string[]? Region { get; init; }
 
-    /// <summary>Languages the rule applies to, as lowercase primary subtags, for example <c>"sk"</c> (FR-123).</summary>
+    /// <summary>Languages the rule applies to, as lowercase primary subtags, for example <c>"sk"</c>.</summary>
     public string[]? Language { get; init; }
 
     /// <summary>Client channels the rule applies to, using the canonical names in <see cref="ChannelNames"/>.</summary>
     public string[]? Channel { get; init; }
 
-    /// <summary>Time constraint evaluated in UTC (FR-126).</summary>
+    /// <summary>Time constraint evaluated in UTC.</summary>
     public TimeWindowPredicate? TimeWindow { get; init; }
 
     /// <summary>
-    /// Deterministic A/B split (FR-125). The variants are laid out as consecutive percentage ranges over the
+    /// Deterministic A/B split. The variants are laid out as consecutive percentage ranges over the
     /// bucket space produced by <see cref="ConsistentBucket.Of(string)"/>; if the bucket falls beyond the
     /// accumulated total, the rule does not match and evaluation continues with the next rule.
     /// </summary>

@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// A host that serves links, together with its verification state (FR-145). Maps to
+/// A host that serves links, together with its verification state. Maps to
 /// <c>domains</c>.
 /// </summary>
 /// <remarks>
@@ -35,17 +35,17 @@ public class LinkDomain
     /// <summary>Last time the domain was verified, in UTC.</summary>
     public DateTimeOffset? LastVerifiedAt { get; set; }
 
-    /// <summary>History of verification runs, stored as a JSON array (FR-143).</summary>
+    /// <summary>History of verification runs, stored as a JSON array.</summary>
     public string VerificationLog { get; set; } = "[]";
 
     /// <summary>Optional consent mode override, stored as text. It can only tighten the mode of
     /// the tenant, never widen it.</summary>
     public string? ConsentModeOverride { get; set; }
 
-    /// <summary>Interstitial branding, stored as a JSON document (FR-163).</summary>
+    /// <summary>Interstitial branding, stored as a JSON document.</summary>
     public string Branding { get; set; } = "{}";
 
-    /// <summary>Open Graph defaults for links that define none, stored as a JSON document (FR-105).</summary>
+    /// <summary>Open Graph defaults for links that define none, stored as a JSON document.</summary>
     public string DefaultOg { get; set; } = "{}";
 
     /// <summary>Whether the domain serves. A disabled domain answers 404 like an unknown host.</summary>

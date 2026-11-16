@@ -6,15 +6,15 @@ import sk.magors.dle.AppLinkOpen
 import sk.magors.dle.DleEvent
 
 /**
- * Turns an incoming `ACTION_VIEW` intent into a `link_open` report (FR-223, spec §B.6.4).
+ * Turns an incoming `ACTION_VIEW` intent into a `link_open` report.
  *
  * A verified App Link opens the application straight from the operating system: no request ever
  * reaches the engine, so this report is the only evidence the click happened. Only `http` and
  * `https` data is reported; a custom scheme intent is ignored, because such links carry no
- * engine identifier and the SDK never transports anything over a custom scheme (FR-227).
+ * engine identifier and the SDK never transports anything over a custom scheme.
  *
  * What is sent is the scheme, host and path. The query string and fragment are stripped on the
- * device: the engine does not use them and they may carry personal data (spec §E.6.3). The full
+ * device: the engine does not use them and they may carry personal data. The full
  * URL is never logged.
  *
  * @param enqueue where the event goes.

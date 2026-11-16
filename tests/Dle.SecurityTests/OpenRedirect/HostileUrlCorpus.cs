@@ -224,7 +224,7 @@ public static class HostileUrlCorpus
     /// <param name="reason">Why the header is unsafe.</param>
     /// <param name="allowMarkerInQuery">
     /// Whether the attacker's marker may appear after the path. It may exactly once: an allow-listed
-    /// UTM parameter is <em>copied</em> into the target's query by design (§E.6.3), so for those
+    /// UTM parameter is <em>copied</em> into the target's query by design, so for those
     /// parameters the property is not "the string never appears" but "it never appears anywhere that
     /// decides where the client goes" - the scheme, the authority or the path.
     /// </param>

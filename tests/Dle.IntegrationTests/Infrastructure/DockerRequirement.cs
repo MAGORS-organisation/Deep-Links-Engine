@@ -6,7 +6,7 @@ namespace Dle.IntegrationTests.Infrastructure;
 
 /// <summary>
 /// Decides, once per process, whether a container runtime is reachable — and therefore whether the
-/// integration suite can run at all (§D.4).
+/// integration suite can run at all.
 /// </summary>
 /// <remarks>
 /// <para>

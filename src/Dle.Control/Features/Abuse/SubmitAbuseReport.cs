@@ -16,7 +16,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Abuse;
 
 /// <summary>
-/// <c>POST /api/v1/abuse-reports</c> — the public notice and action form (FR-245, §E.3 step 7).
+/// <c>POST /api/v1/abuse-reports</c> — the public notice and action form.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -29,7 +29,7 @@ namespace Dle.Control.Features.Abuse;
 /// <para>
 /// The answer never reveals whether the reported link exists. A form that answers "unknown link"
 /// is an oracle: it tells anyone with a list of candidate slugs which ones are live, which is slug
-/// enumeration (T-07) with the rate limit of a public form rather than of the resolve path.
+/// enumeration with the rate limit of a public form rather than of the resolve path.
 /// </para>
 /// </remarks>
 public static class SubmitAbuseReport
@@ -122,7 +122,7 @@ public static class SubmitAbuseReport
 
             // Logged at information without the reported URL: the submission is attacker controlled
             // text, and a full URL in an operational log is a query string in an operational log
-            // (SHARED-KERNEL §17.5).
+            //.
             if (logger.IsEnabled(LogLevel.Information))
             {
                 logger.LogInformation(

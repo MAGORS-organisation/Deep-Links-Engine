@@ -3,7 +3,7 @@ namespace Dle.UnitTests.Control;
 /// <summary>
 /// A clock the test drives. Attribution decisions are all relative to "now" — windows, expiry,
 /// elapsed minutes in the evidence — so the instant has to be an input, never a reading of the
-/// machine clock (SHARED-KERNEL §17.2).
+/// machine clock.
 /// </summary>
 internal sealed class ControlTestClock : TimeProvider
 {

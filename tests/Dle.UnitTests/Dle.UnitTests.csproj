@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Fast, in-process tests: routing engine determinism (FR-127, TC-105),
-    consent gate matrix (TC-145/TC-146), slug policy (TC-109), base62 and
+    Fast, in-process tests: routing engine determinism,
+    consent gate matrix, slug policy, base62 and
     Feistel round-trips, well-known builders, URL policy (TC-161..164).
     docs/zadanie.md §D.1.
   -->

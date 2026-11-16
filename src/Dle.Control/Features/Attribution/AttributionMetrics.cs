@@ -3,7 +3,7 @@ using System.Diagnostics.Metrics;
 namespace Dle.Control.Features.Attribution;
 
 /// <summary>
-/// The instruments the attribution module publishes (§C.6).
+/// The instruments the attribution module publishes.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -47,12 +47,12 @@ public sealed class AttributionMetrics : IDisposable
         _attributions = _meter.CreateCounter<long>(
             "dle.attribution",
             unit: "{attribution}",
-            description: "Attribution decisions, tagged by match type. 'none' is a decision too (§C.6).");
+            description: "Attribution decisions, tagged by match type. 'none' is a decision too.");
 
         _confidence = _meter.CreateHistogram<double>(
             "dle.attribution.confidence",
             unit: "1",
-            description: "Distribution of attribution confidence, tagged by match type (§C.6).");
+            description: "Distribution of attribution confidence, tagged by match type.");
 
         _rejected = _meter.CreateCounter<long>(
             "dle.attribution.rejected",
@@ -62,7 +62,7 @@ public sealed class AttributionMetrics : IDisposable
         _claimCodes = _meter.CreateCounter<long>(
             "dle.attribution.claim_code",
             unit: "{code}",
-            description: "Claim codes by outcome: issued, redeemed, expired, unknown or already consumed (TC-148).");
+            description: "Claim codes by outcome: issued, redeemed, expired, unknown or already consumed.");
     }
 
     /// <summary>Records one attribution decision.</summary>
@@ -83,7 +83,7 @@ public sealed class AttributionMetrics : IDisposable
     public void Rejected(string outcome) =>
         _rejected.Add(1, new KeyValuePair<string, object?>(OutcomeTag, outcome));
 
-    /// <summary>Counts one tampered click identifier (TC-167).</summary>
+    /// <summary>Counts one tampered click identifier.</summary>
     /// <param name="strategy">Strategy that detected it.</param>
     public void Tampered(string strategy) =>
         _rejected.Add(

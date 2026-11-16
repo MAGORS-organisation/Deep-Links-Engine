@@ -4,7 +4,7 @@ using Dle.Persistence.Internal;
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Reads and writes tenants (FR-241).
+/// Reads and writes tenants.
 /// </summary>
 /// <remarks>
 /// Tenants are the one table where the tenant filter has to be stepped over regularly: provisioning
@@ -29,7 +29,7 @@ public sealed class TenantRepository : ITenantLookup
     /// <param name="id">The tenant identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The tenant, or <see langword="null"/> when it does not exist, is deleted, or
-    /// belongs to somebody else — the three are deliberately indistinguishable (TC-166).</returns>
+    /// belongs to somebody else — the three are deliberately indistinguishable.</returns>
     public async Task<Tenant?> GetAsync(Guid id, CancellationToken cancellationToken)
     {
         return await _db.Tenants
@@ -132,7 +132,7 @@ public sealed class TenantRepository : ITenantLookup
         return tenant;
     }
 
-    /// <summary>Changes the consent mode of the tenant in scope (§E.6.2, FR-248).</summary>
+    /// <summary>Changes the consent mode of the tenant in scope.</summary>
     /// <param name="id">The tenant identifier.</param>
     /// <param name="mode">The new mode.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 namespace Dle.Crypto;
 
 /// <summary>
-/// Encodes and decodes click identifiers that carry their own timestamp (§B.6.3).
+/// Encodes and decodes click identifiers that carry their own timestamp.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -20,7 +20,7 @@ namespace Dle.Crypto;
 /// the volume of clicks can be read off it, followed by a 32 bit MAC over the permuted value.
 /// Encrypt-then-MAC is what makes tampering fail loudly: without the MAC a mutated identifier
 /// would still decode, just to a different and entirely plausible instant, and the attribution
-/// service would prune to the wrong partition and silently find nothing (T-05, TC-167).
+/// service would prune to the wrong partition and silently find nothing.
 /// </para>
 /// </remarks>
 public sealed class ClickIdCodec : IClickIdCodec
@@ -143,7 +143,7 @@ public sealed class ClickIdCodec : IClickIdCodec
     }
 
     /// <summary>
-    /// Compares the presented MAC in constant time (T-17, S-03). The comparison is short, but an
+    /// Compares the presented MAC in constant time. The comparison is short, but an
     /// early exit here would still turn forgery into a byte at a time search.
     /// </summary>
     private bool MacMatches(ulong permuted, uint presentedMac)

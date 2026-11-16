@@ -6,7 +6,7 @@ using Dle.Crypto;
 namespace Dle.Control.Features.ApiKeys;
 
 /// <summary>
-/// <c>GET</c>, <c>POST</c> and <c>DELETE /api/v1/api-keys</c> (FR-242).
+/// <c>GET</c>, <c>POST</c> and <c>DELETE /api/v1/api-keys</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -67,12 +67,12 @@ public static class ManageApiKeys
         });
     }
 
-    /// <summary>Issues a key (FR-242).</summary>
+    /// <summary>Issues a key.</summary>
     /// <param name="request">The key to issue.</param>
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="keys">Key storage.</param>
     /// <param name="hasher">Mints the key and its Argon2id hash.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="timeProvider">Clock, used to reject an expiry already in the past.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>201 with the secret, shown exactly once.</returns>
@@ -213,7 +213,7 @@ public static class ManageApiKeys
 
         // The entry records the prefix, never the secret. The prefix is what an operator recognises
         // in a listing and what appears in logs; the secret exists only in the response body of this
-        // one call (SHARED-KERNEL §17.5).
+        // one call.
         await AdministrativeAudit.RecordAsync(
             audit,
             caller,
@@ -245,7 +245,7 @@ public static class ManageApiKeys
     /// <param name="id">The key identifier.</param>
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="keys">Key storage.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="credentialCache">Drops any cached verification entry for the revoked key.</param>
     /// <param name="timeProvider">Clock used to stamp the revocation.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

@@ -5,7 +5,7 @@ namespace Dle.Domain.Ports;
 /// <summary>
 /// Full safety check of a link target: the offline rules of <see cref="TargetUrlPolicy"/> plus the
 /// steps that need the network — resolving the host and checking every resulting address, and
-/// consulting the configured reputation sources (§E.3, FR-244).
+/// consulting the configured reputation sources.
 /// </summary>
 /// <remarks>
 /// It runs when a link is created and again on the nightly re-check, because changing the target

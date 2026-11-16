@@ -22,7 +22,6 @@ public sealed class WellKnownBuilderTests
     // ================================================================ TC-122: nothing means nothing
 
     [Fact]
-    [Trait("TestCase", "TC-122")]
     public void BuildAasa_NoIosApplication_ReturnsNullSoTheEdgeCanAnswer404()
     {
         Assert.Null(WellKnownBuilder.BuildAasa([]));
@@ -30,7 +29,6 @@ public sealed class WellKnownBuilderTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-122")]
     public void BuildAasa_OnlyUnusableEntries_ReturnsNullRatherThanAnEmptyDocument()
     {
         AasaAppEntry[] apps = [null!, new AasaAppEntry { AppId = "   " }];
@@ -39,7 +37,6 @@ public sealed class WellKnownBuilderTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-122")]
     public void BuildAssetLinks_NoAndroidApplication_ReturnsNull()
     {
         Assert.Null(WellKnownBuilder.BuildAssetLinks([]));
@@ -62,7 +59,6 @@ public sealed class WellKnownBuilderTests
     // ================================================================ AASA shape
 
     [Fact]
-    [Trait("TestCase", "TC-121")]
     public void BuildAasa_UsesTheLiteralAppleKeys()
     {
         WellKnownDocument document = Require(WellKnownBuilder.BuildAasa([IosApp]));
@@ -76,7 +72,6 @@ public sealed class WellKnownBuilderTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-121")]
     public void BuildAasa_ComponentKeysSurviveSerialisationVerbatim()
     {
         AasaAppEntry app = IosApp with
@@ -194,7 +189,6 @@ public sealed class WellKnownBuilderTests
     }
 
     [Fact]
-    [Trait("TestCase", "FR-146")]
     public void BuildAasa_AppClip_IsDeclaredInItsOwnSection()
     {
         AasaAppEntry app = IosApp with { AppClipAppId = "ABCDE12345.sk.zakaznik.app.Clip" };
@@ -250,7 +244,6 @@ public sealed class WellKnownBuilderTests
     }
 
     [Fact]
-    [Trait("TestCase", "FR-142")]
     public void BuildAssetLinks_DynamicComponents_UseTheSameLiteralKeysAndNeverPathPattern()
     {
         AndroidAppEntry app = AndroidApp with
@@ -290,7 +283,6 @@ public sealed class WellKnownBuilderTests
     // ================================================================ ETag and content type
 
     [Fact]
-    [Trait("TestCase", "TC-125")]
     public void BuildAasa_IdenticalInput_ProducesTheSameETag()
     {
         WellKnownDocument first = Require(WellKnownBuilder.BuildAasa([IosApp]));
@@ -301,7 +293,6 @@ public sealed class WellKnownBuilderTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-125")]
     public void BuildAasa_DifferentInput_ProducesADifferentETag()
     {
         WellKnownDocument first = Require(WellKnownBuilder.BuildAasa([IosApp]));

@@ -14,7 +14,6 @@ public sealed class TargetUrlPolicyTests
     // ================================================================ TC-161: dangerous schemes
 
     [Theory]
-    [Trait("TestCase", "TC-161")]
     [InlineData("javascript:alert(1)")]
     [InlineData("JavaScript:alert(1)")]
     [InlineData("javascript:void(document.cookie)")]
@@ -140,7 +139,6 @@ public sealed class TargetUrlPolicyTests
     // ================================================================ TC-162: forbidden addresses
 
     [Theory]
-    [Trait("TestCase", "TC-162")]
     [InlineData("http://169.254.169.254/latest/meta-data/")]          // AWS / Azure / DO metadata
     [InlineData("http://169.254.170.2/v2/credentials")]               // ECS task metadata
     [InlineData("http://metadata.google.internal/computeMetadata/v1/")]
@@ -190,7 +188,6 @@ public sealed class TargetUrlPolicyTests
     }
 
     [Theory]
-    [Trait("TestCase", "TC-162")]
     [InlineData("http://100.128.0.1/")]        // just outside CGNAT
     [InlineData("http://100.63.255.254/")]
     [InlineData("http://172.32.0.1/")]         // just outside RFC 1918
@@ -206,7 +203,6 @@ public sealed class TargetUrlPolicyTests
     }
 
     [Theory]
-    [Trait("TestCase", "TC-162")]
     [InlineData("169.254.169.254")]
     [InlineData("169.254.0.1")]
     [InlineData("127.0.0.1")]

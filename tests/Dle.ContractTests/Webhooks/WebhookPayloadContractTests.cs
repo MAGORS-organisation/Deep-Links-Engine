@@ -94,7 +94,6 @@ public sealed class WebhookPayloadContractTests
 
     [Theory]
     [MemberData(nameof(Samples))]
-    [Trait("Contract", "B.7.4")]
     public void RenderedPayload_SatisfiesTheCommittedSchemaForItsEventType(
         string eventType,
         Dictionary<string, string> data)
@@ -123,7 +122,6 @@ public sealed class WebhookPayloadContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void EveryDeclaredEventType_HasACommittedSchema()
     {
         // The regression this guards is adding an event type without publishing what it carries: a
@@ -139,7 +137,6 @@ public sealed class WebhookPayloadContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void EveryCommittedSchema_BelongsToADeclaredEventType()
     {
         // The other direction. A schema for an event type that no longer exists is documentation for
@@ -156,7 +153,6 @@ public sealed class WebhookPayloadContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void Envelope_HasExactlyTheFourMembersOfB74()
     {
         string payload = WebhookEventTypes.Render(
@@ -176,7 +172,6 @@ public sealed class WebhookPayloadContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void Envelope_PreservesDataKeysVerbatim()
     {
         // The naming policy renames properties, not dictionary keys. A `data` map whose keys were
@@ -191,7 +186,6 @@ public sealed class WebhookPayloadContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void AttributionEventName_IsSpelledTheSameInBothPlacesItIsDeclared()
     {
         // The string exists twice in the product: WebhookEventTypes.AttributionCreated, which the

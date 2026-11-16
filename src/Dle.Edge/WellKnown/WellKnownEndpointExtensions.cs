@@ -11,22 +11,22 @@ namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
 /// Maps the two association files that make Universal Links and App Links work
-/// (FR-141, FR-142, §C.3.3).
+///.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Both endpoints are unforgiving and both fail silently. Apple fetches the file through its CDN and
-/// caches whatever it gets; a device refreshes roughly once a week (§A.2.1). An empty document, a
+/// caches whatever it gets; a device refreshes roughly once a week. An empty document, a
 /// redirect, or a content type carrying a charset parameter all produce the same symptom - the
 /// application is simply never opened - and none of them produce an error anywhere. That is why the
 /// handlers below answer 404 rather than an empty JSON body when a host has no application registered
-/// (TC-122), and why the response is written byte for byte rather than through a helper.
+///, and why the response is written byte for byte rather than through a helper.
 /// </para>
 /// <para>
 /// <b>Composition requirement.</b> Nothing in the pipeline may redirect a request under
 /// <see cref="WellKnownPaths.Prefix"/>. In practice that means <c>UseHttpsRedirection</c>,
 /// <c>UseHsts</c> and any rewriter must skip that prefix, and TLS termination must serve it on the
-/// same certificate as the links themselves (TC-124).
+/// same certificate as the links themselves.
 /// </para>
 /// </remarks>
 public static class WellKnownEndpointExtensions
@@ -168,7 +168,7 @@ public static class WellKnownEndpointExtensions
     /// </summary>
     /// <remarks>
     /// The 404 is the whole point of the null case. Apple treats an empty or malformed document as a
-    /// valid negative answer and caches it; a 404 is retried (TC-122). The same reasoning applies to
+    /// valid negative answer and caches it; a 404 is retried. The same reasoning applies to
     /// Google, which re-verifies periodically on Android 15+.
     /// </remarks>
     private static IResult Respond(WellKnownDocument? document) =>

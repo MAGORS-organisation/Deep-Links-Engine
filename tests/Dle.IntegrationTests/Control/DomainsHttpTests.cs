@@ -27,7 +27,6 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("Spec", "FR-145")]
     public async Task Create_NormalisesTheHost_AndAnswers201WithAPendingDomain()
     {
         Fixture fixture = await SeedAsync("domains-create");
@@ -62,7 +61,6 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-145")]
     public async Task Create_WithAnInternationalisedHost_StoresThePunycodeForm()
     {
         Fixture fixture = await SeedAsync("domains-idn");
@@ -82,7 +80,6 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerTheory]
-    [Trait("Spec", "FR-145")]
     [InlineData("""{"host": "not a host"}""", "host")]
     [InlineData("""{"host": ""}""", "host")]
     [InlineData("""{"host": "links.example.com", "consent_mode_override": "loose"}""", "consent_mode_override")]
@@ -102,7 +99,6 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-248")]
     public async Task Create_WithATighterConsentOverride_StoresIt()
     {
         Fixture fixture = await SeedAsync("domains-consent");
@@ -120,7 +116,6 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-145")]
     public async Task Create_AHostAnotherTenantAlreadyServes_Is409DomainTaken()
     {
         Fixture fixture = await SeedAsync("domains-taken");
@@ -140,7 +135,6 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task Get_AndList_ShowOnlyTheTenantsOwnDomains()
     {
         Fixture fixture = await SeedAsync("domains-scope");
@@ -164,7 +158,6 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-248")]
     public async Task Patch_ChangesTheFlagsAndTheOverride_AndRefusesToWidenTheConsentMode()
     {
         Fixture fixture = await SeedAsync("domains-patch");
@@ -192,7 +185,6 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-145")]
     public async Task Delete_RefusesAHostThatStillServesLinks_AndRemovesAnEmptyOne()
     {
         Fixture fixture = await SeedAsync("domains-delete");
@@ -215,7 +207,6 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-143")]
     public async Task Verify_AHostThatDoesNotResolve_ReportsEveryCheckAsFailed_AndKeepsTheHistory()
     {
         Fixture fixture = await SeedAsync("domains-verify-unresolved");
@@ -266,7 +257,6 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-143")]
     public async Task Verify_AReachableHostWithoutAssociationFiles_PassesDnsAndFailsTheFiles()
     {
         // example.com resolves publicly and answers 404 for both association files. With an iOS
@@ -299,7 +289,6 @@ public sealed class DomainsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task Verify_AnotherTenantsDomain_Is404AndRecordsNothing()
     {
         Fixture fixture = await SeedAsync("domains-verify-foreign");

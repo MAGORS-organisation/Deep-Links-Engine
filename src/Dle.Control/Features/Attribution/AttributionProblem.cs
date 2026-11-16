@@ -30,7 +30,7 @@ public static class AttributionProblem
     /// <summary>Extension member naming the machine readable reason of a claim code failure.</summary>
     public const string ReasonExtension = "reason";
 
-    /// <summary>Extension member telling the client whether asking for a new claim code helps (TC-148).</summary>
+    /// <summary>Extension member telling the client whether asking for a new claim code helps.</summary>
     public const string CanReissueExtension = "can_reissue";
 
     /// <summary>The request body failed validation.</summary>
@@ -58,7 +58,7 @@ public static class AttributionProblem
         Challenge = "Bearer realm=\"dle\"",
     };
 
-    /// <summary>A rate limit was exceeded (§E.9).</summary>
+    /// <summary>A rate limit was exceeded.</summary>
     /// <param name="retryAfter">How long the caller should wait, when the limiter could say.</param>
     /// <param name="detail">Which limit was hit.</param>
     /// <returns>A 429 problem document carrying <c>Retry-After</c>.</returns>
@@ -71,7 +71,7 @@ public static class AttributionProblem
         RetryAfter = retryAfter,
     };
 
-    /// <summary>The claim code is unknown, already consumed or past its time to live (TC-148).</summary>
+    /// <summary>The claim code is unknown, already consumed or past its time to live.</summary>
     /// <param name="reason">Machine readable reason: <c>expired</c>, <c>consumed</c>,
     /// <c>unknown</c> or <c>disabled</c>.</param>
     /// <param name="detail">Sentence for a human reading the log.</param>

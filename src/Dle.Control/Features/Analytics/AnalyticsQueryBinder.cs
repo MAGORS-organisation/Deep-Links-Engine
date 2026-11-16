@@ -36,7 +36,7 @@ public readonly record struct AnalyticsQueryBinding(AnalyticsQuery? Query, IResu
 ///     <b>Bots are excluded unless explicitly asked for.</b> FR-205 is blunt about why: a crawler's
 ///     click is a real row and belongs in the stream, but counting it in a campaign inflates every
 ///     number a marketer makes a decision on. The default is therefore off, and turning it on is a
-///     conscious <c>include_bots=true</c> (TC-106).
+///     conscious <c>include_bots=true</c>.
 ///     </description>
 ///   </item>
 /// </list>
@@ -61,7 +61,7 @@ public static class AnalyticsQueryBinder
     /// Binds a query.
     /// </summary>
     /// <param name="context">The request.</param>
-    /// <param name="timeProvider">Clock, used for the default window (SHARED-KERNEL §17.2).</param>
+    /// <param name="timeProvider">Clock, used for the default window.</param>
     /// <param name="maxLimit">Largest row count the store will accept.</param>
     /// <returns>The query, or the problem document.</returns>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>

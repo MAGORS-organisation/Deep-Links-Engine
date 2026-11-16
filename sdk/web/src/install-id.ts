@@ -13,7 +13,7 @@ const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f
  *
  * This is the only identifier the Web SDK ever creates and it is **random**, never derived.
  * If storage is cleared the user is a new user; that is the intended behaviour, not a defect
- * to be engineered around (FR-227, spec §0.2).
+ * to be engineered around.
  */
 export function generateInstallId(): string {
   const c = cryptoObject();
@@ -51,7 +51,7 @@ export interface InstallIdOptions {
   /**
    * Consent gate. While this returns `false` the id is kept **in memory only** and any
    * previously stored id is deleted: no persistent identifier without attribution consent
-   * (spec §E.6.2, TC-145/TC-146).
+   *.
    */
   readonly mayPersist: () => boolean;
   readonly logger?: Logger | undefined;

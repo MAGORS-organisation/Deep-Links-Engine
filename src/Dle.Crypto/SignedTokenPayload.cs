@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Dle.Crypto;
 
 /// <summary>
-/// The payload segment of a token in the <c>dlt1</c> format (§E.4.2).
+/// The payload segment of a token in the <c>dlt1</c> format.
 /// </summary>
 /// <remarks>
 /// The four registered fields are all mandatory, and each earns its place: <c>exp</c> bounds the

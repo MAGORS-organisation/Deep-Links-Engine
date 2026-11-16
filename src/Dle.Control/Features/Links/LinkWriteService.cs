@@ -29,7 +29,7 @@ public enum LinkWriteError
     /// <summary>The target failed the safety policy (T-01, T-02, TC-161 to TC-163).</summary>
     UnsafeTarget = 4,
 
-    /// <summary>The supplied rule set has no default rule (TC-105).</summary>
+    /// <summary>The supplied rule set has no default rule.</summary>
     MissingDefaultRule = 5,
 
     /// <summary>The supplied rule set is otherwise invalid.</summary>
@@ -37,7 +37,7 @@ public enum LinkWriteError
 
     /// <summary>
     /// The domain does not exist, or belongs to another tenant. The two are deliberately the same
-    /// answer (TC-166, SHARED-KERNEL §17.7).
+    /// answer.
     /// </summary>
     DomainNotFound = 7,
 
@@ -51,7 +51,7 @@ public enum LinkWriteError
     Conflict = 9,
 
     /// <summary>
-    /// The resolve-time fields are together larger than the covering index can hold (§B.5.2).
+    /// The resolve-time fields are together larger than the covering index can hold.
     /// </summary>
     TooLarge = 10,
 }
@@ -94,21 +94,21 @@ public sealed record LinkWriteOutcome(
 }
 
 /// <summary>
-/// Creates and edits links: validation, slug allocation and the write itself (FR-101, FR-102).
+/// Creates and edits links: validation, slug allocation and the write itself.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Both the single-link endpoints and the streamed bulk import go through this class, which is why
 /// it returns a value rather than a result. A rule that only the single-link path enforced would be
 /// a rule the bulk path could be used to bypass, and a ten thousand row import is exactly how
-/// somebody would try (FR-103, §E.3).
+/// somebody would try.
 /// </para>
 /// <para>
 /// Nothing here ever takes a redirect target from anywhere but the request body of an authenticated
 /// operator, and every such target is put through <see cref="TargetUrlPolicy"/> and
 /// <see cref="IUrlSafetyChecker"/> before it is stored. That is the whole of prohibition 4: by the
 /// time the edge reads a target, an operator has stored it and the safety pipeline has passed it
-/// (SHARED-KERNEL §17.4, T-01, T-02).
+///.
 /// </para>
 /// </remarks>
 public sealed class LinkWriteService
@@ -119,7 +119,7 @@ public sealed class LinkWriteService
     /// <summary>Identifier given to the rule synthesised for a link that declares none.</summary>
     private const string SynthesisedDefaultRuleId = "default";
 
-    /// <summary>Longest tag accepted, so the GIN index stays usable (FR-109).</summary>
+    /// <summary>Longest tag accepted, so the GIN index stays usable.</summary>
     private const int MaxTagLength = 64;
 
     /// <summary>Most tags one link may carry.</summary>
@@ -142,11 +142,11 @@ public sealed class LinkWriteService
     /// <summary>Creates the service.</summary>
     /// <param name="links">Link storage.</param>
     /// <param name="domains">Domain storage, used to resolve the serving host.</param>
-    /// <param name="sequence">The slug counter (ADR-007).</param>
+    /// <param name="sequence">The slug counter.</param>
     /// <param name="slugs">The keyed permutation that turns a counter value into a slug.</param>
-    /// <param name="safety">The target URL safety pipeline (§E.3).</param>
+    /// <param name="safety">The target URL safety pipeline.</param>
     /// <param name="ids">Mints the time-ordered link identifier before the insert.</param>
-    /// <param name="templates">Campaign templates, which prefill a new link (FR-108).</param>
+    /// <param name="templates">Campaign templates, which prefill a new link.</param>
     public LinkWriteService(
         LinkRepository links,
         DomainRepository domains,
@@ -173,7 +173,7 @@ public sealed class LinkWriteService
         _templates = templates;
     }
 
-    /// <summary>Creates one link (FR-101).</summary>
+    /// <summary>Creates one link.</summary>
     /// <param name="request">The link to create.</param>
     /// <param name="caller">The authenticated operator, recorded on the first revision.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -325,7 +325,7 @@ public sealed class LinkWriteService
         return LinkWriteOutcome.Success(link, domain.Host);
     }
 
-    /// <summary>Applies a partial change to a link and appends its revision (FR-107).</summary>
+    /// <summary>Applies a partial change to a link and appends its revision.</summary>
     /// <param name="id">The link identifier.</param>
     /// <param name="request">The fields to change.</param>
     /// <param name="caller">The authenticated operator.</param>
@@ -334,7 +334,7 @@ public sealed class LinkWriteService
     /// <remarks>
     /// A link that belongs to another tenant is simply not in the queryable, so it arrives here as
     /// <see cref="LinkWriteError.LinkNotFound"/> — the same answer as an identifier nobody ever
-    /// issued (TC-166).
+    /// issued.
     /// </remarks>
     public async Task<LinkWriteOutcome> UpdateAsync(
         long id,
@@ -428,7 +428,7 @@ public sealed class LinkWriteService
 
         // The target is re-validated on every change, not only on creation. A link whose target was
         // safe in March and is a phishing page in June is the ordinary case, and an edit is the one
-        // moment the engine gets to look again (§E.3).
+        // moment the engine gets to look again.
         bool targetChanged = request.TargetUrl is not null;
         bool expiredChanged = request.ExpiredUrl is not null;
 
@@ -468,7 +468,7 @@ public sealed class LinkWriteService
         {
             // The version read at the top of this method is no longer the row's version: another
             // edit, or an abuse quarantine, landed in between. Overwriting it would silently undo
-            // that write, so the caller is told to read again (T-09, TC-103).
+            // that write, so the caller is told to read again.
             return LinkWriteOutcome.Failure(
                 LinkWriteError.Conflict,
                 "The link changed while this request was being prepared. Read it again and retry.");
@@ -498,7 +498,7 @@ public sealed class LinkWriteService
     /// conditions. Rather than making every such caller write out a default rule, one is synthesised
     /// from the target URL — which is what the link means anyway, and which keeps the invariant the
     /// edge relies on: a stored link always has exactly one default rule. A caller that <em>does</em>
-    /// send a rule set is held to it, and a set without a default rule is refused (TC-105).
+    /// send a rule set is held to it, and a set without a default rule is refused.
     /// </remarks>
     private static IReadOnlyList<RoutingRule> ResolveRules(
         IReadOnlyList<RoutingRule>? supplied,
@@ -759,7 +759,7 @@ public sealed class LinkWriteService
     }
 
     /// <summary>
-    /// Settles the slug: the caller's, checked, or a fresh one from the counter (FR-102, ADR-007).
+    /// Settles the slug: the caller's, checked, or a fresh one from the counter.
     /// </summary>
     /// <param name="requested">The slug the caller asked for, or <see langword="null"/>.</param>
     /// <param name="domainId">The serving domain, within which slugs are unique.</param>
@@ -770,7 +770,7 @@ public sealed class LinkWriteService
     /// A generated slug is unique as a byte string by construction — the counter value is unique and
     /// the permutation is a bijection — but the slug column is <c>citext</c>, so two generated slugs
     /// that differ only in letter case are the same slug to the unique index. At a million links on
-    /// one domain the odds of such a pair are about one in four (ADR-0007). So a generated slug is
+    /// one domain the odds of such a pair are about one in four. So a generated slug is
     /// looked up like a custom one, and a case-insensitive collision simply takes the next counter
     /// value; a handful of attempts makes a failure astronomically unlikely.
     /// </para>
@@ -837,7 +837,7 @@ public sealed class LinkWriteService
         return (slug, null);
     }
 
-    /// <summary>Checks the tag list (FR-109).</summary>
+    /// <summary>Checks the tag list.</summary>
     /// <param name="tags">The tags supplied.</param>
     /// <param name="errors">Field errors collected so far.</param>
     private static void ValidateTags(IReadOnlyList<string> tags, Dictionary<string, string[]> errors)
@@ -868,7 +868,7 @@ public sealed class LinkWriteService
         }
     }
 
-    /// <summary>Checks that the serving window makes sense (FR-104).</summary>
+    /// <summary>Checks that the serving window makes sense.</summary>
     /// <param name="startsAt">When the link starts serving.</param>
     /// <param name="expiresAt">When it stops.</param>
     /// <param name="errors">Field errors collected so far.</param>
@@ -892,7 +892,7 @@ public sealed class LinkWriteService
     /// <remarks>
     /// Accepting an absolute or protocol-relative value here would turn the deep link path into an
     /// open redirect that never passes the target policy, which is the same hole
-    /// <see cref="RoutingRuleValidator"/> closes inside a rule (T-01).
+    /// <see cref="RoutingRuleValidator"/> closes inside a rule.
     /// </remarks>
     private static void ValidateDeeplinkPath(
         string? deeplinkPath,
@@ -907,7 +907,7 @@ public sealed class LinkWriteService
         }
     }
 
-    /// <summary>Merges the template's UTM defaults under the link's own (FR-108).</summary>
+    /// <summary>Merges the template's UTM defaults under the link's own.</summary>
     /// <param name="requested">What the request stated.</param>
     /// <param name="template">What the template supplies.</param>
     /// <returns>The merged map, with the request winning every collision.</returns>
@@ -930,7 +930,7 @@ public sealed class LinkWriteService
         return merged;
     }
 
-    /// <summary>Combines the template's tags with the link's own (FR-108, FR-109).</summary>
+    /// <summary>Combines the template's tags with the link's own.</summary>
     /// <param name="requested">What the request stated.</param>
     /// <param name="template">What the template supplies.</param>
     /// <returns>The union.</returns>
@@ -991,7 +991,7 @@ public sealed class LinkWriteService
 
     /// <summary>
     /// SQLSTATE 54000 (program_limit_exceeded) is what PostgreSQL answers when a row's entry in
-    /// the covering resolve index would exceed the btree maximum (§B.5.2). The fields that make
+    /// the covering resolve index would exceed the btree maximum. The fields that make
     /// up that entry are all caller supplied, so this is the caller's problem to shorten, not an
     /// outage and not a 500.
     /// </summary>

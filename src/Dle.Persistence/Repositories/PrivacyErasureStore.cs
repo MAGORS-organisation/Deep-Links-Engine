@@ -7,7 +7,7 @@ namespace Dle.Persistence.Repositories;
 
 /// <summary>
 /// Erases an installation's attributable records within a single tenant for GDPR Article 17 / DSAR
-/// compliance (§E.6.3).
+/// compliance.
 /// </summary>
 public sealed class PrivacyErasureStore : IPrivacyErasureStore
 {

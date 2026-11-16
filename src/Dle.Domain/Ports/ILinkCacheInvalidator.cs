@@ -1,7 +1,7 @@
 namespace Dle.Domain.Ports;
 
 /// <summary>
-/// Drops cached link data after a control plane change, at three granularities (ADR-005).
+/// Drops cached link data after a control plane change, at three granularities.
 /// </summary>
 /// <remarks>
 /// The edge answers from a two level cache, so a control plane write is not visible until the
@@ -18,7 +18,7 @@ public interface ILinkCacheInvalidator
     ValueTask InvalidateLinkAsync(string host, string slug, CancellationToken ct);
 
     /// <summary>Invalidates every entry of one host, used when domain configuration or the
-    /// well-known files change (TC-125).</summary>
+    /// well-known files change.</summary>
     /// <param name="host">Normalized host.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes when the invalidation has been published.</returns>

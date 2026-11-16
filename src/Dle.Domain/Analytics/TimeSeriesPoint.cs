@@ -1,7 +1,7 @@
 namespace Dle.Domain.Analytics;
 
 /// <summary>
-/// One bucket of a time series report (FR-202). Buckets are aligned in UTC according to
+/// One bucket of a time series report. Buckets are aligned in UTC according to
 /// <see cref="AnalyticsQuery.Grain"/> and are returned in ascending order.
 /// </summary>
 /// <remarks>
@@ -10,7 +10,7 @@ namespace Dle.Domain.Analytics;
 /// </remarks>
 /// <param name="Bucket">Inclusive start of the bucket in UTC.</param>
 /// <param name="Clicks">Number of human clicks in the bucket. Crawler traffic is excluded unless
-/// <see cref="AnalyticsQuery.IncludeBots"/> is set (FR-205).</param>
+/// <see cref="AnalyticsQuery.IncludeBots"/> is set.</param>
 /// <param name="Installs">Number of first application opens attributed to the bucket.</param>
 /// <param name="Conversions">Number of conversion events reported by the SDK in the bucket.</param>
 public sealed record TimeSeriesPoint(DateTimeOffset Bucket, long Clicks, long Installs, long Conversions);

@@ -17,7 +17,7 @@ namespace Dle.Crypto;
 /// </para>
 /// <para>
 /// Comparison goes through <see cref="CryptographicOperations.FixedTimeEquals(ReadOnlySpan{byte}, ReadOnlySpan{byte})"/>, without
-/// exception (T-17, S-03, SHARED-KERNEL §17.6).
+/// exception.
 /// </para>
 /// </remarks>
 public sealed class Argon2PasswordHasher

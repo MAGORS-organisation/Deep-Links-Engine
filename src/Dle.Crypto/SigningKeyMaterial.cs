@@ -2,7 +2,7 @@ namespace Dle.Crypto;
 
 /// <summary>
 /// One key in the ring, with everything needed to sign with it, verify against it and publish it.
-/// Mirrors the <c>signing_keys</c> row shape (§B.5.2).
+/// Mirrors the <c>signing_keys</c> row shape.
 /// </summary>
 /// <remarks>
 /// A class rather than a record: the key material is held in arrays, and record value equality
@@ -27,7 +27,7 @@ public sealed class SigningKeyMaterial
 
     /// <summary>
     /// Private key material, or empty on an instance that only verifies. The edge resolver
-    /// verifies and never signs, so it never needs this (T-15).
+    /// verifies and never signs, so it never needs this.
     /// </summary>
     public byte[] PrivateKey { get; init; } = [];
 
@@ -55,7 +55,7 @@ public sealed class SigningKeyMaterial
     /// </summary>
     /// <param name="notAfter">End of the acceptance window. Rotation sets this in the future,
     /// never in the past: a signature made a moment before the rotation has to keep verifying
-    /// (S-12).</param>
+    ///.</param>
     /// <returns>The retired copy.</returns>
     public SigningKeyMaterial Retire(DateTimeOffset notAfter) => new()
     {

@@ -16,7 +16,6 @@ public sealed class UniqueIndexTests(DleInfrastructureFixture infrastructure)
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Links_SameSlugOnSameDomain_IsRejectedByTheUniqueIndex()
     {
         Guid tenantId = await TestSeed.TenantAsync(Database, "slug-unique", cancellationToken: Ct);
@@ -32,7 +31,6 @@ public sealed class UniqueIndexTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Links_SameSlugOnDifferentDomains_AreBothAccepted()
     {
         // The slug space is per domain, not per instance. Two customers each owning "summer" on
@@ -50,7 +48,6 @@ public sealed class UniqueIndexTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.3")]
     public async Task Installs_SameInstallIdForOneApp_IsRejectedByTheUniqueIndex()
     {
         Guid tenantId = await TestSeed.TenantAsync(Database, "install-unique", cancellationToken: Ct);
@@ -66,12 +63,10 @@ public sealed class UniqueIndexTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-143")]
-    [Trait("Spec", "B.5.3")]
     public async Task Attributions_SecondAttributionForOneInstall_IsRejected()
     {
         // One installation, one attribution: the rule that makes a repeated /v1/resolve idempotent
-        // rather than a second credit (TC-143).
+        // rather than a second credit.
         Guid tenantId = await TestSeed.TenantAsync(Database, "attr-install", cancellationToken: Ct);
         Guid appId = await TestSeed.AppAsync(Database, tenantId, domainId: null, "android", "test.app", cancellationToken: Ct);
         Guid installRowId = await TestSeed.InstallAsync(Database, tenantId, appId, "install-1", cancellationToken: Ct);
@@ -86,8 +81,6 @@ public sealed class UniqueIndexTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-144")]
-    [Trait("Spec", "B.5.3")]
     public async Task Attributions_SecondInstallClaimingTheSameClick_IsRejected()
     {
         // TC-144: one click is worth at most one install. There is no foreign key to click_events —
@@ -110,7 +103,6 @@ public sealed class UniqueIndexTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.3")]
     public async Task Attributions_ManyRowsWithoutAClickId_AreAllAccepted()
     {
         // The index is partial for a reason. An organic install and a direct open both carry no
@@ -134,7 +126,6 @@ public sealed class UniqueIndexTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Domains_SameHostTwice_IsRejectedByTheUniqueIndex()
     {
         // A host names exactly one tenant's link space. Two rows for one host would make the

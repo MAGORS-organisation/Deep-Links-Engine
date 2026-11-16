@@ -1,4 +1,4 @@
-// Global usings for the default PostgreSQL analytics provider (ADR-006).
+// Global usings for the default PostgreSQL analytics provider.
 //
 // The shared kernel namespaces are imported project wide for the same reason they are imported
 // project wide inside Dle.Domain itself: this assembly is a set of adapters for a small number of

@@ -16,7 +16,6 @@ public sealed class RoutingEngineOrderingTests
     private const string ClickId = "clk_ordering";
 
     [Fact]
-    [Trait("TestCase", "TC-105")]
     public void Evaluate_FirstMatchingRuleWins_EvenWhenALaterRuleAlsoMatches()
     {
         List<RoutingRule> rules =

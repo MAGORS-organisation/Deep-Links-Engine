@@ -8,7 +8,7 @@ namespace Dle.Control.Workers;
 
 /// <summary>
 /// The shape every background worker in the control plane takes: leader elected, cancellation
-/// aware, failure isolated, instrumented (§B.3, §C.6).
+/// aware, failure isolated, instrumented.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -105,7 +105,7 @@ public abstract partial class LeaderElectedBackgroundService : BackgroundService
     /// <summary>Instruments, so a worker can count what it processed.</summary>
     protected WorkerMetrics Metrics => _metrics;
 
-    /// <summary>Clock (SHARED-KERNEL §17.2).</summary>
+    /// <summary>Clock.</summary>
     protected TimeProvider Clock => _timeProvider;
 
     /// <inheritdoc />
@@ -168,7 +168,7 @@ public abstract partial class LeaderElectedBackgroundService : BackgroundService
         if (lease is null)
         {
             // Another replica is running this pass, or the database is unreachable. Either way this
-            // replica is not the leader and does nothing (§B.3).
+            // replica is not the leader and does nothing.
             _metrics.Run(JobName, WorkerMetrics.OutcomeNotLeader, TimeSpan.Zero);
             return;
         }
@@ -193,7 +193,7 @@ public abstract partial class LeaderElectedBackgroundService : BackgroundService
         {
             // Explicit default: the pass is abandoned, the failure is named and counted, and the
             // loop continues. Rethrowing would stop the BackgroundService and, with it, the whole
-            // control plane (SHARED-KERNEL §17.9).
+            // control plane.
             _metrics.Run(JobName, WorkerMetrics.OutcomeFailed, Stopwatch.GetElapsedTime(started));
             LogFailed(_logger, JobName, exception);
         }

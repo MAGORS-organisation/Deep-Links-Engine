@@ -71,7 +71,7 @@ if (control.ServeAdminSpa)
     app.UseDefaultFiles();
     app.UseStaticFiles(new StaticFileOptions
     {
-        // The console's own files carry its Content-Security-Policy (T-11): the credential it holds
+        // The console's own files carry its Content-Security-Policy: the credential it holds
         // in the browser is only as safe as the guarantee that no foreign script runs on its origin.
         OnPrepareResponse = static file =>
         {
@@ -87,10 +87,10 @@ app.UseRouting();
 app.UseCors();
 
 // Buffering has to be switched on before minimal APIs bind the body, which happens before endpoint
-// filters run. It applies only to writes that actually carry an Idempotency-Key (§B.7.3).
+// filters run. It applies only to writes that actually carry an Idempotency-Key.
 app.UseMiddleware<IdempotencyBufferingMiddleware>();
 
-// At most one credential per request (T-09): two credentials could otherwise authenticate as one
+// At most one credential per request: two credentials could otherwise authenticate as one
 // tenant and authorise as another. Checked before any authentication scheme runs.
 app.UseMiddleware<DleSingleCredentialMiddleware>();
 
@@ -99,7 +99,7 @@ app.UseAuthorization();
 
 // The whole of tenant isolation: the caller's tenant is pushed into the ambient tenant context and
 // every query filter downstream reads it. No handler compares a tenant identifier, which is what
-// makes a foreign identifier indistinguishable from an unknown one (FR-241, TC-166).
+// makes a foreign identifier indistinguishable from an unknown one.
 //
 // It runs AFTER authorization on purpose. An endpoint policy re-authenticates with its own schemes
 // and replaces HttpContext.User with the principal it accepted; the scope must come from that

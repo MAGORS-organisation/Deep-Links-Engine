@@ -1,7 +1,7 @@
 namespace Dle.Analytics.Postgres;
 
 /// <summary>
-/// Writes an analytics report to a stream in one export format (FR-203).
+/// Writes an analytics report to a stream in one export format.
 /// </summary>
 /// <remarks>
 /// Both implementations are registered, so the reporting endpoint resolves

@@ -14,7 +14,7 @@ namespace Dle.Persistence.Fast.Configuration;
 /// them explicitly costs a few lines and keeps the module trimmable.
 /// </para>
 /// <para>
-/// Parsing is invariant culture throughout (SHARED-KERNEL §0) and a malformed value is an error at
+/// Parsing is invariant culture throughout and a malformed value is an error at
 /// composition time rather than a silently substituted default: a mistyped pool size that halves
 /// throughput is far more expensive to find in production than a failed start.
 /// </para>

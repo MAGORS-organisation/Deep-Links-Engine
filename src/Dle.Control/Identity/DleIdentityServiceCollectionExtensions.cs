@@ -15,7 +15,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// The single composition entry point of the identity module (SHARED-KERNEL §15, FR-242).
+/// The single composition entry point of the identity module.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -28,7 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// <para>
 /// The default is deny. The fallback policy is one nothing satisfies, so an endpoint registered
 /// without <c>RequireAuthorization</c> refuses the request instead of serving it — a forgotten
-/// attribute has to fail closed (SHARED-KERNEL §17.9).
+/// attribute has to fail closed.
 /// </para>
 /// </remarks>
 public static class DleIdentityServiceCollectionExtensions

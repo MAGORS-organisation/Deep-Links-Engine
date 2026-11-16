@@ -10,7 +10,7 @@ namespace Dle.IntegrationTests.Edge;
 
 /// <summary>
 /// The two association files, served per host from the applications registered on the link domain
-/// (FR-141, FR-142, §C.3.3, TC-121, TC-122).
+///.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -29,7 +29,6 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-121")]
     public async Task Aasa_OnAVerifiedDomainWithAnIosApp_Is200ApplicationJsonWithNoRedirect()
     {
         string host = TestSeed.UniqueHost("tc121");
@@ -86,7 +85,6 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-122")]
     public async Task Aasa_OnADomainWithNoIosApp_Is404AndNotAnEmptyDocument()
     {
         // TC-122 is the whole reason the handler answers 404: Apple accepts an empty but well formed
@@ -122,12 +120,11 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-142")]
     public async Task AssetLinks_OnADomainWithAnAndroidApp_Is200WithThePlaySigningFingerprintFirst()
     {
         // FR-144: with Play App Signing the certificate that matters on a device is the one Google
         // re-signs with. Publishing only the local upload certificate is the single most common
-        // reason App Links work in a debug build and fail in production (TC-123).
+        // reason App Links work in a debug build and fail in production.
         string host = TestSeed.UniqueHost("assetlinks");
         Guid tenantId = await TestSeed.TenantAsync(Database, "assetlinks", cancellationToken: Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
@@ -176,7 +173,6 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-142")]
     public async Task AssetLinks_OnADomainWithNoAndroidApp_Is404()
     {
         string host = TestSeed.UniqueHost("assetlinks-404");
@@ -194,11 +190,10 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "C.3.3")]
     public async Task WellKnownPaths_AreNeverAnsweredByTheSlugResolver()
     {
         // The prefix is reserved. A slug route that swallowed it would answer Apple with an HTML
-        // 404 page, and the association would fail with no error anywhere (TC-121, TC-124).
+        // 404 page, and the association would fail with no error anywhere.
         string host = TestSeed.UniqueHost("reserved");
         Guid tenantId = await TestSeed.TenantAsync(Database, "reserved", cancellationToken: Ct);
         _ = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);

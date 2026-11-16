@@ -11,8 +11,8 @@ using Xunit;
 namespace Dle.UnitTests.Control;
 
 /// <summary>
-/// Verifies that OIDC token claims are correctly mapped to internal DleClaimTypes (FR-242), and that
-/// the mapping fails closed (T-09).
+/// Verifies that OIDC token claims are correctly mapped to internal DleClaimTypes, and that
+/// the mapping fails closed.
 /// </summary>
 public sealed class OidcClaimMappingTests
 {

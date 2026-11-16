@@ -1,7 +1,7 @@
 namespace Dle.Control.Features.Links;
 
 /// <summary>
-/// The sentences the rule simulator explains itself with, in English and Slovak (NFR-15, FR-129).
+/// The sentences the rule simulator explains itself with, in English and Slovak.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -43,7 +43,7 @@ internal sealed class SimulationVocabulary
         AbSelected = "A/B variant \"{0}\" was selected for bucket {1}.",
     };
 
-    /// <summary>Slovak, the deployment language of the first customers (NFR-15).</summary>
+    /// <summary>Slovak, the deployment language of the first customers.</summary>
     internal static SimulationVocabulary Slovak { get; } = new()
     {
         Language = "sk",

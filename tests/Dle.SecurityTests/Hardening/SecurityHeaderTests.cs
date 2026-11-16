@@ -32,7 +32,7 @@ public sealed class SecurityHeaderTests
 
     private const string GoneSlug = "hdr-gone";
 
-    /// <summary>An in-app webview, which is the client the interstitial exists for (§A.2.6).</summary>
+    /// <summary>An in-app webview, which is the client the interstitial exists for.</summary>
     private const string InAppUserAgent =
         "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) "
         + "Mobile/15E148 Instagram 340.0.0.24.109";
@@ -78,7 +78,6 @@ public sealed class SecurityHeaderTests
 
     [Theory]
     [MemberData(nameof(EveryOutcome))]
-    [Trait("Criterion", "S-04")]
     public async Task EveryResponse_CarriesTheHardeningHeaderSet(string path)
     {
         using HttpResponseMessage response = await GetAsync(path, InAppUserAgent, "198.18.30.1");
@@ -92,7 +91,6 @@ public sealed class SecurityHeaderTests
     }
 
     [Theory]
-    [Trait("Criterion", "S-04")]
     [InlineData("/robots.txt")]
     [InlineData("/there-is-no-such-slug")]
     public async Task AResponseWithNoImageOfItsOwn_KeepsEveryOriginOutOfItsPolicy(string path)
@@ -111,7 +109,6 @@ public sealed class SecurityHeaderTests
     }
 
     [Fact]
-    [Trait("Criterion", "S-04")]
     public async Task ARequestOverTls_CarriesStrictTransportSecurity()
     {
         // Only over TLS: a development host reached over plain HTTP that also serves an origin over
@@ -125,8 +122,6 @@ public sealed class SecurityHeaderTests
     }
 
     [Fact]
-    [Trait("Criterion", "S-04")]
-    [Trait("Threat", "T-11")]
     public async Task TheInterstitialPolicy_ContainsNoUnsafeDirectiveAnywhere()
     {
         using HttpResponseMessage response = await GetAsync("/" + InterstitialSlug, InAppUserAgent, "198.18.30.3");
@@ -146,8 +141,6 @@ public sealed class SecurityHeaderTests
     }
 
     [Fact]
-    [Trait("Criterion", "S-04")]
-    [Trait("Threat", "T-11")]
     public async Task TheInterstitialPolicy_BindsScriptsAndStylesToAPerResponseNonce()
     {
         using HttpResponseMessage first = await GetAsync("/" + InterstitialSlug, InAppUserAgent, "198.18.30.4");
@@ -167,8 +160,6 @@ public sealed class SecurityHeaderTests
     }
 
     [Fact]
-    [Trait("Criterion", "S-04")]
-    [Trait("Threat", "T-11")]
     public async Task TheInterstitialDocument_CarriesNoInlineEventHandlerOrJavascriptUrl()
     {
         // The policy is the enforcement; this is the code the policy would have to forgive. An
@@ -185,7 +176,6 @@ public sealed class SecurityHeaderTests
     }
 
     [Fact]
-    [Trait("Criterion", "S-04")]
     public async Task AResponseWithoutMarkup_CarriesTheStrictestPolicy()
     {
         // A 302 has no document, so nothing needs a source at all. default-src 'none' plus the three
@@ -201,7 +191,6 @@ public sealed class SecurityHeaderTests
     }
 
     [Fact]
-    [Trait("Criterion", "S-04")]
     public async Task AQuarantinedLink_IsGoneRatherThanRedirectedAndStillCarriesThePolicy()
     {
         // TC-103 at the header level: the withdrawn link renders an explanation, and an explanation is

@@ -1,6 +1,6 @@
 using Aspire.Hosting.ApplicationModel;
 
-// .NET Aspire app host for local development (docs/zadanie.md §C.1, §C.2). One command brings up the
+// .NET Aspire app host for local development. One command brings up the
 // backing services, both processes and the dashboard:
 //
 //     aspire run --project deploy/aspire/Dle.AppHost
@@ -22,7 +22,7 @@ IResourceBuilder<PostgresServerResource> postgres = builder
 // database itself is "dle", matching the migration and the compose file in deploy/.
 IResourceBuilder<PostgresDatabaseResource> database = postgres.AddDatabase("dle-postgres", "dle");
 
-// Valkey rather than Redis (§C.2). Aspire ships no Valkey-specific resource, and none is needed: the
+// Valkey rather than Redis. Aspire ships no Valkey-specific resource, and none is needed: the
 // wire protocol and the health check are the same, so the Redis resource with the Valkey image is the
 // whole difference. Pinned to the major tag rather than latest so that a rebuild months from now
 // still starts the container a developer last tested against.

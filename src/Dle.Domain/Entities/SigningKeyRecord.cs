@@ -7,7 +7,7 @@ namespace Dle.Domain.Entities;
 /// Rotation is the reason this is a table rather than a configuration value. The verifier accepts
 /// every key whose validity window still covers the artefacts in circulation, while the signer uses
 /// exactly one, so a key can be replaced without a window in which existing signatures stop
-/// verifying (S-12). The algorithm is stored alongside the key because crypto agility is a design
+/// verifying. The algorithm is stored alongside the key because crypto agility is a design
 /// commitment here: adding ML-DSA later must not change the token format, only the value of
 /// <see cref="Algorithm"/>.
 /// </remarks>
@@ -30,7 +30,7 @@ public class SigningKeyRecord
 
     /// <summary>
     /// Private key material, encrypted at rest. Never leaves the control plane: the edge resolver
-    /// verifies but does not sign, so it never needs this (T-15).
+    /// verifies but does not sign, so it never needs this.
     /// </summary>
     public byte[]? PrivateKeyEncrypted { get; set; }
 

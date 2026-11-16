@@ -13,7 +13,6 @@ public sealed class ConsentGateTests
     // ---------------------------------------------------------------- row 1: Off
 
     [Fact]
-    [Trait("TestCase", "TC-145")]
     public void Evaluate_TenantOff_DeniesEverything()
     {
         ConsentDecision decision = ConsentGate.Evaluate(ConsentMode.Off, null, Consented());
@@ -35,7 +34,6 @@ public sealed class ConsentGateTests
     // ---------------------------------------------------------------- row 2: AggregateOnly
 
     [Fact]
-    [Trait("TestCase", "TC-145")]
     public void Evaluate_AggregateOnly_StoresHashedIpAndNothingElse()
     {
         ConsentDecision decision = ConsentGate.Evaluate(ConsentMode.AggregateOnly, null, Consented());
@@ -85,7 +83,6 @@ public sealed class ConsentGateTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-146")]
     public void Evaluate_FullWithoutAnySignal_DoesNotAllowDeviceSignalProcessing()
     {
         ConsentDecision decision = ConsentGate.Evaluate(ConsentMode.Full, null, signal: null);
@@ -100,7 +97,6 @@ public sealed class ConsentGateTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-146")]
     public void Evaluate_FullWithAttributionDenied_ForbidsProbabilisticMatching()
     {
         ConsentDecision decision = ConsentGate.Evaluate(

@@ -13,7 +13,7 @@ namespace Dle.Edge.Rendering;
 /// </para>
 /// <para>
 /// None of them carries a script, and none of them redirects. A 410 in particular must not: the point
-/// of the quarantine is that the destination is no longer served (TC-103).
+/// of the quarantine is that the destination is no longer served.
 /// </para>
 /// </remarks>
 internal abstract class StatusPageResult : HtmlPageResult
@@ -94,7 +94,7 @@ internal abstract class StatusPageResult : HtmlPageResult
 /// takes the client's language and the link domain, and there is deliberately no overload that takes a
 /// link, a slug or a tenant: a missing slug, a deactivated link, an expired link with no expiry URL and
 /// a link belonging to a different tenant all reach this type with byte-identical arguments, so they
-/// produce byte-identical markup (TC-102, TC-166, SHARED-KERNEL §17.7).
+/// produce byte-identical markup.
 /// </para>
 /// <para>
 /// The only per-response variation anywhere in the response is the nonce, which is a fixed 24 characters
@@ -135,7 +135,7 @@ internal sealed class NotFoundPageResult : StatusPageResult
 }
 
 /// <summary>
-/// The 410 page served for a link withdrawn by abuse handling (TC-103, §E.3).
+/// The 410 page served for a link withdrawn by abuse handling.
 /// </summary>
 /// <remarks>
 /// It explains what happened, says that the record was kept rather than deleted, and offers the appeal
@@ -209,7 +209,7 @@ internal sealed class GonePageResult : StatusPageResult
 }
 
 /// <summary>
-/// The 429 page served when a limiter refused the request (§E.9).
+/// The 429 page served when a limiter refused the request.
 /// </summary>
 /// <remarks>
 /// The page exists because a rate limited human is a normal event — a shared mobile network, an office

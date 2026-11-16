@@ -30,7 +30,7 @@ public enum DleLogLevel: Int, Sendable, Comparable, CaseIterable, Codable {
 /// * never log a full URL including its query string,
 /// * never log the raw `install_id` — only its short prefix.
 ///
-/// These mirror the server-side logging prohibitions (spec S-08, T-08, SHARED-KERNEL §17.5).
+/// These mirror the server-side logging prohibitions.
 public enum DleLog {
     /// A destination for log lines. Supply your own to bridge into the host app's logging stack.
     public typealias Sink = @Sendable (DleLogLevel, String) -> Void

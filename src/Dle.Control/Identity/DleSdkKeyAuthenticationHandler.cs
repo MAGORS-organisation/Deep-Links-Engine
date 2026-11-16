@@ -29,7 +29,7 @@ namespace Dle.Control.Identity;
 /// </para>
 /// <para>
 /// The verification itself is the same as for a control-plane key: prefix lookup, Argon2id,
-/// constant-time comparison, one shared attempt budget (SHARED-KERNEL §17.6, §E.9).
+/// constant-time comparison, one shared attempt budget.
 /// </para>
 /// </remarks>
 public sealed class DleSdkKeyAuthenticationHandler

@@ -1,7 +1,7 @@
 namespace Dle.Domain.Abuse;
 
 /// <summary>
-/// Result of one safety check on a target URL (§E.3). Verdicts from different sources are
+/// Result of one safety check on a target URL. Verdicts from different sources are
 /// combined by keeping the most severe <see cref="Level"/>.
 /// </summary>
 /// <remarks>

@@ -9,7 +9,7 @@ using Xunit;
 namespace Dle.UnitTests.Control;
 
 /// <summary>
-/// Verifies bootstrap configuration and hosted service behavior (FR-241, FR-242).
+/// Verifies bootstrap configuration and hosted service behavior.
 /// </summary>
 public sealed class BootstrapServiceTests
 {

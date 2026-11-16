@@ -24,7 +24,7 @@ public static class UserAgents
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
         + "Chrome/131.0.0.0 Safari/537.36";
 
-    /// <summary>Facebook's link preview fetcher (TC-106).</summary>
+    /// <summary>Facebook's link preview fetcher.</summary>
     public const string FacebookExternalHit =
         "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)";
 

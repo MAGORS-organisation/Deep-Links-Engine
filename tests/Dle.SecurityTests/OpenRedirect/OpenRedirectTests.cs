@@ -63,8 +63,6 @@ public sealed class OpenRedirectTests
 
     [Theory]
     [MemberData(nameof(SampledCorpus))]
-    [Trait("TestCase", "TC-164")]
-    [Trait("Threat", "T-01")]
     public async Task Resolve_HostileValueInASteeringParameter_NeverReachesTheLocationHeader(string hostile)
     {
         using HttpClient client = _edge.Factory.CreateClientFrom("203.0.113.10");
@@ -83,8 +81,6 @@ public sealed class OpenRedirectTests
 
     [Theory]
     [MemberData(nameof(SampledCorpus))]
-    [Trait("TestCase", "TC-164")]
-    [Trait("Threat", "T-01")]
     public async Task Resolve_HostileValueInAForwardableParameter_IsCarriedAsDataNotAsADestination(string hostile)
     {
         // The allow-listed parameters are the interesting ones. They *are* copied into the target, so
@@ -106,8 +102,6 @@ public sealed class OpenRedirectTests
 
     [Theory]
     [MemberData(nameof(SampledCorpus))]
-    [Trait("TestCase", "TC-164")]
-    [Trait("Threat", "T-01")]
     public async Task Resolve_HostileValueAsTheSlug_IsNeverEchoedIntoALocationHeader(string hostile)
     {
         // The slug is the other request-controlled input. Most of the corpus cannot even route to the
@@ -124,8 +118,6 @@ public sealed class OpenRedirectTests
 
     [Theory]
     [MemberData(nameof(SampledCorpus))]
-    [Trait("TestCase", "TC-164")]
-    [Trait("Threat", "T-01")]
     public async Task Resolve_HostileValueInTheReferrer_DoesNotInfluenceTheDestination(string hostile)
     {
         // The referrer is attacker controlled on any page that links here, and §E.6.3 already limits
@@ -141,7 +133,6 @@ public sealed class OpenRedirectTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-164")]
     public async Task Resolve_WithNoHostileInput_StillRedirectsToTheConfiguredTarget()
     {
         // The control. Everything above would also pass against an engine that answered 500 to every
@@ -162,8 +153,6 @@ public sealed class OpenRedirectTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-164")]
-    [Trait("Threat", "T-01")]
     public void UrlBuilder_AcrossTheWholeCorpus_NeverProducesAnAttackerControlledTarget()
     {
         // The same property one layer down, over the entire cross product rather than a sample. This is
@@ -209,7 +198,6 @@ public sealed class OpenRedirectTests
     }
 
     [Fact]
-    [Trait("Threat", "T-01")]
     public void SafeUrl_AcrossTheWholeCorpus_NeverProducesAnythingButAnAbsoluteHttpUrl()
     {
         // SafeUrl is the last gate before a value reaches a Location header or an href, and it is a
@@ -251,8 +239,6 @@ public sealed class OpenRedirectTests
     }
 
     [Fact]
-    [Trait("Threat", "T-01")]
-    [Trait("TestCase", "TC-161")]
     public void SafeUrl_WithNoCustomSchemeConfigured_RefusesEveryNonWebScheme()
     {
         // The deep link slot is the one place a non-web scheme is ever allowed, and only when the link

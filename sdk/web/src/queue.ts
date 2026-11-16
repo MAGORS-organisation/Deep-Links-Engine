@@ -5,7 +5,7 @@ import { readJson, writeJson } from './storage.js';
 import type { DleEvent, DleEventType } from './types.js';
 
 /**
- * Offline event queue with persistence and retry (FR-226, spec §C.5).
+ * Offline event queue with persistence and retry.
  *
  * - Events are appended to a durable, namespaced store and survive reloads and offline spells.
  * - Flushes are debounced and batched, at most `MAX_EVENTS_PER_BATCH` (100) per request, so a

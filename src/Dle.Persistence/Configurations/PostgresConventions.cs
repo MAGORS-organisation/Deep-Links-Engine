@@ -28,7 +28,7 @@ internal static class PostgresConventions
     /// <summary>
     /// Server-side identifier default. Resolves to native <c>uuidv7()</c> on PostgreSQL 18 and to a
     /// RFC 9562 compliant fallback on PostgreSQL 16 and 17, so the minimum supported version keeps
-    /// time ordered keys (ADR-003).
+    /// time ordered keys.
     /// </summary>
     internal const string UuidV7Default = "dle_uuidv7()";
 

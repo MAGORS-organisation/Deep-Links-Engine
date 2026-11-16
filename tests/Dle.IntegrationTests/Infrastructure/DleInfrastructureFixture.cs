@@ -17,7 +17,7 @@ using Testcontainers.Redis;
 namespace Dle.IntegrationTests.Infrastructure;
 
 /// <summary>
-/// The one PostgreSQL 18 instance and the one Valkey 8 instance this assembly runs against (§D.4).
+/// The one PostgreSQL 18 instance and the one Valkey 8 instance this assembly runs against.
 /// </summary>
 /// <remarks>
 /// <para>

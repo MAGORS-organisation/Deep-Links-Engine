@@ -187,7 +187,7 @@ internal static class SafeUrl
             }
         }
 
-        // Nothing matched: the branch defaults to refusing the URL (SHARED-KERNEL §17.9).
+        // Nothing matched: the branch defaults to refusing the URL.
         return null;
     }
 
@@ -234,7 +234,7 @@ internal static class SafeUrl
     /// <remarks>
     /// A QR logo cannot be an external URL: the SVG is served as an image, and browsers refuse to load
     /// subresources from inside an image document. It must not be one either, because fetching a
-    /// tenant-supplied URL server-side would be a third-party call on a cached edge path (NFR-14) and an
+    /// tenant-supplied URL server-side would be a third-party call on a cached edge path and an
     /// SSRF primitive. Inline base64 is the only shape that is both renderable and safe.
     /// </remarks>
     internal static string? ImageDataUri(string? dataUri)

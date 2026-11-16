@@ -18,7 +18,7 @@ namespace Dle.UnitTests.Edge;
 /// mobile carrier NAT is one bucket rather than one bucket per address. The budget for 404 answers
 /// is a separate partition from the budget for successful resolves — and it has to be, because a
 /// legitimate campaign spike would otherwise drain the anti-enumeration defence exactly when the
-/// service is most worth scanning (T-07).
+/// service is most worth scanning.
 /// </summary>
 public sealed class RateLimitPartitionTests : IDisposable
 {
@@ -129,7 +129,6 @@ public sealed class RateLimitPartitionTests : IDisposable
     /// prefix into a shadow ban, and the ban is scoped to that prefix alone.
     /// </summary>
     [Fact]
-    [Trait("TestCase", "TC-108")]
     public void NotFoundBudget_WhenDrained_ShadowBansOnlyTheOffendingNetwork()
     {
         var options = new EdgeRateLimitOptions
@@ -168,7 +167,6 @@ public sealed class RateLimitPartitionTests : IDisposable
     }
 
     [Fact]
-    [Trait("TestCase", "TC-108")]
     public void ShadowBan_ExpiresWithTheConfiguredWindow()
     {
         var options = new EdgeRateLimitOptions

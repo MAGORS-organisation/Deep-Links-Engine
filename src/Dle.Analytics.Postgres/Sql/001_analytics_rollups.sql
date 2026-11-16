@@ -10,7 +10,7 @@
 -- is_bot = true, rather than being dropped: FR-205 says crawler traffic must not be counted in a
 -- campaign, not that it must be unobservable. The reporting store filters on is_bot, so
 -- AnalyticsQuery.IncludeBots keeps working against the rollups exactly as it does against raw
--- events (TC-106).
+-- events.
 --
 -- Why 'unknown' instead of NULL in the key columns. These columns are part of a primary key, and
 -- a NULL in a key column would let the same logical bucket be inserted twice. The reporting store

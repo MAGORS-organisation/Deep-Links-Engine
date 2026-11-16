@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="IdempotencyRecord"/> to the <c>idempotency_records</c> table (§B.7.3).</summary>
+/// <summary>Maps <see cref="IdempotencyRecord"/> to the <c>idempotency_records</c> table.</summary>
 public sealed class IdempotencyRecordConfiguration : IEntityTypeConfiguration<IdempotencyRecord>
 {
     /// <inheritdoc />

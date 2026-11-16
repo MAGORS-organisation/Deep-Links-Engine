@@ -9,14 +9,14 @@ namespace Dle.Persistence.Fast.Links;
 
 /// <summary>
 /// The single database round trip on the resolve hot path: host and slug to
-/// <see cref="LinkSnapshot"/> (ADR-004, §B.6.1).
+/// <see cref="LinkSnapshot"/>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// This is the reason <c>Dle.Persistence.Fast</c> exists. EF Core spends hundreds of microseconds per
 /// operation on entity materialisation and change tracking, which is most of the resolve budget of
 /// NFR-01 spent before any work is done, and its ahead-of-time support is explicitly experimental,
-/// which would rule out an AOT edge resolver altogether (ADR-004, ADR-012). One statement and a hand
+/// which would rule out an AOT edge resolver altogether. One statement and a hand
 /// written reader loop cost neither.
 /// </para>
 /// <para>
@@ -27,7 +27,7 @@ namespace Dle.Persistence.Fast.Links;
 /// <para>
 /// Caching is not this type's job. The store is the miss path behind <c>HybridCache</c>, which supplies
 /// the stampede protection: on a cache miss exactly one caller reaches this query and the rest wait for
-/// its result (ADR-005, §C.3.1).
+/// its result.
 /// </para>
 /// </remarks>
 public sealed class DapperLinkStore : ILinkStore
@@ -42,12 +42,12 @@ public sealed class DapperLinkStore : ILinkStore
     // the 302-to-a-farewell-page of TC-104 from a bare 404. A covering index that leaves one of them
     // out is not covering — the planner falls back to uq_links_domain_slug plus a heap fetch — so the
     // migration's INCLUDE list carries all five, and CoveringIndexTests checks the plan of this exact
-    // statement. A column added here has to be added there (ADR-004).
+    // statement. A column added here has to be added there.
     //
     // The joins are the honest part of the cost. Both consent modes are required to build the snapshot
     // and neither lives on `links`: the tenant's mode is on `tenants` and the domain override on
     // `domains`, and the gate needs both separately, since a domain override may only narrow what the
-    // tenant permits (SHARED-KERNEL §2). The two lateral joins supply the per-domain application
+    // tenant permits. The two lateral joins supply the per-domain application
     // fallbacks — store URL and custom scheme — that RoutingUrlBuilder falls back to when the matched
     // rule carries none. All of it is still one statement and one round trip, which is what the latency
     // budget actually cares about; the result is then cached for L1Seconds/L2Minutes, so the joins are

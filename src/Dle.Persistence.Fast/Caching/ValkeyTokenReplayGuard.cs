@@ -6,7 +6,7 @@ namespace Dle.Persistence.Fast.Caching;
 
 /// <summary>
 /// Shared single-use token replay guard backed by Valkey using atomic <c>SET ... NX PX</c>
-/// semantics (§E.4.2).
+/// semantics.
 /// </summary>
 /// <remarks>
 /// Ensures a single-use token consumed on one edge or control instance is refused on every other

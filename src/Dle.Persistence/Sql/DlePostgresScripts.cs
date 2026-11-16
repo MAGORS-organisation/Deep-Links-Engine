@@ -21,7 +21,7 @@ internal static class DlePostgresScripts
     /// Creates <c>dle_uuidv7()</c>, the identifier default for every uuid primary key.
     /// </summary>
     /// <remarks>
-    /// PostgreSQL 18 has a native <c>uuidv7()</c>; the project floor is 16, which does not (ADR-003).
+    /// PostgreSQL 18 has a native <c>uuidv7()</c>; the project floor is 16, which does not.
     /// The function therefore dispatches on the server version at call time and falls back to an
     /// RFC 9562 conformant construction: the top 48 bits are the Unix millisecond timestamp, the
     /// version nibble is forced to 7, and everything else stays the randomness
@@ -78,7 +78,7 @@ internal static class DlePostgresScripts
     /// partition key in every unique constraint. That is also why <c>attributions.click_id</c>
     /// cannot be a foreign key into this table: there is no unique constraint on <c>click_id</c>
     /// alone to reference, so the one-click-one-install invariant is enforced by a partial unique
-    /// index on the attribution side instead (TC-144).
+    /// index on the attribution side instead.
     /// </para>
     /// <para>
     /// The index choices follow the access patterns. <c>occurred_at</c> gets a BRIN index rather
@@ -90,7 +90,7 @@ internal static class DlePostgresScripts
     /// <para>
     /// <c>spoofed_bot</c> is not in the DDL sketch but is in the <c>ClickEvent</c> contract of the
     /// shared kernel: a user agent that claims to be a crawler while reverse DNS disagrees is
-    /// recorded rather than silently trusted (TC-107).
+    /// recorded rather than silently trusted.
     /// </para>
     /// </remarks>
     internal const string CreateClickEvents = """

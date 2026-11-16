@@ -11,7 +11,7 @@ namespace Dle.Persistence.Fast.Caching;
 /// <typeparam name="T">The cached type.</typeparam>
 /// <remarks>
 /// The default <c>HybridCache</c> serializer resolves properties reflectively, which is the one thing
-/// this assembly may not do (SHARED-KERNEL §17.3, ADR-012). Holding the
+/// this assembly may not do. Holding the
 /// <see cref="JsonTypeInfo{T}"/> instead makes serialization allocation-light, trim-safe and
 /// ahead-of-time safe, and it fixes the wire format of an L2 entry to the same snake_case shape the
 /// rest of the product uses.

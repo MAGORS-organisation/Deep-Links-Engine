@@ -88,7 +88,6 @@ public sealed class PostgresUnavailableTests(DleInfrastructureFixture infrastruc
         _chaosDatabase ?? throw new InvalidOperationException("The chaos database was never created.");
 
     [RequiresDockerFact]
-    [Trait("Spec", "D.6")]
     public async Task PostgresDown_ACachedLinkStillResolves_AndAnUncachedOneIs503NotFoundOr500()
     {
         string host = TestSeed.UniqueHost("chaos-pg");
@@ -132,7 +131,6 @@ public sealed class PostgresUnavailableTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "D.6")]
     public async Task PostgresDown_TheControlPlaneAnswers503RatherThan500()
     {
         Guid tenantId = await TestSeed.TenantAsync(Chaos, "chaos-cp", cancellationToken: Ct);
@@ -179,7 +177,6 @@ public sealed class PostgresUnavailableTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "D.6")]
     public async Task PostgresDown_TheEdgeStaysInRotationAndItsReadinessProbeReportsTheDatabaseAsDegraded()
     {
         DleTestHost<EdgeOptions> edge = StartEdgeAgainstChaosPostgres();

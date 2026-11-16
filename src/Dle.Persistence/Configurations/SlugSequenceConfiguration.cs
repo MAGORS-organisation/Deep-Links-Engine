@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="SlugSequence"/> to the <c>slug_sequences</c> table (ADR-007).</summary>
+/// <summary>Maps <see cref="SlugSequence"/> to the <c>slug_sequences</c> table.</summary>
 /// <remarks>
 /// One instance wide counter space, deliberately not per tenant: slugs are drawn from a keyed
 /// Feistel permutation over a 47 bit counter, and giving every tenant its own space would either

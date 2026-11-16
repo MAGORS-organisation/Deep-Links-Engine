@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="Install"/> to the <c>installs</c> table (§B.5.3).</summary>
+/// <summary>Maps <see cref="Install"/> to the <c>installs</c> table.</summary>
 public sealed class InstallConfiguration : IEntityTypeConfiguration<Install>
 {
     /// <inheritdoc />
@@ -56,7 +56,7 @@ public sealed class InstallConfiguration : IEntityTypeConfiguration<Install>
             .OnDelete(DeleteBehavior.Cascade);
 
         // This is what makes a repeated resolve idempotent: the second call finds the existing row
-        // and returns the existing attribution instead of creating a second one (TC-143, FR-188).
+        // and returns the existing attribution instead of creating a second one.
         builder.HasIndex(i => new { i.AppId, i.InstallId })
             .IsUnique()
             .HasDatabaseName("uq_installs_app_install");

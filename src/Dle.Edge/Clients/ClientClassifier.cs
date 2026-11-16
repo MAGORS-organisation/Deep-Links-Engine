@@ -11,7 +11,7 @@ namespace Dle.Edge.Clients;
 
 /// <summary>
 /// Turns a transport-neutral <see cref="ClientRequest"/> into the <see cref="ClientContext"/> the
-/// routing engine and the click stream both consume (§B.6.1 step 3).
+/// routing engine and the click stream both consume.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -19,7 +19,7 @@ namespace Dle.Edge.Clients;
 /// together, out of a 5.5 ms p50. User agent parsing is a cascade of regular expressions and would
 /// eat most of that on its own, so the parse result is memoised: real traffic sends a few thousand
 /// distinct user agent strings, and the same handful account for the overwhelming majority of
-/// requests (§C.2).
+/// requests.
 /// </para>
 /// <para>
 /// The memo is keyed by a 64-bit FNV-1a hash of the string rather than by the string itself. That
@@ -47,7 +47,7 @@ public sealed class ClientClassifier : IClientClassifier
     /// <summary>
     /// Creates the classifier.
     /// </summary>
-    /// <param name="geoIp">Geographic resolver; may be permanently unavailable (§D.6).</param>
+    /// <param name="geoIp">Geographic resolver; may be permanently unavailable.</param>
     /// <param name="options">Edge options; supplies the memo capacity.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public ClientClassifier(IGeoIpResolver geoIp, IOptions<EdgeOptions> options)

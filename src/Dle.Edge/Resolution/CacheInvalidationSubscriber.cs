@@ -13,7 +13,7 @@ namespace Dle.Edge.Resolution;
 
 /// <summary>
 /// Background service that subscribes to Valkey pub/sub channel <c>dle:cache:invalidation</c>
-/// and invalidates local L1 cache entries across edge replicas (ADR-005).
+/// and invalidates local L1 cache entries across edge replicas.
 /// </summary>
 public sealed class CacheInvalidationSubscriber : BackgroundService
 {

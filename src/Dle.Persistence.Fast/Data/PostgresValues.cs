@@ -10,11 +10,11 @@ namespace Dle.Persistence.Fast.Data;
 /// <para>
 /// Every reader here takes an ordinal, never a column name: the queries in this assembly are literal
 /// and their projections are fixed, so a name lookup would only buy a dictionary probe per column on
-/// the path with the tightest latency budget in the product (NFR-01).
+/// the path with the tightest latency budget in the product.
 /// </para>
 /// <para>
 /// The enum decoding is deliberately forgiving about spelling. Enumerations are stored as text rather
-/// than integers (SHARED-KERNEL §12) and the exact casing depends on how the control plane's EF Core
+/// than integers and the exact casing depends on how the control plane's EF Core
 /// model configures the conversion, which is a separate slice. Accepting <c>aggregate_only</c>,
 /// <c>AggregateOnly</c> and <c>1</c> alike costs nothing here and removes a whole class of
 /// cross-module breakage; an unrecognised value falls back to the most restrictive mode, never the
@@ -48,7 +48,7 @@ internal static class PostgresValues
     /// <remarks>
     /// An unrecognised value resolves to <paramref name="fallback"/>, and every caller passes
     /// <see cref="ConsentMode.Off"/> for it. A typo in the database must never widen what may be
-    /// collected about a person (§E.6.2).
+    /// collected about a person.
     /// </remarks>
     internal static ConsentMode ParseConsentMode(string? raw, ConsentMode fallback)
     {

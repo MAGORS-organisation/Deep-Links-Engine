@@ -4,13 +4,13 @@ using System.Text;
 namespace Dle.Domain.Routing;
 
 /// <summary>
-/// Deterministic A/B bucketing derived from the click identifier (FR-125).
+/// Deterministic A/B bucketing derived from the click identifier.
 /// </summary>
 /// <remarks>
 /// <para>
 /// There is no randomness anywhere in the routing pipeline. The bucket is a pure function of the click
 /// id, so the same click always lands in the same variant — on every node, in the rule simulator
-/// (FR-129) and when a decision is replayed months later from the click stream.
+/// and when a decision is replayed months later from the click stream.
 /// </para>
 /// <para>
 /// The hash is FNV-1a over the UTF-8 bytes of the click id, reduced modulo 100. FNV-1a is chosen for

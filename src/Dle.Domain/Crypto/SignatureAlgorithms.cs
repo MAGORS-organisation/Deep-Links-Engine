@@ -1,7 +1,7 @@
 namespace Dle.Domain.Crypto;
 
 /// <summary>
-/// Identifiers of the signature algorithms the engine can use (§E.4.2). They appear verbatim in
+/// Identifiers of the signature algorithms the engine can use. They appear verbatim in
 /// the <c>alg</c> segment of a signed token and in the <c>DLE-Alg</c> webhook header, so they are
 /// part of the public wire contract and must never be renamed.
 /// </summary>
@@ -9,7 +9,7 @@ namespace Dle.Domain.Crypto;
 /// Crypto agility has to exist from day one. Retrofitting an algorithm identifier into a token
 /// format that is already in circulation is a breaking change for every integrator, which is why
 /// the format carries the algorithm and the key identifier from the first release even though
-/// only one algorithm is used at a time (§E.4.2, ADR-013).
+/// only one algorithm is used at a time.
 /// </remarks>
 public static class SignatureAlgorithms
 {
@@ -25,7 +25,7 @@ public static class SignatureAlgorithms
     public const string MlDsa65 = "MLDSA65";
 
     /// <summary>Composite of Ed25519 and ML-DSA-65: both signatures must verify. The migration
-    /// target for long lived asymmetric signatures (§E.5.3).</summary>
+    /// target for long lived asymmetric signatures.</summary>
     public const string Ed25519MlDsa65 = "Ed25519+MLDSA65";
 
     /// <summary>SLH-DSA-128s, the FIPS 205 hash based signature. Conservative and large; kept for

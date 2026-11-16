@@ -1,12 +1,12 @@
 namespace Dle.Domain.Routing;
 
 /// <summary>
-/// Per-rule override for the interstitial page (FR-162, FR-163).
+/// Per-rule override for the interstitial page.
 /// </summary>
 /// <remarks>
 /// The interstitial exists because an in-app webview only hands a Universal Link or an App Link
 /// to the operating system on a genuine tap of an <c>&lt;a&gt;</c> element; a scripted navigation
-/// is not a user gesture (§A.2.6). <see cref="Never"/> therefore never suppresses the interstitial
+/// is not a user gesture. <see cref="Never"/> therefore never suppresses the interstitial
 /// for an in-app webview — it only suppresses it where a plain redirect actually works.
 /// </remarks>
 public enum InterstitialMode

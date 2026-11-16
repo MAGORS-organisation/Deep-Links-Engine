@@ -5,7 +5,7 @@ using Dle.Persistence.Internal;
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Reads and writes link domains and their verification history (FR-143, FR-145).
+/// Reads and writes link domains and their verification history.
 /// </summary>
 public sealed class DomainRepository
 {
@@ -142,7 +142,7 @@ public sealed class DomainRepository
     }
 
     /// <summary>
-    /// Appends a verification run and updates the summary columns of the domain (FR-143).
+    /// Appends a verification run and updates the summary columns of the domain.
     /// </summary>
     /// <param name="verification">The run to record. Its checked instant is filled in when unset.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

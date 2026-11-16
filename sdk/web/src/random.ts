@@ -3,7 +3,7 @@
  *
  * Everything here is **random**, never derived. No canvas hash, no font list, no `navigator`
  * enumeration, no clock skew — nothing that would survive a storage wipe or re-identify a
- * device (FR-227, spec §0.2).
+ * device.
  */
 
 interface CryptoLike {

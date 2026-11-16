@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Dle.Control.Features.Attribution;
 
-/// <summary>Why a presented claim code could or could not be redeemed (TC-148).</summary>
+/// <summary>Why a presented claim code could or could not be redeemed.</summary>
 public enum ClaimCodeStatus
 {
     /// <summary>The code is valid, unexpired and unspent.</summary>
@@ -64,7 +64,7 @@ public sealed class ClaimCodeService
     /// </summary>
     /// <param name="store">Storage seam.</param>
     /// <param name="generator">Code generator and verifier from the crypto module.</param>
-    /// <param name="timeProvider">Clock. Never <c>DateTime.UtcNow</c> (SHARED-KERNEL §17.2).</param>
+    /// <param name="timeProvider">Clock. Never <c>DateTime.UtcNow</c>.</param>
     /// <param name="metrics">Instruments.</param>
     /// <param name="options">Attribution options.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
@@ -152,7 +152,7 @@ public sealed class ClaimCodeService
     /// <see cref="ClaimCodeGenerator.Verify"/>, which is constant time. The database equality that
     /// found the row compares 32 bytes of HMAC output, from which no timing signal about the code
     /// itself can be extracted; the in-process comparison is what the security property rests on
-    /// (T-17, SHARED-KERNEL §17.6).
+    ///.
     /// </remarks>
     public async Task<ClaimCodeRedemption> InspectAsync(string? presentedCode, CancellationToken cancellationToken)
     {

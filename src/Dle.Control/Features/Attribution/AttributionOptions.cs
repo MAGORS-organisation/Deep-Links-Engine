@@ -29,7 +29,7 @@ public sealed class AttributionOptions
 
     /// <summary>
     /// Order applied when <see cref="Strategies"/> is empty: the three deterministic strategies,
-    /// strongest first. <c>probabilistic</c> is not part of it (ADR-008, §C.4).
+    /// strongest first. <c>probabilistic</c> is not part of it.
     /// </summary>
     public static readonly string[] DefaultStrategies =
     [
@@ -54,14 +54,14 @@ public sealed class AttributionOptions
     /// <summary>
     /// Half-width, in minutes, of the <c>occurred_at</c> window used to look a click up by its
     /// identifier. The identifier carries its own timestamp, and this window is what lets the
-    /// planner prune the partitions of <c>click_events</c> (§B.6.3). Widening it costs a partition
+    /// planner prune the partitions of <c>click_events</c>. Widening it costs a partition
     /// per day of width.
     /// </summary>
     public int ClickWindowMinutes { get; set; } = 5;
 
     /// <summary>
     /// Oldest install referrer that is still honoured, in days. Play keeps the referrer for about
-    /// 90 days (§A.2.4); anything older is a replay rather than an install.
+    /// 90 days; anything older is a replay rather than an install.
     /// </summary>
     public int MaxReferrerAgeDays { get; set; } = 90;
 
@@ -115,7 +115,7 @@ public sealed class ProbabilisticOptions
 
     /// <summary>
     /// Width of the matching window in minutes. Confidence decays linearly to zero across it, and
-    /// past its end the answer is <c>none</c> rather than a weak match (TC-147).
+    /// past its end the answer is <c>none</c> rather than a weak match.
     /// </summary>
     public int WindowMinutes { get; set; } = 60;
 
@@ -152,7 +152,7 @@ public sealed class ClaimCodeOptions
 }
 
 /// <summary>
-/// Rate limits of the SDK endpoints, bound from <c>Dle:RateLimits</c> (§E.9).
+/// Rate limits of the SDK endpoints, bound from <c>Dle:RateLimits</c>.
 /// </summary>
 /// <remarks>
 /// The defaults are the table in §E.9 verbatim. The resolve limit looks brutally low until you
@@ -278,7 +278,7 @@ public sealed class AttributionOptionsValidator
         // The one value the engine refuses to obey. Turning consent off would make the module
         // process device signals without a legal basis under ePrivacy art. 5(3), which EDPB
         // Guidelines 2/2023 confirms covers marketing attribution. Refusing to start is the
-        // fail-closed answer (SHARED-KERNEL §17.9); silently ignoring the setting would be worse,
+        // fail-closed answer; silently ignoring the setting would be worse,
         // because the operator would believe it took effect.
         if (options.Probabilistic is { Enabled: true, RequireConsent: false })
         {

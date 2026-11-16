@@ -1,7 +1,7 @@
 namespace Dle.Domain.Abuse;
 
 /// <summary>
-/// Category chosen by the reporter on the public abuse form (FR-245).
+/// Category chosen by the reporter on the public abuse form.
 /// </summary>
 public enum AbuseReason
 {

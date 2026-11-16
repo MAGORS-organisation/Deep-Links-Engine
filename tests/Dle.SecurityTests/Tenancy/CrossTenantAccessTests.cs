@@ -42,8 +42,6 @@ public sealed class CrossTenantAccessTests
     public const string TenantBResourcesVariable = "DLE_TEST_TENANT_B_RESOURCES";
 
     [Fact]
-    [Trait("TestCase", "TC-166")]
-    [Trait("Threat", "T-09")]
     public async Task NotFound_IsTheAnswerForAResourceThatIsNotYours()
     {
         // The shape of the answer, asserted where it is produced. Every handler that looks a resource
@@ -59,8 +57,6 @@ public sealed class CrossTenantAccessTests
     }
 
     [Theory]
-    [Trait("TestCase", "TC-166")]
-    [Trait("Threat", "T-09")]
     [InlineData("No such link.")]
     [InlineData("No such webhook subscription.")]
     public async Task NotFound_DoesNotEchoTheIdentifierItWasAskedAbout(string detail)
@@ -109,8 +105,6 @@ public sealed class CrossTenantAccessTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-166")]
-    [Trait("Threat", "T-09")]
     public void TenantContext_WithNoScope_RefusesToProduceATenantRatherThanDefaultingToAll()
     {
         // The single most dangerous default in a multi-tenant system is "no tenant means every
@@ -123,7 +117,6 @@ public sealed class CrossTenantAccessTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-166")]
     public void TenantContext_ScopesNest_AndRestoreThePreviousTenantExactly()
     {
         // A nested scope that leaked would leave a later query running as the wrong tenant — the worst
@@ -149,7 +142,6 @@ public sealed class CrossTenantAccessTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-166")]
     public void TenantContext_RefusesTheEmptyTenant()
     {
         // Guid.Empty is what an uninitialised field looks like, and a scope opened on it would silently
@@ -161,8 +153,6 @@ public sealed class CrossTenantAccessTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-166")]
-    [Trait("Threat", "T-09")]
     public async Task ControlPlane_TenantAKeyAgainstEveryResourceOfTenantB_Answers404()
     {
         // The real matrix. It needs two tenants, two credentials and a database enforcing row level

@@ -76,8 +76,6 @@ public sealed class LogRedactionTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("Criterion", "S-08")]
-    [Trait("Threat", "T-08")]
     public async Task Resolve_WithACredentialAQueryStringAReferrerAndAnAddress_LogsNoneOfThem()
     {
         _edge.Logs.Clear();
@@ -109,8 +107,6 @@ public sealed class LogRedactionTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("Criterion", "S-08")]
-    [Trait("Threat", "T-08")]
     public async Task Resolve_OfAMissingSlug_LogsNeitherTheAddressNorTheQueryString()
     {
         // The 404 path logs a reason, which is the one place an operator gets to see *why* a request
@@ -131,7 +127,6 @@ public sealed class LogRedactionTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("Criterion", "S-08")]
     public async Task TheResolvePath_LogsItsOutcome_SoTheAssertionsAboveAreNotVacuous()
     {
         // Without this, an engine that logged nothing at all would pass every test in this class. The
@@ -156,7 +151,6 @@ public sealed class LogRedactionTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("Criterion", "S-08")]
     public void EveryCapturedEntry_IsAttributedToACategory()
     {
         // A log line nobody can filter by category is a log line an operator cannot turn off, which is

@@ -3,14 +3,14 @@ using System.Diagnostics.Metrics;
 namespace Dle.Persistence.Fast.Telemetry;
 
 /// <summary>
-/// The instruments this module publishes (§C.6).
+/// The instruments this module publishes.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Instrument names use the OpenTelemetry dotted spelling. A Prometheus exporter renders
 /// <c>dle.click_events.dropped</c> as <c>dle_click_events_dropped_total</c>, which is the metric §C.6
 /// names and puts an alert on. That alert is the point: dropping click events is a deliberate trade
-/// under load (NFR-06), but a silent one would mean campaign numbers quietly going wrong with nothing
+/// under load, but a silent one would mean campaign numbers quietly going wrong with nothing
 /// to notice it.
 /// </para>
 /// <para>
@@ -48,7 +48,7 @@ public sealed class FastPersistenceMetrics : IDisposable
         _clickEventsDropped = _meter.CreateCounter<long>(
             "dle.click_events.dropped",
             unit: "{event}",
-            description: "Click events discarded because the bounded channel was full. Any non-zero rate is an alert (§C.6).");
+            description: "Click events discarded because the bounded channel was full. Any non-zero rate is an alert.");
 
         _clickEventsWritten = _meter.CreateCounter<long>(
             "dle.click_events.written",

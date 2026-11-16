@@ -5,14 +5,14 @@ import java.net.URI
 import java.net.URISyntaxException
 
 /**
- * An App Link open the SDK reported (FR-223), handed back so the application can route on it.
+ * An App Link open the SDK reported, handed back so the application can route on it.
  *
  * @property url the URL exactly as the operating system delivered it. Untrusted input, even
  * though it came from the OS (MASTG-TEST-0028): pass it through a [DeepLinkAllowlist] before
  * navigating.
  * @property reportedUrl what was sent to the engine as the `link_open` URL: scheme, host and path
  * only. The query string and fragment are dropped on the device because the engine never uses
- * them and they may carry personal data (spec §E.6.3).
+ * them and they may carry personal data.
  */
 public data class AppLinkOpen(
     public val url: String,

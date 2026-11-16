@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// One historical revision of a link (FR-107). Maps to <c>link_versions</c>.
+/// One historical revision of a link. Maps to <c>link_versions</c>.
 /// </summary>
 /// <remarks>
 /// The whole link is stored as a snapshot rather than as a field level diff. A link is small, and

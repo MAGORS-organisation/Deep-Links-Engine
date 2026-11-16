@@ -33,7 +33,6 @@ public sealed class TenantIsolationHttpTests(DleInfrastructureFixture infrastruc
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task GetLink_WithAnotherTenantsApiKey_Is404AndNever403()
     {
         Seeded seeded = await SeedTwoTenantsAsync();
@@ -60,7 +59,6 @@ public sealed class TenantIsolationHttpTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task PatchLink_WithAnotherTenantsApiKey_Is404AndChangesNothing()
     {
         Seeded seeded = await SeedTwoTenantsAsync();
@@ -90,7 +88,6 @@ public sealed class TenantIsolationHttpTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task ListLinks_WithATenantsApiKey_ReturnsOnlyThatTenantsLinks()
     {
         Seeded seeded = await SeedTwoTenantsAsync();
@@ -119,7 +116,6 @@ public sealed class TenantIsolationHttpTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-242")]
     public async Task AnyRequest_WithNoCredential_Is401AndNeverServesData()
     {
         Seeded seeded = await SeedTwoTenantsAsync();

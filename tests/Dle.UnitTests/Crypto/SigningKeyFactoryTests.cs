@@ -6,7 +6,7 @@ using Xunit;
 namespace Dle.UnitTests.Crypto;
 
 /// <summary>
-/// The algorithm provider behind the key ring (§E.4.2, §E.5.2, NFR-17).
+/// The algorithm provider behind the key ring.
 /// </summary>
 /// <remarks>
 /// <para>

@@ -126,7 +126,7 @@ public sealed partial class GeoIpUpdateWorker : LeaderElectedBackgroundService
         if (string.IsNullOrWhiteSpace(options.DownloadUrl) || string.IsNullOrWhiteSpace(options.DatabasePath))
         {
             // Cannot happen while IsEnabled holds, but the guard keeps this method honest if it is
-            // ever called directly by a test (SHARED-KERNEL §17.9).
+            // ever called directly by a test.
             return "no download URL or database path is configured; nothing to do.";
         }
 

@@ -25,26 +25,26 @@ public static class ProblemCodes
     /// <summary>The slug is syntactically invalid or reserved.</summary>
     public const string SlugInvalid = Base + "slug-invalid";
 
-    /// <summary>The target URL failed the safety policy (§E.3, T-01, T-02).</summary>
+    /// <summary>The target URL failed the safety policy.</summary>
     public const string UnsafeTarget = Base + "unsafe-target";
 
-    /// <summary>A rate limit or quota was exceeded. Carries <c>Retry-After</c> (§E.9).</summary>
+    /// <summary>A rate limit or quota was exceeded. Carries <c>Retry-After</c>.</summary>
     public const string RateLimited = Base + "rate-limited";
 
-    /// <summary>The routing rule set has no default rule, so it cannot be stored (TC-105).</summary>
+    /// <summary>The routing rule set has no default rule, so it cannot be stored.</summary>
     public const string MissingDefaultRule = Base + "missing-default-rule";
 
     /// <summary>The routing rule set is otherwise invalid. Carries an <c>errors</c> extension.</summary>
     public const string InvalidRoutingRules = Base + "invalid-routing-rules";
 
-    /// <summary>The domain exists but has not passed AASA/assetlinks verification (FR-143).</summary>
+    /// <summary>The domain exists but has not passed AASA/assetlinks verification.</summary>
     public const string DomainNotVerified = Base + "domain-not-verified";
 
     /// <summary>The host is already registered, possibly by another tenant.</summary>
     public const string DomainTaken = Base + "domain-taken";
 
     /// <summary>
-    /// The domain still serves links, so it cannot be removed (FR-133). Delete or move the links
+    /// The domain still serves links, so it cannot be removed. Delete or move the links
     /// first; short URLs already in circulation would otherwise stop resolving with no trace of why.
     /// </summary>
     public const string DomainInUse = Base + "domain-in-use";
@@ -58,10 +58,10 @@ public static class ProblemCodes
     /// <summary>The credential is valid but lacks the scope this operation needs.</summary>
     public const string Forbidden = Base + "forbidden";
 
-    /// <summary>The claim code is unknown, already consumed or past its TTL (TC-148).</summary>
+    /// <summary>The claim code is unknown, already consumed or past its TTL.</summary>
     public const string ClaimCodeInvalid = Base + "claim-code-invalid";
 
-    /// <summary>The link is quarantined following an abuse report (TC-103).</summary>
+    /// <summary>The link is quarantined following an abuse report.</summary>
     public const string LinkQuarantined = Base + "link-quarantined";
 
     /// <summary>A dependency the request needs is unavailable; the caller may retry.</summary>
@@ -76,13 +76,13 @@ public static class ProblemCodes
 
     /// <summary>
     /// The link's resolve-time fields are together larger than the covering index can hold
-    /// (§B.5.2); shorten the target URL, the expired URL, the title, the UTM set or the rules.
+    ///; shorten the target URL, the expired URL, the title, the UTM set or the rules.
     /// </summary>
     public const string LinkTooLarge = Base + "link-too-large";
 
     /// <summary>
     /// An application with this platform and bundle identifier is already registered in the
-    /// tenant (FR-140). Update the existing registration instead of adding a second one.
+    /// tenant. Update the existing registration instead of adding a second one.
     /// </summary>
     public const string AppTaken = Base + "app-taken";
 
@@ -91,7 +91,7 @@ public static class ProblemCodes
     /// </summary>
     /// <remarks>
     /// The set exists so that the published OpenAPI document can enumerate the codes an integrator
-    /// may have to branch on (§B.7.3). Without it the identifiers would be discoverable only by
+    /// may have to branch on. Without it the identifiers would be discoverable only by
     /// reading this file or by provoking each failure against a running server. A new code is added
     /// here in the same change that declares it; nothing else in the product is allowed to keep a
     /// second copy of the list.

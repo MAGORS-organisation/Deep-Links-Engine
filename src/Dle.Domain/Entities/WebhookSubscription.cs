@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// A customer endpoint subscribed to postbacks (FR-204). Maps to <c>webhook_subscriptions</c>.
+/// A customer endpoint subscribed to postbacks. Maps to <c>webhook_subscriptions</c>.
 /// </summary>
 public class WebhookSubscription
 {
@@ -16,7 +16,7 @@ public class WebhookSubscription
 
     /// <summary>Shared secret for the symmetric signature, encrypted at rest. The signature is
     /// doubled with an asymmetric one so that a third party can verify a delivery without ever
-    /// receiving this value (§B.7.4).</summary>
+    /// receiving this value.</summary>
     public byte[] SecretEncrypted { get; set; } = [];
 
     /// <summary>Event types the endpoint is interested in, for example <c>attribution.created</c>.</summary>

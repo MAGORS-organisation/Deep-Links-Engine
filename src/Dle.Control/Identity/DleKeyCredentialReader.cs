@@ -90,7 +90,7 @@ public static class DleKeyCredentialReader
     /// <remarks>
     /// The full address is never used as a limiter key and is never logged. A single client behind
     /// carrier-grade NAT and a single client on a residential connection should cost the same to
-    /// rate limit, and the prefix is enough for that while being far less identifying (§17.5).
+    /// rate limit, and the prefix is enough for that while being far less identifying.
     /// </remarks>
     public static string? AddressPrefix(IPAddress? address)
     {

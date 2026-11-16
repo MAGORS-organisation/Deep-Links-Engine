@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Tenants;
 
 /// <summary>
-/// <c>GET</c>, <c>POST</c>, <c>PATCH</c> and <c>DELETE /api/v1/tenants</c> (FR-241).
+/// <c>GET</c>, <c>POST</c>, <c>PATCH</c> and <c>DELETE /api/v1/tenants</c>.
 /// </summary>
 public static class ManageTenants
 {
@@ -111,12 +111,12 @@ public static class ManageTenants
             : TypedResults.Ok(Project(tenant));
     }
 
-    /// <summary>Provisions a tenant (FR-241).</summary>
+    /// <summary>Provisions a tenant.</summary>
     /// <param name="request">The tenant to create.</param>
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="tenants">Tenant storage.</param>
     /// <param name="administration">Cross-tenant tenant storage, for the slug uniqueness check.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="privacyOptions">The privacy options, for default consent mode configuration.</param>
     /// <param name="controlOptions">Control-plane options, for single-tenant self-service limits.</param>
     /// <param name="operatorRegistry">Knows whether an explicit operator tenant is configured.</param>
@@ -125,7 +125,7 @@ public static class ManageTenants
     /// <remarks>
     /// The default consent mode is <c>aggregate_only</c>, the mode that needs no consent banner. A
     /// fresh tenant therefore never collects more than the legitimate interest basis supports until
-    /// somebody deliberately widens it (§E.6.2, FR-248).
+    /// somebody deliberately widens it.
     /// </remarks>
     public static async Task<IResult> CreateAsync(
         CreateTenantRequest request,
@@ -250,7 +250,7 @@ public static class ManageTenants
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="administration">Cross-tenant tenant storage.</param>
     /// <param name="tenants">Tenant storage, used to enumerate domain hosts for cache invalidation.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops the cached configuration of every host of the tenant.</param>
     /// <param name="credentialCache">Drops cached credentials belonging to the updated tenant.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -258,7 +258,7 @@ public static class ManageTenants
     /// <remarks>
     /// A consent mode change is recorded with the old and the new value. Tightening takes effect on
     /// the next resolve; widening does not retroactively make already collected data lawful, and the
-    /// audit entry is what lets that distinction be reconstructed later (§E.6.2).
+    /// audit entry is what lets that distinction be reconstructed later.
     /// </remarks>
     public static async Task<IResult> UpdateAsync(
         Guid id,
@@ -380,7 +380,7 @@ public static class ManageTenants
         {
             // The effective consent mode is baked into every cached link snapshot, so a change has to
             // drop them all. A tightened mode that kept being ignored until the cache expired would
-            // be a privacy setting that does not take effect when it is set (§E.6.2, TC-145).
+            // be a privacy setting that does not take effect when it is set.
             // A status change is the same: the edge only resolves the links of an active tenant, and
             // a suspension that waited for the cache to expire would not be one.
             await cache.InvalidateTenantAsync(tenant.Id, cancellationToken);
@@ -403,7 +403,7 @@ public static class ManageTenants
     /// <param name="id">The tenant identifier.</param>
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="tenants">Tenant storage.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops the cached configuration of every host of the tenant.</param>
     /// <param name="credentialCache">Drops cached credentials belonging to the deleted tenant.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

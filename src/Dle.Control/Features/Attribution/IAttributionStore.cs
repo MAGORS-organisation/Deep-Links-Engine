@@ -10,7 +10,7 @@ namespace Dle.Control.Features.Attribution;
 /// </summary>
 /// <param name="Id">Link identifier.</param>
 /// <param name="TenantId">Owning tenant. Compared before anything is returned, so a click that
-/// belongs to another tenant becomes "no match" rather than a leak (SHARED-KERNEL §17.7).</param>
+/// belongs to another tenant becomes "no match" rather than a leak.</param>
 /// <param name="DeeplinkPath">Path the application should open.</param>
 /// <param name="Campaign">Campaign name, when the link belongs to one.</param>
 /// <param name="Title">Human readable link title.</param>
@@ -48,7 +48,7 @@ public sealed record AttributedLink(
 /// </remarks>
 public interface IAttributionStore
 {
-    /// <summary>Reads the consent mode configured on a tenant (§E.6.2).</summary>
+    /// <summary>Reads the consent mode configured on a tenant.</summary>
     /// <param name="tenantId">The tenant.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The configured mode. An unknown or missing tenant yields
@@ -56,12 +56,12 @@ public interface IAttributionStore
     Task<ConsentMode> GetTenantConsentModeAsync(Guid tenantId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Returns the installation row, creating it on first sight (FR-188).
+    /// Returns the installation row, creating it on first sight.
     /// </summary>
     /// <param name="candidate">The installation as reported by the SDK.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The stored installation. A repeated resolve finds the existing row, which is what
-    /// makes the call idempotent (TC-143).</returns>
+    /// makes the call idempotent.</returns>
     Task<Install> GetOrCreateInstallAsync(Install candidate, CancellationToken cancellationToken);
 
     /// <summary>Records the account hash reported after a sign-in, for later reconciliation.</summary>
@@ -139,6 +139,6 @@ public interface IAttributionStore
     /// <param name="slug">Normalized slug.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The link, or <see langword="null"/> when the URL is not ours or belongs to another
-    /// tenant (§B.6.4, FR-223).</returns>
+    /// tenant.</returns>
     Task<AttributedLink?> FindLinkByHostAndSlugAsync(string host, string slug, CancellationToken cancellationToken);
 }

@@ -5,15 +5,15 @@ namespace Dle.Domain.Routing;
 /// </summary>
 /// <remarks>
 /// The evaluation is deterministic and allocation-light: it is on the resolve hot path, whose whole
-/// budget for rules is 0,3 ms (§B.6.1). It performs no I/O and never consults the incoming request's
-/// query string for a target (TC-164).
+/// budget for rules is 0,3 ms. It performs no I/O and never consults the incoming request's
+/// query string for a target.
 /// </remarks>
 public interface IRoutingEngine
 {
     /// <summary>
-    /// Evaluates the rules in order; the first rule that matches wins (FR-127). If nothing matches,
+    /// Evaluates the rules in order; the first rule that matches wins. If nothing matches,
     /// the default rule — the one whose <see cref="RoutingRule.When"/> is <see langword="null"/> — applies.
-    /// If even that is missing, which validation must prevent (TC-105), the result is
+    /// If even that is missing, which validation must prevent, the result is
     /// <see cref="RoutingDecision.NotFound"/>.
     /// </summary>
     /// <param name="rules">The link's rule set, in author order. May be empty.</param>
@@ -25,7 +25,7 @@ public interface IRoutingEngine
     /// </param>
     /// <param name="clickId">
     /// The click identifier for this request. It seeds the deterministic A/B bucket
-    /// <see cref="ConsistentBucket.Of(string)"/> ∈ 0..99 (FR-125); it is never used as a target.
+    /// <see cref="ConsistentBucket.Of(string)"/> ∈ 0..99; it is never used as a target.
     /// </param>
     /// <returns>The decision the edge turns into an HTTP response.</returns>
     RoutingDecision Evaluate(

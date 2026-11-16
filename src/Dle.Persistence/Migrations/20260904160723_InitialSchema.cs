@@ -17,7 +17,7 @@ namespace Dle.Persistence.Migrations
             // Hand written, and preserved whenever this file is regenerated. What follows the
             // scaffolded block is schema PostgreSQL has and the EF Core model cannot express: a
             // version dependent identifier default, a declaratively partitioned table, a BRIN
-            // index and a per table autovacuum setting (§B.5.2, §B.5.3).
+            // index and a per table autovacuum setting.
             //
             // The identifier function comes first, because every CreateTable below names it as a
             // column default.

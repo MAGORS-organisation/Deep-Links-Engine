@@ -38,10 +38,10 @@ function reasonKey(reason: string): MessageKey {
 }
 
 /**
- * Abuse handling (FR-245, §E.3). Three views: reports filed against the caller's own links, the
+ * Abuse handling. Three views: reports filed against the caller's own links, the
  * instance-wide triage queue, and quarantine. Quarantine answers 410 with an explanation rather
  * than deleting the link, because a deleted link destroys the record a later complaint has to be
- * answered from (TC-103) — and the decision notes are the notice-and-action trail DSA art. 16 asks for.
+ * answered from — and the decision notes are the notice-and-action trail DSA art. 16 asks for.
  */
 export default function AbusePage() {
   const { t, formatDate } = useI18n();

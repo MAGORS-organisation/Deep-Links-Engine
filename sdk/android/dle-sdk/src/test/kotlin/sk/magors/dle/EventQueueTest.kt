@@ -17,7 +17,7 @@ import sk.magors.dle.internal.MAX_EVENTS_PER_BATCH
 import java.io.File
 import kotlin.random.Random
 
-/** The offline buffer behind `POST /v1/events` (FR-226). */
+/** The offline buffer behind `POST /v1/events`. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventQueueTest {
     @TempDir

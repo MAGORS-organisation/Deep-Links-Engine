@@ -9,7 +9,7 @@ namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
 /// <c>POST /api/v1/webhooks/{id}/test</c> — sends one delivery now and reports what happened
-/// (§B.7.3, FR-204).
+///.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -61,7 +61,7 @@ public static class SendTestWebhook
 
         if (subscription is null)
         {
-            // Also the answer for a subscription of another tenant (SHARED-KERNEL §17.7, TC-166).
+            // Also the answer for a subscription of another tenant.
             return DleProblemResults.NotFound("No such webhook subscription.");
         }
 

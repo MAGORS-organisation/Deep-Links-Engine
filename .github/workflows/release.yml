@@ -18,7 +18,7 @@
 #   DLE_LOADTEST_CONTROL_URL, DLE_LOADTEST_API_KEY, DLE_LOADTEST_DOMAIN_ID, DLE_LOADTEST_LINK_HOST
 # When they are set the run is a hard gate (the thresholds inside resolve.js decide). When they
 # are not, the run is skipped with a warning and the GitHub release is forced to PRE-RELEASE:
-# no load-test evidence, no GA release (§D.7 criterion 2).
+# no load-test evidence, no GA release.
 #
 # Image names are ghcr.io/<owner lower-cased>/dle-edge and dle-control, matching the defaults in
 # deploy/docker-compose.yml and deploy/helm/dle/values.yaml.

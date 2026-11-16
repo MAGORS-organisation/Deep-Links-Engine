@@ -10,7 +10,7 @@ namespace Dle.Edge.Clients;
 
 /// <summary>
 /// Background job that notices a replaced GeoLite2 file and asks
-/// <see cref="MaxMindGeoIpResolver"/> to swap the reader (§B.6.1, §D.6).
+/// <see cref="MaxMindGeoIpResolver"/> to swap the reader.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -37,7 +37,7 @@ public sealed partial class GeoIpDatabaseRefresher : BackgroundService
     /// <summary>Creates the refresher.</summary>
     /// <param name="resolver">The resolver whose reader is swapped.</param>
     /// <param name="options">Geographic options; supply the refresh interval.</param>
-    /// <param name="timeProvider">Clock driving the timer (SHARED-KERNEL §17.2).</param>
+    /// <param name="timeProvider">Clock driving the timer.</param>
     /// <param name="logger">Logger.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public GeoIpDatabaseRefresher(

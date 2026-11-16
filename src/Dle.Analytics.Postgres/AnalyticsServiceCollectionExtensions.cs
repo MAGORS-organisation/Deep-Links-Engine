@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Registration of the analytics module (SHARED-KERNEL §15). One extension, one call from
+/// Registration of the analytics module. One extension, one call from
 /// <c>Dle.Control/Program.cs</c>.
 /// </summary>
 /// <remarks>
@@ -103,7 +103,7 @@ public static class AnalyticsServiceCollectionExtensions
         services.TryAddSingleton<IRollupService, PostgresRollupService>();
         services.TryAddSingleton<IRetentionService, PostgresRetentionService>();
 
-        // The rollup schema is not part of the EF Core migration set (ADR-006); the host applies
+        // The rollup schema is not part of the EF Core migration set; the host applies
         // the idempotent script itself, before the workers that depend on it are started.
         services.AddHostedService<PostgresAnalyticsSchema>();
     }
@@ -130,7 +130,7 @@ public static class AnalyticsServiceCollectionExtensions
                 }
 
                 // The TTL in the embedded DDL is generated from this value, so the two providers
-                // expire raw events on the same schedule (FR-247).
+                // expire raw events on the same schedule.
                 options.RawRetentionDays = retention.CurrentValue.RawDays;
             })
             .ValidateDataAnnotations()

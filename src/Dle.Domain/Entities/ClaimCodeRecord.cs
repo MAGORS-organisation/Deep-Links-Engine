@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// A claim code issued on an interstitial page and redeemable inside the application (FR-184).
+/// A claim code issued on an interstitial page and redeemable inside the application.
 /// Maps to <c>claim_codes</c>.
 /// </summary>
 /// <remarks>

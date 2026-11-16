@@ -16,7 +16,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
 /// The single composition entry point of the edge rate limiting module
-/// (SHARED-KERNEL §15, §E.9, T-07).
+///.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -31,7 +31,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// All three are separate partitions and that separation is the property that matters most in the
 /// table. If the anti-enumeration budget shared a counter with successful resolves, a campaign going
 /// viral would exhaust it and switch the defence off at the moment the service is most visible and
-/// most worth scanning (§E.9, T-07).
+/// most worth scanning.
 /// </para>
 /// <para>
 /// One global limiter rather than per-endpoint policies, because the QR endpoint is mapped by the
@@ -144,7 +144,7 @@ public static class EdgeRateLimitingServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Writes the 429, always with <c>Retry-After</c> (§E.9).
+    /// Writes the 429, always with <c>Retry-After</c>.
     /// </summary>
     /// <remarks>
     /// <para>

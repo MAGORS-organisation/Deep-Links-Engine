@@ -5,7 +5,7 @@ namespace Dle.Edge.Resolution;
 
 /// <summary>
 /// Maps an ASP.NET Core <see cref="HttpContext"/> onto the transport-neutral
-/// <see cref="ClientRequest"/> the shared kernel classifies (SHARED-KERNEL §3).
+/// <see cref="ClientRequest"/> the shared kernel classifies.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -82,7 +82,7 @@ public static class ClientRequestFactory
         address is not null && address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;
 
     /// <summary>
-    /// Copies the parameters that are allowed to travel to the target (§E.6.3, FR-128).
+    /// Copies the parameters that are allowed to travel to the target.
     /// </summary>
     /// <remarks>
     /// The allowlist is walked, not the request. Walking the request would make the cost of building

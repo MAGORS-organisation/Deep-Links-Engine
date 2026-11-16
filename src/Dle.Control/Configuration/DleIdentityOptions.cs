@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Control.Configuration;
 
 /// <summary>
-/// Authentication configuration bound from the <c>Dle:Identity</c> section (FR-242).
+/// Authentication configuration bound from the <c>Dle:Identity</c> section.
 /// </summary>
 public sealed class DleIdentityOptions
 {
@@ -52,7 +52,7 @@ public sealed class DleIdentityOptions
 }
 
 /// <summary>
-/// OpenID Connect settings for the administration UI (FR-242).
+/// OpenID Connect settings for the administration UI.
 /// </summary>
 /// <remarks>
 /// The whole block is optional. An API-only, self-hosted deployment authenticates with API keys and
@@ -81,7 +81,7 @@ public sealed class DleOidcOptions
     /// </summary>
     /// <remarks>
     /// Without it a token from the identity provider cannot establish a tenant, and the request is
-    /// refused rather than served against an arbitrary one (SHARED-KERNEL §17.9).
+    /// refused rather than served against an arbitrary one.
     /// </remarks>
     [Required]
     [StringLength(128, MinimumLength = 1)]

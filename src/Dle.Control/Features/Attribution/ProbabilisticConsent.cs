@@ -6,7 +6,7 @@ namespace Dle.Control.Features.Attribution;
 
 /// <summary>
 /// The capability that has to be held before device signals may be looked at, let alone stored
-/// (TC-145, TC-146, §E.6.2).
+///.
 /// </summary>
 /// <remarks>
 /// <para>

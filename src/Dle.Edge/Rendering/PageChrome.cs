@@ -19,7 +19,7 @@ internal static class PageChrome
     /// </summary>
     /// <remarks>
     /// <c>robots.txt</c> deliberately allows the whole origin, because a <c>Disallow</c> would also stop
-    /// the social crawlers that build link previews (FR-161). Suppression is therefore per page, and
+    /// the social crawlers that build link previews. Suppression is therefore per page, and
     /// only the crawler preview omits it.
     /// </remarks>
     internal static readonly Action<HtmlBuilder> NoIndex =

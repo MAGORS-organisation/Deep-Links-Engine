@@ -15,7 +15,6 @@ public sealed class SlugPolicyTests
     // ---------------------------------------------------------------- confusables must be refused
 
     [Theory]
-    [Trait("TestCase", "TC-109")]
     [InlineData("аbc", "Cyrillic small letter a (U+0430)")]
     [InlineData("pаypal", "Cyrillic small letter a inside a brand name")]
     [InlineData("еxample", "Cyrillic small letter ie (U+0435)")]
@@ -34,7 +33,6 @@ public sealed class SlugPolicyTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-109")]
     public void TryNormalize_CyrillicHomoglyph_DoesNotCollideWithTheLatinSlug()
     {
         Assert.True(SlugPolicy.TryNormalize("promo", out string latin));
@@ -47,7 +45,6 @@ public sealed class SlugPolicyTests
     // ---------------------------------------------------------------- NFKC
 
     [Theory]
-    [Trait("TestCase", "TC-109")]
     [InlineData("ＰＲＯＭＯ", "promo")]     // full width PROMO
     [InlineData("１２３", "123")]                     // full width digits
     [InlineData("①②", "12")]                            // circled digits one and two

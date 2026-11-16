@@ -11,7 +11,7 @@ namespace Dle.Analytics.ClickHouse;
 /// </summary>
 /// <remarks>
 /// <para>
-/// This is one of the two supported ways to fill the ClickHouse tables (§B.5.3 / ADR-006). The
+/// This is one of the two supported ways to fill the ClickHouse tables. The
 /// other is <b>logical replication from PostgreSQL</b>: the engine keeps writing the partitioned
 /// PostgreSQL click stream and a change-data-capture pipeline mirrors it here. Replication is the
 /// safer path for an installation that is migrating, because PostgreSQL stays the system of

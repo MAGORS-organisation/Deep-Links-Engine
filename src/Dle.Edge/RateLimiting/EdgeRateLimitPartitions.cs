@@ -14,7 +14,7 @@ namespace Dle.Edge.RateLimiting;
 /// The kind is part of the partition key rather than a separate limiter registration. That is the
 /// mechanical guarantee behind the single most important property of the table: the successful-resolve
 /// budget and the QR budget count against different partitions even for the same client, so exhausting
-/// one can never switch the other off (T-07).
+/// one can never switch the other off.
 /// </para>
 /// <para>
 /// Requests that are not in the table at all — health probes, association files, static assets —

@@ -3,7 +3,7 @@ namespace Dle.Domain.Crypto;
 /// <summary>
 /// Produces signatures with exactly one algorithm and one key. A signer is deliberately
 /// single valued while <see cref="IVerifier"/> accepts a set: that asymmetry is what makes key
-/// and algorithm rotation possible without an outage (§E.4.2).
+/// and algorithm rotation possible without an outage.
 /// </summary>
 public interface ISigner
 {

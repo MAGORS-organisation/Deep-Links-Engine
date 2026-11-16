@@ -99,7 +99,7 @@ jobs:
 
   # ---------------------------------------------------------------------------------------------
   licences:
-    name: Licence policy (NFR-18)
+    name: Licence policy
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:

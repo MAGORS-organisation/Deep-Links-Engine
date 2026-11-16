@@ -7,7 +7,7 @@ namespace Dle.IntegrationTests.Persistence;
 
 /// <summary>
 /// Tenant isolation at the repository level, with two tenants seeded and neither able to see the
-/// other (T-09, S-02, FR-241).
+/// other.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -25,7 +25,6 @@ public sealed class MultiTenancyRepositoryTests(DleInfrastructureFixture infrast
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("Spec", "T-09")]
     public async Task Links_ReadInOneTenantsScope_NeverReturnAnotherTenantsRows()
     {
         Seeded seeded = await SeedTwoTenantsAsync();
@@ -48,7 +47,6 @@ public sealed class MultiTenancyRepositoryTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "T-09")]
     public async Task Domains_ReadInOneTenantsScope_NeverReturnAnotherTenantsRows()
     {
         Seeded seeded = await SeedTwoTenantsAsync();
@@ -67,7 +65,6 @@ public sealed class MultiTenancyRepositoryTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "T-09")]
     public async Task Apps_ReadInOneTenantsScope_NeverReturnAnotherTenantsRows()
     {
         Seeded seeded = await SeedTwoTenantsAsync();
@@ -85,7 +82,6 @@ public sealed class MultiTenancyRepositoryTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "T-09")]
     public async Task Attributions_ReadInOneTenantsScope_NeverReturnAnotherTenantsRows()
     {
         Seeded seeded = await SeedTwoTenantsAsync();
@@ -104,7 +100,6 @@ public sealed class MultiTenancyRepositoryTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "T-09")]
     public async Task Tenants_ReadInOneTenantsScope_ReturnOnlyThatTenant()
     {
         Seeded seeded = await SeedTwoTenantsAsync();
@@ -117,7 +112,6 @@ public sealed class MultiTenancyRepositoryTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "T-09")]
     public async Task AnyQuery_MadeWithNoTenantInScope_FailsRatherThanReturningEverything()
     {
         // The filter reads ITenantContext.RequiredTenantId, which throws when nothing established a
@@ -152,7 +146,6 @@ public sealed class MultiTenancyRepositoryTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "T-09")]
     public async Task CrossTenantScope_WithoutDroppingTheFilterByName_StillReturnsNothing()
     {
         // Opening the window is not the same as widening the query. A query that forgets to call

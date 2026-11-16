@@ -26,7 +26,6 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("Spec", "FR-241")]
     public async Task Me_ReturnsTheCallersOwnTenant_EvenForAViewer()
     {
         Fixture fixture = await SeedAsync("tenants-me", asOperator: false);
@@ -44,7 +43,6 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-241")]
     public async Task Tenants_AreListedAndReadOnlyByTheInstanceOperator()
     {
         Fixture plain = await SeedAsync("tenants-plain", asOperator: false);
@@ -71,7 +69,6 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-241")]
     public async Task Create_ATenant_Is201_NormalisesTheSlug_AndRefusesADuplicate()
     {
         Fixture fixture = await SeedAsync("tenants-create", asOperator: true);
@@ -106,7 +103,6 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerTheory]
-    [Trait("Spec", "FR-241")]
     [InlineData("""{"slug": "ab", "name": "Too short"}""", "slug")]
     [InlineData("""{"slug": "no name", "name": "Spaces are not allowed"}""", "slug")]
     [InlineData("""{"slug": "no-name", "name": "   "}""", "name")]
@@ -125,7 +121,6 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-248")]
     public async Task Patch_ATenant_ChangesNameAndConsent_AndSuspensionLocksItsKeysOut()
     {
         Fixture fixture = await SeedAsync("tenants-patch", asOperator: true);
@@ -158,7 +153,6 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-241")]
     public async Task Delete_ATenant_Is204_AndTheTenantAndItsKeysVanish()
     {
         Fixture fixture = await SeedAsync("tenants-delete", asOperator: true);
@@ -190,7 +184,6 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "E.4.1")]
     public async Task ApiKeys_AreIssuedOnceInTheClear_ListedByPrefix_ScopedAsRequested_AndRevocable()
     {
         Fixture fixture = await SeedAsync("keys-lifecycle", asOperator: false);
@@ -260,7 +253,6 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "E.4.1")]
     public async Task ApiKeys_ARevokedKeyStopsAuthenticating()
     {
         Fixture fixture = await SeedAsync("keys-revoked", asOperator: false);
@@ -281,7 +273,6 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "E.4.1")]
     public async Task ApiKeys_AKeyThatWasInUse_StopsAuthenticatingWhenTheCacheIsNotInTheWay()
     {
         // The test above revokes a key that was never presented, so the credential cache was never
@@ -289,7 +280,7 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
         // then used again — with Dle:Identity:CredentialCacheSeconds at 0, which is the setting an
         // operator who needs revocation to bite at once has to choose. Left at its default of 60,
         // the same sequence answers 200 until the entry expires; that window is the documented
-        // cost of not verifying a credential on every request (docs/self-hosting/configuration.md).
+        // cost of not verifying a credential on every request.
         Fixture fixture = await SeedAsync(
             "keys-revoked-live",
             asOperator: false,
@@ -313,7 +304,6 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerTheory]
-    [Trait("Spec", "E.4.1")]
     [InlineData("""{"name": "   ", "role": "viewer"}""", "name")]
     [InlineData("""{"name": "Bad role", "role": "god"}""", "role")]
     [InlineData("""{"name": "Bad scope", "role": "viewer", "scopes": ["sdk:ingest"]}""", "scopes")]
@@ -332,7 +322,6 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "E.4.1")]
     public async Task ApiKeys_AnAdminMayListButOnlyAnOwnerMayIssue()
     {
         Fixture fixture = await SeedAsync("keys-roles", asOperator: false);
@@ -356,7 +345,6 @@ public sealed class TenantsAndApiKeysHttpTests(DleInfrastructureFixture infrastr
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "E.4.2")]
     public async Task Jwks_IsPublishedWithoutACredential()
     {
         Fixture fixture = await SeedAsync("jwks", asOperator: false);

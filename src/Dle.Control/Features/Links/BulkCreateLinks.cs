@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Links;
 
 /// <summary>
-/// <c>POST /api/v1/links/bulk</c> — a streamed batch of at least ten thousand links (FR-103).
+/// <c>POST /api/v1/links/bulk</c> — a streamed batch of at least ten thousand links.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -26,7 +26,7 @@ namespace Dle.Control.Features.Links;
 /// One bad row does not fail the batch. Each line is answered on its own with either the created
 /// link or the problem type that stopped it, using exactly the same validation the single-link
 /// endpoint runs — a rule that only the single-link path enforced would be a rule this endpoint
-/// could be used to bypass, and a bulk import is precisely how somebody would try (§E.3).
+/// could be used to bypass, and a bulk import is precisely how somebody would try.
 /// </para>
 /// <para>
 /// Concurrency is bounded to two batches per tenant by the <c>dle-bulk</c> limiter and the row count
@@ -48,9 +48,9 @@ public static class BulkCreateLinks
     /// <param name="http">The request, which is read and written as it is processed.</param>
     /// <param name="writer">Validation, slug allocation and the write itself.</param>
     /// <param name="presenter">Builds the short URL of each created link.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops the edge's negative cache entries for the hosts touched.</param>
-    /// <param name="idempotency">Replay store for the <c>Idempotency-Key</c> header (§B.7.3).</param>
+    /// <param name="idempotency">Replay store for the <c>Idempotency-Key</c> header.</param>
     /// <param name="jsonOptions">
     /// The HTTP serializer options, so a row in a batch is read exactly as the same body would be on
     /// the single-link route.
@@ -127,7 +127,7 @@ public static class BulkCreateLinks
                             Error = ProblemCodes.RateLimited,
                             Detail = string.Create(
                                 CultureInfo.InvariantCulture,
-                                $"The batch exceeds the maximum of {maxRows} rows (§E.9). "
+                                $"The batch exceeds the maximum of {maxRows} rows. "
                                 + $"Everything up to that row was created; split the remainder into "
                                 + $"another batch."),
                         },
@@ -280,7 +280,7 @@ public static class BulkCreateLinks
     }
 
     /// <summary>
-    /// Reserves the <c>Idempotency-Key</c> of a streamed batch, or replays its summary (§B.7.3).
+    /// Reserves the <c>Idempotency-Key</c> of a streamed batch, or replays its summary.
     /// </summary>
     /// <param name="http">The request.</param>
     /// <param name="idempotency">The replay store.</param>

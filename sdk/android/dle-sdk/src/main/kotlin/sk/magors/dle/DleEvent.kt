@@ -13,7 +13,7 @@ public enum class DleEventType(
     public val requiresAnalyticsConsent: Boolean,
 ) {
     /**
-     * The application was opened through one of our links (spec §B.6.4, FR-223). The most
+     * The application was opened through one of our links. The most
      * important event there is: a verified App Link opens the application without any request
      * reaching the engine, so this report is the only evidence the click ever happened.
      */
@@ -45,14 +45,14 @@ public enum class DleEventType(
 }
 
 /**
- * A single event queued for `POST /v1/events`. Mirrors `EventDto` (spec §B.7.2). Build instances
+ * A single event queued for `POST /v1/events`. Mirrors `EventDto`. Build instances
  * through the factories in the companion object; they enforce what the server would otherwise
  * reject, so constructing an invalid event throws `IllegalArgumentException` (a blank name, a
  * non-finite value, a currency that is not three letters, more than [MAX_PROPERTIES] properties).
  * [DleClient.trackEvent] itself never throws; validate computed values before building the event.
  *
  * Keep [properties] free of personal data: the engine stores them as sent, and the deletion
- * endpoint keyed on `install_id` is the only remedy afterwards (spec §E.6.3).
+ * endpoint keyed on `install_id` is the only remedy afterwards.
  *
  * @property type the event kind.
  * @property name name of a conversion or custom event, for example `purchase`.

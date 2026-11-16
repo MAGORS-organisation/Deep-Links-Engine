@@ -14,14 +14,14 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
-/// <c>POST /api/v1/webhooks</c> — registers a postback endpoint (FR-204, §B.7.3).
+/// <c>POST /api/v1/webhooks</c> — registers a postback endpoint.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Creation is where the destination is judged. A URL that resolves to a private, loopback,
 /// link-local or metadata address is refused here with a message, rather than accepted and then
 /// failing silently on every delivery — and rather than, far worse, succeeding and turning the
-/// control plane into a proxy into its own network (T-02).
+/// control plane into a proxy into its own network.
 /// </para>
 /// <para>
 /// The shared secret is generated here and returned exactly once. The stored copy is encrypted,
@@ -43,7 +43,7 @@ public static class CreateWebhook
     /// <param name="store">Tenant scoped reads, for the quota check.</param>
     /// <param name="secrets">Protector of the shared secret.</param>
     /// <param name="keys">Webhook signing keys, so the response can name the published key.</param>
-    /// <param name="audit">Audit trail (FR-246).</param>
+    /// <param name="audit">Audit trail.</param>
     /// <param name="options">Webhook options.</param>
     /// <param name="timeProvider">Clock.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -131,7 +131,7 @@ public static class CreateWebhook
         RequestActor actor = RequestActor.FromPrincipal(context.User);
 
         // The audit entry names the destination host and the event types, never the secret and
-        // never an end user identifier (§E.6.3).
+        // never an end user identifier.
         Dictionary<string, string> metadata = new(StringComparer.Ordinal)
         {
             ["url_host"] = HostOf(subscription.Url),

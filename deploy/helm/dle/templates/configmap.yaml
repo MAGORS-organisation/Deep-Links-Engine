@@ -27,7 +27,7 @@ data:
   {{- range $i, $ip := .Values.edge.config.network.knownProxies }}
   {{- include "dle.env" (dict "key" (printf "Dle:Edge:Network:KnownProxies:%d" $i) "value" $ip) }}
   {{- end }}
-  # ---- Dle:Edge:GeoIp — a local mmdb, never downloaded (NFR-14) ----
+  # ---- Dle:Edge:GeoIp — a local mmdb, never downloaded ----
   {{- include "dle.env" (dict "key" "Dle:Edge:GeoIp:Path" "value" .Values.edge.config.geoIp.path) }}
   # ---- Dle:Edge:BotDetection ----
   {{- include "dle.env" (dict "key" "Dle:Edge:BotDetection:ReverseDnsVerify" "value" .Values.edge.config.botDetection.reverseDnsVerify) }}

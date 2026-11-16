@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DLE webhook payload: attribution.created",
-  "description": "An install was attributed to a click (FR-204). Envelope per docs/zadanie.md B.7.4.",
+  "description": "An install was attributed to a click. Envelope per docs/zadanie.md B.7.4.",
   "type": "object",
   "additionalProperties": false,
   "required": [

@@ -1,7 +1,7 @@
 namespace Dle.Domain.Attribution;
 
 /// <summary>
-/// Canonical values of the <c>attributions.match_type</c> column (§B.5.3). The storage and wire
+/// Canonical values of the <c>attributions.match_type</c> column. The storage and wire
 /// representation of <see cref="MatchType"/> is a stable lowercase string, so the column stays
 /// readable in the database and survives renumbering of the enumeration.
 /// </summary>

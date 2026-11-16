@@ -120,7 +120,6 @@ public sealed class FuzzHarnessTests
 
     [Fact]
     [Trait("Tool", "fuzz")]
-    [Trait("Threat", "T-12")]
     public void RoutingRules_SurvivesMutationsOfRealDocuments()
     {
         // T-12. Random bytes never reach the object graph; a mutated real document does, which is the
@@ -142,7 +141,6 @@ public sealed class FuzzHarnessTests
 
     [Fact]
     [Trait("Tool", "fuzz")]
-    [Trait("Threat", "T-12")]
     public void RoutingRules_SurvivesDeepAndWideDocuments()
     {
         // The two shapes a depth or size cap exists for. An uncaught StackOverflowException here would
@@ -163,7 +161,6 @@ public sealed class FuzzHarnessTests
 
     [Fact]
     [Trait("Tool", "fuzz")]
-    [Trait("Threat", "T-10")]
     public void UserAgent_SurvivesMutationsOfRealHeaders()
     {
         // T-10 through the classifier: the header is attacker chosen, the parser is a set of compiled
@@ -194,7 +191,6 @@ public sealed class FuzzHarnessTests
 
     [Fact]
     [Trait("Tool", "fuzz")]
-    [Trait("Threat", "T-01")]
     public void Url_SurvivesTheWholeOpenRedirectCorpus()
     {
         // The corpus already exists and is exactly the kind of input a URL fuzzer would spend a long
@@ -207,7 +203,6 @@ public sealed class FuzzHarnessTests
 
     [Fact]
     [Trait("Tool", "fuzz")]
-    [Trait("Threat", "T-05")]
     public void InstallReferrer_SurvivesPercentEncodingAbuse()
     {
         // The referrer arrives percent-encoded, sometimes twice, from a device the engine does not

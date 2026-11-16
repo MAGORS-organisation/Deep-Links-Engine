@@ -1,7 +1,7 @@
 namespace Dle.Edge.Rendering;
 
 /// <summary>
-/// Image formats <c>GET /{slug}/qr</c> can answer with (FR-106).
+/// Image formats <c>GET /{slug}/qr</c> can answer with.
 /// </summary>
 /// <remarks>
 /// Two, and only two. A vector format for anything that will be printed or scaled, and a raster format

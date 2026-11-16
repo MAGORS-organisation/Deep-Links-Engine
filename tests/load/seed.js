@@ -106,7 +106,7 @@ async function createLink(index) {
         Authorization: `Bearer ${API_KEY}`,
         'Content-Type': 'application/json',
         // The same key with the same body replays the stored response, so re-running the seeder
-        // against a partially seeded instance is idempotent rather than a wall of 409s (§B.7.3).
+        // against a partially seeded instance is idempotent rather than a wall of 409s.
         'Idempotency-Key': `${PREFIX}-${index}`,
       },
       body: JSON.stringify(body),

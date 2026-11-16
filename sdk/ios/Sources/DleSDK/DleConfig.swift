@@ -1,12 +1,12 @@
 import Foundation
 
-/// The deferred deep-link strategies this installation takes part in (spec §B.6.3, ADR-008).
+/// The deferred deep-link strategies this installation takes part in.
 ///
 /// Every strategy is executed by the engine; this set only decides what the SDK *offers* it.
 /// `claimCode` and `login` are deterministic and cost nothing until the host app calls
 /// ``Dle/submitClaimCode(_:)`` or ``Dle/reconcileLogin(loginKey:)``. `probabilistic` is the one
 /// that matters for privacy: while it is absent — the default — the SDK never collects device
-/// signals, whatever the consent state says (spec §0.2, §A.6 item 4, FR-227).
+/// signals, whatever the consent state says.
 public struct DleDeferredStrategies: OptionSet, Sendable, Hashable {
     /// The underlying bit set.
     public let rawValue: UInt8
@@ -16,17 +16,17 @@ public struct DleDeferredStrategies: OptionSet, Sendable, Hashable {
         self.rawValue = rawValue
     }
 
-    /// S3 — the user types the six-character code shown on the interstitial page (FR-184).
+    /// S3 — the user types the six-character code shown on the interstitial page.
     /// Deterministic, confidence 1.00.
     public static let claimCode = DleDeferredStrategies(rawValue: 1 << 0)
 
     /// S2 — an opaque account key reported after sign-in is reconciled with the click that
-    /// carried the same key (FR-185). Deterministic, confidence 1.00.
+    /// carried the same key. Deterministic, confidence 1.00.
     public static let login = DleDeferredStrategies(rawValue: 1 << 1)
 
     /// S4 — coarse device signals are offered for a statistical match inside the engine's
     /// window (60 minutes by default). Opt-in, off by default, and additionally gated on
-    /// ``DleConsent/attribution`` at call time. Never deterministic (spec §A.2.5).
+    /// ``DleConsent/attribution`` at call time. Never deterministic.
     public static let probabilistic = DleDeferredStrategies(rawValue: 1 << 2)
 
     /// The default: deterministic strategies only.
@@ -52,7 +52,7 @@ public struct DleConfig: Sendable {
     /// Must be `https`; plain `http` is accepted only for `localhost` during development.
     public var endpoint: URL
 
-    /// The publishable SDK key, sent as `Authorization: Bearer <sdkKey>` (spec §B.7.2).
+    /// The publishable SDK key, sent as `Authorization: Bearer <sdkKey>`.
     ///
     /// It ships inside the application binary and is therefore an identifier, not a secret:
     /// it binds calls to one tenant and one application and can be revoked. The engine's
@@ -63,7 +63,7 @@ public struct DleConfig: Sendable {
     /// `applinks:` associated-domains entitlement (for example `["links.example.sk"]`).
     ///
     /// This is the allowlist behind ``Dle/handle(url:)``: only an `https` URL on one of these
-    /// hosts is treated as a DLE link and reported as `link_open` (FR-223, spec §E.7 item 1).
+    /// hosts is treated as a DLE link and reported as `link_open`.
     /// A pattern starting with `*.` matches one level of subdomain. With an empty list the SDK
     /// reports nothing and logs a warning, because it would otherwise have to send URLs of
     /// arbitrary hosts to the engine.
@@ -80,7 +80,7 @@ public struct DleConfig: Sendable {
     /// Per-request timeout in seconds. Default 10.
     public var requestTimeout: TimeInterval
 
-    /// Host application version reported as `app_version` (FR-124). Defaults to
+    /// Host application version reported as `app_version`. Defaults to
     /// `CFBundleShortVersionString` of the main bundle.
     public var appVersion: String?
 
@@ -90,7 +90,7 @@ public struct DleConfig: Sendable {
 
     /// Debounce, in seconds, between an event being queued and the automatic flush. Batching
     /// keeps the SDK inside the engine's budget of 60 events per minute per installation
-    /// (spec §E.9). Default 3.
+    ///. Default 3.
     public var flushDelay: TimeInterval
 
     /// Events older than this, in seconds, are discarded instead of sent: the engine refuses

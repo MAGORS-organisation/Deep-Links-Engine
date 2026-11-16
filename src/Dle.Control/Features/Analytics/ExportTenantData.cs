@@ -13,7 +13,7 @@ namespace Dle.Control.Features.Analytics;
 
 /// <summary>
 /// <c>GET /api/v1/exports/tenant</c> — everything the engine holds for one tenant, as one archive
-/// (FR-249).
+///.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -228,7 +228,7 @@ public static class ExportTenantData
                 "webhook_subscriptions.secret_encrypted: the shared signing secret is omitted. "
                     + "Rotate the subscription to obtain a new one.",
                 "installs.login_key_hash: the keyed account hash is omitted. It is a pseudonymous "
-                    + "identifier of an end user and is not part of a tenant's own data (§E.6.3).",
+                    + "identifier of an end user and is not part of a tenant's own data.",
                 "click_events: the raw click stream is not in this archive. It is partitioned, it is "
                     + "subject to the retention policy of FR-247, and it is exported through the "
                     + "analytics export endpoint in CSV or Parquet.",

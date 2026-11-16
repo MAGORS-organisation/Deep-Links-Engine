@@ -2,7 +2,7 @@ namespace Dle.Persistence.Fast.Data;
 
 /// <summary>
 /// The data source the read-only hot path uses, which is a Postgres read replica when one is
-/// configured and the primary otherwise (§B.8).
+/// configured and the primary otherwise.
 /// </summary>
 /// <remarks>
 /// <para>

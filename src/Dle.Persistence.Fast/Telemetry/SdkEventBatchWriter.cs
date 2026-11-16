@@ -12,7 +12,7 @@ namespace Dle.Persistence.Fast.Telemetry;
 /// operating system opens it without ever contacting the edge, so a re-engagement click leaves no trace
 /// in the click stream at all; the SDK reporting <c>link_open</c> is the only record of it. Without this
 /// path the reporting is systematically wrong in the same direction — the most successful campaigns are
-/// the most under-counted (§B.6.4).
+/// the most under-counted.
 /// </para>
 /// <para>
 /// The endpoint answers <c>202 Accepted</c> before this completes, so durability is this writer's

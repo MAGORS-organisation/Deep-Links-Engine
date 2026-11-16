@@ -13,7 +13,7 @@ namespace Dle.Control.Features.Abuse;
 
 /// <summary>
 /// Reading side of the abuse queue: the tenant's own reports, and the instance operator's triage
-/// queue across every tenant (§E.3 step 9).
+/// queue across every tenant.
 /// </summary>
 /// <remarks>
 /// Two lists rather than one, because they answer to different people. A tenant may see reports

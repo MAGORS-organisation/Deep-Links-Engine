@@ -2,7 +2,7 @@ namespace Dle.Crypto;
 
 /// <summary>
 /// Turns a database sequence value into a slug: sequence, keyed permutation, base62 over exactly
-/// eight characters (ADR-007).
+/// eight characters.
 /// </summary>
 /// <remarks>
 /// The sequence is the only source of uniqueness; the permutation only hides it. That is the whole

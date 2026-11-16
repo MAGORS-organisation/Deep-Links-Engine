@@ -27,7 +27,7 @@ public sealed record LoginHintCacheEntry(
     DateTimeOffset ExpiresAt);
 
 /// <summary>
-/// PostgreSQL + optional Valkey write-through store for indexed S2 login reconciliation hints (FR-185).
+/// PostgreSQL + optional Valkey write-through store for indexed S2 login reconciliation hints.
 /// </summary>
 public sealed partial class DapperLoginHintStore : ILoginHintStore
 {

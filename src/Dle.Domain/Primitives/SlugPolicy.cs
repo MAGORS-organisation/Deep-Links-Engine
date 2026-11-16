@@ -4,7 +4,7 @@ namespace Dle.Domain.Primitives;
 
 /// <summary>
 /// Rules for the path segment that identifies a link. A generated slug is exactly
-/// <see cref="GeneratedLength"/> base62 characters (ADR-007); a custom slug must be
+/// <see cref="GeneratedLength"/> base62 characters; a custom slug must be
 /// distinguishable from that shape, so it is either shorter or longer, never exactly as long.
 /// </summary>
 /// <remarks>
@@ -25,7 +25,7 @@ namespace Dle.Domain.Primitives;
 /// </remarks>
 public static class SlugPolicy
 {
-    /// <summary>Length of a generated slug: 8 base62 characters, about 47.6 bits (ADR-007).</summary>
+    /// <summary>Length of a generated slug: 8 base62 characters, about 47.6 bits.</summary>
     public const int GeneratedLength = 8;
 
     /// <summary>Shortest custom slug that is accepted.</summary>

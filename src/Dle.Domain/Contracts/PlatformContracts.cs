@@ -1,10 +1,10 @@
 namespace Dle.Domain.Contracts;
 
-/// <summary>Body of <c>POST /api/v1/domains</c> (FR-145).</summary>
+/// <summary>Body of <c>POST /api/v1/domains</c>.</summary>
 public sealed record CreateDomainRequest
 {
     /// <summary>Host to serve links from, for example <c>link.customer.sk</c>. Each subdomain needs
-    /// its own association file and its own entitlement; nothing is inherited (§A.2.1).</summary>
+    /// its own association file and its own entitlement; nothing is inherited.</summary>
     public required string Host { get; init; }
 
     /// <summary>Make this the default domain for new links in the tenant.</summary>
@@ -13,7 +13,7 @@ public sealed record CreateDomainRequest
     /// <summary>Consent mode override for this domain. It may only tighten the tenant setting.</summary>
     public string? ConsentModeOverride { get; init; }
 
-    /// <summary>Default language for the interstitial page on this domain (NFR-15).</summary>
+    /// <summary>Default language for the interstitial page on this domain.</summary>
     public string? DefaultLanguage { get; init; }
 
     /// <summary>Default Open Graph metadata used when a link supplies none.</summary>
@@ -67,9 +67,9 @@ public sealed record DomainResponse
 }
 
 /// <summary>
-/// Result of <c>POST /api/v1/domains/{id}/verify</c> (FR-143). The warning list matters as much as
+/// Result of <c>POST /api/v1/domains/{id}/verify</c>. The warning list matters as much as
 /// the error list: an Android fingerprint taken from the local keystore instead of Play App Signing
-/// verifies fine in a debug build and then fails silently in production (FR-144, TC-123).
+/// verifies fine in a debug build and then fails silently in production.
 /// </summary>
 public sealed record DomainVerificationResponse
 {
@@ -89,7 +89,7 @@ public sealed record DomainVerificationResponse
     public IReadOnlyList<VerificationCheckResult> Checks { get; init; } = [];
 
     /// <summary>Operator facing reminder that association file changes take up to seven days to
-    /// reach devices on both platforms (§A.2.1, §A.2.2, TC-125).</summary>
+    /// reach devices on both platforms.</summary>
     public string? PropagationNotice { get; init; }
 }
 
@@ -122,7 +122,7 @@ public sealed record CreateAppRequest
     public string? TeamId { get; init; }
 
     /// <summary>SHA-256 signing certificate fingerprints. On Android these must come from Play
-    /// Console App signing, not from the local upload keystore (FR-144).</summary>
+    /// Console App signing, not from the local upload keystore.</summary>
     public IReadOnlyList<string> CertFingerprints { get; init; } = [];
 
     /// <summary>Store identifier, for example <c>id123456789</c> or the package name.</summary>
@@ -138,7 +138,7 @@ public sealed record CreateAppRequest
     /// <summary>Minimum application version that understands the deep link format.</summary>
     public string? MinAppVersion { get; init; }
 
-    /// <summary>App Clip bundle identifier, published in the association file (FR-146).</summary>
+    /// <summary>App Clip bundle identifier, published in the association file.</summary>
     public string? AppClipBundleId { get; init; }
 
     /// <summary>Domains this application is associated with.</summary>

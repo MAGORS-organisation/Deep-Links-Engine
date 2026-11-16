@@ -99,7 +99,7 @@ public static class DleProblem
     /// There is deliberately no "belongs to another tenant" answer. A foreign identifier is filtered
     /// out by the tenant query filter before any handler sees it, so it arrives here as an ordinary
     /// miss — which is exactly the response TC-166 requires, reached by construction rather than by
-    /// a special case somebody could forget (SHARED-KERNEL §17.7).
+    /// a special case somebody could forget.
     /// </remarks>
     public static IResult NotFound(string detail) =>
         Create(
@@ -146,7 +146,7 @@ public static class DleProblem
     /// <remarks>
     /// Used where a missing dependency would otherwise weaken a security decision — a target URL that
     /// cannot be checked against the reputation feed is refused rather than accepted unchecked
-    /// (SHARED-KERNEL §17.9).
+    ///.
     /// </remarks>
     public static IResult DependencyUnavailable(string detail) =>
         Create(
@@ -155,7 +155,7 @@ public static class DleProblem
             "A required dependency is unavailable.",
             detail);
 
-    /// <summary>A rate limit was exceeded (§E.9).</summary>
+    /// <summary>A rate limit was exceeded.</summary>
     /// <param name="retryAfterSeconds">Seconds to put into <c>Retry-After</c>.</param>
     /// <param name="detail">Which limit was hit.</param>
     /// <returns>A 429 problem document.</returns>

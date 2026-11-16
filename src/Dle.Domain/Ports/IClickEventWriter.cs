@@ -4,7 +4,7 @@ namespace Dle.Domain.Ports;
 
 /// <summary>
 /// Writes batches of click events drained from <see cref="IClickEventSink"/> to durable storage
-/// (§C.3.2).
+///.
 /// </summary>
 public interface IClickEventWriter
 {

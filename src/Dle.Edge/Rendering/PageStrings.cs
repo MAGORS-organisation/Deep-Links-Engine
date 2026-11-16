@@ -5,7 +5,7 @@ namespace Dle.Edge.Rendering;
 
 /// <summary>
 /// Every user-facing string on every page the edge renders, in the two languages the product ships
-/// (NFR-15).
+///.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -19,7 +19,7 @@ namespace Dle.Edge.Rendering;
 /// The copy avoids the second person imperative where the user has no agency ("this link is not
 /// available", not "you cannot open this link") and never names the reason a link is missing: the 404
 /// text has to read identically whether the slug does not exist or belongs to another tenant
-/// (TC-166, SHARED-KERNEL §17.7).
+///.
 /// </para>
 /// </remarks>
 internal sealed record PageStrings

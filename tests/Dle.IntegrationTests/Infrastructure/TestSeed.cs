@@ -98,8 +98,8 @@ public static class TestSeed
     /// <param name="isActive">Whether the link serves.</param>
     /// <param name="startsAt">Not servable before this instant.</param>
     /// <param name="expiresAt">Not servable from this instant.</param>
-    /// <param name="expiredUrl">Where an expired link redirects (TC-104).</param>
-    /// <param name="quarantinedAt">When the link was withdrawn for abuse (TC-103).</param>
+    /// <param name="expiredUrl">Where an expired link redirects.</param>
+    /// <param name="quarantinedAt">When the link was withdrawn for abuse.</param>
     /// <param name="title">Link title.</param>
     /// <param name="linkId">Identifier to use; one is minted when omitted.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

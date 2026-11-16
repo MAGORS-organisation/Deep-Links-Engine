@@ -2,7 +2,7 @@ namespace Dle.Domain.Crypto;
 
 /// <summary>
 /// One public key published at <c>/.well-known/jwks.json</c> so that integrators can verify
-/// webhook signatures without holding a shared secret (§B.7.3, §B.7.4).
+/// webhook signatures without holding a shared secret.
 /// </summary>
 /// <remarks>
 /// Only public material appears here. The post-quantum algorithms have no registered JWK

@@ -8,7 +8,7 @@ export const apiKeys = {
     return api(base, { query: { includeRevoked }, signal });
   },
 
-  /** The secret in the answer is shown once and never retrievable again (FR-242). */
+  /** The secret in the answer is shown once and never retrievable again. */
   create(body: CreateApiKeyRequest): Promise<ApiKeyCreatedResponse> {
     return api(base, { method: 'POST', body });
   },

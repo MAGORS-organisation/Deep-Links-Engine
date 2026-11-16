@@ -1,7 +1,7 @@
 namespace Dle.Domain.Abuse;
 
 /// <summary>
-/// How safe a target URL is judged to be (§E.3). The levels are ordered by severity so that a
+/// How safe a target URL is judged to be. The levels are ordered by severity so that a
 /// caller aggregating several checkers can keep the worst verdict.
 /// </summary>
 public enum UrlSafetyLevel

@@ -1,17 +1,17 @@
 namespace Dle.Domain.Attribution;
 
 /// <summary>
-/// Strategy that produced an attribution (ADR-008). The order of the members follows the
+/// Strategy that produced an attribution. The order of the members follows the
 /// strength of the evidence, not the order of evaluation.
 /// </summary>
 /// <remarks>
 /// Every strategy except <see cref="Probabilistic"/> is deterministic and therefore carries a
 /// confidence of exactly <c>1.00</c>. The distinction is never collapsed: an attribution record
-/// always stores both the match type and the confidence (FR-186).
+/// always stores both the match type and the confidence.
 /// </remarks>
 public enum MatchType
 {
-    /// <summary>No strategy matched. The install is reported as organic (TC-142).</summary>
+    /// <summary>No strategy matched. The install is reported as organic.</summary>
     None = 0,
 
     /// <summary>Android Play Install Referrer carried the click identifier (S1, deterministic).</summary>
@@ -29,7 +29,7 @@ public enum MatchType
     /// <summary>
     /// The application was already installed and the universal or app link opened it directly;
     /// the SDK reported the URL back (S0). Deterministic, and the most frequent case of all
-    /// — which is exactly why it is easy to forget (§B.6.4).
+    /// — which is exactly why it is easy to forget.
     /// </summary>
     DirectOpen = 5,
 }

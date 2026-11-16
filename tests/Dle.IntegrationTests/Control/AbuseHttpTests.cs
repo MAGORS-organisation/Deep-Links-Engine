@@ -24,7 +24,6 @@ public sealed class AbuseHttpTests(DleInfrastructureFixture infrastructure)
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("Spec", "FR-245")]
     public async Task Report_AShortUrl_IsAcceptedWithoutACredential_AndKeepsOnlyAHashOfTheReporter()
     {
         Fixture fixture = await SeedAsync("abuse-report");
@@ -76,7 +75,6 @@ public sealed class AbuseHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Threat", "T-07")]
     public async Task Report_AUrlThatIsNotOneOfOurLinks_IsAcceptedIdenticallyAndStoresNothing()
     {
         // The public form must not tell an attacker which slugs exist: an unknown URL gets the
@@ -101,7 +99,6 @@ public sealed class AbuseHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerTheory]
-    [Trait("Spec", "FR-245")]
     [InlineData("""{"url": "", "reason": "spam"}""", "url")]
     [InlineData("""{"url": "https://example.com/x", "reason": "because"}""", "reason")]
     public async Task Report_WithAnUnusableDescription_IsValidationFailedOnTheField(string body, string field)
@@ -118,7 +115,6 @@ public sealed class AbuseHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task TenantList_ShowsOnlyReportsAgainstTheTenantsOwnLinks_AndFiltersByStatus()
     {
         Fixture fixture = await SeedAsync("abuse-tenant-list");
@@ -149,7 +145,6 @@ public sealed class AbuseHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "E.3")]
     public async Task Triage_IsForTheInstanceOperator_SeesEveryTenant_AndDecidesWithReasons()
     {
         Fixture fixture = await SeedAsync("abuse-triage", asOperator: true);
@@ -190,7 +185,6 @@ public sealed class AbuseHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "E.3")]
     public async Task Triage_IsRefusedToAnOrdinaryTenant()
     {
         Fixture fixture = await SeedAsync("abuse-triage-plain");
@@ -204,7 +198,6 @@ public sealed class AbuseHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-103")]
     public async Task Quarantine_WithdrawsTheLinkAsAVersionedChange_AndReleaseRestoresIt()
     {
         Fixture fixture = await SeedAsync("abuse-quarantine", asOperator: true);

@@ -12,7 +12,7 @@ import type {
 } from './types.js';
 
 /**
- * Smart app banner (FR-224), rendered into a shadow root so host CSS cannot break it and
+ * Smart app banner, rendered into a shadow root so host CSS cannot break it and
  * the banner cannot leak styles into the host page.
  *
  * Accessibility (WCAG 2.2 AA, NFR-16): a labelled region landmark, a real `<a>` for the
@@ -24,7 +24,7 @@ import type {
  * Why an anchor and not a redirect: inside an in-app WebView (Facebook, Instagram, TikTok,
  * …) the operating system hands a Universal Link / App Link to the native app **only on a
  * genuine user tap on an `<a>` element**. `window.location.href` from script is not a user
- * gesture on iOS (spec §A.2.6). The banner's anchor IS that tap; nothing here ever calls
+ * gesture on iOS. The banner's anchor IS that tap; nothing here ever calls
  * `location.assign`, opens a custom URI scheme or fires a timer-driven redirect.
  */
 

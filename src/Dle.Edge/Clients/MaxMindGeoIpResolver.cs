@@ -16,7 +16,7 @@ namespace Dle.Edge.Clients;
 
 /// <summary>
 /// Offline geographic lookup over a memory-mapped MaxMind GeoLite2 or GeoIP2 database
-/// (FR-122, §B.6.1, NFR-14).
+///.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -27,7 +27,7 @@ namespace Dle.Edge.Clients;
 /// walk over that mapping with no allocation beyond the response object.
 /// </para>
 /// <para>
-/// A missing, unreadable or corrupt database is not an error condition (§D.6). Country stays
+/// A missing, unreadable or corrupt database is not an error condition. Country stays
 /// <see langword="null"/>, every geo-dependent routing rule therefore fails to match and evaluation
 /// falls through to the default rule, and <c>dle_geoip_available</c> drops to zero so that the
 /// operator is told. Nothing on the resolve path ever sees an exception from here — a redirect that
@@ -278,7 +278,7 @@ public sealed partial class MaxMindGeoIpResolver : IGeoIpResolver, IDisposable
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "A geographic lookup must never fail a redirect (§D.6). The branch ends in a null location, " +
+        Justification = "A geographic lookup must never fail a redirect. The branch ends in a null location, " +
                         "which is the explicit deny-by-default outcome required by SHARED-KERNEL §17.9.")]
     private GeoLocation? Lookup(Database database, IPAddress address)
     {

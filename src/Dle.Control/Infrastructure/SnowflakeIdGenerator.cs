@@ -18,7 +18,7 @@ namespace Dle.Control.Infrastructure;
 /// </para>
 /// <para>
 /// Time comes from <see cref="TimeProvider"/>, never from <c>DateTime.UtcNow</c>
-/// (SHARED-KERNEL §17.2). A clock that steps backwards does not produce duplicates: the generator
+///. A clock that steps backwards does not produce duplicates: the generator
 /// keeps issuing from the last millisecond it saw rather than rewinding, which costs ordering
 /// accuracy during the step and never costs uniqueness.
 /// </para>

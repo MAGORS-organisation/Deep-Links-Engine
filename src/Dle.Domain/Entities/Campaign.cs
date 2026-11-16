@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// A campaign that groups links and supplies default UTM parameters (FR-108). Maps to
+/// A campaign that groups links and supplies default UTM parameters. Maps to
 /// <c>campaigns</c>.
 /// </summary>
 public class Campaign

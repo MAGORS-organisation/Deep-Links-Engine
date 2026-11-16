@@ -4,7 +4,7 @@ namespace Dle.Edge.Rendering;
 
 /// <summary>
 /// Configuration of every page the edge renders: the interstitial, the crawler preview and the
-/// three status pages. Bound from <c>Dle:Edge:Interstitial</c> (SHARED-KERNEL §16, §C.4).
+/// three status pages. Bound from <c>Dle:Edge:Interstitial</c>.
 /// </summary>
 /// <remarks>
 /// The section is named after the interstitial because that is the page the operator thinks about, but
@@ -37,8 +37,8 @@ public sealed class InterstitialOptions
     /// This is a progressive enhancement and never the only path: the page always carries a real anchor
     /// the user can tap, because inside the Facebook, Instagram and TikTok webviews a Universal Link
     /// only fires on a genuine tap - <c>window.location</c> from a script is not a user gesture on iOS
-    /// (§A.2.6, FR-162). The countdown can also be stopped from the page, which is what keeps a timed
-    /// navigation compatible with WCAG 2.2 success criterion 2.2.1 (NFR-16).
+    ///. The countdown can also be stopped from the page, which is what keeps a timed
+    /// navigation compatible with WCAG 2.2 success criterion 2.2.1.
     /// </remarks>
     [Range(0, 60_000)]
     public int AutoRedirectMs { get; set; } = DefaultAutoRedirectMs;
@@ -59,7 +59,7 @@ public sealed class InterstitialOptions
 
     /// <summary>
     /// Where a tenant whose link was quarantined after an abuse report appeals the decision
-    /// (§E.3, TC-103). Shown on the 410 page.
+    ///. Shown on the 410 page.
     /// </summary>
     [StringLength(512)]
     public string? AppealUrl { get; set; }
@@ -78,13 +78,13 @@ public sealed class InterstitialOptions
 
     /// <summary>
     /// Whether the interstitial may show a claim code when the resolve pipeline issued one
-    /// (FR-184, §B.6.3). The code is only rendered when one is actually present.
+    ///. The code is only rendered when one is actually present.
     /// </summary>
     public bool ShowClaimCode { get; set; } = true;
 
     /// <summary>
     /// Language used when neither the client nor the link domain expresses a usable preference.
-    /// Only <c>en</c> and <c>sk</c> are shipped (NFR-15).
+    /// Only <c>en</c> and <c>sk</c> are shipped.
     /// </summary>
     [StringLength(8)]
     public string DefaultLanguage { get; set; } = "en";

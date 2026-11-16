@@ -25,7 +25,6 @@ public sealed class SdkWireContractTests
         new(2026, 9, 3, 10, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void ResolveRequestDto_SerializesToTheSnakeCaseShapeOfB72()
     {
         ResolveRequestDto request = new()
@@ -49,7 +48,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void ResolveResponseDto_SerializesToTheSnakeCaseShapeOfB72()
     {
         ResolveResponseDto response = new()
@@ -82,7 +80,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void EventBatchDto_SerializesToTheSnakeCaseShapeOfB72()
     {
         EventBatchDto batch = new()
@@ -111,7 +108,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void EventBatchAcceptedDto_SerializesToItsTwoCounters()
     {
         const string expected = """{"accepted":2,"rejected":0}""";
@@ -122,7 +118,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void ResolveRequestDto_DeserializesTheExampleBodyFromTheSpecification()
     {
         const string body =
@@ -156,7 +151,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void ResolveRequestDto_CamelCaseNames_AreNotAccepted()
     {
         // Property matching is case sensitive on purpose (DleJson.Default). An SDK that sends
@@ -170,7 +164,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void ResolveLinkRequestDto_DeserializesTheBodyTheMobileSdksSend()
     {
         // The exact literal asserted by the iOS (WireContractTests.swift) and Android
@@ -194,7 +187,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void ResolveResponseDto_OmitsAbsentOptionalMembers()
     {
         // An unmatched install is a 200 with matched=false, and the SDKs treat the absence of
@@ -212,7 +204,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void Params_KeysKeepTheirOriginalSpelling()
     {
         // The naming policy renames properties, never dictionary keys. UTM parameters and custom data
@@ -237,14 +228,12 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void EventBatch_MaximumSize_IsTheHundredEventsOfB72()
     {
         Assert.Equal(100, EventBatchDto.MaxEventsPerBatch);
     }
 
     [Theory]
-    [Trait("Contract", "B.7.2")]
     [InlineData("""{"install_id":"a","platform":"ios",}""")]
     [InlineData("""{"install_id":"a","platform":"ios" /* comment */}""")]
     public void WireFormat_RejectsLenientJson(string body)
@@ -256,7 +245,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void WireFormat_RejectsDeeplyNestedPayloads()
     {
         // A depth cap is the cheap half of the T-12 defence: a hostile payload cannot exhaust the

@@ -31,7 +31,6 @@ public sealed partial class PartitionPruningTests(DleInfrastructureFixture infra
     private static partial Regex PartitionName { get; }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.6.3")]
     public async Task ClickLookup_BoundedByTheClickIdsOwnTimestamp_TouchesAtMostTwoPartitions()
     {
         Fixture seeded = await SeedAcrossDaysAsync();
@@ -68,7 +67,6 @@ public sealed partial class PartitionPruningTests(DleInfrastructureFixture infra
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.6.3")]
     public async Task ClickLookup_WithoutATimeBound_TouchesEveryPartition()
     {
         // The counter-example, and the reason the bound exists at all. Without it the same lookup
@@ -93,7 +91,6 @@ public sealed partial class PartitionPruningTests(DleInfrastructureFixture infra
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.6.3")]
     public async Task ClickLookup_ThroughTheStore_FindsTheClickInTheRightPartition()
     {
         Fixture seeded = await SeedAcrossDaysAsync();
@@ -126,7 +123,6 @@ public sealed partial class PartitionPruningTests(DleInfrastructureFixture infra
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.6.3")]
     public async Task CandidateLookup_ExcludesBotClicksAndStaysInsideTheWindow()
     {
         Fixture seeded = await SeedAcrossDaysAsync();

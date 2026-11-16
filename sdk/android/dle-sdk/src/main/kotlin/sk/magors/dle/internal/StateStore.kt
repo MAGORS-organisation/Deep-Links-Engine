@@ -9,7 +9,7 @@ import sk.magors.dle.DeferredLink
 import sk.magors.dle.DleConsent
 import sk.magors.dle.ResolveOptions
 
-/** How the last Install Referrer read ended (spec §A.2.4). Only a terminal status is final. */
+/** How the last Install Referrer read ended. Only a terminal status is final. */
 internal enum class ReferrerStatus {
     /** The Play Store answered; [ReferrerOutcome.referrer] holds the raw string. */
     OK,
@@ -56,7 +56,7 @@ internal data class ReferrerOutcome(
 }
 
 /**
- * A resolve answer kept for the life of the installation (TC-143).
+ * A resolve answer kept for the life of the installation.
  *
  * @property link the answer.
  * @property resolvedAtMillis when it was received, to age a non final answer.
@@ -67,7 +67,7 @@ internal data class CachedResolve(
 ) {
     /**
      * Whether a resolve call must go to the server despite this cached answer. Normally it must
-     * not (TC-143). The two exceptions: the answer is not final and has aged past
+     * not. The two exceptions: the answer is not final and has aged past
      * [DeferredLink.expiresIn], or the caller brings new deterministic evidence
      * ([ResolveOptions.hasExplicitEvidence]) while the stored answer is not deterministic itself.
      *

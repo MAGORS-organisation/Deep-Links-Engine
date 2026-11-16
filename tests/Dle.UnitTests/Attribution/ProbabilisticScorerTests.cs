@@ -27,7 +27,6 @@ public sealed class ProbabilisticScorerTests
     // ================================================================ TC-147: the window is a wall
 
     [Theory]
-    [Trait("TestCase", "TC-147")]
     [InlineData(60)]
     [InlineData(61)]
     [InlineData(90)]
@@ -40,7 +39,6 @@ public sealed class ProbabilisticScorerTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-147")]
     public void Score_NinetyMinutesInASixtyMinuteWindow_IsZeroForAPerfectSignalMatch()
     {
         // The signals agree on every axis. The only reason to refuse is the window, and it must win.

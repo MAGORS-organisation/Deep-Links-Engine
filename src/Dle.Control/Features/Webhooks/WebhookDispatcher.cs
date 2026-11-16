@@ -42,7 +42,7 @@ public sealed record WebhookAttempt(
 }
 
 /// <summary>
-/// Signs one webhook payload and posts it (§B.7.4, FR-204, T-02, T-13, TC-165).
+/// Signs one webhook payload and posts it.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -55,7 +55,7 @@ public sealed record WebhookAttempt(
 /// The bytes are the contract. The payload is rendered once, when the event is recorded, stored as
 /// text, and posted here without re-serialization; the signature is computed over exactly those
 /// bytes plus the timestamp. A retry therefore sends the same body and the same signature material
-/// as the first attempt, and a body altered anywhere in between fails verification (TC-165).
+/// as the first attempt, and a body altered anywhere in between fails verification.
 /// </para>
 /// <para>
 /// The destination is validated twice. Once when the subscription is created, and once here in the
@@ -63,7 +63,7 @@ public sealed record WebhookAttempt(
 /// socket connects to. Only the second one is proof against DNS rebinding: between a check on the
 /// resolved address and the connection, the resolver can answer differently, and a webhook aimed
 /// at <c>169.254.169.254</c> would turn the control plane into a proxy for the cloud metadata
-/// service (T-02).
+/// service.
 /// </para>
 /// </remarks>
 public sealed partial class WebhookDispatcher
@@ -91,8 +91,8 @@ public sealed partial class WebhookDispatcher
     /// <param name="clients">Factory of the guarded outbound client.</param>
     /// <param name="keys">Webhook signing keys.</param>
     /// <param name="secrets">Protector of the per subscription shared secret.</param>
-    /// <param name="metrics">Instruments (§C.6).</param>
-    /// <param name="timeProvider">Clock (SHARED-KERNEL §17.2).</param>
+    /// <param name="metrics">Instruments.</param>
+    /// <param name="timeProvider">Clock.</param>
     /// <param name="options">Webhook options.</param>
     /// <param name="logger">Logger.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
@@ -167,7 +167,7 @@ public sealed partial class WebhookDispatcher
         if (!_secrets.TryUnprotect(secretEncrypted, out byte[] secret))
         {
             // Explicit deny. Sending unsigned, or signed with a different secret, would either be
-            // rejected by the receiver or — worse — accepted (SHARED-KERNEL §17.9).
+            // rejected by the receiver or — worse — accepted.
             return Unsendable(
                 eventType,
                 started,
@@ -196,7 +196,7 @@ public sealed partial class WebhookDispatcher
         WebhookOptions options = _options.CurrentValue;
 
         // The bytes that are signed and the bytes that are sent are the same array. Nothing
-        // re-serializes between here and the socket (TC-165).
+        // re-serializes between here and the socket.
         byte[] body = Encoding.UTF8.GetBytes(payloadJson);
 
         ISigner? signer;
@@ -264,7 +264,7 @@ public sealed partial class WebhookDispatcher
             TimeSpan elapsed = Stopwatch.GetElapsedTime(started);
             _metrics.Attempt(eventType, WebhookAttempt.Failed, elapsed);
 
-            // The message can name the destination policy that refused the address (T-02), which is
+            // The message can name the destination policy that refused the address, which is
             // information the operator needs and the customer's endpoint never sees.
             return new WebhookAttempt(
                 WebhookAttempt.Failed,
@@ -307,7 +307,7 @@ public sealed partial class WebhookDispatcher
     /// A 4xx other than 408 and 429 means the receiver understood the request and refused it;
     /// repeating it changes nothing and only spends the customer's own capacity. 3xx counts as a
     /// refusal too: the client does not follow redirects, because a redirect the caller never sees
-    /// is a redirect the caller cannot judge (T-02).
+    /// is a redirect the caller cannot judge.
     /// </remarks>
     private static bool IsRetryable(HttpStatusCode status) => status switch
     {

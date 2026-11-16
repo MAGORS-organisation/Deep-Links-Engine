@@ -4,13 +4,13 @@ namespace Dle.Domain.Ports;
 
 /// <summary>
 /// Classifies an incoming request into the client context that drives both routing and the shape
-/// of the response (ADR-009).
+/// of the response.
 /// </summary>
 /// <remarks>
 /// The distinction between a crawler, an in-app web view and an ordinary browser is not cosmetic:
 /// a crawler needs HTML with Open Graph tags rather than a redirect, and an in-app web view needs
 /// an interstitial with a real anchor to tap, because neither Facebook nor Instagram nor TikTok
-/// triggers OS level link capture on page load (§A.2.6).
+/// triggers OS level link capture on page load.
 /// </remarks>
 public interface IClientClassifier
 {

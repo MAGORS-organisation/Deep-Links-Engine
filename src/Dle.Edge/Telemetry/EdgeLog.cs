@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 namespace Dle.Edge.Telemetry;
 
 /// <summary>
-/// Source-generated log messages for the resolve path (§C.2).
+/// Source-generated log messages for the resolve path.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -80,7 +80,7 @@ public static partial class EdgeLog
     [LoggerMessage(
         EventId = 1005,
         Level = LogLevel.Warning,
-        Message = "Click event dropped because the bounded channel is full; {Dropped} dropped so far. The redirect was still served (FR-165).")]
+        Message = "Click event dropped because the bounded channel is full; {Dropped} dropped so far. The redirect was still served.")]
     public static partial void ClickEventDropped(ILogger logger, long dropped);
 
     /// <summary>Logs a successful load of the geographic database.</summary>
@@ -99,7 +99,7 @@ public static partial class EdgeLog
     [LoggerMessage(
         EventId = 1011,
         Level = LogLevel.Warning,
-        Message = "Geographic database {Path} is missing or unreadable; country stays null and geo-dependent rules fall through to the default rule (§D.6).")]
+        Message = "Geographic database {Path} is missing or unreadable; country stays null and geo-dependent rules fall through to the default rule.")]
     public static partial void GeoIpUnavailable(ILogger logger, string path);
 
     /// <summary>Logs that the geographic database could not be opened.</summary>

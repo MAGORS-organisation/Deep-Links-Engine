@@ -11,7 +11,7 @@ namespace Dle.UnitTests.Control;
 
 /// <summary>
 /// A webhook is the only place where the engine speaks to a system it does not control, so the
-/// receiver's only defence is the signature (§B.7.4, TC-165). Two signatures travel together:
+/// receiver's only defence is the signature. Two signatures travel together:
 /// <c>v1</c>, a shared-secret HMAC every integrator can check in three lines, and <c>v2</c>, an
 /// Ed25519 signature over the same bytes that can be checked against the published JWKS without
 /// sharing a secret at all.
@@ -73,7 +73,6 @@ public sealed class WebhookSignatureTests
     /// its own is what an integrator will rely on.
     /// </summary>
     [Fact]
-    [Trait("TestCase", "TC-165")]
     public void Verify_BodyWithOneByteChanged_Fails()
     {
         (ISigner signer, VerificationKey key) = KeyPair();
@@ -96,7 +95,6 @@ public sealed class WebhookSignatureTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-165")]
     public void Verify_BodyWithABytesAppended_Fails()
     {
         (ISigner signer, VerificationKey key) = KeyPair();
@@ -115,7 +113,6 @@ public sealed class WebhookSignatureTests
     /// a fresh clock.
     /// </summary>
     [Fact]
-    [Trait("TestCase", "TC-165")]
     public void Verify_TimestampRewritten_Fails()
     {
         string header = WebhookSignature.Create(Body, Secret, signer: null, Now);

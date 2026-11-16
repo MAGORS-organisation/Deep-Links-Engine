@@ -5,7 +5,7 @@ using Dle.Domain.Contracts;
 namespace Dle.Control.Features.Analytics;
 
 /// <summary>
-/// Turns the per match type counts into the honest attribution split (ADR-008, §0.2, FR-202).
+/// Turns the per match type counts into the honest attribution split.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -78,7 +78,7 @@ public static class AttributionQuality
                 default:
                     // Anything this build does not recognise counts as unmatched rather than as a
                     // match. A future match type must not silently inflate the deterministic share
-                    // of an older reader (SHARED-KERNEL §17.9).
+                    // of an older reader.
                     unmatched += row.Count;
                     break;
             }

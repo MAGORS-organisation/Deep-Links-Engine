@@ -19,6 +19,6 @@ public interface ILinkStore
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The snapshot, or <see langword="null"/> when no link exists. A quarantined or
     /// expired link is still returned: the caller needs it to answer 410 rather than 404
-    /// (TC-103), and that decision belongs to <c>LinkSnapshot.GetServeState</c>, not here.</returns>
+    ///, and that decision belongs to <c>LinkSnapshot.GetServeState</c>, not here.</returns>
     ValueTask<LinkSnapshot?> FindAsync(string host, string slug, CancellationToken ct);
 }

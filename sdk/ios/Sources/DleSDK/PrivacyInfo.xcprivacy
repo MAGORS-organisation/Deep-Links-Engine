@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Apple privacy manifest of the DLE iOS SDK (spec §E.7 item 4).
+  Apple privacy manifest of the DLE iOS SDK.
 
   Every entry below describes what the SDK actually does; nothing is declared "just in case",
   because an SDK's declarations are aggregated into every host app's privacy report.

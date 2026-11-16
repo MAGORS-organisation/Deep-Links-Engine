@@ -1,7 +1,7 @@
 namespace Dle.Crypto;
 
 /// <summary>
-/// Verifies signatures made with any algorithm and key the deployment currently accepts (§E.4.2).
+/// Verifies signatures made with any algorithm and key the deployment currently accepts.
 /// </summary>
 /// <remarks>
 /// <para>

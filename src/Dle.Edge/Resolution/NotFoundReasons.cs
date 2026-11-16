@@ -7,14 +7,14 @@ namespace Dle.Edge.Resolution;
 /// The distinction exists in the log at <c>Debug</c> and nowhere else. It never reaches the response:
 /// the status code, the headers, the body and the work done to produce them are identical for every
 /// reason below, because a client able to tell "no such link" from "not your link" can enumerate a
-/// competitor's campaigns (T-07, TC-102, TC-166).
+/// competitor's campaigns.
 /// </remarks>
 public static class NotFoundReasons
 {
     /// <summary>The <c>Host</c> header could not be normalized.</summary>
     public const string UnusableHost = "unusable_host";
 
-    /// <summary>The path segment could not be normalized into a slug, or names a reserved word (TC-109).</summary>
+    /// <summary>The path segment could not be normalized into a slug, or names a reserved word.</summary>
     public const string UnusableSlug = "unusable_slug";
 
     /// <summary>No link exists for this host and slug, or it belongs to a host this request did not name.</summary>
@@ -29,9 +29,9 @@ public static class NotFoundReasons
     /// <summary>The link's window has closed and it has no expired target configured.</summary>
     public const string Expired = "expired";
 
-    /// <summary>The network prefix is in the enumeration shadow ban (§E.9, T-07).</summary>
+    /// <summary>The network prefix is in the enumeration shadow ban.</summary>
     public const string ShadowBanned = "shadow_banned";
 
-    /// <summary>No routing rule matched and the rule set has no default (FR-127).</summary>
+    /// <summary>No routing rule matched and the rule set has no default.</summary>
     public const string NoMatchingRule = "no_matching_rule";
 }

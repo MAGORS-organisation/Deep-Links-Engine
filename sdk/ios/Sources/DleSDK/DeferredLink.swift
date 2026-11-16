@@ -4,7 +4,7 @@ import Foundation
 ///
 /// ``matchType`` and ``confidence`` are not optional, on purpose: a body without either is
 /// refused as malformed rather than guessed at, because a guess is exactly how a probabilistic
-/// hint ends up displayed as a certainty (FR-186, ADR-008, spec §A.2.5). Read
+/// hint ends up displayed as a certainty. Read
 /// ``isDeterministic`` before doing anything irreversible for the user.
 public struct DeferredLink: Sendable, Hashable, Codable {
     /// The link an installation was attributed to, reduced to what the app needs to navigate.

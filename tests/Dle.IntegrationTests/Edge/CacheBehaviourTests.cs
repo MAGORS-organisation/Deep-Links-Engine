@@ -13,7 +13,7 @@ namespace Dle.IntegrationTests.Edge;
 
 /// <summary>
 /// The two-level link cache: what a control-plane change costs before the edge sees it, and how the
-/// edge is told (ADR-005, §C.3.1, TC-125).
+/// edge is told.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -37,7 +37,6 @@ public sealed class CacheBehaviourTests(DleInfrastructureFixture infrastructure)
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("Spec", "ADR-005")]
     public async Task LinkChange_AfterTheControlPlaneInvalidatesIt_IsServedImmediately()
     {
         string host = TestSeed.UniqueHost("cache-invalidate");
@@ -76,7 +75,6 @@ public sealed class CacheBehaviourTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "ADR-005")]
     public async Task LinkChange_WithNoInvalidationAtAll_IsServedOnceTheConfiguredWindowElapses()
     {
         // The backstop. Configured down to a second so the test can wait for it; in a deployment it
@@ -123,7 +121,6 @@ public sealed class CacheBehaviourTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-125")]
     public async Task AssociationDocument_AfterTheHostIsInvalidated_IsRegenerated()
     {
         // TC-125: a rule change reaches the association file within fifteen minutes. The expiry is
@@ -163,7 +160,6 @@ public sealed class CacheBehaviourTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "ADR-005")]
     public async Task CachedSnapshot_SurvivesARestartOfTheEdgeBecauseTheSharedLevelHoldsIt()
     {
         // §B.8 profile B: L2 is what absorbs the cold start of a scaled-out replica. A second host

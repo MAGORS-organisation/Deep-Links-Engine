@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Registration of the background workers (SHARED-KERNEL §15, §B.3).
+/// Registration of the background workers.
 /// </summary>
 /// <remarks>
 /// <para>

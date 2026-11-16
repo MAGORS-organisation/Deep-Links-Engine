@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="Tenant"/> to the <c>tenants</c> table (§B.5.2).</summary>
+/// <summary>Maps <see cref="Tenant"/> to the <c>tenants</c> table.</summary>
 public sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
 {
     /// <inheritdoc />

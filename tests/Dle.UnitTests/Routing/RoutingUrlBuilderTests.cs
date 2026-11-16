@@ -27,7 +27,6 @@ public sealed class RoutingUrlBuilderTests
     // ================================================================ TC-164: open redirect
 
     [Theory]
-    [Trait("TestCase", "TC-164")]
     [InlineData("to", "https://evil.example.com/")]
     [InlineData("url", "https://evil.example.com/")]
     [InlineData("redirect", "https://evil.example.com/")]
@@ -51,7 +50,6 @@ public sealed class RoutingUrlBuilderTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-164")]
     public void BuildWebUrl_EveryHostileParameterAtOnce_LeavesSchemeHostAndPathUntouched()
     {
         LinkSnapshot link = TestLinks.Snapshot("https://shop.example.com/a/b/c");
@@ -72,7 +70,6 @@ public sealed class RoutingUrlBuilderTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-164")]
     public void BuildStoreUrl_HostileQueryParameters_DoNotReachTheStoreUrl()
     {
         LinkSnapshot link = TestLinks.Snapshot(androidStoreUrl: "https://play.google.com/store/apps/details?id=sk.example");
@@ -87,7 +84,6 @@ public sealed class RoutingUrlBuilderTests
     // ================================================================ TC-110: forwardable allowlist
 
     [Theory]
-    [Trait("TestCase", "TC-110")]
     [InlineData("utm_source")]
     [InlineData("utm_medium")]
     [InlineData("utm_campaign")]
@@ -271,7 +267,6 @@ public sealed class RoutingUrlBuilderTests
     // ================================================================ consent
 
     [Fact]
-    [Trait("TestCase", "TC-146")]
     public void BuildWebUrl_WithoutClickIdLinkingConsent_AppendsNoClickId()
     {
         LinkSnapshot link = TestLinks.Snapshot("https://shop.example.com/p");
@@ -379,7 +374,6 @@ public sealed class RoutingUrlBuilderTests
     // ================================================================ Android install referrer
 
     [Fact]
-    [Trait("TestCase", "TC-141")]
     public void BuildStoreUrl_Android_ExpandsTheReferrerTemplateAndEncodesItExactlyOnce()
     {
         LinkSnapshot link = TestLinks.Snapshot(
@@ -482,7 +476,6 @@ public sealed class RoutingUrlBuilderTests
     // ================================================================ iOS App Store
 
     [Fact]
-    [Trait("TestCase", "TC-101")]
     public void BuildStoreUrl_Ios_AddsTheCampaignTokenFromTheLinkUtm()
     {
         LinkSnapshot link = TestLinks.Snapshot(
@@ -496,7 +489,6 @@ public sealed class RoutingUrlBuilderTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-101")]
     public void BuildStoreUrl_Ios_KeepsExistingProviderCampaignAndMediaTokens()
     {
         LinkSnapshot link = TestLinks.Snapshot(

@@ -12,13 +12,13 @@ namespace Dle.Edge.Clients;
 
 /// <summary>
 /// Confirms — or fails to confirm — a user agent's claim to be a crawler, by reverse DNS with forward
-/// confirmation (FR-161, TC-107).
+/// confirmation.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The claim matters because it changes the response. A confirmed crawler is answered with an Open
-/// Graph document instead of a redirect (ADR-009) and its click is flagged <c>is_bot</c>, which keeps
-/// it out of every campaign report (FR-205). Trusting the user agent alone would therefore hand anyone
+/// Graph document instead of a redirect and its click is flagged <c>is_bot</c>, which keeps
+/// it out of every campaign report. Trusting the user agent alone would therefore hand anyone
 /// a free switch for suppressing a competitor's numbers, or for inflating their own by pretending not
 /// to be a bot; TC-107 is that scenario written as a test.
 /// </para>
@@ -35,7 +35,7 @@ namespace Dle.Edge.Clients;
 /// already claims to be a crawler can reach here at all; the verdict is cached per address and
 /// crawler for <c>Dle:Edge:BotDetection:CacheTtlMinutes</c>; and each attempt runs under a hard
 /// millisecond budget, because an unbounded lookup would turn a slow resolver into a slow redirect
-/// (SHARED-KERNEL §17.8).
+///.
 /// </para>
 /// <para>
 /// Crawlers that publish no reverse DNS convention — the social preview fetchers — are reported as
@@ -66,7 +66,7 @@ public sealed class BotVerifier : IBotVerifier
 
     /// <summary>Creates the verifier.</summary>
     /// <param name="options">Bot detection options.</param>
-    /// <param name="timeProvider">Clock used for cache expiry (SHARED-KERNEL §17.2).</param>
+    /// <param name="timeProvider">Clock used for cache expiry.</param>
     /// <param name="logger">Logger.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public BotVerifier(

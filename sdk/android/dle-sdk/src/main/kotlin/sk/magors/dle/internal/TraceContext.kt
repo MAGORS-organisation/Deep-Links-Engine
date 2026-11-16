@@ -3,7 +3,7 @@ package sk.magors.dle.internal
 import java.security.SecureRandom
 
 /**
- * W3C Trace Context (NFR-12): one `traceparent` per request so the SDK span and the server span it
+ * W3C Trace Context: one `traceparent` per request so the SDK span and the server span it
  * caused belong to one trace. The identifiers are random, never derived from anything about the
  * device or the installation.
  */

@@ -1,7 +1,7 @@
 namespace Dle.Domain.Routing;
 
 /// <summary>
-/// One arm of a deterministic A/B split (FR-125).
+/// One arm of a deterministic A/B split.
 /// </summary>
 /// <remarks>
 /// Variants of a single rule are laid out as consecutive percentage ranges over the

@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="ClaimCodeRecord"/> to the <c>claim_codes</c> table (FR-184).</summary>
+/// <summary>Maps <see cref="ClaimCodeRecord"/> to the <c>claim_codes</c> table.</summary>
 public sealed class ClaimCodeRecordConfiguration : IEntityTypeConfiguration<ClaimCodeRecord>
 {
     /// <inheritdoc />

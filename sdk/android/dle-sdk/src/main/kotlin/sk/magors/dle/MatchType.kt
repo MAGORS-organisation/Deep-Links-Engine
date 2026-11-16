@@ -5,7 +5,7 @@ package sk.magors.dle
  * (`Dle.Domain.Contracts.SdkContracts`, spec §B.7.2).
  *
  * The product rule this enum exists to enforce: **a probabilistic match is never presented as a
- * certainty** (spec §0.2, §A.2.5). Always read [DeferredLink.confidence] alongside this value and
+ * certainty**. Always read [DeferredLink.confidence] alongside this value and
  * branch on [isDeterministic] before doing anything irreversible for the user, such as granting a
  * referral bonus.
  */
@@ -33,8 +33,8 @@ public enum class MatchType(
 
     /**
      * The application was already installed and the operating system opened it straight from a
-     * verified App Link (spec §B.6.4). Produced from the `link_open` event the SDK reports
-     * (FR-223), never inferred by the server.
+     * verified App Link. Produced from the `link_open` event the SDK reports
+     *, never inferred by the server.
      */
     DIRECT_OPEN("direct_open"),
     ;

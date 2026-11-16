@@ -1,11 +1,11 @@
 # =============================================================================
-# Deep Link Engine (DLE) — Profile A: one server, one `docker compose up` (NFR-09).
+# Deep Link Engine (DLE) — Profile A: one server, one `docker compose up`.
 #
 #   docs/zadanie.md §B.8:
 #     caddy (TLS, HTTP/2+3)  →  dle-edge (2 replicas)  ┐
 #                               dle-control (1)        ├→ postgres:18
 #                                                      └→ valkey:8
-#   Sized for 2 vCPU / 4 GB RAM / 20 GB disk (NFR-10); ~1 000 req/s.
+#   Sized for 2 vCPU / 4 GB RAM / 20 GB disk; ~1 000 req/s.
 #
 # Configuration comes from ./.env (copy .env.example, or let setup-dev.sh / setup-dev.ps1 generate
 # it). Three values are REQUIRED: POSTGRES_PASSWORD, DLE_MASTER_SECRET and DLE_EDGE_SECRET. Every
@@ -132,7 +132,7 @@ services:
       Dle__Privacy__IpStorage: ${DLE_IP_STORAGE:-hash_only}
       Dle__Telemetry__OtlpEndpoint: ${DLE_OTLP_ENDPOINT:-}
     volumes:
-      # MaxMind mmdb, read-only, supplied by the operator. Never downloaded from here (NFR-14).
+      # MaxMind mmdb, read-only, supplied by the operator. Never downloaded from here.
       - ${DLE_GEOIP_DIR:-./geoip}:/geoip:ro
     depends_on:
       postgres:

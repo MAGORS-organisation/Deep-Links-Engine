@@ -14,7 +14,7 @@ namespace Dle.Control.Features.Abuse;
 
 /// <summary>
 /// Withdraws a link from service and returns it, with the trail both actions have to leave
-/// (TC-103, §E.3 step 8).
+///.
 /// </summary>
 /// <remarks>
 /// <para>

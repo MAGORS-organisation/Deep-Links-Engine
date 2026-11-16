@@ -77,7 +77,7 @@ internal static class DleProblemResults
         "The request conflicts with the current state.",
         detail);
 
-    /// <summary>Answers 503 when a dependency the request needs is unavailable (§D.6).</summary>
+    /// <summary>Answers 503 when a dependency the request needs is unavailable.</summary>
     /// <param name="detail">Which dependency failed, without leaking connection details.</param>
     /// <returns>The result.</returns>
     internal static IResult DependencyUnavailable(string detail) => Create(

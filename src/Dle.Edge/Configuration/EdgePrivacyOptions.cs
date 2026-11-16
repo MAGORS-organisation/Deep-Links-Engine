@@ -4,7 +4,7 @@ namespace Dle.Edge.Configuration;
 
 /// <summary>
 /// How much of a client address the click stream is allowed to carry, bound from <c>Dle:Privacy</c>
-/// (§C.4, §E.6.2, FR-247).
+///.
 /// </summary>
 /// <remarks>
 /// <para>

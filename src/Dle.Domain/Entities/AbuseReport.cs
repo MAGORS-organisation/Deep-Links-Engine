@@ -1,13 +1,13 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// A report submitted through the public abuse form (FR-245). Maps to <c>abuse_reports</c>.
+/// A report submitted through the public abuse form. Maps to <c>abuse_reports</c>.
 /// </summary>
 /// <remarks>
 /// The form is not only hygiene. A link shortener carrying user supplied content is very likely a
 /// hosting service under the Digital Services Act, whose article 16 requires a notice and action
 /// mechanism with a traceable outcome — which is what the status and the resolution note provide
-/// (§E.3).
+///.
 /// </remarks>
 public class AbuseReport
 {

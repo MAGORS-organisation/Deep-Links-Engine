@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Domains;
 
 /// <summary>
-/// Fetches and judges a domain's association files (FR-143, FR-144).
+/// Fetches and judges a domain's association files.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -31,10 +31,10 @@ public sealed class DomainVerificationService
     /// <summary>Name of the guarded HTTP client used to fetch association files.</summary>
     public const string HttpClientName = "dle-well-known";
 
-    /// <summary>Path of the Apple App Site Association file (§A.2.1).</summary>
+    /// <summary>Path of the Apple App Site Association file.</summary>
     public const string AasaPath = "/.well-known/apple-app-site-association";
 
-    /// <summary>Path of the Digital Asset Links file (§A.2.2).</summary>
+    /// <summary>Path of the Digital Asset Links file.</summary>
     public const string AssetLinksPath = "/.well-known/assetlinks.json";
 
     /// <summary>Stored verification kind for the name resolution check.</summary>
@@ -180,7 +180,7 @@ public sealed class DomainVerificationService
     }
 
     /// <summary>
-    /// The seven-day propagation notice shown after every verification (TC-125, §A.2.1, §A.2.2).
+    /// The seven-day propagation notice shown after every verification.
     /// </summary>
     /// <returns>The notice.</returns>
     /// <remarks>
@@ -188,7 +188,7 @@ public sealed class DomainVerificationService
     /// prevents is an operator who fixes an association file, sees a green tick, tests on a device
     /// that still holds the old file, concludes the fix did not work and reverts it. Apple's CDN and
     /// Android's verifier both cache for up to a week; nothing the control plane does shortens that,
-    /// so the only honest thing to do is say so every time (NFR-15).
+    /// so the only honest thing to do is say so every time.
     /// </remarks>
     private string PropagationNotice()
     {
@@ -285,7 +285,7 @@ public sealed class DomainVerificationService
     /// <remarks>
     /// Redirects are counted, not followed. Both Apple and Google refuse a redirected association
     /// file, so following one would report a success the devices will never see — this is one of the
-    /// most common silent breakages there is (TC-124).
+    /// most common silent breakages there is.
     /// </remarks>
     private async Task<FetchResult> FetchAsync(
         string host,
@@ -335,7 +335,7 @@ public sealed class DomainVerificationService
         catch (HttpRequestException exception)
         {
             // Fail closed and say what happened. A verification that cannot reach the host is a
-            // failed verification, never an assumed pass (SHARED-KERNEL §17.9).
+            // failed verification, never an assumed pass.
             if (_logger.IsEnabled(LogLevel.Information))
             {
                 _logger.LogInformation(
@@ -497,7 +497,7 @@ public sealed class DomainVerificationService
     /// <remarks>
     /// A warning is kept distinct from a failure rather than folded into it. The Play App Signing
     /// warning is the reason that distinction exists: the file is valid, the verification passes, and
-    /// the application will still fail to open links in production (FR-144, TC-123).
+    /// the application will still fail to open links in production.
     /// </remarks>
     private static VerificationCheckResult Judge(
         string kind,
@@ -576,7 +576,7 @@ public sealed class DomainVerificationService
 }
 
 /// <summary>
-/// The outcome of one verification run: what to answer, and what to record (FR-143).
+/// The outcome of one verification run: what to answer, and what to record.
 /// </summary>
 /// <param name="Response">The answer to the caller.</param>
 /// <param name="Runs">The rows to append to the verification history.</param>

@@ -34,7 +34,7 @@
       Only genuinely noisy rules are muted globally. Severities for everything
       else live in .editorconfig so they can be reasoned about in one place.
 
-        CA1848  LoggerMessage delegates — required on the hot path only (§C.6),
+        CA1848  LoggerMessage delegates — required on the hot path only,
                 mandating it everywhere would drown ordinary control-plane code.
         CA2007  ConfigureAwait(false) — this is application code with no
                 SynchronizationContext; ASP.NET Core does not need it.

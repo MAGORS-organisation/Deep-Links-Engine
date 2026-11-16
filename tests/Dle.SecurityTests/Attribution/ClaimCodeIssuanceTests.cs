@@ -1,7 +1,7 @@
 namespace Dle.SecurityTests.Attribution;
 
 /// <summary>
-/// The iOS interstitial shows a claim code only when the code can be redeemed (ADR-008, §B.6.3).
+/// The iOS interstitial shows a claim code only when the code can be redeemed.
 /// </summary>
 /// <remarks>
 /// <para>

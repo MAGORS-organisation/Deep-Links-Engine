@@ -3,8 +3,8 @@
   <!--
     Adversarial tests for the threat register in docs/zadanie.md §E.2.2:
     open-redirect fuzzing (T-01/T-02, TC-161..164), click-id tampering
-    (T-05/TC-167), cross-tenant access returning 404 not 403 (TC-166),
-    timing-safe secret comparison (T-17/S-03) and rate-limit enforcement (§E.9).
+, cross-tenant access returning 404 not 403,
+    timing-safe secret comparison and rate-limit enforcement.
   -->
 
   <ItemGroup>

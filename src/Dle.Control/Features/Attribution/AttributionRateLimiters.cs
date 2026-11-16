@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Attribution;
 
 /// <summary>
-/// The rate limits of the SDK endpoints, keyed by installation and by caller address (§E.9).
+/// The rate limits of the SDK endpoints, keyed by installation and by caller address.
 /// </summary>
 /// <remarks>
 /// <para>

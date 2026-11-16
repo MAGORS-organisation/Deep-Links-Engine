@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Edge.Configuration;
 
 /// <summary>
-/// Everything the edge reads from the <c>Dle:Edge</c> configuration section (SHARED-KERNEL §16, §C.4).
+/// Everything the edge reads from the <c>Dle:Edge</c> configuration section.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -28,7 +28,7 @@ public sealed class EdgeOptions
     /// How many distinct user agent strings the classifier keeps parsed results for.
     /// </summary>
     /// <remarks>
-    /// User agent parsing is a regular expression cascade and it sits on the hot path (§C.2), so the
+    /// User agent parsing is a regular expression cascade and it sits on the hot path, so the
     /// result is memoised. The cache is bounded because the key space is attacker controlled: a
     /// client can send a fresh user agent on every request, and an unbounded dictionary would be a
     /// memory exhaustion primitive rather than an optimisation.
@@ -37,7 +37,7 @@ public sealed class EdgeOptions
     public int UserAgentCacheCapacity { get; set; } = 20_000;
 
     /// <summary>
-    /// Query parameter that switches a request into decision preview mode (FR-166).
+    /// Query parameter that switches a request into decision preview mode.
     /// </summary>
     [Required(AllowEmptyStrings = false)]
     [RegularExpression("^[a-z_][a-z0-9_]{0,31}$")]
@@ -57,7 +57,7 @@ public sealed class BotDetectionOptions
     public const string SectionName = "Dle:Edge:BotDetection";
 
     /// <summary>
-    /// Whether a user agent claiming to be a crawler is confirmed by reverse DNS (FR-161, TC-107).
+    /// Whether a user agent claiming to be a crawler is confirmed by reverse DNS.
     /// </summary>
     /// <remarks>
     /// Turning this off makes <c>is_bot</c> a claim rather than a fact, which is acceptable in a
@@ -109,7 +109,7 @@ public sealed class GeoIpOptions
     /// <summary>
     /// Path to the GeoLite2 or GeoIP2 database file. A missing or unreadable file is not an error:
     /// country becomes <see langword="null"/>, geo-dependent rules fall through to the default rule
-    /// and a metric is raised instead (§D.6).
+    /// and a metric is raised instead.
     /// </summary>
     public string? Path { get; set; }
 
@@ -122,7 +122,7 @@ public sealed class GeoIpOptions
 }
 
 /// <summary>
-/// Response header policy, bound from <c>Dle:Edge:Security</c> (S-04, T-11).
+/// Response header policy, bound from <c>Dle:Edge:Security</c>.
 /// </summary>
 public sealed class SecurityHeaderOptions
 {
@@ -147,8 +147,8 @@ public sealed class SecurityHeaderOptions
 /// Reverse proxy handling, bound from <c>Dle:Edge:Network</c>.
 /// </summary>
 /// <remarks>
-/// The client address is not cosmetic here. It is the rate limiting partition key (§E.9), the input
-/// to the hashed identifier in the click stream (FR-247) and the geographic lookup key, so believing
+/// The client address is not cosmetic here. It is the rate limiting partition key, the input
+/// to the hashed identifier in the click stream and the geographic lookup key, so believing
 /// a forwarded header from an untrusted peer would let a client pick its own rate limit bucket. The
 /// header is therefore only honoured when the immediate peer is a configured proxy.
 /// </remarks>

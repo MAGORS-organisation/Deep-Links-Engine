@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="ApiKey"/> to the <c>api_keys</c> table (FR-242).</summary>
+/// <summary>Maps <see cref="ApiKey"/> to the <c>api_keys</c> table.</summary>
 public sealed class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
 {
     /// <inheritdoc />

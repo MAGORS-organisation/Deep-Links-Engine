@@ -3,7 +3,7 @@ using System.Diagnostics.Metrics;
 namespace Dle.Control.Features.Abuse;
 
 /// <summary>
-/// The instruments the abuse module publishes (§C.6).
+/// The instruments the abuse module publishes.
 /// </summary>
 /// <remarks>
 /// Names use the OpenTelemetry dotted spelling; a Prometheus exporter renders
@@ -36,7 +36,7 @@ public sealed class AbuseMetrics : IDisposable
         _blocked = _meter.CreateCounter<long>(
             "dle.abuse.blocked",
             unit: "{target}",
-            description: "Target URLs refused or withdrawn because a safety check rejected them (§E.3).");
+            description: "Target URLs refused or withdrawn because a safety check rejected them.");
 
         _reports = _meter.CreateCounter<long>(
             "dle.abuse.reports",
@@ -46,7 +46,7 @@ public sealed class AbuseMetrics : IDisposable
         _quarantines = _meter.CreateCounter<long>(
             "dle.abuse.quarantines",
             unit: "{link}",
-            description: "Links withdrawn from service, and links released back into it (TC-103).");
+            description: "Links withdrawn from service, and links released back into it.");
 
         _lookupFailures = _meter.CreateCounter<long>(
             "dle.abuse.lookup_failures",

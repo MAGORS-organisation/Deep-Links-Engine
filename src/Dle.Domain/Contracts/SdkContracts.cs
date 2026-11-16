@@ -4,18 +4,18 @@ namespace Dle.Domain.Contracts;
 
 /// <summary>
 /// Body of <c>POST /v1/resolve</c>, the call an SDK makes once on the first launch after install
-/// to recover the context of the click that led to it (§B.7.2, UC-04, UC-05).
+/// to recover the context of the click that led to it.
 /// </summary>
 public sealed record ResolveRequestDto
 {
     /// <summary>Identifier the SDK generated and persisted for this installation. Deduplication and
-    /// replay protection key off it (FR-188, TC-143).</summary>
+    /// replay protection key off it.</summary>
     public required string InstallId { get; init; }
 
     /// <summary>Client platform: <c>ios</c>, <c>android</c>, <c>desktop</c> or <c>other</c>.</summary>
     public required string Platform { get; init; }
 
-    /// <summary>Host application version, for version scoped routing rules (FR-124).</summary>
+    /// <summary>Host application version, for version scoped routing rules.</summary>
     public string? AppVersion { get; init; }
 
     /// <summary>Operating system version reported by the device.</summary>
@@ -32,7 +32,7 @@ public sealed record ResolveRequestDto
     public string? LoginKey { get; init; }
 
     /// <summary>Device signals for probabilistic matching. Sent only when the module is enabled and
-    /// attribution consent was given; otherwise the SDK omits the object entirely (TC-145, TC-146).</summary>
+    /// attribution consent was given; otherwise the SDK omits the object entirely.</summary>
     public DeviceSignalsDto? Signals { get; init; }
 
     /// <summary>Recorded consent. Under a tenant in <c>full</c> mode, click-id linking of any kind -
@@ -96,7 +96,7 @@ public sealed record ConsentDto
 
 /// <summary>
 /// Response to <c>POST /v1/resolve</c>. Always states how the match was made and how much to trust
-/// it: a probabilistic result is never dressed up as a certainty (FR-186, ADR-008).
+/// it: a probabilistic result is never dressed up as a certainty.
 /// </summary>
 public sealed record ResolveResponseDto
 {
@@ -143,7 +143,7 @@ public sealed record ResolveLinkDto
 
 /// <summary>
 /// Body of <c>POST /v1/events</c>. Batched on purpose: an SDK on a mobile network should spend one
-/// request, not one per event (FR-226).
+/// request, not one per event.
 /// </summary>
 public sealed record EventBatchDto
 {
@@ -167,7 +167,7 @@ public sealed record EventBatchDto
 /// A single SDK event. <c>link_open</c> is the important one: when the operating system opens the
 /// application directly through a Universal or App Link, no HTTP request ever reaches the engine,
 /// so without this report the click is invisible and the most successful campaigns are the ones
-/// most under-counted (FR-223, §B.6.4).
+/// most under-counted.
 /// </summary>
 public sealed record EventDto
 {

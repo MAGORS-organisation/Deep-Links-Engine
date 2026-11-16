@@ -7,7 +7,7 @@ namespace Dle.Persistence.Tenancy;
 /// Query filters keep foreign rows out of reads, but nothing in a query filter stops code from
 /// attaching an entity carrying someone else's tenant identifier and saving it. This exception is
 /// the write-side half of the same guarantee, raised by <see cref="DbContext.SaveChanges()"/>
-/// before the statement reaches the database (T-09).
+/// before the statement reaches the database.
 /// </remarks>
 public sealed class CrossTenantWriteException : InvalidOperationException
 {

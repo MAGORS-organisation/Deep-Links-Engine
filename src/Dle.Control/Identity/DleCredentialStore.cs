@@ -49,7 +49,7 @@ public sealed record SdkKeyCandidate(
 /// Authentication is the one place in the control plane that genuinely cannot run inside a tenant:
 /// the credential is what establishes which tenant this is. Every read here therefore opens a
 /// <see cref="CrossTenantScope"/> with a written reason and drops the tenant filter by name, which
-/// is the sanctioned form of that step (FR-241, T-09).
+/// is the sanctioned form of that step.
 /// </para>
 /// <para>
 /// The soft-delete filter is deliberately left on. A revoked key and a deleted tenant are invisible

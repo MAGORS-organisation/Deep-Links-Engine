@@ -20,7 +20,7 @@ namespace Dle.Domain.Primitives;
 /// character folds to something the allowlist refuses anyway, so omitting it cannot change a verdict.
 /// Confusables are deliberately absent: NFKC does not map Cyrillic <c>а</c> (U+0430) onto Latin
 /// <c>a</c>, and neither does this table, which is what keeps one tenant out of another's address
-/// space (TC-109).
+/// space.
 /// </para>
 /// <para>
 /// Applying this fold after <see cref="string.Normalize(NormalizationForm)"/> is safe with or without

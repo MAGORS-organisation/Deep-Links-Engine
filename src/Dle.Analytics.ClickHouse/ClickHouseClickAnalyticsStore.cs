@@ -25,7 +25,7 @@ namespace Dle.Analytics.ClickHouse;
 /// point of the port: moving provider is an operator decision, not a rewrite. Every query is
 /// tenant scoped, every query carries the reported time range so the monthly partitions prune,
 /// and crawler traffic is excluded unless <see cref="AnalyticsQuery.IncludeBots"/> is set
-/// (FR-205, TC-106).
+///.
 /// </para>
 /// <para>
 /// Unlike the PostgreSQL provider this one keeps no rollup tables. ClickHouse aggregates raw
@@ -35,7 +35,7 @@ namespace Dle.Analytics.ClickHouse;
 /// PostgreSQL function <c>dle_platform_of</c> applies.
 /// </para>
 /// <para>
-/// There are two supported ways to fill these tables (§B.5.3 / ADR-006).
+/// There are two supported ways to fill these tables.
 /// <see cref="ClickHouseEventSink"/> writes the click stream here directly — instead of
 /// PostgreSQL, or alongside it as a dual write during a migration. Alternatively, logical
 /// replication from PostgreSQL mirrors the same rows through a change-data-capture pipeline; the

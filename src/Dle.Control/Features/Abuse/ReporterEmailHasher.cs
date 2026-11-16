@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Abuse;
 
 /// <summary>
-/// Turns a reporter's address into the hash that is stored instead of it (§E.6.3).
+/// Turns a reporter's address into the hash that is stored instead of it.
 /// </summary>
 /// <remarks>
 /// <para>

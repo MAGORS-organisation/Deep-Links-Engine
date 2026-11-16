@@ -3,7 +3,7 @@ using System.Buffers.Binary;
 namespace Dle.Crypto;
 
 /// <summary>
-/// A keyed Feistel network over a fixed width integer space (ADR-007).
+/// A keyed Feistel network over a fixed width integer space.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -30,7 +30,7 @@ namespace Dle.Crypto;
 public sealed class FeistelPermutation : IFeistelPermutation
 {
     /// <summary>Width of the slug space: 62^8 is just above 2^47, so 47 bits is the largest space
-    /// that always fits into eight base62 characters (ADR-007).</summary>
+    /// that always fits into eight base62 characters.</summary>
     public const int SlugBits = 47;
 
     /// <summary>Round count specified by ADR-007.</summary>

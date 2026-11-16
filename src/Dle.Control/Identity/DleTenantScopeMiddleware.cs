@@ -2,7 +2,7 @@ namespace Dle.Control.Identity;
 
 /// <summary>
 /// Pushes the authenticated caller's tenant into <see cref="ITenantContext"/> for the duration of
-/// the request (FR-241, T-09, TC-166).
+/// the request.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -17,7 +17,7 @@ namespace Dle.Control.Identity;
 /// identifier does not hit an ownership check that returns 403; the row simply is not in the
 /// queryable, the lookup returns <see langword="null"/>, and the handler answers 404 exactly as it
 /// would for an identifier nobody ever issued. The two are indistinguishable from outside because
-/// they are indistinguishable inside (SHARED-KERNEL §17.7).
+/// they are indistinguishable inside.
 /// </para>
 /// <para>
 /// The scope is an <c>AsyncLocal</c> that nests and restores, so an <c>await</c> inside the request
@@ -70,7 +70,7 @@ public sealed class DleTenantScopeMiddleware
         using IDisposable scope = _tenantContext.BeginScope(caller.TenantId);
 
         // The tenant identifier is not an end-user identifier, so it belongs in the log scope; the
-        // credential is identified by its non-secret prefix and never by its value (§17.5).
+        // credential is identified by its non-secret prefix and never by its value.
         using IDisposable? logScope = _logger.BeginScope(new Dictionary<string, object>(StringComparer.Ordinal)
         {
             ["TenantId"] = caller.TenantId,

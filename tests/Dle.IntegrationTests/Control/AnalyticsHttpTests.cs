@@ -34,7 +34,6 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     private const string Analytics = "/api/v1/analytics";
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-202")]
     public async Task TimeSeries_CountsClicksAndInstalls_LeavesBotsOutUnlessAsked_AndTotalsTheFunnel()
     {
         Fixture fixture = await SeedAsync("analytics-series");
@@ -71,7 +70,6 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-202")]
     public async Task Breakdown_GroupsByPlatform_AndRefusesADimensionOffTheAllowlist()
     {
         Fixture fixture = await SeedAsync("analytics-breakdown");
@@ -110,7 +108,6 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "ADR-008")]
     public async Task Funnel_AndAttributionQuality_ComeFromTheSameEvents()
     {
         Fixture fixture = await SeedAsync("analytics-funnel");
@@ -138,7 +135,6 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerTheory]
-    [Trait("Spec", "FR-202")]
     [InlineData("from=2026-02-01T00:00:00Z&to=2026-01-01T00:00:00Z", "from")]
     [InlineData("from=2020-01-01T00:00:00Z&to=2026-01-01T00:00:00Z", "from")]
     [InlineData("from=yesterday", "from")]
@@ -157,7 +153,6 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task Figures_AreTheCallersTenantsOnly_AViewerMayRead_AndNobodyElse()
     {
         Fixture fixture = await SeedAsync("analytics-scope");
@@ -184,7 +179,6 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-203")]
     public async Task Export_WritesCsvOrParquet_NamedAfterTheReportAndWindow()
     {
         Fixture fixture = await SeedAsync("analytics-export");
@@ -219,7 +213,6 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-206")]
     public async Task Stream_SendsTheFunnelAsAServerSentEvent()
     {
         Fixture fixture = await SeedAsync("analytics-stream");
@@ -255,7 +248,6 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "ADR-006")]
     public async Task Rollups_AggregateTheRawEvents_AndAnAlignedQueryIsServedFromThem()
     {
         Fixture fixture = await SeedAsync("analytics-rollups");
@@ -340,7 +332,6 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-247")]
     public async Task Retention_ForgetsIpPrefixes_DropsExpiredDays_AndKeepsALedger()
     {
         Fixture fixture = await SeedAsync(
@@ -392,7 +383,6 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-247")]
     public async Task Retention_HoldsTheDropBack_WhileTheRollupsHaveNotCaughtUp()
     {
         Fixture fixture = await SeedAsync(
@@ -426,7 +416,6 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-247")]
     public async Task Retention_InDryRun_ReportsWithoutChangingAnything()
     {
         Fixture fixture = await SeedAsync(
@@ -453,7 +442,6 @@ public sealed class AnalyticsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-249")]
     public async Task TenantExport_IsAZipOfNdjsonPerEntity_WithAManifest_ForTheOwnerOnly()
     {
         Fixture fixture = await SeedAsync("analytics-tenant-export");

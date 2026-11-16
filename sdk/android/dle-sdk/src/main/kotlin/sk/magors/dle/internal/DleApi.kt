@@ -29,7 +29,7 @@ import kotlin.coroutines.resumeWithException
  * The HTTP client of the SDK plane: `POST /v1/resolve` and `POST /v1/events`.
  *
  * Every request carries `Authorization: Bearer <sdkKey>`, `Content-Type: application/json` and a
- * fresh W3C `traceparent` (NFR-12). Redirects are disabled on the derived [OkHttpClient]: a bearer
+ * fresh W3C `traceparent`. Redirects are disabled on the derived [OkHttpClient]: a bearer
  * key must never be replayed to wherever a misconfigured proxy points. Non success answers are
  * turned into [DleException.Http] with the RFC 9457 problem document parsed and `Retry-After`
  * honoured; a 2xx body the SDK cannot use is [DleException.Malformed].
@@ -37,7 +37,7 @@ import kotlin.coroutines.resumeWithException
  * Privacy rules enforced here: the `signals` object is attached to a resolve request **only** when
  * the operator opted in ([DleConfig.probabilisticSignals]) **and** the user consented
  * ([DleConsent.allowsDeviceSignals]), and the Install Referrer only with [DleConsent.attribution].
- * Otherwise the member is absent, not empty (TC-145, TC-146).
+ * Otherwise the member is absent, not empty.
  *
  * @param config the SDK configuration.
  * @param signalsProvider collects the coarse device signals on demand. Invoked only when both

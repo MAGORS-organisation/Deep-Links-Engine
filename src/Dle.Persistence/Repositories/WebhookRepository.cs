@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Reads and writes webhook subscriptions and their delivery queue (FR-204), and serves as the
+/// Reads and writes webhook subscriptions and their delivery queue, and serves as the
 /// transactional outbox behind <see cref="IWebhookOutbox"/>.
 /// </summary>
 /// <remarks>

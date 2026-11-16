@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Edge.Resolution;
 
 /// <summary>
-/// Writes the response hardening headers on everything the edge serves (S-04, T-11, §E.7).
+/// Writes the response hardening headers on everything the edge serves.
 /// </summary>
 /// <remarks>
 /// <para>

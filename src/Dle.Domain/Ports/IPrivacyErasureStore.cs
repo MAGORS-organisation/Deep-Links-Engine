@@ -12,7 +12,7 @@ public sealed record InstallErasureResult(
     int ErasedSdkEvents);
 
 /// <summary>
-/// Tenant-scoped right-to-erasure store for an end-user <c>install_id</c> (§E.6.3).
+/// Tenant-scoped right-to-erasure store for an end-user <c>install_id</c>.
 /// </summary>
 public interface IPrivacyErasureStore
 {

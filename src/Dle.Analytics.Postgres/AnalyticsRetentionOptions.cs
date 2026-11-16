@@ -4,7 +4,7 @@ namespace Dle.Analytics.Postgres;
 
 /// <summary>
 /// Retention policy of the analytics data, bound from <c>Dle:Privacy:Retention</c>
-/// (SHARED-KERNEL §16, FR-247, §E.6.3).
+///.
 /// </summary>
 /// <remarks>
 /// The defaults are the ones the specification names: thirty days of raw, hash-only click stream

@@ -113,6 +113,6 @@ public sealed partial class DependencyUnavailableExceptionHandler : IExceptionHa
     [LoggerMessage(
         EventId = 5901,
         Level = LogLevel.Warning,
-        Message = "The control-plane database was unavailable while serving {Path}; answered 503 (§D.6).")]
+        Message = "The control-plane database was unavailable while serving {Path}; answered 503.")]
     private static partial void LogDependencyUnavailable(ILogger logger, string path, Exception exception);
 }

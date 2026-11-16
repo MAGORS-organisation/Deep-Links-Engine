@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 
 namespace Dle.Domain.Contracts;
 
-/// <summary>Body of <c>POST /api/v1/tenants</c> (FR-241).</summary>
+/// <summary>Body of <c>POST /api/v1/tenants</c>.</summary>
 public sealed record CreateTenantRequest
 {
     /// <summary>Short unique identifier used in URLs and logs.</summary>
@@ -12,7 +12,7 @@ public sealed record CreateTenantRequest
     public required string Name { get; init; }
 
     /// <summary>Consent mode: <c>off</c>, <c>aggregate_only</c> or <c>full</c>. Defaults to
-    /// <c>aggregate_only</c>, the mode that needs no consent banner (§E.6.2, FR-248).</summary>
+    /// <c>aggregate_only</c>, the mode that needs no consent banner.</summary>
     public string? ConsentMode { get; init; }
 }
 
@@ -38,7 +38,7 @@ public sealed record TenantResponse
     public required DateTimeOffset CreatedAt { get; init; }
 }
 
-/// <summary>Body of <c>POST /api/v1/api-keys</c> (FR-242).</summary>
+/// <summary>Body of <c>POST /api/v1/api-keys</c>.</summary>
 public sealed record CreateApiKeyRequest
 {
     /// <summary>Human readable name, so a key can be identified without revealing it.</summary>
@@ -110,7 +110,7 @@ public sealed record ApiKeyResponse
     public required DateTimeOffset CreatedAt { get; init; }
 }
 
-/// <summary>Query parameters accepted by the analytics endpoints (FR-202).</summary>
+/// <summary>Query parameters accepted by the analytics endpoints.</summary>
 public sealed record AnalyticsQueryRequest
 {
     /// <summary>Start of the window, inclusive.</summary>
@@ -135,7 +135,7 @@ public sealed record AnalyticsQueryRequest
     public string? Platform { get; init; }
 
     /// <summary>Include bot traffic. Off by default, because bot clicks must not inflate campaign
-    /// numbers (FR-205, TC-106).</summary>
+    /// numbers.</summary>
     public bool IncludeBots { get; init; }
 
     /// <summary>Maximum rows returned by a breakdown.</summary>
@@ -167,7 +167,7 @@ public sealed record BreakdownResponse
 
 /// <summary>
 /// The honest attribution split. This is the number commercial measurement partners systematically
-/// blur, and stating it plainly is the product argument, not a footnote (ADR-008, §0.2).
+/// blur, and stating it plainly is the product argument, not a footnote.
 /// </summary>
 public sealed record AttributionQualityResponse
 {
@@ -187,11 +187,11 @@ public sealed record AttributionQualityResponse
     public IReadOnlyList<MatchTypeSummary> ByMatchType { get; init; } = [];
 }
 
-/// <summary>Body of <c>POST /api/v1/webhooks</c> (FR-204).</summary>
+/// <summary>Body of <c>POST /api/v1/webhooks</c>.</summary>
 public sealed record CreateWebhookRequest
 {
     /// <summary>Destination URL. Validated against the same target policy as a link, so a webhook
-    /// cannot be pointed at a cloud metadata endpoint (T-02).</summary>
+    /// cannot be pointed at a cloud metadata endpoint.</summary>
     public required string Url { get; init; }
 
     /// <summary>Event types to deliver, for example <c>attribution.created</c>.</summary>
@@ -226,7 +226,7 @@ public sealed record WebhookResponse
 /// <summary>
 /// Envelope delivered to a webhook endpoint. Signed twice: a symmetric HMAC for simplicity and an
 /// Ed25519 signature a third party can verify against the JWKS endpoint without holding the shared
-/// secret. The second slot is also where a post-quantum signature lands later (§B.7.4, §E.5.3).
+/// secret. The second slot is also where a post-quantum signature lands later.
 /// </summary>
 public sealed record WebhookPayload
 {
@@ -243,7 +243,7 @@ public sealed record WebhookPayload
     public IReadOnlyDictionary<string, string> Data { get; init; } = ReadOnlyDictionary<string, string>.Empty;
 }
 
-/// <summary>Body of <c>POST /api/v1/abuse-reports</c>. Public and rate limited (FR-245).</summary>
+/// <summary>Body of <c>POST /api/v1/abuse-reports</c>. Public and rate limited.</summary>
 public sealed record CreateAbuseReportRequest
 {
     /// <summary>The reported short URL.</summary>
@@ -257,7 +257,7 @@ public sealed record CreateAbuseReportRequest
     public string? Details { get; init; }
 
     /// <summary>Reporter contact address. Stored only as a hash, so follow up is possible without
-    /// keeping an identifiable address (§E.6.3).</summary>
+    /// keeping an identifiable address.</summary>
     public string? ReporterEmail { get; init; }
 }
 

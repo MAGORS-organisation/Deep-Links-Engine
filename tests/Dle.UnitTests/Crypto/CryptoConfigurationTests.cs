@@ -10,7 +10,7 @@ namespace Dle.UnitTests.Crypto;
 
 /// <summary>
 /// Start-up validation of the crypto options, the configuration backed key store and the
-/// process-local replay guard (§E.4.2, §E.5.3, SHARED-KERNEL §16).
+/// process-local replay guard.
 /// </summary>
 /// <remarks>
 /// The theme is failing at start rather than under load. A mistyped key, an algorithm with no
@@ -257,7 +257,7 @@ public sealed class CryptoConfigurationTests
     [Fact]
     public async Task ConfigurationStore_Retire_ClosesTheWindowWithoutRemovingTheKey()
     {
-        // Retiring is not deleting: the key has to keep verifying until its window closes (S-12).
+        // Retiring is not deleting: the key has to keep verifying until its window closes.
         CryptoOptions options = Valid();
         options.Keys.Add(KeyOptions("k1"));
 

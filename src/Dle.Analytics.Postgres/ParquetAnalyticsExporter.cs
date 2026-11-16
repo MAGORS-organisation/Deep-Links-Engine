@@ -4,7 +4,7 @@ using Parquet.Serialization;
 namespace Dle.Analytics.Postgres;
 
 /// <summary>
-/// Apache Parquet export of analytics reports (FR-203).
+/// Apache Parquet export of analytics reports.
 /// </summary>
 /// <remarks>
 /// <para>

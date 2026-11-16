@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="AttributionRecord"/> to the <c>attributions</c> table (§B.5.3).</summary>
+/// <summary>Maps <see cref="AttributionRecord"/> to the <c>attributions</c> table.</summary>
 public sealed class AttributionRecordConfiguration : IEntityTypeConfiguration<AttributionRecord>
 {
     /// <inheritdoc />
@@ -66,14 +66,14 @@ public sealed class AttributionRecordConfiguration : IEntityTypeConfiguration<At
             .IsUnique()
             .HasDatabaseName("uq_attributions_install");
 
-        // One click may be credited to at most one installation (TC-144). It has to be a partial
+        // One click may be credited to at most one installation. It has to be a partial
         // unique index because click_id is nullable — an unmatched install still gets a row, and
         // several of those must be allowed to coexist.
         //
         // A foreign key to click_events is impossible: that table is partitioned by occurred_at
         // with the composite primary key (occurred_at, id), so there is no unique constraint on
         // click_id alone to point at. This index plus the transactional check in
-        // AttributionRepository is what enforces the invariant instead (§B.5.3).
+        // AttributionRepository is what enforces the invariant instead.
         builder.HasIndex(a => a.ClickId)
             .IsUnique()
             .HasDatabaseName("uq_attributions_click")

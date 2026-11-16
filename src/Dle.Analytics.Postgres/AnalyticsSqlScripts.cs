@@ -11,7 +11,7 @@ namespace Dle.Analytics.Postgres;
 /// <see cref="Migration"/> is the schema: the rollup tables, the shared platform function, the
 /// rollup watermark and the retention audit table. It is outside the EF Core migration set because
 /// the PostgreSQL analytics provider is one of two and an instance running ClickHouse has no use
-/// for these tables (ADR-0006), so this module applies it itself: every statement is idempotent and
+/// for these tables, so this module applies it itself: every statement is idempotent and
 /// <c>PostgresAnalyticsSchema</c> runs the script when the host starts. A host whose database role
 /// may not create tables logs the failure and carries on without the rollups rather than refusing
 /// to start.

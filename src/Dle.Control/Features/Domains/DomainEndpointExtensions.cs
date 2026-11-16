@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// Maps the domain management routes (SHARED-KERNEL §15, FR-143, FR-145).
+/// Maps the domain management routes.
 /// </summary>
 public static class DomainEndpointExtensions
 {

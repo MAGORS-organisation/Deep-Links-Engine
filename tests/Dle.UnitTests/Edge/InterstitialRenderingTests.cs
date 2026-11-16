@@ -16,8 +16,8 @@ namespace Dle.UnitTests.Edge;
 /// <summary>
 /// The interstitial is the one page in the engine that renders attacker-influenced text: Open Graph
 /// metadata comes from whoever created the link, and the target URL can carry whatever a campaign
-/// put in it (T-11). Two defences have to hold together — every value is HTML encoded on the way
-/// out, and the Content-Security-Policy admits no inline script (S-04) — because either one alone
+/// put in it. Two defences have to hold together — every value is HTML encoded on the way
+/// out, and the Content-Security-Policy admits no inline script — because either one alone
 /// fails to an author who controls the other.
 /// </summary>
 public sealed class InterstitialRenderingTests
@@ -29,7 +29,6 @@ public sealed class InterstitialRenderingTests
     private static readonly DateTimeOffset Now = new(2026, 7, 1, 8, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    [Trait("Criterion", "S-04")]
     public async Task OgPreview_AllowsTheOriginOfItsOwnImage_AndNoOther()
     {
         LinkSnapshot link = Link(og: new OgMeta
@@ -50,7 +49,6 @@ public sealed class InterstitialRenderingTests
     }
 
     [Fact]
-    [Trait("Criterion", "S-04")]
     public async Task AStatusPage_ReferencesNoImage_AndItsPolicySaysSo()
     {
         RenderedPage page = await RenderedPage.RenderAsync(InterstitialResults.NotFound(language: null));
@@ -59,7 +57,6 @@ public sealed class InterstitialRenderingTests
     }
 
     [Fact]
-    [Trait("TestCase", "T-11")]
     public async Task OgPreview_HostileOpenGraphMetadata_IsEncoded()
     {
         LinkSnapshot link = Link(og: new OgMeta
@@ -88,7 +85,6 @@ public sealed class InterstitialRenderingTests
     }
 
     [Fact]
-    [Trait("TestCase", "T-11")]
     public async Task OgPreview_HostileMetadata_StillProducesTheOpenGraphTagsACrawlerNeeds()
     {
         LinkSnapshot link = Link(og: new OgMeta { Title = HostileTitle, Description = "Safe enough." });
@@ -104,7 +100,6 @@ public sealed class InterstitialRenderingTests
     }
 
     [Fact]
-    [Trait("TestCase", "T-11")]
     public async Task Interstitial_HostileQueryValueInTheTarget_IsEncodedInTheHref()
     {
         // A query value that survived into the outgoing URL. The anchor must not be able to escape
@@ -155,7 +150,6 @@ public sealed class InterstitialRenderingTests
     }
 
     [Fact]
-    [Trait("TestCase", "S-04")]
     public async Task Interstitial_ContentSecurityPolicy_AdmitsNoInlineScript()
     {
         RenderedPage page = await RenderedPage.RenderAsync(InterstitialResults.Page(
@@ -180,7 +174,6 @@ public sealed class InterstitialRenderingTests
     }
 
     [Fact]
-    [Trait("TestCase", "S-04")]
     public async Task Interstitial_WithDeferredConsentToken_RendersZeroJsPostFormAndAllowsSelfFormAction()
     {
         RenderedPage page = await RenderedPage.RenderAsync(InterstitialResults.Page(
@@ -200,7 +193,6 @@ public sealed class InterstitialRenderingTests
     }
 
     [Fact]
-    [Trait("TestCase", "S-04")]
     public async Task Interstitial_EveryScriptElementCarriesTheNonceFromTheHeader()
     {
         RenderedPage page = await RenderedPage.RenderAsync(InterstitialResults.Page(
@@ -223,7 +215,6 @@ public sealed class InterstitialRenderingTests
     }
 
     [Fact]
-    [Trait("TestCase", "S-04")]
     public async Task Interstitial_NonceIsFreshOnEveryResponse()
     {
         static Task<RenderedPage> RenderOnce() => RenderedPage.RenderAsync(InterstitialResults.Page(
@@ -272,7 +263,6 @@ public sealed class InterstitialRenderingTests
     /// that was asked for.
     /// </summary>
     [Fact]
-    [Trait("TestCase", "TC-102")]
     public async Task NotFound_IsTheSameDocumentWhateverWasAskedFor()
     {
         RenderedPage missing = await RenderedPage.RenderAsync(InterstitialResults.NotFound(MobileClient()));
@@ -291,7 +281,6 @@ public sealed class InterstitialRenderingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-102")]
     public async Task NotFound_NamesNeitherTheSlugNorTheReason()
     {
         RenderedPage page = await RenderedPage.RenderAsync(InterstitialResults.NotFound(MobileClient()));
@@ -303,7 +292,6 @@ public sealed class InterstitialRenderingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-103")]
     public async Task Gone_IsAnExplainedPageRatherThanARedirect()
     {
         RenderedPage page = await RenderedPage.RenderAsync(InterstitialResults.Gone(MobileClient()));
@@ -314,7 +302,6 @@ public sealed class InterstitialRenderingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-108")]
     public async Task TooManyRequests_CarriesRetryAfter()
     {
         RenderedPage page = await RenderedPage.RenderAsync(
@@ -406,7 +393,6 @@ public sealed class InterstitialRenderingTests
     };
 
     [Fact]
-    [Trait("Criterion", "S-04")]
     public async Task OgPreview_ImageUrlWithUserInfo_IsExcludedFromImageAndPolicy()
     {
         LinkSnapshot link = Link(og: new OgMeta

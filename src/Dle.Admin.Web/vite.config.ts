@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 /**
  * The console is served by the control plane from wwwroot/admin (see the CopyAdminSpa target in
  * Dle.Control.csproj), so every asset URL is rooted at /admin/. Nothing is fetched from a CDN
- * (NFR-14): every script, style and font ships in this bundle.
+ *: every script, style and font ships in this bundle.
  *
  * During development the API is proxied so that the browser talks to one origin and the
  * credential never has to cross a CORS boundary. Set VITE_DLE_CONTROL_ORIGIN in .env.local

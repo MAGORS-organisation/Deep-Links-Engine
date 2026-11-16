@@ -4,7 +4,7 @@ namespace Dle.Analytics.Postgres;
 
 /// <summary>
 /// Configuration of the analytics module, bound from the <c>Dle:Analytics</c> section
-/// (SHARED-KERNEL §16).
+///.
 /// </summary>
 public sealed class AnalyticsOptions
 {
@@ -12,7 +12,7 @@ public sealed class AnalyticsOptions
     public const string SectionName = "Dle:Analytics";
 
     /// <summary>
-    /// Storage provider: <c>postgres</c> (default) or <c>clickhouse</c> (ADR-006).
+    /// Storage provider: <c>postgres</c> (default) or <c>clickhouse</c>.
     /// </summary>
     [Required(AllowEmptyStrings = false)]
     public string Provider { get; set; } = AnalyticsProviderNames.Postgres;

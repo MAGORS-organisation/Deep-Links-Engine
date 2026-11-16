@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Analytics;
 
 /// <summary>
-/// The reporting queries (FR-202, FR-203, FR-205, §B.7.3).
+/// The reporting queries.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -159,7 +159,7 @@ public static class GetAnalytics
 
     /// <summary>
     /// Handles the attribution quality report — the deterministic, probabilistic and unmatched
-    /// split with the mean confidence of the guesses (ADR-008, §0.2).
+    /// split with the mean confidence of the guesses.
     /// </summary>
     /// <param name="context">The request.</param>
     /// <param name="store">The analytics store.</param>

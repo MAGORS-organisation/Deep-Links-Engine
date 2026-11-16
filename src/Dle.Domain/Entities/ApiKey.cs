@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// A control plane API key (FR-242). Maps to <c>api_keys</c>.
+/// A control plane API key. Maps to <c>api_keys</c>.
 /// </summary>
 /// <remarks>
 /// Only the Argon2id hash of the key is stored, so a database dump does not yield working

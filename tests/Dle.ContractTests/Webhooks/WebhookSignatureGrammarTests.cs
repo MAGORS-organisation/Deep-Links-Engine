@@ -49,7 +49,6 @@ public sealed class WebhookSignatureGrammarTests
         Encoding.UTF8.GetBytes("""{"event":"webhook.test","id":"1","occurred_at":"2026-09-03T10:00:00+00:00","data":{}}""");
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void SignatureHeader_MatchesThePublishedGrammar()
     {
         string header = WebhookSignature.Create(Body, Secret, signer: null, Moment);
@@ -62,7 +61,6 @@ public sealed class WebhookSignatureGrammarTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void SignatureHeader_TimestampIsUnixSecondsNotMilliseconds()
     {
         // §B.7.4 prints t=1756900000, which is seconds. A receiver comparing a millisecond value
@@ -75,7 +73,6 @@ public sealed class WebhookSignatureGrammarTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void SignatureHeader_V1IsBase64HmacSha256OverTimestampDotBody()
     {
         // The signing input is published as t + "." + body. Recomputing it here, from the
@@ -96,7 +93,6 @@ public sealed class WebhookSignatureGrammarTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void AlgorithmHeader_NamesBothSlots()
     {
         Assert.Equal("HS256+Ed25519", WebhookSignature.AlgorithmValue);
@@ -105,7 +101,6 @@ public sealed class WebhookSignatureGrammarTests
     }
 
     [Theory]
-    [Trait("Contract", "B.7.4")]
     [InlineData("t=1756900000, v1=Zm9v", true)]
     [InlineData("t=1756900000, v1=Zm9v, v2=YmFy, kid=k_2026_09", true)]
     [InlineData("t=1756900000, v1=Zm9v, v2=YmFy, v3=YmF6, kid=k_2026_09", true)]
@@ -121,7 +116,6 @@ public sealed class WebhookSignatureGrammarTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void Parser_IgnoresAnUnknownMemberWithoutLosingTheKnownOnes()
     {
         const string header = "t=1756900000, v1=Zm9v, v3=YmF6, kid=k_2026_09";
@@ -135,7 +129,6 @@ public sealed class WebhookSignatureGrammarTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void Parser_IsIndifferentToWhitespaceAndMemberOrder()
     {
         // §B.7.4 prints the header wrapped over four lines, so a receiver will see the members in any

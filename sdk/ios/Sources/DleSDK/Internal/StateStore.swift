@@ -1,7 +1,7 @@
 import Foundation
 
 /// The little that must survive relaunches and app updates: whether this installation has
-/// already called `POST /v1/resolve`, and what the engine answered (TC-143).
+/// already called `POST /v1/resolve`, and what the engine answered.
 struct PersistedState: Codable, Sendable, Equatable {
     /// Layout version of the file.
     var schema: Int = 1

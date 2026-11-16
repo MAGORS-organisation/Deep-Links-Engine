@@ -42,7 +42,6 @@ public sealed class ClickIdTamperingTests
     private static readonly ClickIdCodec Codec = new(PermutationKey, MacKey);
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
     public void ClickId_AsMinted_DecodesBackToItsInstant()
     {
         // The control: an untouched identifier decodes, which is what makes the refusals below mean
@@ -56,8 +55,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
-    [Trait("Threat", "T-05")]
     public void ClickId_WithAnyOneCharacterChanged_FailsToDecode()
     {
         // Every position, every replacement character. This is the mutation a partner actually makes:
@@ -94,8 +91,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
-    [Trait("Threat", "T-05")]
     public void ClickId_MintedUnderAnotherDeploymentsKey_FailsToDecode()
     {
         // Two instances of the engine must not accept each other's identifiers. Otherwise a partner
@@ -106,8 +101,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Theory]
-    [Trait("TestCase", "TC-167")]
-    [Trait("Threat", "T-05")]
     [InlineData("")]
     [InlineData("   ")]
     [InlineData("aB3xK9pQ")]
@@ -121,8 +114,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
-    [Trait("Threat", "T-05")]
     public void ClickId_DecodeIsTotalOverArbitraryText()
     {
         // The decoder reads a value from an untrusted device, so it must terminate and answer for
@@ -138,8 +129,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
-    [Trait("Threat", "T-05")]
     public void ClickId_NoArbitraryStringIsEverAccepted()
     {
         // The complement of the mutation test: not only does editing a real identifier fail, but
@@ -151,7 +140,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
     public void InstallReferrer_CarriesTheClickIdUnderTheDocumentedKey()
     {
         // §B.7.2 shows the referrer as dl_cid%3D…%26utm_source%3Dfb, which is the percent-encoded form
@@ -166,8 +154,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
-    [Trait("Threat", "T-05")]
     public void InstallReferrer_WithATamperedClickId_ParsesButDoesNotDecode()
     {
         // Both halves in one place, because this is the exact sequence ResolveInstall performs: the
@@ -185,7 +171,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-142")]
     public void InstallReferrer_WithoutAClickId_IsAnOrganicInstallRatherThanAnError()
     {
         // TC-142: an organic install carries no dl_cid, and that is not a failure. Conflating the two
@@ -196,7 +181,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
     public void TamperedEvidence_UsesTheConstantsTheResolverWrites()
     {
         // The end-to-end assertion that the attribution row says `tampered` lives in the integration
@@ -208,7 +192,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
     public void ClickId_IsFixedWidth_SoItsLengthLeaksNothing()
     {
         // A variable-width identifier would leak the sequence number's magnitude, and with it the

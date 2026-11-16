@@ -7,7 +7,7 @@ namespace Dle.Control.Identity;
 /// <para>
 /// The default is deny. <c>AuthorizationOptions.FallbackPolicy</c> is a policy nothing satisfies, so
 /// an endpoint registered without <c>RequireAuthorization</c> refuses the request instead of serving
-/// it — a forgotten attribute has to fail closed (SHARED-KERNEL §17.9). Endpoints that are genuinely
+/// it — a forgotten attribute has to fail closed. Endpoints that are genuinely
 /// public say so with <c>AllowAnonymous</c>, which is one word and greppable.
 /// </para>
 /// <para>

@@ -38,8 +38,6 @@ public sealed class WebhookForgeryTests
         """{"event":"attribution.created","id":"0192f4f0-1c1a-7c3d-9b2e-4d5a6f7b8c9d","occurred_at":"2026-09-03T10:00:00+00:00","data":{"install_id":"9f2c","match_type":"install_referrer","confidence":"1.00"}}""");
 
     [Fact]
-    [Trait("TestCase", "TC-165")]
-    [Trait("Threat", "T-13")]
     public void Verify_TheDeliveryAsSent_Succeeds()
     {
         // The control. Everything else in this class asserts a refusal, and a verifier that refuses
@@ -50,8 +48,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-165")]
-    [Trait("Threat", "T-13")]
     public void Verify_ABodyChangedByOneBitAnywhere_Fails()
     {
         // A property rather than three examples: the interesting forgeries are the small ones —
@@ -73,8 +69,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Theory]
-    [Trait("TestCase", "TC-165")]
-    [Trait("Threat", "T-13")]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(64)]
@@ -90,8 +84,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Theory]
-    [Trait("TestCase", "TC-165")]
-    [Trait("Threat", "T-13")]
     [InlineData(6)]
     [InlineData(60)]
     [InlineData(24 * 60)]
@@ -111,8 +103,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-165")]
-    [Trait("Threat", "T-13")]
     public void Verify_ADeliveryFromTheFutureBeyondTheTolerance_Fails()
     {
         // Both directions. A receiver whose clock is behind must not accept a timestamp far ahead of
@@ -123,8 +113,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-165")]
-    [Trait("Threat", "T-13")]
     public void Verify_JustInsideTheTolerance_StillSucceeds()
     {
         string header = WebhookSignature.Create(Body, Secret, signer: null, SignedAt);
@@ -138,8 +126,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-165")]
-    [Trait("Threat", "T-13")]
     public void Verify_ASignatureMadeWithAnotherKey_Fails()
     {
         string forged = WebhookSignature.Create(Body, WrongSecret, signer: null, SignedAt);
@@ -148,8 +134,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-165")]
-    [Trait("Threat", "T-13")]
     public void Verify_ATimestampRewrittenToStayFresh_Fails()
     {
         // The obvious attack on a naive scheme where `t` is a transport detail rather than signed
@@ -168,8 +152,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Theory]
-    [Trait("TestCase", "TC-165")]
-    [Trait("Threat", "T-13")]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("nonsense")]
@@ -186,7 +168,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-165")]
     public void Verify_AnEmptySignature_DoesNotMatchAnEmptyExpectation()
     {
         // The degenerate forgery: send v1 as an empty value and hope the comparison is on two empty
@@ -200,8 +181,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Fact]
-    [Trait("Threat", "T-17")]
-    [Trait("Criterion", "S-03")]
     public void Verify_UsesAConstantTimeComparison()
     {
         // S-03 asks that every signature be verified in constant time, and T-17 says why: an equality
@@ -231,7 +210,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void Create_TheSameDeliveryTwice_ProducesTheSameSignature()
     {
         // A retry has to reproduce the bytes exactly, or the receiver rejects the second attempt and
@@ -242,7 +220,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Fact]
-    [Trait("Threat", "T-13")]
     public void Create_TwoDifferentBodies_NeverShareASignature()
     {
         Gen.Byte.Array[1, 512].Sample(
@@ -257,7 +234,6 @@ public sealed class WebhookForgeryTests
     }
 
     [Fact]
-    [Trait("Threat", "T-13")]
     public void VerifySymmetric_AgreesWithAnIndependentImplementation()
     {
         // The signing input is published as t + "." + body, and a receiver in another language will

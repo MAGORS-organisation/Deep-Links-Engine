@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Coverage threshold gate for the Deep Link Engine CI (docs/zadanie.md §D.1).
+"""Coverage threshold gate for the Deep Link Engine CI.
 
 Reads a merged Cobertura report (dotnet-coverage output), computes line coverage per assembly and
 for the product as a whole, and enforces:

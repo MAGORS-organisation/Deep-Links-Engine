@@ -17,13 +17,13 @@ internal static class CryptoKeyDerivation
     /// <summary>Length of every derived key, in bytes.</summary>
     internal const int KeyLength = 32;
 
-    /// <summary>Label for the slug permutation key (ADR-007).</summary>
+    /// <summary>Label for the slug permutation key.</summary>
     internal const string SlugLabel = "dle:slug:feistel:v1";
 
-    /// <summary>Label for the click identifier permutation key (§B.6.3).</summary>
+    /// <summary>Label for the click identifier permutation key.</summary>
     internal const string ClickIdPermutationLabel = "dle:click-id:permutation:v1";
 
-    /// <summary>Label for the click identifier MAC key (T-05).</summary>
+    /// <summary>Label for the click identifier MAC key.</summary>
     internal const string ClickIdMacLabel = "dle:click-id:mac:v1";
 
     /// <summary>Label for the IP hash secret (K9).</summary>

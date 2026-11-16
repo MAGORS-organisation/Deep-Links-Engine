@@ -5,7 +5,7 @@ namespace Dle.IntegrationTests.Infrastructure;
 
 /// <summary>
 /// The wire format the public API speaks: snake_case, string enums, nulls omitted
-/// (SHARED-KERNEL §14).
+///.
 /// </summary>
 /// <remarks>
 /// Reflection based rather than source generated, and only ever used by the tests. The product's own

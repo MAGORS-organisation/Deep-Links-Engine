@@ -10,7 +10,7 @@ namespace Dle.UnitTests.Control;
 
 /// <summary>
 /// Hardening checks for <see cref="DleCredentialCache"/> and
-/// <see cref="CredentialCacheInvalidationSubscriber"/> (H-1): expiry capping, immediate
+/// <see cref="CredentialCacheInvalidationSubscriber"/>: expiry capping, immediate
 /// key/tenant/app revocation, generation fencing against verification races, and pub/sub parsing.
 /// </summary>
 public sealed class CredentialCacheTests

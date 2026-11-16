@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="AppDomainEntity"/> to the <c>app_domains</c> join table (§B.5.2).</summary>
+/// <summary>Maps <see cref="AppDomainEntity"/> to the <c>app_domains</c> join table.</summary>
 /// <remarks>
 /// The table carries no tenant column, exactly as the DDL specifies, and is therefore listed as
 /// tenant exempt in <see cref="DleDbContext"/>. Isolation is not lost: both foreign keys point at
@@ -33,7 +33,7 @@ public sealed class AppDomainConfiguration : IEntityTypeConfiguration<AppDomainE
             .OnDelete(DeleteBehavior.Cascade);
 
         // The association files are built per host, so the lookup direction that matters is
-        // "which applications does this domain serve" (FR-141, FR-142).
+        // "which applications does this domain serve".
         builder.HasIndex(ad => ad.DomainId).HasDatabaseName("ix_app_domains_domain");
     }
 }

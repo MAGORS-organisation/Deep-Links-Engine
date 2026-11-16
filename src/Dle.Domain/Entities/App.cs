@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// A mobile application registered for deep linking (FR-141, FR-142). Maps to <c>apps</c>.
+/// A mobile application registered for deep linking. Maps to <c>apps</c>.
 /// </summary>
 public class App
 {
@@ -35,13 +35,13 @@ public class App
     /// <summary>Store identifier, for example <c>id123456789</c> or the package name.</summary>
     public string? StoreId { get; set; }
 
-    /// <summary>Custom URI scheme, used only as a last resort fallback (§A.2.3).</summary>
+    /// <summary>Custom URI scheme, used only as a last resort fallback.</summary>
     public string? CustomScheme { get; set; }
 
     /// <summary>Lowest application version that understands the deep links of this tenant.</summary>
     public string? MinAppVersion { get; set; }
 
-    /// <summary>Bundle identifier of the App Clip, when one is published (FR-146).</summary>
+    /// <summary>Bundle identifier of the App Clip, when one is published.</summary>
     public string? AppClipBundleId { get; set; }
 
     /// <summary>Store URL used when the application is not installed.</summary>

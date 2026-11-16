@@ -8,7 +8,7 @@ using Npgsql;
 namespace Dle.Control.Features.Health;
 
 /// <summary>
-/// The readiness check: can this process reach its database (§D.6).
+/// The readiness check: can this process reach its database.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -77,7 +77,7 @@ public sealed record HealthDocument
 /// </summary>
 /// <remarks>
 /// A probe is called every few seconds for the life of the process, which makes it one of the few
-/// control-plane responses worth keeping off the reflection-based serializer (SHARED-KERNEL §17.3).
+/// control-plane responses worth keeping off the reflection-based serializer.
 /// </remarks>
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower,

@@ -17,12 +17,12 @@ import okhttp3.OkHttpClient
  * @property consent the consent state that applies until [DleClient.setConsent] is called and no
  * recorded decision exists. Default: [DleConsent.denied].
  * @property autoReportOpens whether the SDK observes activity lifecycle callbacks and reports
- * App Link opens on its own (FR-223). Default `true`. With `false`, call
+ * App Link opens on its own. Default `true`. With `false`, call
  * [DleClient.handleIntent] from `onCreate` and `onNewIntent` yourself.
  * @property probabilisticSignals opt in to sending coarse device signals (language, screen size,
  * UTC offset, device model) so the engine may attempt a probabilistic match. Off by default,
  * and additionally gated on [DleConsent.attribution] at call time. Never a fingerprint hash
- * (spec §0.2, §A.6, FR-227).
+ *.
  * @property requireAnalyticsConsentForEvents whether behavioural events are dropped without
  * [DleConsent.analytics]. Default `true`.
  * @property connectTimeoutMillis TCP connect timeout. Default 5000.
@@ -32,7 +32,7 @@ import okhttp3.OkHttpClient
  * again by the next resolve that goes to the server; a final `none` answer is not re-requested
  * for it. Zero skips the read.
  * @property flushDelayMillis debounce before an automatic event flush. Default 3000; keeps the SDK
- * inside the documented `/v1/events` budget of sixty events a minute (spec §E.9).
+ * inside the documented `/v1/events` budget of sixty events a minute.
  * @property maxQueueSize maximum number of buffered events before the oldest are dropped.
  * Default 500.
  * @property logLevel verbosity. Default [DleLogLevel.WARN].

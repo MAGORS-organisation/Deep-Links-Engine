@@ -11,7 +11,7 @@ namespace Dle.Control.Features.Attribution;
 /// what produced an attribution and is a persisted, public value; a strategy says what the engine
 /// is about to attempt. <see cref="Dle.Domain.Attribution.MatchType.DirectOpen"/> has no strategy
 /// here because it is not deferred at all: it arrives as a <c>link_open</c> event on
-/// <c>POST /v1/events</c> (§B.6.4, FR-223).
+/// <c>POST /v1/events</c>.
 /// </remarks>
 public enum AttributionStrategy
 {

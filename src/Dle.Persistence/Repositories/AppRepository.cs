@@ -4,7 +4,7 @@ using Dle.Domain.WellKnown;
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Reads and writes registered applications and their pairing with domains (FR-141, FR-142).
+/// Reads and writes registered applications and their pairing with domains.
 /// </summary>
 public sealed class AppRepository
 {
@@ -190,7 +190,7 @@ public sealed class AppRepository
     }
 
     /// <summary>
-    /// Builds the Apple App Site Association entries for a host (FR-141).
+    /// Builds the Apple App Site Association entries for a host.
     /// </summary>
     /// <param name="host">The host.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -198,7 +198,7 @@ public sealed class AppRepository
     /// <remarks>
     /// An application with no team identifier is skipped rather than rendered with a placeholder:
     /// an association file listing a malformed application identifier is worse than one that omits
-    /// it, because iOS rejects the whole file rather than the bad entry (TC-122).
+    /// it, because iOS rejects the whole file rather than the bad entry.
     /// </remarks>
     public async Task<IReadOnlyList<AasaAppEntry>> GetAasaEntriesAsync(
         string host,
@@ -228,7 +228,7 @@ public sealed class AppRepository
     }
 
     /// <summary>
-    /// Builds the Digital Asset Links entries for a host (FR-142).
+    /// Builds the Digital Asset Links entries for a host.
     /// </summary>
     /// <param name="host">The host.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -237,7 +237,7 @@ public sealed class AppRepository
     /// Both fingerprint lists are published. The Play App Signing fingerprint is the one that
     /// matters for an application distributed through the Play Store, but a build installed from a
     /// developer machine is signed with the upload certificate, and dropping either list breaks one
-    /// of the two (FR-144).
+    /// of the two.
     /// </remarks>
     public async Task<IReadOnlyList<AndroidAppEntry>> GetAssetLinkEntriesAsync(
         string host,

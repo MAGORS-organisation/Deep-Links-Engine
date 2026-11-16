@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// A reserved block of slug sequence values. Maps to <c>slug_sequences</c> (ADR-007).
+/// A reserved block of slug sequence values. Maps to <c>slug_sequences</c>.
 /// </summary>
 /// <remarks>
 /// <para>

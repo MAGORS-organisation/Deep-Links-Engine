@@ -3,14 +3,14 @@ using Dle.Domain.Analytics;
 namespace Dle.Domain.Ports;
 
 /// <summary>
-/// Reporting side of the analytics storage (ADR-006): PostgreSQL partitions by default,
+/// Reporting side of the analytics storage: PostgreSQL partitions by default,
 /// ClickHouse as an opt-in. Everything the reporting API needs is expressed here so that the
 /// choice of engine stays an operator decision rather than an application rewrite.
 /// </summary>
 /// <remarks>
 /// Every method is tenant scoped through <see cref="AnalyticsQuery.TenantId"/> and honours
 /// <see cref="AnalyticsQuery.IncludeBots"/>, which defaults to excluding crawler traffic so that
-/// a preview fetch never inflates a campaign (FR-205, TC-106).
+/// a preview fetch never inflates a campaign.
 /// </remarks>
 public interface IClickAnalyticsStore
 {

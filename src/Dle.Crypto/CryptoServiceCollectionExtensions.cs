@@ -8,13 +8,13 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// The single composition entry point of the cryptography module (SHARED-KERNEL §15).
+/// The single composition entry point of the cryptography module.
 /// </summary>
 /// <remarks>
 /// The namespace is <c>Microsoft.Extensions.DependencyInjection</c> rather than <c>Dle.Crypto</c>,
 /// matching every other module in the solution, so that the composition roots of
 /// <c>Dle.Edge</c> and <c>Dle.Control</c> can call <see cref="AddDleCrypto"/> without a
-/// module-specific <c>using</c> and stay purely declarative (SHARED-KERNEL §15).
+/// module-specific <c>using</c> and stay purely declarative.
 /// </remarks>
 public static class CryptoServiceCollectionExtensions
 {
@@ -55,7 +55,7 @@ public static class CryptoServiceCollectionExtensions
 
         services.TryAddSingleton(TimeProvider.System);
 
-        // --- Key ring and signing (§E.4.2, ADR-013) ------------------------------------------
+        // --- Key ring and signing ------------------------------------------
         services.TryAddSingleton<ISigningKeyStore, ConfigurationSigningKeyStore>();
         services.TryAddSingleton<IKeyRing, KeyRing>();
 
@@ -64,7 +64,7 @@ public static class CryptoServiceCollectionExtensions
         services.TryAddTransient(static sp => sp.GetRequiredService<IKeyRing>().CurrentSigner);
         services.TryAddTransient(static sp => sp.GetRequiredService<IKeyRing>().Verifier);
 
-        // --- Tokens (§E.4.2) ------------------------------------------------------------------
+        // --- Tokens ------------------------------------------------------------------
         services.TryAddSingleton<ITokenReplayGuard>(static sp => new InMemoryTokenReplayGuard(
             sp.GetRequiredService<IOptions<CryptoOptions>>().Value.ReplayGuardCapacity,
             sp.GetRequiredService<TimeProvider>(),
@@ -72,7 +72,7 @@ public static class CryptoServiceCollectionExtensions
 
         services.TryAddSingleton<SignedTokenCodec>();
 
-        // --- Slugs (ADR-007) ------------------------------------------------------------------
+        // --- Slugs ------------------------------------------------------------------
         services.TryAddSingleton<IFeistelPermutation>(static sp =>
         {
             CryptoOptions options = sp.GetRequiredService<IOptions<CryptoOptions>>().Value;
@@ -85,7 +85,7 @@ public static class CryptoServiceCollectionExtensions
 
         services.TryAddSingleton<ISlugGenerator, SlugGenerator>();
 
-        // --- Click identifiers (§B.6.3) -------------------------------------------------------
+        // --- Click identifiers -------------------------------------------------------
         services.TryAddSingleton<IClickIdCodec>(static sp =>
         {
             CryptoOptions options = sp.GetRequiredService<IOptions<CryptoOptions>>().Value;

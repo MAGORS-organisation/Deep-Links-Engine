@@ -17,7 +17,7 @@ namespace Dle.Control.Features.Webhooks;
 /// kernel's general rule: the bytes this produces are the bytes that get signed and sent, and a
 /// retry has to reproduce them exactly. Deterministic, generated writing is what makes that
 /// dependable — and it keeps the assembly trimmable, which a control plane inherits from the same
-/// discipline the edge is held to (SHARED-KERNEL §0, TC-165).
+/// discipline the edge is held to.
 /// </para>
 /// <para>
 /// The management contracts are listed here too, so the CRUD endpoints write through the same

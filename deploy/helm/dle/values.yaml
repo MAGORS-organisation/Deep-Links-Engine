@@ -16,7 +16,7 @@
 #   secrets.masterSecret               Dle:Crypto:MasterSecret, at least 32 characters
 #   externalPostgres.connectionString  or postgresql.enabled=true with postgresql.auth.password
 #
-# !!! /.well-known RESPONSES MUST NEVER BE REDIRECTED (§A.2.1) — see the `ingress` section. !!!
+# !!! /.well-known RESPONSES MUST NEVER BE REDIRECTED — see the `ingress` section. !!!
 # =============================================================================
 
 
@@ -113,7 +113,7 @@ secrets:
 # Npgsql connection strings, exactly as docker-compose.yml builds them:
 #   Host=<primary>;Port=5432;Database=dle;Username=dle;Password=<pw>;SSL Mode=Require
 # PostgreSQL 16 is the minimum, 18 is recommended; extensions citext and — for the daily
-# click_events and sdk_events partitions with 180-day retention (§B.5.2) — pg_partman. Without
+# click_events and sdk_events partitions with 180-day retention — pg_partman. Without
 # pg_partman the InitialSchema migration installs plain-SQL fallbacks, dle_click_events_maintain()
 # and dle_sdk_events_maintain(), that have to be called daily (pg_cron or a CronJob). deploy/docker/Dockerfile.postgres shows the package.
 # Ignored when secrets.existingSecret is set (the Secret carries the strings) or when
@@ -219,7 +219,7 @@ config:
   telemetry:
     # OTLP endpoint for traces/metrics, e.g. http://otel-collector.observability:4317. Empty
     # disables the exporter. The edge's network policy allows egress ONLY to DNS, PostgreSQL and
-    # Valkey (NFR-14): a collector needs a matching entry in networkPolicy.edge.extraEgress and
+    # Valkey: a collector needs a matching entry in networkPolicy.edge.extraEgress and
     # must live on your own network — never a third-party endpoint on the resolve path.
     otlpEndpoint: ""
   # Free-form environment for BOTH services, e.g.
@@ -334,13 +334,13 @@ edge:
     geoIp:
       # Dle:Edge:GeoIp:Path — the MaxMind mmdb inside the container, e.g. /geoip/GeoLite2-Country.mmdb.
       # Empty = no GeoIP: country stays null, geo rules fall through to the default rule.
-      # The edge never downloads it (NFR-14): mount it from a PVC you fill yourself
+      # The edge never downloads it: mount it from a PVC you fill yourself
       # (existingClaim) or through edge.extraVolumes / extraVolumeMounts.
       path: ""
       existingClaim: ""
       mountPath: /geoip
     botDetection:
-      # Reverse-DNS verification of self-declared crawlers (FR-161). Needs cluster DNS egress,
+      # Reverse-DNS verification of self-declared crawlers. Needs cluster DNS egress,
       # which the network policy grants; it is ON in production.
       reverseDnsVerify: true
     interstitial:
@@ -518,7 +518,7 @@ migrate:
 #   /api /v1 /admin /scalar /openapi             → control
 #   everything else, i.e. /{slug}, /{slug}/qr    → edge
 #
-# !!! /.well-known MUST NEVER BE REDIRECTED (§A.2.1, TC-124) !!!
+# !!! /.well-known MUST NEVER BE REDIRECTED !!!
 # Apple's CDN and Google's verifier refuse an apple-app-site-association / assetlinks.json that
 # answers with ANY 3xx: HTTP→HTTPS, trailing slash, www canonicalisation, all of them. The chart
 # therefore renders TWO Ingress objects for the same host: `<release>-well-known`, which carries

@@ -17,7 +17,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
 /// The single composition entry point of the control-plane observability module
-/// (SHARED-KERNEL §15, §C.6, NFR-12).
+///.
 /// </summary>
 public static class ControlTelemetryServiceCollectionExtensions
 {

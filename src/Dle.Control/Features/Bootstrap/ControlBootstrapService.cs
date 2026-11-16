@@ -16,7 +16,7 @@ namespace Dle.Control.Features.Bootstrap;
 
 /// <summary>
 /// Gives an empty installation its first tenant and its first owner key, and tells the identity module
-/// which tenant operates the instance (FR-241, FR-242).
+/// which tenant operates the instance.
 /// </summary>
 /// <remarks>
 /// <para>

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Hands out slug counter values from a block claimed in advance (ADR-007).
+/// Hands out slug counter values from a block claimed in advance.
 /// </summary>
 /// <remarks>
 /// <para>

@@ -307,7 +307,7 @@ function currentView(): SignalsView {
  *
  * The two members that carry the meaning of an attribution — `match_type` and `confidence`
  * — are mandatory. A body without them is refused rather than guessed at, because a guess
- * is exactly how a probabilistic hint ends up displayed as a certainty (FR-186, ADR-008).
+ * is exactly how a probabilistic hint ends up displayed as a certainty.
  */
 export function parseResolveResponse(value: unknown): ResolveResult {
   if (!isRecord(value)) throw new DleError('malformed', 'resolve response is not a JSON object');
@@ -350,7 +350,7 @@ export function isDeterministic(result: Pick<ResolveResult, 'matched' | 'matchTy
 }
 
 // ---------------------------------------------------------------------------------------
-// Trace context (NFR-12): one W3C `traceparent` per request so the SDK span and the server
+// Trace context: one W3C `traceparent` per request so the SDK span and the server
 // span it caused belong to one trace. Random ids, never derived from anything.
 // ---------------------------------------------------------------------------------------
 

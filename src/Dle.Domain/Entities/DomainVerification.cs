@@ -1,13 +1,13 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// One recorded run of a domain verification check. Maps to <c>domain_verifications</c> (FR-143).
+/// One recorded run of a domain verification check. Maps to <c>domain_verifications</c>.
 /// </summary>
 /// <remarks>
 /// Kept as history rather than a single mutable status column, because association file problems
 /// are usually intermittent and the useful question is "since when", not "right now". The nightly
 /// verifier appends a row per domain per check kind, which is also what feeds the
-/// <c>dle_domain_verification_failures</c> alert (§C.6, §C.8).
+/// <c>dle_domain_verification_failures</c> alert.
 /// </remarks>
 public class DomainVerification
 {
@@ -29,7 +29,7 @@ public class DomainVerification
     /// <summary>
     /// Number of redirects followed. Any value above zero fails the check: both Apple and Google
     /// refuse a redirected association file, and this is one of the most common silent breakages
-    /// (§A.2.1, §A.2.2, TC-124).
+    ///.
     /// </summary>
     public int RedirectCount { get; set; }
 

@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 namespace Dle.Control.Features.Abuse;
 
 /// <summary>
-/// <c>POST</c> and <c>DELETE /api/v1/abuse/links/{linkId}/quarantine</c> — enforcement (TC-103).
+/// <c>POST</c> and <c>DELETE /api/v1/abuse/links/{linkId}/quarantine</c> — enforcement.
 /// </summary>
 /// <remarks>
 /// An instance operator action, not a tenant one: the party whose link is being withdrawn is not

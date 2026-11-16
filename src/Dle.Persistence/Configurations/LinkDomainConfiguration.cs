@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="LinkDomain"/> to the <c>domains</c> table (§B.5.2).</summary>
+/// <summary>Maps <see cref="LinkDomain"/> to the <c>domains</c> table.</summary>
 public sealed class LinkDomainConfiguration : IEntityTypeConfiguration<LinkDomain>
 {
     /// <inheritdoc />
@@ -55,7 +55,7 @@ public sealed class LinkDomainConfiguration : IEntityTypeConfiguration<LinkDomai
             .HasDefaultValueSql(PostgresConventions.EmptyJsonArrayDefault)
             .IsRequired();
 
-        // Nullable: absent means "inherit the tenant mode". It can only ever narrow it (§E.6.2).
+        // Nullable: absent means "inherit the tenant mode". It can only ever narrow it.
         builder.Property(d => d.ConsentModeOverride)
             .HasColumnName("consent_mode_override");
 

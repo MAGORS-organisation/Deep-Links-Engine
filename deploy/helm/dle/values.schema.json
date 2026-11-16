@@ -412,7 +412,7 @@
         "annotations": { "$ref": "#/definitions/labelMap" },
         "mainAnnotations": { "$ref": "#/definitions/labelMap" },
         "wellKnownAnnotations": {
-          "description": "Must never contain a redirect or rewrite annotation (§A.2.1).",
+          "description": "Must never contain a redirect or rewrite annotation.",
           "allOf": [
             { "$ref": "#/definitions/labelMap" },
             { "propertyNames": { "not": { "pattern": "redirect|rewrite-target|app-root" } } }

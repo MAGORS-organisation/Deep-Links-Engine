@@ -3,8 +3,8 @@ using Dle.Edge.Resolution;
 
 using Microsoft.Extensions.Options;
 
-// The data plane (§C.1, §C.3.1). CreateSlimBuilder rather than CreateBuilder: the edge serves one
-// route that has to answer inside an 8 ms budget (NFR-01), and the slim host leaves out the default
+// The data plane. CreateSlimBuilder rather than CreateBuilder: the edge serves one
+// route that has to answer inside an 8 ms budget, and the slim host leaves out the default
 // middleware, configuration providers and logging sinks that route would otherwise pay for on every
 // request without ever using them.
 WebApplicationBuilder builder = WebApplication.CreateSlimBuilder(args);
@@ -32,7 +32,7 @@ if (app.Services.GetRequiredService<IOptions<NetworkOptions>>().Value.UseForward
 }
 
 // Second, so that every response below it — including one written by a component that never returns
-// here — carries the hardening headers (S-04, T-11).
+// here — carries the hardening headers.
 app.UseMiddleware<SecurityHeadersMiddleware>();
 
 // The interstitial's versioned stylesheet and icon, plus robots.txt. Served from the same origin
@@ -47,7 +47,7 @@ app.UseStaticFiles();
 
 // Explicitly, so that it lands here rather than at the head of the pipeline where WebApplication would
 // otherwise insert it. The rate limiter has to run after it to see the endpoint metadata that lets the
-// health probes opt out (§E.9).
+// health probes opt out.
 app.UseRouting();
 
 app.UseRateLimiter();

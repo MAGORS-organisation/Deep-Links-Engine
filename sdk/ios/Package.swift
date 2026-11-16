@@ -4,7 +4,7 @@
 // Self-hosted, EU-first deep linking and attribution. MIT licensed.
 //
 // Deliberately dependency-free: every transitive dependency of an SDK becomes a
-// dependency of every customer application (spec §C.5). Networking is URLSession only.
+// dependency of every customer application. Networking is URLSession only.
 
 import PackageDescription
 

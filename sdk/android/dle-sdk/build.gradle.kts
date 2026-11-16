@@ -1,6 +1,6 @@
 // Deep Link Engine — Android SDK module.
 //
-// Thin by design (spec §C.5): the only runtime dependencies are the platform HTTP client
+// Thin by design: the only runtime dependencies are the platform HTTP client
 // (OkHttp), coroutines, kotlinx.serialization and Google's Install Referrer library. Every
 // dependency of an SDK becomes a dependency of every customer application, so nothing else is
 // added. androidx.security:security-crypto is compileOnly: the SDK uses it when the host

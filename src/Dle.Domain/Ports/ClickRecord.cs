@@ -1,7 +1,7 @@
 namespace Dle.Domain.Ports;
 
 /// <summary>
-/// The subset of a click that attribution needs to read back later (§B.6.2, §B.6.3).
+/// The subset of a click that attribution needs to read back later.
 /// </summary>
 /// <remarks>
 /// This is deliberately not the stored click event: it carries no IP hash and no user agent

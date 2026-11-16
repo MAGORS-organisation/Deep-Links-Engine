@@ -13,7 +13,7 @@ namespace Dle.SecurityTests.Hardening;
 
 /// <summary>
 /// Control-plane hardening regressions: OpenAPI/Scalar gating and baseline security headers in
-/// Production (M-7), plus fallback console CSP hygiene (L-6).
+/// Production, plus fallback console CSP hygiene.
 /// </summary>
 public sealed class ControlHardeningTests
 {

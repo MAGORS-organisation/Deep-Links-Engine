@@ -11,7 +11,7 @@ import AppKit
 /// Four values, each shared by millions of devices: the UI language, the physical screen size,
 /// the UTC offset and the hardware model string. Nothing is hashed, nothing is combined, and the
 /// caller invokes this only when the operator opted in to probabilistic matching AND the user
-/// granted attribution consent (spec §0.2, §E.6.2, TC-146). The identifier-bearing APIs —
+/// granted attribution consent. The identifier-bearing APIs —
 /// `ASIdentifierManager`, `identifierForVendor`, `UIPasteboard` — are not referenced anywhere in
 /// this package, and none of the calls below is a required-reason API.
 enum DeviceSignalsCollector {

@@ -3,7 +3,7 @@ using Dle.Edge.Resolution;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// Maps the resolve endpoint — the one route the whole edge exists for (SHARED-KERNEL §15, §B.6.1).
+/// Maps the resolve endpoint — the one route the whole edge exists for.
 /// </summary>
 /// <remarks>
 /// The namespace is <c>Microsoft.AspNetCore.Builder</c>, matching every other module, so that the
@@ -17,7 +17,7 @@ public static class ResolveEndpointExtensions
     /// <see cref="SlugPolicy"/> inside the handler rather than by a route constraint, because a request
     /// that fails validation still has to be answered by the same code path with the same body and the
     /// same work — a route constraint would answer it earlier, more cheaply and therefore
-    /// distinguishably (T-07, TC-102).
+    /// distinguishably.
     /// </remarks>
     public const string RoutePattern = "/{slug:minlength(1):maxlength(64)}";
 
@@ -46,8 +46,8 @@ public static class ResolveEndpointExtensions
             .WithDescription(
                 "Classifies the client, evaluates the link's routing rules and answers with a 302 to the store or " +
                 "the web target, a 200 interstitial for an in-app webview, a 200 Open Graph document for a " +
-                "confirmed crawler, 410 for a withdrawn link, or 404. Never 301 (ADR-009). " +
-                "Adding ?_dl=preview evaluates everything and records no click event (FR-166).")
+                "confirmed crawler, 410 for a withdrawn link, or 404. Never 301. " +
+                "Adding ?_dl=preview evaluates everything and records no click event.")
             .Produces(StatusCodes.Status302Found)
             .Produces(StatusCodes.Status200OK, contentType: "text/html")
             .Produces(StatusCodes.Status404NotFound, contentType: "text/html")

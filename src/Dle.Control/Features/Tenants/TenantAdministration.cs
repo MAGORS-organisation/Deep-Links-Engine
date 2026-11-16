@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Dle.Control.Features.Tenants;
 
 /// <summary>
-/// Reads and writes tenants other than the one in scope (FR-241).
+/// Reads and writes tenants other than the one in scope.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,7 +18,7 @@ namespace Dle.Control.Features.Tenants;
 /// recognised as the instance operator, either because their tenant is named in
 /// <c>Dle:Control:InstanceTenantId</c> or because <c>Dle:Control:AllowTenantSelfService</c> is on.
 /// With neither set the policy denies every caller, which is the right posture for a deployment that
-/// has not decided (SHARED-KERNEL §17.9).
+/// has not decided.
 /// </para>
 /// </remarks>
 public sealed class TenantAdministration
@@ -65,7 +65,7 @@ public sealed class TenantAdministration
     /// <returns>The updated tenant, or <see langword="null"/> when there is no such tenant.</returns>
     /// <remarks>
     /// The slug is deliberately absent. It appears in operator-facing URLs and in the audit trail,
-    /// and a trail whose subject can be renamed underneath it stops being evidence (FR-246).
+    /// and a trail whose subject can be renamed underneath it stops being evidence.
     /// </remarks>
     public async Task<Tenant?> UpdateAsync(
         Guid id,

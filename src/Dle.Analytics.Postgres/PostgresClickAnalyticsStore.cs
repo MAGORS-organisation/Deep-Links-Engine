@@ -8,7 +8,7 @@ using Npgsql;
 namespace Dle.Analytics.Postgres;
 
 /// <summary>
-/// Default <see cref="IClickAnalyticsStore"/> (ADR-006): Dapper over the partitioned
+/// Default <see cref="IClickAnalyticsStore"/>: Dapper over the partitioned
 /// <c>click_events</c> table and the rollup tables this module ships.
 /// </summary>
 /// <remarks>
@@ -19,7 +19,7 @@ namespace Dle.Analytics.Postgres;
 /// Every query is scoped by <see cref="AnalyticsQuery.TenantId"/> — there is no code path that
 /// reads another tenant's rows. And crawler traffic is excluded unless
 /// <see cref="AnalyticsQuery.IncludeBots"/> is set, so a link-preview fetch never inflates a
-/// campaign (FR-205, TC-106).
+/// campaign.
 /// </para>
 /// <para>
 /// Rollups are used, not assumed. A rollup answers a query only when the requested bounds fall

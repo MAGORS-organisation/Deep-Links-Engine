@@ -22,7 +22,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// The SDK facing endpoints (SHARED-KERNEL §15, §B.7.2). Component C-06 of §B.3.
+/// The SDK facing endpoints. Component C-06 of §B.3.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -78,7 +78,7 @@ public static class AttributionEndpointExtensions
             .WithDescription(
                 "Called once on the first launch after an install. Answers with the strategy that "
                 + "produced the match and how much to trust it; an unmatched install is a 200 with "
-                + "matched=false, not an error. Limited to five calls an hour per install_id (§E.9).")
+                + "matched=false, not an error. Limited to five calls an hour per install_id.")
             .Accepts<ResolveRequestDto>("application/json")
             .Produces<ResolveResponseDto>(StatusCodes.Status200OK, "application/json")
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -113,7 +113,7 @@ public static class AttributionEndpointExtensions
                 + "direct open through a verified Universal or App Link measurable at all: the "
                 + "operating system opens the application without any request reaching the engine, "
                 + "so without this report the most successful campaigns are the most under-counted "
-                + "(§B.6.4, FR-223). A link_open whose URL resolves to one of the caller's links "
+                + ". A link_open whose URL resolves to one of the caller's links "
                 + "creates a direct_open attribution with confidence 1.00.")
             .Accepts<EventBatchDto>("application/json")
             .Produces<EventBatchAcceptedDto>(StatusCodes.Status202Accepted, "application/json")
@@ -129,7 +129,7 @@ public static class AttributionEndpointExtensions
             .WithDescription(
                 "The deterministic iOS path of ADR-008. The edge has just written a click event "
                 + "and exchanges its identifier for a short lived, single use code the user can "
-                + "read off the screen and type into the application (FR-184, §B.6.3). Only the "
+                + "read off the screen and type into the application. Only the "
                 + "keyed hash of the code is stored; the plaintext exists in this response and "
                 + "nowhere else.")
             .Accepts<IssueClaimCodeRequest>("application/json")
@@ -146,7 +146,7 @@ public static class AttributionEndpointExtensions
             .WithDescription(
                 "Binds a keyed account identifier from a signed-in web visit to a click identifier "
                 + "or short link URL when attribution consent is active, allowing S2 login attribution "
-                + "to resolve in O(1) without scanning click partitions (FR-185).")
+                + "to resolve in O(1) without scanning click partitions.")
             .Accepts<LoginHintRequestDto>("application/json")
             .Produces<LoginHintResponseDto>(StatusCodes.Status202Accepted, "application/json")
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -214,7 +214,7 @@ public static class AttributionEndpointExtensions
                 AttributionRateLimiters.RetryAfter(lease),
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"An installation may resolve {configured.ResolvePermitLimit} times per {configured.ResolveWindowMinutes} minutes (§E.9); a correct SDK calls this endpoint once in the lifetime of an installation."));
+                    $"An installation may resolve {configured.ResolvePermitLimit} times per {configured.ResolveWindowMinutes} minutes; a correct SDK calls this endpoint once in the lifetime of an installation."));
         }
 
         // The limit above is keyed on install_id, which the caller chooses: it bounds a correct SDK,
@@ -321,7 +321,7 @@ public static class AttributionEndpointExtensions
         {
             // A batch larger than the bucket can ever hold could never be leased, so it is refused
             // here with an answer the SDK can act on rather than being handed to a limiter that
-            // would throw (SHARED-KERNEL §17.9).
+            // would throw.
             metrics.Rejected("rate_limited");
 
             return AttributionProblem.RateLimited(
@@ -509,7 +509,7 @@ public static class AttributionEndpointExtensions
         catch (JsonException)
         {
             // The parser's message quotes the offending input, which is attacker controlled text;
-            // it is deliberately not echoed back or logged (SHARED-KERNEL §17.5).
+            // it is deliberately not echoed back or logged.
             return new BodyResult<T>(default, AttributionProblem.Validation("The request body is not valid JSON."));
         }
         catch (BadHttpRequestException)
@@ -544,7 +544,7 @@ public static class AttributionEndpointExtensions
         return true;
     }
 
-    /// <summary>Turns a claim code failure into the problem document an SDK can branch on (TC-148).</summary>
+    /// <summary>Turns a claim code failure into the problem document an SDK can branch on.</summary>
     /// <param name="status">Why the code could not be redeemed.</param>
     /// <returns>The problem document.</returns>
     /// <remarks>

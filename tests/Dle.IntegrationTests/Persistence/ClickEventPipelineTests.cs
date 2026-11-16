@@ -10,7 +10,7 @@ namespace Dle.IntegrationTests.Persistence;
 
 /// <summary>
 /// The click stream write path: a bounded channel that drops rather than blocks, and a binary
-/// <c>COPY</c> that puts the batch in the partitioned table (§C.3.2, FR-165, NFR-06).
+/// <c>COPY</c> that puts the batch in the partitioned table.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -29,7 +29,6 @@ public sealed class ClickEventPipelineTests(DleInfrastructureFixture infrastruct
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("Spec", "C.3.2")]
     public async Task CopyWriter_WritesABatch_AndEveryColumnArrivesWithItsDeclaredType()
     {
         Guid tenantId = await TestSeed.TenantAsync(Database, "copy", "full", Ct);
@@ -123,7 +122,6 @@ public sealed class ClickEventPipelineTests(DleInfrastructureFixture infrastruct
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "NFR-06")]
     public void Sink_WhenTheChannelIsFull_DropsTheEventAndCountsIt()
     {
         // No database and no clock: the whole point of the bounded channel is that the decision to
@@ -157,7 +155,6 @@ public sealed class ClickEventPipelineTests(DleInfrastructureFixture infrastruct
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "NFR-06")]
     public void Sink_WhenItDrops_PublishesTheAlertableCounter()
     {
         // §C.6 puts an alert on dle_click_events_dropped_total. Dropping is a deliberate trade under
@@ -196,7 +193,6 @@ public sealed class ClickEventPipelineTests(DleInfrastructureFixture infrastruct
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "C.3.2")]
     public async Task Sink_AndCopyWriter_Together_PersistExactlyWhatTheChannelAccepted()
     {
         Guid tenantId = await TestSeed.TenantAsync(Database, "flood", "full", Ct);

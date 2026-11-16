@@ -10,7 +10,7 @@ export const CONSENT_KEY = 'consent';
 /** Consent-first default: nothing is permitted until the host site says so. */
 export const DENIED: DleConsent = { analytics: false, attribution: false };
 
-/** Wire shape of `ConsentDto` (SHARED-KERNEL §14). */
+/** Wire shape of `ConsentDto`. */
 export interface ConsentWire {
   readonly analytics: boolean;
   readonly attribution: boolean;
@@ -31,7 +31,7 @@ export interface ConsentManager {
   /**
    * `true` only when the operator opted in to probabilistic matching **and** the user
    * granted attribution consent. Both must hold — probabilistic matching is opt-in, off by
-   * default and consent-gated (spec §0.2, §A.6, §E.6.2).
+   * default and consent-gated.
    */
   canSendDeviceSignals(probabilisticOptIn: boolean): boolean;
   /** Serialise for `ResolveRequestDto.consent`, or `undefined` when nothing was recorded. */

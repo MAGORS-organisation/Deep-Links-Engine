@@ -5,7 +5,7 @@ import { defineConfig } from 'tsup';
  *  - `dist/index.js`  + `dist/index.cjs`  for bundlers (ESM + CJS, tree-shakeable, unminified)
  *  - `dist/dle.global.js`                 for a plain `<script>` tag (IIFE, minified, `window.Dle`)
  *
- * Nothing is fetched from a CDN at build or run time (NFR-14); the package has zero runtime
+ * Nothing is fetched from a CDN at build or run time; the package has zero runtime
  * dependencies, so the bundle is exactly the code in `src/`.
  */
 export default defineConfig([

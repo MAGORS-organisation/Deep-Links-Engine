@@ -91,7 +91,7 @@ public sealed class ClaimCodeGenerator
     /// <param name="presentedCode">The code as typed. Untrusted.</param>
     /// <param name="storedHash">The <c>claim_codes.code_hash</c> value.</param>
     /// <returns><see langword="true"/> only when the code matches. The comparison is constant
-    /// time (T-17, S-03).</returns>
+    /// time.</returns>
     public bool Verify(string? presentedCode, ReadOnlySpan<byte> storedHash)
     {
         if (string.IsNullOrEmpty(presentedCode) || storedHash.IsEmpty)

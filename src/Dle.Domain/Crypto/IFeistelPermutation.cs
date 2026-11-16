@@ -1,13 +1,13 @@
 namespace Dle.Domain.Crypto;
 
 /// <summary>
-/// A keyed Feistel permutation: a bijection over a fixed width integer space (ADR-007).
+/// A keyed Feistel permutation: a bijection over a fixed width integer space.
 /// </summary>
 /// <remarks>
 /// This is what turns a dense database sequence into a slug that does not leak the order or the
 /// volume of link creation, while staying collision free by construction rather than by retrying
 /// on a unique index. It is a permutation, not encryption in the confidentiality sense; slug
-/// unguessability is a second layer, behind access control and rate limiting (ADR-007).
+/// unguessability is a second layer, behind access control and rate limiting.
 /// </remarks>
 public interface IFeistelPermutation
 {

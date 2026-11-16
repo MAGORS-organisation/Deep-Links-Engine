@@ -4,11 +4,11 @@ using Dle.Domain.Privacy;
 namespace Dle.Domain.Attribution;
 
 /// <summary>
-/// Transport neutral form of a <c>POST /v1/resolve</c> call (§B.7.2): an installation asking the
+/// Transport neutral form of a <c>POST /v1/resolve</c> call: an installation asking the
 /// engine which click, if any, brought it here.
 /// </summary>
 /// <remarks>
-/// The strategies are tried in the order configured for the tenant, strongest first (ADR-008):
+/// The strategies are tried in the order configured for the tenant, strongest first:
 /// <see cref="Referrer"/> on Android, <see cref="LoginKey"/> and <see cref="ClaimCode"/> on both
 /// platforms, and only then <see cref="Signals"/>. The probabilistic strategy is disabled by
 /// default and requires a recorded consent, so <see cref="Consent"/> is an input to the decision
@@ -17,7 +17,7 @@ namespace Dle.Domain.Attribution;
 public sealed record ResolveRequest
 {
     /// <summary>SDK generated identifier, stable for the lifetime of one installation. The
-    /// deduplication key that makes a repeated resolve idempotent (TC-143, FR-188).</summary>
+    /// deduplication key that makes a repeated resolve idempotent.</summary>
     public required string InstallId { get; init; }
 
     /// <summary>Platform the SDK runs on.</summary>

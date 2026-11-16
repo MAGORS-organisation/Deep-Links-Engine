@@ -3,7 +3,7 @@ using Dle.Domain.Routing;
 namespace Dle.ContractTests.Routing;
 
 /// <summary>
-/// The published schema of <c>links.routing_rules</c> (§B.5.4), and its agreement with the validator
+/// The published schema of <c>links.routing_rules</c>, and its agreement with the validator
 /// the control plane actually enforces at write time.
 /// </summary>
 /// <remarks>
@@ -71,7 +71,6 @@ public sealed class RoutingRulesSchemaTests
         JsonSchemaValidator.Parse(RepositoryLayout.ReadContract(SchemaFileName));
 
     [Fact]
-    [Trait("TestCase", "TC-105")]
     public void Schema_AcceptsTheExampleFromSectionB54()
     {
         IReadOnlyList<SchemaViolation> violations = Schema.ValidateJson(SpecificationExample);
@@ -83,7 +82,6 @@ public sealed class RoutingRulesSchemaTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-105")]
     public void Schema_RejectsARuleSetWithNoDefaultRule()
     {
         // Every rule carries a "when", so a client matching none of them would fall off the end.
@@ -101,7 +99,6 @@ public sealed class RoutingRulesSchemaTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-105")]
     public void Schema_RejectsMoreThanOneDefaultRule()
     {
         // Two rules without "when" means the second can never be reached, which is a rule set whose
@@ -120,7 +117,6 @@ public sealed class RoutingRulesSchemaTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-105")]
     public void Validator_AndSchema_AgreeThatADefaultRuleIsMandatory()
     {
         // The schema is what a client generates against; the validator is what the server enforces.
@@ -217,7 +213,6 @@ public sealed class RoutingRulesSchemaTests
     }
 
     [Fact]
-    [Trait("Threat", "T-12")]
     public void Schema_IsADocumentWithoutPolymorphism()
     {
         // T-12: the deserialization surface must be a closed set of named members. A schema keyword

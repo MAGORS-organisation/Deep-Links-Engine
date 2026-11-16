@@ -2,7 +2,7 @@ namespace Dle.Domain.Primitives;
 
 /// <summary>
 /// Base62 encoding and decoding of unsigned 64 bit values, used for the 47 bit slug space
-/// (ADR-007) and for click identifiers.
+/// and for click identifiers.
 /// </summary>
 /// <remarks>
 /// The encoding is big endian: the most significant digit comes first, so the lexicographic

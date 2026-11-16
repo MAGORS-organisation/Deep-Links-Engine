@@ -22,7 +22,7 @@ namespace Dle.Persistence.Fast.Configuration;
 /// <para>
 /// Validation runs eagerly in <c>AddDleFastPersistence</c> rather than through
 /// <c>ValidateOnStart</c>, because the data annotations validator is reflective and this assembly
-/// stays free of reflection (ADR-012). The failure mode is the same: the process refuses to start.
+/// stays free of reflection. The failure mode is the same: the process refuses to start.
 /// </para>
 /// </remarks>
 public sealed class FastPersistenceOptions
@@ -76,15 +76,15 @@ public sealed class FastPersistenceOptions
 
     /// <summary>
     /// Capacity of the bounded click event channel. Once it is full, further events are dropped rather
-    /// than delaying a redirect (NFR-06, FR-165).
+    /// than delaying a redirect.
     /// </summary>
     public int ClickEventChannelCapacity { get; init; } = 100_000;
 
-    /// <summary>Largest batch handed to one <c>COPY</c> operation (§C.3.2).</summary>
+    /// <summary>Largest batch handed to one <c>COPY</c> operation.</summary>
     public int ClickEventBatchSize { get; init; } = 5_000;
 
     /// <summary>
-    /// Longest a partially filled batch waits before it is written anyway (§C.3.2). Together with
+    /// Longest a partially filled batch waits before it is written anyway. Together with
     /// <see cref="ClickEventBatchSize"/> this is the "5 000 rows or 250 ms, whichever comes first"
     /// rule.
     /// </summary>

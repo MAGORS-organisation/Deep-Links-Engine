@@ -79,6 +79,6 @@ public sealed class DatabaseReachabilityHealthCheck : IHealthCheck
 
     private static HealthCheckResult Degraded(string reason, Exception? exception) =>
         HealthCheckResult.Degraded(
-            reason + "; cached links keep resolving from L1 and L2, uncached links answer 503 (§D.6).",
+            reason + "; cached links keep resolving from L1 and L2, uncached links answer 503.",
             exception);
 }

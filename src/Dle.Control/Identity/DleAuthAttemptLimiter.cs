@@ -28,7 +28,7 @@ namespace Dle.Control.Identity;
 /// <para>
 /// A refused attempt costs the same as an accepted one from the caller's point of view: the handler
 /// still reports "the credential was refused" and never distinguishes "unknown key" from "too many
-/// attempts" in the time it takes to answer (T-07).
+/// attempts" in the time it takes to answer.
 /// </para>
 /// </remarks>
 public sealed class DleAuthAttemptLimiter : IDisposable

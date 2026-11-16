@@ -3,7 +3,7 @@ using Dle.IntegrationTests.Infrastructure;
 using Xunit.Sdk;
 using Xunit.v3;
 
-// One PostgreSQL 18 and one Valkey 8 for the whole assembly (§D.4). The fixture applies the
+// One PostgreSQL 18 and one Valkey 8 for the whole assembly. The fixture applies the
 // InitialSchema migration to a template database; each test copies it.
 [assembly: AssemblyFixture(typeof(DleInfrastructureFixture))]
 

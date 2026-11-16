@@ -135,7 +135,7 @@ public sealed partial class DistributedCacheProbe : BackgroundService
     [LoggerMessage(
         EventId = 4301,
         Level = LogLevel.Warning,
-        Message = "The shared (L2) cache stopped answering; resolves fall through to L1 and PostgreSQL with higher latency (§D.6).")]
+        Message = "The shared (L2) cache stopped answering; resolves fall through to L1 and PostgreSQL with higher latency.")]
     private static partial void LogDistributedCacheDown(ILogger logger);
 
     [LoggerMessage(

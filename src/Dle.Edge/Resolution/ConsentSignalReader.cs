@@ -1,7 +1,7 @@
 namespace Dle.Edge.Resolution;
 
 /// <summary>
-/// Reads the consent signal a plain browser request can carry (§E.6.2, FR-248).
+/// Reads the consent signal a plain browser request can carry.
 /// </summary>
 /// <remarks>
 /// <para>

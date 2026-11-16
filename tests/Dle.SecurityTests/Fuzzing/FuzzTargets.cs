@@ -106,7 +106,7 @@ public static class FuzzTargets
         _ = Classifier.Classify(request);
     }
 
-    /// <summary>Fuzzes the <c>routing_rules</c> deserializer and its validator (T-12).</summary>
+    /// <summary>Fuzzes the <c>routing_rules</c> deserializer and its validator.</summary>
     /// <param name="data">Raw bytes from the fuzzer.</param>
     /// <remarks>
     /// T-12 is a deserialization attack on the rule document. The mitigations §E.2.2 names are JSON
@@ -140,7 +140,7 @@ public static class FuzzTargets
         _ = RoutingRuleValidator.Validate(rules);
     }
 
-    /// <summary>Fuzzes the Play install referrer parser (T-05).</summary>
+    /// <summary>Fuzzes the Play install referrer parser.</summary>
     /// <param name="data">Raw bytes from the fuzzer.</param>
     public static void InstallReferrer(ReadOnlySpan<byte> data)
     {

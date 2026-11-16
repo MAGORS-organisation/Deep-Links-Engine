@@ -27,7 +27,6 @@ public sealed class AppsHttpTests(DleInfrastructureFixture infrastructure)
     private const string Sha256Colons = "AB:5C:2F:9E:7D:1A:4B:3C:8E:6F:0A:1B:2C:3D:4E:5F:6A:7B:8C:9D:0E:1F:2A:3B:4C:5D:6E:7F:8A:9B:0C:1D";
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-141")]
     public async Task Create_AnIosApplication_Is201WithTheLocationAndItsPairedDomain()
     {
         Fixture fixture = await SeedAsync("apps-ios");
@@ -76,7 +75,6 @@ public sealed class AppsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-142")]
     public async Task Create_AnAndroidApplicationWithoutAFingerprint_WarnsThatAppLinksCannotVerify()
     {
         Fixture fixture = await SeedAsync("apps-android-bare");
@@ -99,7 +97,6 @@ public sealed class AppsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-142")]
     public async Task Create_AnAndroidApplicationWithAFingerprint_NormalisesItToColonSeparatedUppercase()
     {
         Fixture fixture = await SeedAsync("apps-android-fp");
@@ -122,7 +119,6 @@ public sealed class AppsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerTheory]
-    [Trait("Spec", "FR-141")]
     [InlineData("""{"platform": "windows", "bundle_id": "sk.example.app"}""", "platform")]
     [InlineData("""{"platform": "ios", "bundle_id": "sk.example.app"}""", "team_id")]
     [InlineData("""{"platform": "android", "bundle_id": "   "}""", "bundle_id")]
@@ -144,7 +140,6 @@ public sealed class AppsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-141")]
     public async Task Create_TheSamePlatformAndBundleTwice_Is409AppTaken()
     {
         Fixture fixture = await SeedAsync("apps-duplicate");
@@ -161,7 +156,6 @@ public sealed class AppsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task Get_AndList_ShowOnlyTheTenantsOwnApplications()
     {
         Fixture fixture = await SeedAsync("apps-scope");
@@ -188,7 +182,6 @@ public sealed class AppsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-145")]
     public async Task Patch_ReplacesThePairingsAndTheOptionalFields_IgnoringAnotherTenantsDomain()
     {
         Fixture fixture = await SeedAsync("apps-patch");
@@ -236,7 +229,6 @@ public sealed class AppsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-141")]
     public async Task Delete_Is204_AndThePairingsGoWithIt()
     {
         Fixture fixture = await SeedAsync("apps-delete");
@@ -256,7 +248,6 @@ public sealed class AppsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-242")]
     public async Task SdkKeys_AreIssuedOnceInTheClear_ListedByPrefix_AndRevocable()
     {
         Fixture fixture = await SeedAsync("apps-sdk-keys");
@@ -318,7 +309,6 @@ public sealed class AppsHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task SdkKeys_ForAnotherTenantsApplication_Are404()
     {
         Fixture fixture = await SeedAsync("apps-sdk-foreign");

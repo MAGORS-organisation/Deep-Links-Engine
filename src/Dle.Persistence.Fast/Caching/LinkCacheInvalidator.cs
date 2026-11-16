@@ -7,7 +7,7 @@ using StackExchange.Redis;
 namespace Dle.Persistence.Fast.Caching;
 
 /// <summary>
-/// Drops cached link data after a control plane change, using <c>HybridCache</c> tags (ADR-005)
+/// Drops cached link data after a control plane change, using <c>HybridCache</c> tags
 /// and broadcasts invalidations across edge nodes via Valkey Pub/Sub.
 /// </summary>
 public sealed class LinkCacheInvalidator : ILinkCacheInvalidator

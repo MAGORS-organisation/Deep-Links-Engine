@@ -5,7 +5,7 @@ using Dle.Persistence.Fast.Configuration;
 namespace Dle.Persistence.Fast.Telemetry;
 
 /// <summary>
-/// The non-blocking hand-off from the resolve path to the click stream writer (NFR-06, FR-165).
+/// The non-blocking hand-off from the resolve path to the click stream writer.
 /// </summary>
 /// <remarks>
 /// <para>

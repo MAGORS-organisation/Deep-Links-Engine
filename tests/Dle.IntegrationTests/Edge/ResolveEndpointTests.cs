@@ -10,7 +10,7 @@ namespace Dle.IntegrationTests.Edge;
 
 /// <summary>
 /// The resolve path end to end: the real edge composition root, real PostgreSQL, real Valkey
-/// (§B.6.1, ADR-009, §D.3).
+///.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -39,7 +39,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     /// <summary>
     /// Two responses that must be indistinguishable: identical bodies once the fixed-width nonce
     /// is blanked, and identical lengths on the wire, so that a nonce that stopped being fixed
-    /// width would fail here rather than become a size oracle (TC-102).
+    /// width would fail here rather than become a size oracle.
     /// </summary>
     private static async Task AssertIndistinguishableAsync(HttpResponseMessage first, HttpResponseMessage second)
     {
@@ -52,12 +52,11 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-101")]
     public async Task Resolve_ActiveLinkOnIosWithoutTheApp_ServesTheInterstitialThatOffersTheStore()
     {
         // TC-101: "interstitial or 302 to the App Store with pt/ct". With the shipped Auto policy an
         // iOS browser gets the interstitial, because a bare 302 to the store would skip the one tap
-        // that lets the operating system hand a Universal Link to an installed application (§A.2.6).
+        // that lets the operating system hand a Universal Link to an installed application.
         const string StoreUrl = "https://apps.apple.com/app/id123456789?pt=1234&ct=autumn26&mt=8";
 
         string host = TestSeed.UniqueHost("tc101");
@@ -89,7 +88,6 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-101")]
     public async Task Resolve_ActiveLinkOnIosWithInterstitialNever_Redirects302ToTheStoreWithPtAndCt()
     {
         // The other half of TC-101's "or": with the interstitial switched off for this rule the same
@@ -111,7 +109,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
 
         using HttpResponseMessage response = await GetAsync(host, "autumn", UserAgents.IosSafari);
 
-        // 302 and never 301 (ADR-009, SHARED-KERNEL §17.1): a 301 is cached indefinitely and would
+        // 302 and never 301: a 301 is cached indefinitely and would
         // freeze an A/B split, outlive a campaign's expiry and survive a change of target.
         Assert.Equal(HttpStatusCode.Found, response.StatusCode);
 
@@ -123,7 +121,6 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-102")]
     public async Task Resolve_UnknownSlug_AnswersExactlyAsItDoesForAnotherTenantsSlug()
     {
         // TC-102 and TC-166 in one: a slug that exists somewhere else must be indistinguishable from
@@ -158,7 +155,6 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-103")]
     public async Task Resolve_QuarantinedLink_Returns410WithAPageAndNoRedirect()
     {
         string host = TestSeed.UniqueHost("tc103");
@@ -177,7 +173,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
         using HttpResponseMessage response = await GetAsync(host, "withdrawn", UserAgents.DesktopChrome);
 
         // 410 rather than 404: the link is withdrawn, not missing, and the difference is what lets
-        // the page carry the route to contest it (§E.3).
+        // the page carry the route to contest it.
         Assert.Equal(HttpStatusCode.Gone, response.StatusCode);
         Assert.Null(response.Headers.Location);
         Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
@@ -189,7 +185,6 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-104")]
     public async Task Resolve_ExpiredLinkWithAnExpiredUrl_Redirects302ToIt()
     {
         string host = TestSeed.UniqueHost("tc104");
@@ -213,7 +208,6 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-104")]
     public async Task Resolve_ExpiredLinkWithoutAnExpiredUrl_IsIndistinguishableFromOneThatNeverExisted()
     {
         string host = TestSeed.UniqueHost("tc104b");
@@ -240,7 +234,6 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-106")]
     public async Task Resolve_FacebookExternalHit_Serves200HtmlWithOpenGraphTagsAndNoCampaignClick()
     {
         string host = TestSeed.UniqueHost("tc106");
@@ -259,7 +252,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
         using HttpResponseMessage response = await GetAsync(host, "shared", UserAgents.FacebookExternalHit);
 
         // A crawler does not follow a 30x reliably and runs no script, so a redirected preview comes
-        // out blank. It gets the document (ADR-009, FR-161).
+        // out blank. It gets the document.
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
 
@@ -271,7 +264,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
         Assert.Contains("""name="twitter:card""", body, StringComparison.Ordinal);
 
         // The click is recorded — the preview happened and the rules were evaluated — but it is
-        // recorded as a bot, and every campaign report filters is_bot = false by default (FR-205).
+        // recorded as a bot, and every campaign report filters is_bot = false by default.
         // That is what "no record in campaign statistics" means in a schema that keeps the row.
         await Eventually.TrueAsync(
             async () => await Sql.ScalarAsync<long>(
@@ -300,8 +293,6 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     }
 
     [RequiresDockerTheory]
-    [Trait("TestCase", "TC-106")]
-    [Trait("Spec", "D.2.1")]
     [InlineData(UserAgents.FacebookExternalHit)]
     [InlineData("Twitterbot/1.0")]
     [InlineData("Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)")]
@@ -339,7 +330,6 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-110")]
     public async Task Resolve_QueryParameters_AreForwardedByTheAllowlistWithTheClickIdAdded()
     {
         string host = TestSeed.UniqueHost("tc110");
@@ -357,7 +347,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
 
         // dl_consent=all is the consent management platform's signal. Without it the tenant's full
         // mode still yields no click-id linking, because ePrivacy art. 5(3) needs the visitor's own
-        // signal and not the operator's configuration (SHARED-KERNEL §2).
+        // signal and not the operator's configuration.
         using HttpResponseMessage response = await GetAsync(
             host,
             "forwarded?utm_source=newsletter&fbclid=fb-123&not_on_the_list=evil&dl_consent=all",
@@ -369,7 +359,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
 
         Assert.StartsWith("https://example.test/landing", location, StringComparison.Ordinal);
 
-        // On the allowlist (§E.6.3), so forwarded.
+        // On the allowlist, so forwarded.
         Assert.Contains("utm_source=newsletter", location, StringComparison.Ordinal);
         Assert.Contains("fbclid=fb-123", location, StringComparison.Ordinal);
 
@@ -387,7 +377,6 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-110")]
     public async Task Resolve_WithoutAConsentSignal_ForwardsUtmButNeverTheClickId()
     {
         // The same request without the consent signal. The tenant is on full, so the operator has
@@ -414,8 +403,6 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "SHARED-KERNEL 17.4")]
-    [Trait("TestCase", "TC-164")]
     public async Task Resolve_WithATargetInAQueryParameter_IgnoresItCompletely()
     {
         // TC-164: the open redirect. The target comes from the stored rule set and from nowhere
@@ -441,7 +428,6 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-166")]
     public async Task Resolve_WithThePreviewParameter_DecidesEverythingAndRecordsNoClick()
     {
         string host = TestSeed.UniqueHost("preview");

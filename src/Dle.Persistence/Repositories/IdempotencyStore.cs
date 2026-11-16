@@ -7,7 +7,7 @@ using Npgsql;
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Stores and replays the responses of idempotent requests (§B.7.3).
+/// Stores and replays the responses of idempotent requests.
 /// </summary>
 /// <remarks>
 /// A client that retries after a timeout must not create a second link. The key alone cannot decide

@@ -8,7 +8,7 @@ namespace Dle.Persistence.Fast.WellKnown;
 
 /// <summary>
 /// Loads per-domain configuration and the applications a host is associated with, and hands them to
-/// <see cref="WellKnownBuilder"/> (FR-141, FR-142, §C.3.3).
+/// <see cref="WellKnownBuilder"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -23,7 +23,7 @@ namespace Dle.Persistence.Fast.WellKnown;
 /// Android fingerprints are emitted with the Play App Signing certificates first. That ordering is the
 /// point of FR-144: with Play App Signing the certificate that matters on a real device is the one
 /// Google re-signs with, and publishing only the local upload certificate is the single most common
-/// reason App Links work in a debug build and fail in production (TC-123). Upload certificates are
+/// reason App Links work in a debug build and fail in production. Upload certificates are
 /// still emitted after them so that internally distributed builds keep working.
 /// </para>
 /// </remarks>

@@ -53,7 +53,7 @@ public sealed class CryptoOptions
     public string? ClaimCodeSecret { get; set; }
 
     /// <summary>Algorithm the signer uses. Exactly one, unlike
-    /// <see cref="AcceptedAlgorithms"/> (§E.4.2).</summary>
+    /// <see cref="AcceptedAlgorithms"/>.</summary>
     [Required(AllowEmptyStrings = false)]
     public string SigningAlgorithm { get; set; } = SignatureAlgorithms.Hs256;
 
@@ -78,7 +78,7 @@ public sealed class CryptoOptions
 
     /// <summary>
     /// How long a retired key stays acceptable for verification after it stops signing. Rotation
-    /// must never invalidate a signature made with a key still inside its window (S-12), so this
+    /// must never invalidate a signature made with a key still inside its window, so this
     /// has to exceed the lifetime of the longest lived artefact the key signed.
     /// </summary>
     [Range(1, 365)]

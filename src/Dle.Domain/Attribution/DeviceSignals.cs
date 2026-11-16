@@ -1,14 +1,14 @@
 namespace Dle.Domain.Attribution;
 
 /// <summary>
-/// Device signals used by the probabilistic matcher (§A.2.5). They are processed only when
+/// Device signals used by the probabilistic matcher. They are processed only when
 /// <c>ConsentDecision.AllowProbabilisticMatch</c> is set.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The signals are deliberately coarse; none of them is a strong device fingerprint. When the
 /// effective consent mode is anything other than <c>full</c> they are dropped before they reach
-/// storage — not written and deleted later (TC-145, TC-146).
+/// storage — not written and deleted later.
 /// </para>
 /// <para>
 /// Every property is optional. A signal that is missing on either side of a comparison

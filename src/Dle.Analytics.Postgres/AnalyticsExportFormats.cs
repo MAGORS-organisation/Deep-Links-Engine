@@ -1,7 +1,7 @@
 namespace Dle.Analytics.Postgres;
 
 /// <summary>
-/// Export formats offered by <see cref="IAnalyticsExporter"/> (FR-203).
+/// Export formats offered by <see cref="IAnalyticsExporter"/>.
 /// </summary>
 public static class AnalyticsExportFormats
 {

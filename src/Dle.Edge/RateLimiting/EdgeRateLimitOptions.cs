@@ -10,7 +10,7 @@ namespace Dle.Edge.RateLimiting;
 /// The two resolve limits are separate on purpose and that separation is the single most important
 /// property in the table. A campaign that goes viral produces a burst of <em>successful</em> resolves;
 /// if the anti-enumeration budget shared a counter with it, the burst would exhaust the budget and
-/// the enumeration defence (T-07) would switch itself off exactly when the service is most visible.
+/// the enumeration defence would switch itself off exactly when the service is most visible.
 /// </para>
 /// <para>
 /// Both are keyed by network prefix rather than by address — /24 for IPv4, /48 for IPv6 — because an
@@ -64,7 +64,7 @@ public sealed class ResolveRateLimitOptions
 
 /// <summary>
 /// Token bucket and shadow ban for resolve requests that ended in 404, bound from
-/// <c>Dle:RateLimits:Edge:NotFound</c> (§E.9, T-07, TC-108).
+/// <c>Dle:RateLimits:Edge:NotFound</c>.
 /// </summary>
 public sealed class NotFoundRateLimitOptions
 {

@@ -4,12 +4,12 @@ namespace Dle.Edge.Clients;
 
 /// <summary>
 /// The crawlers the edge recognises by user agent, and how each of them can be confirmed
-/// (FR-161, ADR-009, TC-106, TC-107).
+///.
 /// </summary>
 /// <remarks>
 /// <para>
 /// A social crawler needs an HTML document with Open Graph tags, not a redirect: it will not follow
-/// a 30x reliably and it does not run script, so a redirected preview comes out blank (§A.2.6). That
+/// a 30x reliably and it does not run script, so a redirected preview comes out blank. That
 /// makes crawler detection a routing decision rather than a statistic, which is why the table is
 /// explicit rather than a heuristic over the word "bot".
 /// </para>

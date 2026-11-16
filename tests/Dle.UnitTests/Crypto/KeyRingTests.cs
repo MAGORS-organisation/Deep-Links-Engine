@@ -11,7 +11,7 @@ using Xunit;
 namespace Dle.UnitTests.Crypto;
 
 /// <summary>
-/// The key ring and its rotation (§E.4.2, ADR-013, NFR-17).
+/// The key ring and its rotation.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -374,7 +374,7 @@ public sealed class KeyRingTests
         Assert.NotEqual(signingKid, ring.CurrentSigner.KeyId);
         Assert.True(
             ring.Verifier.Verify(algorithm, signingKid, payload, signature),
-            "A token signed a moment before the rotation must still verify (S-12).");
+            "A token signed a moment before the rotation must still verify.");
     }
 
     [Fact]

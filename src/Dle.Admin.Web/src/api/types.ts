@@ -118,7 +118,7 @@ export interface RuleAction {
   interstitial?: InterstitialMode;
 }
 
-/** A rule whose `when` is null or absent is the default rule (TC-105). */
+/** A rule whose `when` is null or absent is the default rule. */
 export interface RoutingRule {
   id: string;
   when?: RuleCondition | null;

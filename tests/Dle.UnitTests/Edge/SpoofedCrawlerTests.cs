@@ -31,7 +31,7 @@ namespace Dle.UnitTests.Edge;
 /// The resolve pipeline of §B.6.1 driven directly, with fakes in place of the store, the crawler
 /// confirmation and the click sink. There is no server and no network here: the point is the two
 /// decisions that cannot be observed from the outside — what a forged crawler claim is turned into
-/// (TC-107), and whether two different reasons for a 404 are distinguishable (TC-102, TC-166).
+///, and whether two different reasons for a 404 are distinguishable.
 /// </summary>
 [SuppressMessage(
     "Reliability",
@@ -124,7 +124,6 @@ public sealed class SpoofedCrawlerTests : IAsyncLifetime
     /// them into, somebody's campaign numbers.
     /// </summary>
     [Fact]
-    [Trait("TestCase", "TC-107")]
     public async Task Resolve_UnconfirmedGooglebotClaim_IsServedAsAnOrdinaryClientAndRecordedAsSpoofed()
     {
         GivenLink("go.example", "abc123", TenantA);
@@ -146,10 +145,9 @@ public sealed class SpoofedCrawlerTests : IAsyncLifetime
 
     /// <summary>
     /// The other half of TC-107: a claim the verifier does confirm keeps its crawler treatment — an
-    /// Open Graph document (TC-106) and <c>is_bot=true</c>.
+    /// Open Graph document and <c>is_bot=true</c>.
     /// </summary>
     [Fact]
-    [Trait("TestCase", "TC-107")]
     public async Task Resolve_ConfirmedGooglebot_KeepsItsCrawlerTreatment()
     {
         GivenLink("go.example", "abc123", TenantA);
@@ -175,7 +173,6 @@ public sealed class SpoofedCrawlerTests : IAsyncLifetime
     /// else is an oracle that says which slugs exist.
     /// </summary>
     [Fact]
-    [Trait("TestCase", "TC-166")]
     public async Task Resolve_MissingSlugAndAnotherTenantsSlug_AreTheSameAnswer()
     {
         // "shared" exists, but on tenant B's host. On tenant A's host it is as absent as "nothing".
@@ -200,7 +197,6 @@ public sealed class SpoofedCrawlerTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("TestCase", "TC-103")]
     public async Task Resolve_QuarantinedLink_Returns410AndNeverRedirects()
     {
         GivenLink("go.example", "abc123", TenantA, link => link with { QuarantinedAt = Now.AddDays(-1) });
@@ -212,7 +208,6 @@ public sealed class SpoofedCrawlerTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("TestCase", "TC-104")]
     public async Task Resolve_ExpiredLinkWithALandingPage_RedirectsThere()
     {
         GivenLink(
@@ -228,7 +223,6 @@ public sealed class SpoofedCrawlerTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("TestCase", "TC-104")]
     public async Task Resolve_ExpiredLinkWithoutALandingPage_IsIndistinguishableFromAMiss()
     {
         GivenLink("go.example", "abc123", TenantA, link => link with { ExpiresAt = Now.AddDays(-1) });

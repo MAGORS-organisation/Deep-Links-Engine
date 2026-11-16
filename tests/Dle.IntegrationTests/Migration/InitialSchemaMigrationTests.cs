@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Dle.IntegrationTests.Migration;
 
 /// <summary>
-/// The first time <c>InitialSchema</c> meets a live PostgreSQL server (§B.5.2, §B.5.3, §D.7.5).
+/// The first time <c>InitialSchema</c> meets a live PostgreSQL server.
 /// </summary>
 /// <remarks>
 /// Most of this migration is scaffolded and would fail loudly if it were wrong. Four parts are not:
@@ -27,7 +27,7 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     /// <remarks>
     /// <c>sdk_events</c> is on the list because <c>SdkEventBatchWriter</c> copies into it on the
     /// <c>POST /v1/events</c> path and <c>PostgresClickAnalyticsStore</c> reads it for the funnel and
-    /// the time series (§B.6.4, FR-223, FR-202). A table a shipped code path writes to has to exist
+    /// the time series. A table a shipped code path writes to has to exist
     /// after the schema migration; there is nowhere else for it to come from.
     /// </remarks>
     private static readonly string[] RequiredTables =
@@ -77,7 +77,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     ];
 
     [RequiresDockerFact]
-    [Trait("Spec", "D.7.5")]
     public async Task Migration_AppliedToAnEmptyServer_CreatesEveryTableTheProductWritesTo()
     {
         List<string> missing = [];
@@ -98,7 +97,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Migration_CreatesCitextExtension_AndUsesItForSlugAndHost()
     {
         Assert.True(
@@ -114,7 +112,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Migration_DleUuidV7_ReturnsVersionSevenIdentifiers()
     {
         // Character 15 of the canonical text form is the version nibble: 8-4-4-4-12 puts it at the
@@ -129,7 +126,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Migration_DleUuidV7_ProducesTimeOrderedIdentifiers()
     {
         // The whole reason for the shim: a time ordered key turns random B-tree page splits into
@@ -155,7 +151,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.3")]
     public async Task Migration_ClickEvents_IsRangePartitionedByOccurredAt()
     {
         string? strategy = await Sql.ScalarAsync<string>(
@@ -179,7 +174,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.3")]
     public async Task Migration_ClickEvents_HasPartitionsSoThatAnInsertSucceeds()
     {
         // A partitioned table with no partitions rejects every insert. pg_partman is not in a stock
@@ -230,7 +224,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.3")]
     public async Task Migration_SdkEvents_IsPartitionedLikeTheClickStreamAndAcceptsAnInsert()
     {
         // The SDK event stream is not spelled out in §B.5.3, but the batch writer copies into it and
@@ -283,7 +276,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.3")]
     public async Task PartitionMaintenance_AdoptsADayWhoseRowsLandedInTheDefaultPartition()
     {
         // A day that arrives before its partition exists goes to the default partition, and
@@ -338,7 +330,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.3")]
     public async Task Migration_ClickEvents_HasTheBrinAndBtreeIndexesOfB53()
     {
         IReadOnlyList<string> definitions = await Sql.StringsAsync(
@@ -359,7 +350,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Migration_LinksAutovacuum_IsTunedSoTheVisibilityMapStaysFresh()
     {
         IReadOnlyList<string> options = await Sql.StringsAsync(
@@ -375,7 +365,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Migration_LinksResolveIndex_IncludesEveryColumnB52Names()
     {
         string? definition = await Sql.ScalarAsync<string>(
@@ -393,7 +382,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Migration_UniqueIndexes_AreCreatedWithTheFiltersB53Requires()
     {
         string? attributionsByClick = await Sql.ScalarAsync<string>(
@@ -415,7 +403,6 @@ public sealed class InitialSchemaMigrationTests(DleInfrastructureFixture infrast
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "D.7.5")]
     public async Task Migration_RolledBack_RemovesEveryObjectItCreated()
     {
         // Release criterion 5 of §D.7: migrations are tested including the rollback. A Down that

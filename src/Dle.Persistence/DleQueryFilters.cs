@@ -21,7 +21,7 @@ public static class DleQueryFilters
 {
     /// <summary>
     /// Restricts every tenant-owned entity type to the tenant supplied by
-    /// <see cref="Tenancy.ITenantContext"/> (FR-241).
+    /// <see cref="Tenancy.ITenantContext"/>.
     /// </summary>
     public const string Tenant = "Tenant";
 

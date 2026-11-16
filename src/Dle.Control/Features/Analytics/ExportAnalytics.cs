@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Analytics;
 
 /// <summary>
-/// <c>GET /api/v1/analytics/export</c> — a report as a downloadable file (FR-203).
+/// <c>GET /api/v1/analytics/export</c> — a report as a downloadable file.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -32,7 +32,7 @@ public static class ExportAnalytics
     /// <summary>Report name of the dimensional breakdown export.</summary>
     public const string BreakdownReport = "breakdown";
 
-    /// <summary>Report name of the attribution quality export (ADR-008).</summary>
+    /// <summary>Report name of the attribution quality export.</summary>
     public const string AttributionQualityReport = "attribution_quality";
 
     /// <summary>Every report name this endpoint can export.</summary>

@@ -16,7 +16,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Workers;
 
 /// <summary>
-/// Re-checks the targets of active links against the reputation sources (§E.3 step 5, FR-244).
+/// Re-checks the targets of active links against the reputation sources.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -32,12 +32,12 @@ namespace Dle.Control.Workers;
 /// Safe Browsing v5 is restricted to non-commercial use and Web Risk is paid, so neither can be the
 /// default of an open-source product a commercial self-hoster is meant to run. URLhaus is free and
 /// unrestricted. Anything else belongs behind <see cref="IUrlReputationProvider"/>, added by the
-/// deployment that holds the licence (§E.3 step 3).
+/// deployment that holds the licence.
 /// </para>
 /// <para>
 /// A target found malicious is quarantined rather than deleted, through the same service the human
 /// triage queue uses, so the decision is audited and the link answers 410 with an explanation
-/// instead of vanishing (§E.3 step 8, TC-103). Whether the quarantine is automatic is configuration:
+/// instead of vanishing. Whether the quarantine is automatic is configuration:
 /// on by default, because the window between a target turning malicious and an operator reading a
 /// queue is exactly the window the abuse is designed to fit into.
 /// </para>
@@ -49,7 +49,7 @@ public sealed partial class UrlReputationWorker : LeaderElectedBackgroundService
 
     /// <summary>Reason recorded on an automatic quarantine.</summary>
     private const string QuarantineReason =
-        "The target of this link was found malicious by an automatic re-check of active links (§E.3 step 5).";
+        "The target of this link was found malicious by an automatic re-check of active links.";
 
     private readonly IServiceScopeFactory _scopes;
     private readonly IOptionsMonitor<WorkerOptions> _options;
@@ -240,7 +240,7 @@ public sealed partial class UrlReputationWorker : LeaderElectedBackgroundService
         CancellationToken cancellationToken)
     {
         using CrossTenantScope scope = db.BeginCrossTenantScope(
-            "the nightly reputation re-check covers the active links of every tenant (§E.3 step 5)");
+            "the nightly reputation re-check covers the active links of every tenant");
 
         IQueryable<Link> active = db.Links
             .AsNoTracking()

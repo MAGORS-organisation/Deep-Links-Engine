@@ -2,7 +2,7 @@
 --
 -- Parameters: @parentTable.
 --
--- Retention drops whole partitions rather than deleting rows (§E.6.3): a DELETE on a hundred
+-- Retention drops whole partitions rather than deleting rows: a DELETE on a hundred
 -- million rows rewrites indexes, bloats the heap and leaves the data recoverable from the table
 -- until VACUUM catches up, while DETACH plus DROP is a catalogue operation that actually removes
 -- the file. Deciding which partitions are expired therefore means reading their bounds.

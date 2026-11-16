@@ -3,7 +3,7 @@ import Foundation
 /// Kind of a client event. Raw values are the wire names accepted by `POST /v1/events`
 /// (`SdkEventNames`, spec §B.7.2).
 public enum DleEventType: String, Sendable, Hashable, CaseIterable, Codable {
-    /// The application was opened through one of the engine's links (spec §B.6.4, FR-223).
+    /// The application was opened through one of the engine's links.
     /// This is the event that makes a direct open measurable at all.
     case linkOpen = "link_open"
     /// First launch after an installation.
@@ -61,7 +61,7 @@ public struct DleEvent: Sendable, Hashable, Codable {
         self.properties = properties
     }
 
-    /// A `link_open` report for a URL the operating system handed to the app (FR-223).
+    /// A `link_open` report for a URL the operating system handed to the app.
     /// Userinfo, query parameters, and fragment are stripped to match Android's `AppLinkHandler`.
     public static func linkOpen(url: URL, at timestamp: Date? = nil) -> DleEvent {
         DleEvent(type: .linkOpen, url: DleUniversalLink.reportable(url), timestamp: timestamp)

@@ -3,7 +3,7 @@ using System.Security.Claims;
 namespace Dle.Control.Features.Shared;
 
 /// <summary>
-/// Who is making the request, in the terms the audit trail records (FR-246, §E.6.3).
+/// Who is making the request, in the terms the audit trail records.
 /// </summary>
 /// <param name="ActorType">Kind of actor: <c>user</c>, <c>api_key</c> or <c>system</c>.</param>
 /// <param name="ActorId">Identifier of the operator, or <see langword="null"/> for the system.</param>

@@ -3,7 +3,7 @@ using CsCheck;
 namespace Dle.SecurityTests.Ssrf;
 
 /// <summary>
-/// Scheme rejection (TC-161) and the address half of SSRF (T-02, TC-162).
+/// Scheme rejection and the address half of SSRF.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -103,8 +103,6 @@ public sealed class TargetUrlPolicyTests
 
     [Theory]
     [MemberData(nameof(ForbiddenSchemeUrls))]
-    [Trait("TestCase", "TC-161")]
-    [Trait("Threat", "T-01")]
     public void ValidateSyntax_ASchemeOutsideTheAllowList_IsRejected(string url)
     {
         UrlSafetyVerdict verdict = TargetUrlPolicy.ValidateSyntax(url);
@@ -115,8 +113,6 @@ public sealed class TargetUrlPolicyTests
 
     [Theory]
     [MemberData(nameof(ForbiddenAddresses))]
-    [Trait("TestCase", "TC-162")]
-    [Trait("Threat", "T-02")]
     public void IsForbiddenAddress_EveryInternalRangeAndAlias_IsForbidden(string address, string why)
     {
         Assert.True(
@@ -126,8 +122,6 @@ public sealed class TargetUrlPolicyTests
 
     [Theory]
     [MemberData(nameof(ForbiddenAddresses))]
-    [Trait("TestCase", "TC-162")]
-    [Trait("Threat", "T-02")]
     public void ValidateSyntax_AnAddressLiteralInsideAForbiddenRange_IsRejected(string address, string why)
     {
         string url = address.Contains(':', StringComparison.Ordinal)
@@ -143,7 +137,6 @@ public sealed class TargetUrlPolicyTests
 
     [Theory]
     [MemberData(nameof(PublicAddresses))]
-    [Trait("Threat", "T-02")]
     public void IsForbiddenAddress_AnOrdinaryPublicAddress_IsAllowed(string address)
     {
         // The control group. A policy that refuses everything satisfies every test above and is
@@ -153,8 +146,6 @@ public sealed class TargetUrlPolicyTests
     }
 
     [Theory]
-    [Trait("TestCase", "TC-162")]
-    [Trait("Threat", "T-02")]
     [InlineData("http://localhost/")]
     [InlineData("http://LOCALHOST/")]
     [InlineData("http://localhost.")]
@@ -179,7 +170,6 @@ public sealed class TargetUrlPolicyTests
     }
 
     [Theory]
-    [Trait("Threat", "T-01")]
     [InlineData("https://trusted.example.com@evil.com/")]
     [InlineData("https://trusted.example.com:pass@evil.com/")]
     [InlineData("http://user@10.0.0.1/")]
@@ -195,7 +185,6 @@ public sealed class TargetUrlPolicyTests
     }
 
     [Theory]
-    [Trait("Threat", "T-01")]
     [InlineData("https://example.com/a\rb")]
     [InlineData("https://example.com/a\nb")]
     [InlineData("https://example.com/a\tb")]
@@ -225,7 +214,6 @@ public sealed class TargetUrlPolicyTests
     }
 
     [Fact]
-    [Trait("Threat", "T-02")]
     public void IsForbiddenAddress_EveryIPv4MappedAddress_AgreesWithItsIPv4Form()
     {
         // Property, not example: the mapped form is a different sixteen bytes for the same
@@ -243,7 +231,6 @@ public sealed class TargetUrlPolicyTests
     }
 
     [Fact]
-    [Trait("Threat", "T-02")]
     public void IsForbiddenAddress_IsTotalAndNeverThrows()
     {
         // §17.9: a decision branch that cannot classify its input must deny, not fall through and not
@@ -258,7 +245,6 @@ public sealed class TargetUrlPolicyTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-161")]
     public void ValidateSyntax_IsTotalOverArbitraryText_AndNeverApprovesANonWebScheme()
     {
         // The syntax gate takes operator input, which means it takes whatever a compromised admin

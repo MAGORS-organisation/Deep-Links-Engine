@@ -55,7 +55,6 @@ public sealed class MixedCredentialTests : IDisposable
 
     [Theory]
     [MemberData(nameof(CredentialPairs))]
-    [Trait("Threat", "T-09")]
     public async Task TwoCredentials_AreRefusedBeforeAnySchemeRuns(
         string firstHeader,
         string firstValue,
@@ -79,7 +78,6 @@ public sealed class MixedCredentialTests : IDisposable
     }
 
     [Fact]
-    [Trait("Threat", "T-09")]
     public async Task TenantScope_ComesFromThePrincipalAuthorizationAccepted()
     {
         // The default scheme is rigged to answer tenant A for every request, while the endpoint's

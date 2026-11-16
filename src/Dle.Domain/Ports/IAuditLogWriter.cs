@@ -1,7 +1,7 @@
 namespace Dle.Domain.Ports;
 
 /// <summary>
-/// Appends immutable entries to the administrative audit log (FR-246, §E.6.3).
+/// Appends immutable entries to the administrative audit log.
 /// </summary>
 public interface IAuditLogWriter
 {

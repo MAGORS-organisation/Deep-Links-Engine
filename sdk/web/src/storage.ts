@@ -10,7 +10,7 @@
  *    wrapped and degrades to an in-memory map that lives only for this page view.
  *  - **No fallback identifiers.** When persistence is unavailable the SDK loses continuity.
  *    It does not reach for IndexedDB, cache probes, ETags or anything else that would
- *    reconstruct an identifier behind the user's back (FR-227).
+ *    reconstruct an identifier behind the user's back.
  */
 
 export interface KeyValueStore {

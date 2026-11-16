@@ -27,7 +27,7 @@ annotations:
 # Optional bundled data stores — EVALUATION CONVENIENCE ONLY, both off by default.
 #
 # Production Profile B wants a PostgreSQL primary with two read replicas and a Valkey cluster
-# (§B.8). Run those with an operator (CloudNativePG, a managed service) or the platform's own
+#. Run those with an operator (CloudNativePG, a managed service) or the platform's own
 # charts and hand this chart the connection strings (externalPostgres.*, externalValkey.*).
 #
 # Helm refuses to install a chart whose declared dependencies are not in charts/, even when their

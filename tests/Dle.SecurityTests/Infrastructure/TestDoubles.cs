@@ -109,7 +109,7 @@ public sealed class FakeDomainConfigStore : IDomainConfigStore
 /// <remarks>
 /// The real one does a reverse and forward DNS lookup, which is a network call and therefore not
 /// something a security test should depend on. Refusing every claim is also the conservative default:
-/// a user agent claiming to be Googlebot is treated as the ordinary browser it probably is (TC-107),
+/// a user agent claiming to be Googlebot is treated as the ordinary browser it probably is,
 /// which is exactly the path the open-redirect corpus needs to travel.
 /// </remarks>
 public sealed class DenyingBotVerifier : IBotVerifier

@@ -1,8 +1,8 @@
-// Deep Link Engine — resolve path load profile (docs/zadanie.md §D.5).
+// Deep Link Engine — resolve path load profile.
 //
 // The two scenarios and the three thresholds below are transcribed from §D.5 and are not to be
 // relaxed to make a run pass: they are the numbers NFR-01 and NFR-02 are written against, and a run
-// that misses them is a release that does not go out (§D.7 criterion 2).
+// that misses them is a release that does not go out.
 //
 //   steady   constant-arrival-rate, 2000 requests a second for ten minutes
 //   spike    ramping-arrival-rate,  0 → 12000/s over 30 s, held 2 min, back to 2000/s over 1 min
@@ -250,7 +250,7 @@ function record(response, kind, isCrawler) {
       rateLimited.add(1);
     }
   } else if (isCrawler) {
-    // A confirmed crawler gets an Open Graph document, not a redirect (ADR-009, TC-106).
+    // A confirmed crawler gets an Open Graph document, not a redirect.
     expected = status === 200;
     previews.add(status === 200 ? 1 : 0);
   } else {
@@ -284,7 +284,7 @@ export function handleSummary(data) {
   // would add a request to every iteration.
   const reminder = [
     '',
-    'Acceptance criteria k6 cannot decide on its own (§D.5, §D.7):',
+    'Acceptance criteria k6 cannot decide on its own:',
     '  cache hit rate >= 95 %       dle_cache_hit_ratio{level="l1"} + {level="l2"} on the edge',
     '  dropped click events = 0     dle_click_events_dropped_total must not have moved during the run',
     '  p99 <= 200 ms while scaling  §D.6, the spike scenario',

@@ -1,7 +1,7 @@
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Reads and writes control-plane API keys (FR-242).
+/// Reads and writes control-plane API keys.
 /// </summary>
 /// <remarks>
 /// Authentication happens before a tenant is in scope — the key is what establishes it — so the

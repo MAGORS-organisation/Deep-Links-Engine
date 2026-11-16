@@ -6,12 +6,11 @@ using Xunit;
 namespace Dle.UnitTests.Control;
 
 /// <summary>
-/// Verifies the public auth and OIDC configuration endpoint response models (FR-242).
+/// Verifies the public auth and OIDC configuration endpoint response models.
 /// </summary>
 public sealed class AuthConfigTests
 {
     [Fact]
-    [Trait("Spec", "FR-242")]
     public void WhenOidcNotConfigured_ReturnsOidcDisabled()
     {
         DleIdentityOptions identity = new();
@@ -36,7 +35,6 @@ public sealed class AuthConfigTests
     }
 
     [Fact]
-    [Trait("Spec", "FR-242")]
     public void WhenOidcConfigured_ReturnsConfigDetails()
     {
         DleIdentityOptions identity = new();

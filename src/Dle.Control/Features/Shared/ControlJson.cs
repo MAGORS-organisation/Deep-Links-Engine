@@ -53,7 +53,7 @@ internal static class ControlJson
     /// <remarks>
     /// A rule set that will not parse must not route anything, so the caller sees an empty set
     /// rather than a guess. The routing engine answers an empty set with
-    /// <see cref="DecisionKind.NotFound"/>, which is the fail-closed outcome (SHARED-KERNEL §17.9).
+    /// <see cref="DecisionKind.NotFound"/>, which is the fail-closed outcome.
     /// </remarks>
     internal static IReadOnlyList<RoutingRule> ReadRoutingRules(string? json)
     {

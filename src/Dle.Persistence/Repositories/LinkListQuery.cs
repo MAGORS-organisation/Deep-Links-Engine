@@ -1,7 +1,7 @@
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Filter and page for <see cref="LinkRepository.ListAsync"/> (FR-109).
+/// Filter and page for <see cref="LinkRepository.ListAsync"/>.
 /// </summary>
 /// <remarks>
 /// Paging is keyset, not offset. A link list is ordered newest first and is written to constantly,
@@ -27,7 +27,7 @@ public sealed record LinkListQuery
 
     /// <summary>
     /// Include links withdrawn by abuse handling. They are hidden by the soft delete filter, which
-    /// this drops by name — the tenant filter stays on either way (TC-103).
+    /// this drops by name — the tenant filter stays on either way.
     /// </summary>
     public bool IncludeQuarantined { get; init; }
 

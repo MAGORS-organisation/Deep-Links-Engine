@@ -68,25 +68,25 @@ public sealed class EdgeMetrics : IDisposable
         _shadowBanned = _meter.CreateCounter<long>(
             "dle.resolve.shadow_banned",
             unit: "{request}",
-            description: "Resolve requests answered from the enumeration shadow ban without a database lookup (T-07).");
+            description: "Resolve requests answered from the enumeration shadow ban without a database lookup.");
 
         _ = _meter.CreateObservableGauge(
             "dle.cache.hit_ratio",
             ObserveCacheHitRatio,
             unit: "1",
-            description: "Share of link lookups served by each cache level, L1 and L2 reported separately (§C.6).");
+            description: "Share of link lookups served by each cache level, L1 and L2 reported separately.");
 
         _ = _meter.CreateObservableGauge(
             "dle.domain_verification.failures",
             () => new Measurement<long>(_domainVerification.Count),
             unit: "{domain}",
-            description: "Hosts whose Apple or Android association file currently fails validation. Alert on any non-zero value (§C.6).");
+            description: "Hosts whose Apple or Android association file currently fails validation. Alert on any non-zero value.");
 
         _ = _meter.CreateObservableGauge(
             "dle.geoip.available",
             () => new Measurement<long>(Interlocked.Read(ref _geoIpAvailable)),
             unit: "1",
-            description: "1 when the geographic database is loaded, 0 when it is missing or corrupt and country is null (§D.6).");
+            description: "1 when the geographic database is loaded, 0 when it is missing or corrupt and country is null.");
     }
 
     /// <summary>Records one completed resolve.</summary>

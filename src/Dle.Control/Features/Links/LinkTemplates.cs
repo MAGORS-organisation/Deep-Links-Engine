@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Dle.Control.Features.Links;
 
 /// <summary>
-/// The stored form of a link template (FR-108).
+/// The stored form of a link template.
 /// </summary>
 /// <remarks>
 /// §B.5.2 gives <c>campaigns</c> one JSON column, named for the UTM map it was originally meant to
@@ -32,21 +32,21 @@ public sealed record LinkTemplateDocument
     /// <summary>Default deep link path.</summary>
     public string? DeeplinkPath { get; init; }
 
-    /// <summary>Default Open Graph metadata (FR-105).</summary>
+    /// <summary>Default Open Graph metadata.</summary>
     public OgMeta? Og { get; init; }
 
-    /// <summary>Tags added to every link created from this template (FR-109).</summary>
+    /// <summary>Tags added to every link created from this template.</summary>
     public IReadOnlyList<string> Tags { get; init; } = [];
 }
 
 /// <summary>
-/// Reads and writes link templates, which are stored as campaigns (FR-108).
+/// Reads and writes link templates, which are stored as campaigns.
 /// </summary>
 /// <remarks>
 /// The context is used directly rather than through a repository because there is no other consumer
 /// of <c>campaigns</c> in the control plane, and a repository whose only caller is one feature is a
 /// layer without a boundary. The tenant query filter applies exactly as it does everywhere else, so
-/// a template belonging to another tenant is simply not in the queryable (TC-166).
+/// a template belonging to another tenant is simply not in the queryable.
 /// </remarks>
 public sealed class LinkTemplateStore
 {
@@ -209,13 +209,13 @@ public sealed class LinkTemplateStore
 }
 
 /// <summary>
-/// <c>GET</c>, <c>POST</c>, <c>PATCH</c> and <c>DELETE /api/v1/links/templates</c> (FR-108).
+/// <c>GET</c>, <c>POST</c>, <c>PATCH</c> and <c>DELETE /api/v1/links/templates</c>.
 /// </summary>
 /// <remarks>
 /// Nothing here is validated as strictly as a link, because a template is not served. The rules are
 /// checked when a link is created from it, against the same validator every other link passes
 /// through: a half-finished template is a legitimate intermediate state, a half-finished link is not
-/// (TC-105).
+///.
 /// </remarks>
 public static class LinkTemplates
 {
@@ -273,7 +273,7 @@ public static class LinkTemplates
     /// <param name="request">The template.</param>
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="templates">Template storage.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>201 with the created template, or a problem document.</returns>
     public static async Task<IResult> CreateAsync(
@@ -320,7 +320,7 @@ public static class LinkTemplates
     /// <param name="request">The new content.</param>
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="templates">Template storage.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>200 with the template, or 404.</returns>
     public static async Task<IResult> UpdateAsync(
@@ -372,7 +372,7 @@ public static class LinkTemplates
     /// <param name="id">The template identifier.</param>
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="templates">Template storage.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>204, or 404.</returns>
     /// <remarks>

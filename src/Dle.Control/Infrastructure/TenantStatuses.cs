@@ -1,11 +1,11 @@
 namespace Dle.Control.Infrastructure;
 
 /// <summary>
-/// The stored lifecycle values of <c>tenants.status</c> (§B.5.2).
+/// The stored lifecycle values of <c>tenants.status</c>.
 /// </summary>
 /// <remarks>
 /// Stored as text rather than as an integer so the value is legible in the database and survives a
-/// reordering of any enumeration (SHARED-KERNEL §12). <see cref="Deleted"/> is what the soft-delete
+/// reordering of any enumeration. <see cref="Deleted"/> is what the soft-delete
 /// query filter keys off, which is why it is never written by an update: deletion goes through the
 /// repository that also writes the audit entry.
 /// </remarks>

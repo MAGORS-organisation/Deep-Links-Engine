@@ -26,7 +26,6 @@ public sealed class WellKnownValidatorTests
     // ================================================================ TC-124: redirects are fatal
 
     [Theory]
-    [Trait("TestCase", "TC-124")]
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(5)]
@@ -41,7 +40,6 @@ public sealed class WellKnownValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-124")]
     public void ValidateAssetLinks_AnyRedirect_IsAFatalError()
     {
         IReadOnlyList<WellKnownValidationIssue> issues =
@@ -51,7 +49,6 @@ public sealed class WellKnownValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-124")]
     public void ValidateAasa_HttpToHttpsRedirect_StopsBeforeParsingTheBody()
     {
         // The redirect target may well contain a perfect file; it is still not the file Apple reads.
@@ -212,7 +209,6 @@ public sealed class WellKnownValidatorTests
     // ================================================================ TC-123: upload certificate
 
     [Fact]
-    [Trait("TestCase", "TC-123")]
     public void ValidateAssetLinks_FingerprintOutsideANonEmptyPlaySigningList_IsAWarningNotAnError()
     {
         IReadOnlyList<WellKnownValidationIssue> issues = WellKnownValidator.ValidateAssetLinks(
@@ -230,7 +226,6 @@ public sealed class WellKnownValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-123")]
     public void ValidateAssetLinks_FingerprintInsideThePlaySigningList_IsSilent()
     {
         Assert.Empty(WellKnownValidator.ValidateAssetLinks(
@@ -243,7 +238,6 @@ public sealed class WellKnownValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-123")]
     public void ValidateAssetLinks_WithoutAPlaySigningList_CannotJudgeAndStaysSilent()
     {
         // The five argument overload is the "we do not know the Play certificates" case. Warning
@@ -252,7 +246,6 @@ public sealed class WellKnownValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-123")]
     public void LooksLikeUploadCertificate_EmptyOrNullKnownList_IsFalse()
     {
         Assert.False(WellKnownValidator.LooksLikeUploadCertificate(Fingerprint, []));
@@ -260,7 +253,6 @@ public sealed class WellKnownValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-123")]
     public void LooksLikeUploadCertificate_ComparesRegardlessOfSpelling()
     {
         string lowercaseNoSeparators = Fingerprint.Replace(":", string.Empty, StringComparison.Ordinal).ToLowerInvariant();

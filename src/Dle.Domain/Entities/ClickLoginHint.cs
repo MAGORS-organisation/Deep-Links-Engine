@@ -3,7 +3,7 @@ namespace Dle.Domain.Entities;
 /// <summary>
 /// A keyed login reconciliation hint recorded when a signed-in visitor lands on a short link or
 /// web destination, allowing S2 login attribution to run in <c>O(1)</c> instead of scanning raw
-/// click partitions (FR-185). Maps to <c>click_login_hints</c>.
+/// click partitions. Maps to <c>click_login_hints</c>.
 /// </summary>
 public class ClickLoginHint
 {

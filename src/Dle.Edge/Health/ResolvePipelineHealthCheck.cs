@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Edge.Health;
 
 /// <summary>
-/// Readiness of the resolve path (§D.6, NFR-05).
+/// Readiness of the resolve path.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -21,8 +21,8 @@ namespace Dle.Edge.Health;
 /// <para>
 /// What it does report is the two conditions that make this instance's answers worse than another's
 /// while it stays perfectly able to serve: a geographic database that failed to load, which silently
-/// sends every geo-conditioned rule to the default (§D.6), and a click event channel that is dropping
-/// telemetry because the writer cannot keep up (NFR-06). Both are <em>degraded</em>, which maps to a
+/// sends every geo-conditioned rule to the default, and a click event channel that is dropping
+/// telemetry because the writer cannot keep up. Both are <em>degraded</em>, which maps to a
 /// 200 response, so the instance keeps serving and the operator still sees it.
 /// </para>
 /// </remarks>

@@ -1,8 +1,8 @@
 import XCTest
 @testable import DleSDK
 
-/// Consent is an input to the pipeline, not a filter after the fact (spec §E.6.2): with
-/// attribution consent absent the `signals` object is not in the body at all (TC-145, TC-146),
+/// Consent is an input to the pipeline, not a filter after the fact: with
+/// attribution consent absent the `signals` object is not in the body at all,
 /// and with analytics consent absent behavioural events are never queued.
 final class ConsentGatingTests: XCTestCase {
     private let moment = TestDates.moment

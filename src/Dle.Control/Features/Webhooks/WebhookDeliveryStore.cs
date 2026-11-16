@@ -28,7 +28,7 @@ public sealed record PendingDelivery(
     bool IsActive);
 
 /// <summary>
-/// The reads the delivery worker needs that cross tenants (§B.3 component C-10).
+/// The reads the delivery worker needs that cross tenants.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -125,7 +125,7 @@ public sealed class WebhookDeliveryStore
     /// Counts the deliveries currently in the dead letter queue, across every tenant.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The depth of the queue, for <c>dle_webhook_dlq_size</c> (§C.6).</returns>
+    /// <returns>The depth of the queue, for <c>dle_webhook_dlq_size</c>.</returns>
     public async Task<long> CountDeadLetteredAsync(CancellationToken cancellationToken)
     {
         using CrossTenantScope scope = _db.BeginCrossTenantScope(
@@ -143,7 +143,7 @@ public sealed class WebhookDeliveryStore
     /// <param name="subscriptionId">The subscription.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The subscription, or <see langword="null"/> when it does not exist <em>in this
-    /// tenant</em> — the two are indistinguishable on purpose (SHARED-KERNEL §17.7, TC-166).</returns>
+    /// tenant</em> — the two are indistinguishable on purpose.</returns>
     public async Task<WebhookSubscription?> FindAsync(Guid subscriptionId, CancellationToken cancellationToken) =>
         await _db.WebhookSubscriptions
             .AsNoTracking()

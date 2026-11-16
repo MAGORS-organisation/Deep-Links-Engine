@@ -146,7 +146,7 @@ ALGORITHMS: list[dict] = [
         "classicalSecurityLevel": 0,
         "nistQuantumSecurityLevel": 0,
         "patterns": [r"FeistelPermutation", r"SlugFeistelRounds"],
-        "note": "Slug generation (ADR-007): hides the sequence behind an unpredictable order. Not a "
+        "note": "Slug generation: hides the sequence behind an unpredictable order. Not a "
                 "confidentiality primitive; the security level is deliberately reported as 0.",
     },
     {
@@ -241,7 +241,7 @@ INVENTORY: list[dict] = [
      "assetType": "related-crypto-material", "material": "salt",
      "lifetime": "24 h (Dle:Privacy:IpSaltRotationHours)", "pqRisk": "none",
      "uses": ["alg:hmac-sha-256", "alg:hkdf-sha-256"]},
-    {"id": "K-slug", "ref": "inv:slug-permutation", "name": "Slug permutation key (ADR-007)",
+    {"id": "K-slug", "ref": "inv:slug-permutation", "name": "Slug permutation key",
      "assetType": "related-crypto-material", "material": "secret-key",
      "lifetime": "lifetime of the deployment", "pqRisk": "none (not a confidentiality boundary)",
      "uses": ["alg:keyed-feistel-permutation", "alg:hkdf-sha-256"]},

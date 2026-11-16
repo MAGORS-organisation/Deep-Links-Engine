@@ -6,7 +6,7 @@ namespace Dle.Persistence.Internal;
 /// Source generated metadata for the documents this project writes itself.
 /// </summary>
 /// <remarks>
-/// Only one shape needs it: the link snapshot stored with every revision (FR-107). It is generated
+/// Only one shape needs it: the link snapshot stored with every revision. It is generated
 /// rather than reflected so the assembly stays trimmable and so the layout of a stored revision is
 /// fixed at compile time — a revision has to deserialize years later, and a snapshot whose shape
 /// depends on runtime reflection is a snapshot whose shape can drift.

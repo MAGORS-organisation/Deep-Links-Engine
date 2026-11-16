@@ -1,5 +1,5 @@
 # =============================================================================
-# Deep Link Engine (DLE) — production overrides for Profile B (docs/zadanie.md §B.8).
+# Deep Link Engine (DLE) — production overrides for Profile B.
 #
 #   helm upgrade --install dle deploy/helm/dle -n dle --create-namespace \
 #     -f deploy/helm/dle/values-production.yaml --set ingress.host=go.example.com
@@ -127,7 +127,7 @@ ingress:
   # Keep the admin console and API off the link domain; jwks.json stays on `host`.
   exposeControlOnHost: false
   controlHost: admin.example.com        # CHANGE ME
-  # Never put a redirect or rewrite annotation into wellKnownAnnotations (§A.2.1).
+  # Never put a redirect or rewrite annotation into wellKnownAnnotations.
   wellKnownAnnotations: {}
   mainAnnotations: {}
 

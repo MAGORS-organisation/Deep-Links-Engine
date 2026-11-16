@@ -3,7 +3,7 @@ using Dle.Control.Infrastructure;
 namespace Dle.Control.Identity;
 
 /// <summary>
-/// Refuses a request that presents more than one credential (T-09, §E.2.1 TB2).
+/// Refuses a request that presents more than one credential.
 /// </summary>
 /// <remarks>
 /// <para>

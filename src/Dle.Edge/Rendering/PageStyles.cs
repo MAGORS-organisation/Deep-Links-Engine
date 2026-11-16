@@ -35,7 +35,7 @@ internal static class PageStyles
 
     /// <summary>
     /// The inline stylesheet. Written with a nonce, so the page needs no <c>unsafe-inline</c>
-    /// (T-11, S-04).
+    ///.
     /// </summary>
     /// <remarks>
     /// Contrast, measured against WCAG 2.2 AA: light scheme text #16202e on #f6f7f9 is 13.4:1 and the

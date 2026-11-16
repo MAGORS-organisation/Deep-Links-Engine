@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="ClickLoginHint"/> to <c>click_login_hints</c> (FR-185).</summary>
+/// <summary>Maps <see cref="ClickLoginHint"/> to <c>click_login_hints</c>.</summary>
 public sealed class ClickLoginHintConfiguration : IEntityTypeConfiguration<ClickLoginHint>
 {
     /// <inheritdoc />

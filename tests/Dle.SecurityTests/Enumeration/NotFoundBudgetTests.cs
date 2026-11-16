@@ -59,8 +59,6 @@ public sealed class NotFoundBudgetTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("TestCase", "TC-108")]
-    [Trait("Threat", "T-07")]
     public async Task Resolve_ManyDistinctMissingSlugsFromOnePrefix_ExhaustsThe404BudgetAndShadowBansThePrefix()
     {
         using HttpClient scanner = _edge.CreateClientFrom("203.0.113.7");
@@ -85,8 +83,6 @@ public sealed class NotFoundBudgetTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("TestCase", "TC-108")]
-    [Trait("Threat", "T-07")]
     public async Task Resolve_AShadowBannedPrefix_IsAnsweredWithoutTouchingTheStore()
     {
         using HttpClient scanner = _edge.CreateClientFrom("192.0.2.7");
@@ -110,8 +106,6 @@ public sealed class NotFoundBudgetTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("TestCase", "TC-108")]
-    [Trait("Threat", "T-07")]
     public async Task Resolve_LegitimateTrafficFromAnotherPrefix_IsUnaffectedByAScanElsewhere()
     {
         using HttpClient scanner = _edge.CreateClientFrom("198.51.100.7");
@@ -130,8 +124,6 @@ public sealed class NotFoundBudgetTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("TestCase", "TC-108")]
-    [Trait("Threat", "T-07")]
     public async Task Resolve_SuccessfulTraffic_DoesNotConsumeThe404Budget()
     {
         // The independence claim, from the side that a shared counter would break first. This client
@@ -157,8 +149,6 @@ public sealed class NotFoundBudgetTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("TestCase", "TC-108")]
-    [Trait("Threat", "T-07")]
     public async Task Resolve_ExhaustingThe404Budget_DoesNotConsumeAnotherPrefixesBudget()
     {
         // The same independence, across prefixes rather than across budgets: the guard's key space is

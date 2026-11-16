@@ -7,7 +7,7 @@ using Npgsql;
 namespace Dle.Control.Workers;
 
 /// <summary>
-/// Leader election over a PostgreSQL session advisory lock (§B.3).
+/// Leader election over a PostgreSQL session advisory lock.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -86,7 +86,7 @@ public sealed partial class PostgresLeaderLock
     /// <returns>
     /// A handle to dispose when the pass is over, or <see langword="null"/> when another replica
     /// holds the lock or the database could not be reached. Both are "not the leader"; neither is
-    /// an error the caller has to handle differently (SHARED-KERNEL §17.9).
+    /// an error the caller has to handle differently.
     /// </returns>
     public async Task<LeaderLease?> TryAcquireAsync(
         string jobName,

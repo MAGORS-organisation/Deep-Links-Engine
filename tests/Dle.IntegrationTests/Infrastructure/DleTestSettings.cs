@@ -14,7 +14,7 @@ namespace Dle.IntegrationTests.Infrastructure;
 /// <para>
 /// The master secret is a fixed string. Determinism is the point: the click identifier codec, the
 /// slug permutation and the address hasher all derive from it, so a fixed secret is what lets a test
-/// mint a click identifier in one process and decode it in another (TC-141).
+/// mint a click identifier in one process and decode it in another.
 /// </para>
 /// </remarks>
 public static class DleTestSettings
@@ -47,7 +47,7 @@ public static class DleTestSettings
 
             // hash_only is the shipped default and would leave ip_prefix null everywhere. The
             // attribution and partition tests need the prefix to exist, and the consent gate still
-            // has the final say on whether it is written (SHARED-KERNEL section 2).
+            // has the final say on whether it is written.
             ["Dle:Privacy:IpStorage"] = "full",
             ["Dle:Privacy:ConsentMode"] = "aggregate_only",
 

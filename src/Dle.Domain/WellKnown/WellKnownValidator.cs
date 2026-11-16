@@ -1,20 +1,20 @@
 namespace Dle.Domain.WellKnown;
 
 /// <summary>
-/// Validates a well-known file actually fetched from a customer domain (FR-143, FR-144).
+/// Validates a well-known file actually fetched from a customer domain.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The validator is deliberately strict about transport, because Apple and Google are. A redirect on
 /// the way to the file is fatal on both platforms even though the file itself is perfectly valid, and a
 /// content type other than <c>application/json</c> is enough for Apple to discard the association
-/// (§A.2.1, §A.2.2, TC-121). Reporting these as warnings would mean shipping a domain that the operator
+///. Reporting these as warnings would mean shipping a domain that the operator
 /// believes is verified and that no device will honour.
 /// </para>
 /// <para>
 /// The one finding that is a warning rather than an error is the Play App Signing heuristic: an upload
 /// certificate fingerprint produces a file that is syntactically correct and works in a debug build, so
-/// the validator can only say that it looks wrong (FR-144, TC-123).
+/// the validator can only say that it looks wrong.
 /// </para>
 /// </remarks>
 public static class WellKnownValidator
@@ -141,7 +141,7 @@ public static class WellKnownValidator
     /// <summary>
     /// Validates a fetched <c>assetlinks.json</c> file and, when the Play App Signing fingerprints for the
     /// application are known, also warns about fingerprints that look like an upload certificate
-    /// (FR-144, TC-123).
+    ///.
     /// </summary>
     /// <param name="body">The response body, exactly as received.</param>
     /// <param name="contentType">The response <c>Content-Type</c> header; a charset parameter is ignored.</param>
@@ -246,7 +246,7 @@ public static class WellKnownValidator
     /// <summary>
     /// Heuristic for the most common Android App Links failure: the file declares the upload certificate
     /// from the local keystore instead of the certificate Google signs the released artifact with
-    /// (§A.2.2, FR-144, TC-123).
+    ///.
     /// </summary>
     /// <param name="fingerprint">The fingerprint found in the file.</param>
     /// <param name="knownPlayFingerprints">

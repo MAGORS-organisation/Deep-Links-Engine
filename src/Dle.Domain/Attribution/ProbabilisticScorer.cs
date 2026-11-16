@@ -15,7 +15,7 @@ namespace Dle.Domain.Attribution;
 /// coin flip beyond 24 hours. A fingerprint match older than a day is more likely wrong than
 /// right. That is why the confidence decays linearly to zero across the window, why the default
 /// window is 60 minutes rather than the seven days the commercial vendors use, and why the result
-/// is never reported as a certainty (FR-186).
+/// is never reported as a certainty.
 /// </para>
 /// <para>
 /// A signal that is absent on either side contributes nothing and its weight is <em>not</em>
@@ -26,7 +26,7 @@ namespace Dle.Domain.Attribution;
 /// <para>
 /// The caller compares the result against the configured minimum confidence and degrades to
 /// <see cref="MatchType.None"/> when it is lower. Outside the window the score is exactly zero,
-/// so a late match is never reported as a weak one (TC-147).
+/// so a late match is never reported as a weak one.
 /// </para>
 /// </remarks>
 public static class ProbabilisticScorer

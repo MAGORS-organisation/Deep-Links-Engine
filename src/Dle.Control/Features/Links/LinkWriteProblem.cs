@@ -45,7 +45,7 @@ internal static class LinkWriteProblem
         return outcome.Error switch
         {
             // A resource of another tenant is filtered out of the queryable before any handler sees
-            // it, so it arrives here as an ordinary miss and leaves as 404 — never 403 (TC-166).
+            // it, so it arrives here as an ordinary miss and leaves as 404 — never 403.
             LinkWriteError.DomainNotFound or LinkWriteError.LinkNotFound => DleProblem.NotFound(detail),
 
             LinkWriteError.SlugTaken => DleProblem.Conflict(
@@ -106,7 +106,7 @@ internal static class LinkWriteProblem
         };
     }
 
-    /// <summary>Renders a failure as one line of a bulk result (FR-103).</summary>
+    /// <summary>Renders a failure as one line of a bulk result.</summary>
     /// <param name="reference">The caller's correlation key for the line.</param>
     /// <param name="outcome">The failed outcome.</param>
     /// <returns>The line to write back.</returns>

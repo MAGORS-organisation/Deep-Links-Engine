@@ -102,7 +102,6 @@ public sealed class CoveringIndexTests(DleInfrastructureFixture infrastructure)
         """;
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task ResolveIndex_ForTheColumnsItCovers_IsAnsweredByAnIndexOnlyScan()
     {
         Seeded seeded = await SeedAsync();
@@ -123,7 +122,6 @@ public sealed class CoveringIndexTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task ResolveQuery_AsTheEdgeIssuesIt_IsAnsweredByAnIndexOnlyScanOnIxLinksResolve()
     {
         // §B.5.2: "verify with EXPLAIN (ANALYZE, BUFFERS) that the index-only scan is really used —
@@ -146,7 +144,6 @@ public sealed class CoveringIndexTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task ResolveIndex_IsPreferredOverASequentialScanOnceTheTableIsRealisticallySized()
     {
         // The weaker claim, and the one that is worth having even if the covering scan is not

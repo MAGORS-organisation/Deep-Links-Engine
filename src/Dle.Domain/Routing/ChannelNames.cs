@@ -16,7 +16,7 @@ public static class ChannelNames
     /// <summary>An ordinary web browser, not embedded in another application.</summary>
     public const string Browser = "browser";
 
-    /// <summary>A verified crawler; answered with an Open Graph preview rather than a redirect (FR-161, ADR-009).</summary>
+    /// <summary>A verified crawler; answered with an Open Graph preview rather than a redirect.</summary>
     public const string Crawler = "crawler";
 
     /// <summary>Facebook in-app webview.</summary>
@@ -109,7 +109,7 @@ public static class ChannelNames
     /// This is the single most consequential classification in the whole engine: such a webview hands a
     /// Universal Link or an App Link to the operating system only on a genuine tap of an <c>&lt;a&gt;</c>
     /// element, so these clients must be served an interstitial page rather than a redirect
-    /// (§A.2.6, ADR-009, FR-162) — even when the rule asks for <see cref="InterstitialMode.Never"/>.
+    /// — even when the rule asks for <see cref="InterstitialMode.Never"/>.
     /// </remarks>
     /// <param name="channel">The channel produced by the client classifier.</param>
     /// <returns><see langword="true"/> when the channel is an in-app webview.</returns>

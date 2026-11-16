@@ -61,8 +61,6 @@ public sealed class IndistinguishableResponseTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-102")]
-    [Trait("Threat", "T-07")]
     public async Task Resolve_AMissingSlugAndAnotherTenantsSlug_ProduceByteIdenticalResponses()
     {
         using HttpClient client = _edge.Factory.CreateClientFrom("198.18.20.1");
@@ -85,8 +83,6 @@ public sealed class IndistinguishableResponseTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-102")]
-    [Trait("Threat", "T-07")]
     public async Task Resolve_EveryUnservableState_ProducesTheSameNotFoundDocument()
     {
         // Missing, inactive, not yet started, expired with no landing page, and a slug that cannot be
@@ -136,8 +132,6 @@ public sealed class IndistinguishableResponseTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-102")]
-    [Trait("Threat", "T-07")]
     public async Task Resolve_AMissingSlugAndAnotherTenantsSlug_TakeComparableTime()
     {
         // A coarse sanity check, not a microbenchmark. The tolerance is wide on purpose: this is here

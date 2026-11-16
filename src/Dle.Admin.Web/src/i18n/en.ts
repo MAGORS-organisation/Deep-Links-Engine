@@ -1,6 +1,6 @@
 /**
  * English catalogue. Keys are dotted, values may carry {placeholders}. The Slovak catalogue is
- * typed against this object, so a key added here without a translation fails the build (NFR-15).
+ * typed against this object, so a key added here without a translation fails the build.
  */
 export const en = {
   'app.name': 'Deep Link Engine',
@@ -293,13 +293,13 @@ export const en = {
   'rules.add': 'Add rule',
   'rules.addDefault': 'Add default rule',
   'rules.default': 'Default rule',
-  'rules.defaultHint': 'Matches every client. Exactly one is required and it must be last (TC-105).',
+  'rules.defaultHint': 'Matches every client. Exactly one is required and it must be last.',
   'rules.rule': 'Rule {n}',
   'rules.id': 'Rule ID',
   'rules.idHint': 'Written to the click stream; renaming breaks historical reports.',
   'rules.missingDefault.title': 'No default rule',
   'rules.missingDefault.detail':
-    'A link without a default rule answers 404 to every client that matches nothing. The control plane refuses to store it (TC-105). Add a default rule to save.',
+    'A link without a default rule answers 404 to every client that matches nothing. The control plane refuses to store it. Add a default rule to save.',
   'rules.when': 'When',
   'rules.then': 'Then',
   'rules.cond.platform': 'Platform',
@@ -514,7 +514,7 @@ export const en = {
   'apps.field.domains': 'Associated domains',
   'apps.fingerprint.warning.title': 'Use the Play App Signing certificate, not your keystore',
   'apps.fingerprint.warning.detail':
-    'With Play App Signing (default since 2021) devices verify the certificate Google signs the release with. Take the SHA-256 from Play Console → Release → Setup → App signing → "App signing key certificate". A fingerprint from the local upload keystore verifies in a debug build and then fails silently in production (FR-144).',
+    'With Play App Signing (default since 2021) devices verify the certificate Google signs the release with. Take the SHA-256 from Play Console → Release → Setup → App signing → "App signing key certificate". A fingerprint from the local upload keystore verifies in a debug build and then fails silently in production.',
   'apps.warnings': 'Warnings from the control plane',
   'apps.col.app': 'App',
   'apps.col.identity': 'Identity',
@@ -611,7 +611,7 @@ export const en = {
   'abuse.decide.noteHint': 'Say what was decided and why. This is the record the notice is answered from.',
   'abuse.decided': 'Decision recorded',
   'abuse.quarantine.title': 'Quarantine a link',
-  'abuse.quarantine.hint': 'The link answers 410 Gone from the next resolve on (TC-103). Reversible with release.',
+  'abuse.quarantine.hint': 'The link answers 410 Gone from the next resolve on. Reversible with release.',
   'abuse.quarantine.linkId': 'Link ID',
   'abuse.quarantine.reason': 'Reason',
   'abuse.quarantine.confirmTitle': 'Quarantine link {id}?',

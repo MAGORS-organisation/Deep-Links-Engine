@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Dle.Control.Identity;
 
 /// <summary>
-/// Maps token claims from an external OIDC identity provider to the DLE principal claims (FR-242).
+/// Maps token claims from an external OIDC identity provider to the DLE principal claims.
 /// </summary>
 /// <remarks>
 /// <para>

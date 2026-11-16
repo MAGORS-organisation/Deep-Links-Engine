@@ -23,13 +23,13 @@ public struct DleProblem: Sendable, Hashable, Decodable {
     public static let base = "https://docs.dle.dev/problems/"
     /// The request body failed validation.
     public static let validationFailed = base + "validation-failed"
-    /// A rate limit was exceeded (spec §E.9). Carries `Retry-After`.
+    /// A rate limit was exceeded. Carries `Retry-After`.
     public static let rateLimited = base + "rate-limited"
     /// The SDK key is missing, malformed, unknown or inactive.
     public static let unauthorized = base + "unauthorized"
     /// The credential lacks the scope the operation needs.
     public static let forbidden = base + "forbidden"
-    /// The claim code cannot be redeemed (TC-148). Carries `reason` and `can_reissue`.
+    /// The claim code cannot be redeemed. Carries `reason` and `can_reissue`.
     public static let claimCodeInvalid = base + "claim-code-invalid"
     /// A dependency the engine needs did not answer.
     public static let dependencyUnavailable = base + "dependency-unavailable"
@@ -122,7 +122,7 @@ public enum DleError: Error, Sendable, Hashable {
     /// was one; `retryAfter` is the server's `Retry-After` in seconds.
     case http(status: Int, problem: DleProblem?, retryAfter: TimeInterval?)
     /// A 2xx body could not be decoded. In particular a resolve response without `match_type`
-    /// or `confidence` is refused rather than guessed at (FR-186).
+    /// or `confidence` is refused rather than guessed at.
     case malformedResponse(String)
     /// An event batch outside `1 ... 100` events was requested.
     case invalidBatch(count: Int)

@@ -2,7 +2,7 @@ namespace Dle.Domain.Crypto;
 
 /// <summary>
 /// A token in the engine format <c>dlt1.&lt;alg&gt;.&lt;kid&gt;.&lt;base64url(payload)&gt;.&lt;base64url(signature)&gt;</c>
-/// (§E.4.2).
+///.
 /// </summary>
 /// <remarks>
 /// <para>

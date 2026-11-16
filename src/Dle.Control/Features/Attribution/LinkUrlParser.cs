@@ -11,19 +11,19 @@ namespace Dle.Control.Features.Attribution;
 public readonly record struct ReportedLink(string Host, string Slug);
 
 /// <summary>
-/// Turns the URL an application says it was opened with into a host and a slug (§B.6.4, FR-223).
+/// Turns the URL an application says it was opened with into a host and a slug.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The input is attacker controlled: it arrives in a JSON body from a binary that anybody can
 /// modify. Nothing is echoed back, nothing is logged whole, and only the two normalized components
 /// survive — the query string and the fragment are discarded here rather than downstream, because
-/// a value that never leaves this method cannot be logged by accident (SHARED-KERNEL §17.5).
+/// a value that never leaves this method cannot be logged by accident.
 /// </para>
 /// <para>
 /// Discarding the query is also correct on the merits. The only thing the reported URL is used for
 /// is to look up which of the tenant's links was opened; the deep link path and the parameters
-/// come back from the stored link, never from what the caller sent (SHARED-KERNEL §17.4).
+/// come back from the stored link, never from what the caller sent.
 /// </para>
 /// </remarks>
 public static class LinkUrlParser

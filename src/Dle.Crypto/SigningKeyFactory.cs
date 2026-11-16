@@ -57,7 +57,7 @@ public static class SigningKeyFactory
     /// <summary>Algorithms this provider implements.</summary>
     public static IReadOnlyCollection<string> SupportedAlgorithms => SupportedAlgorithmIds;
 
-    /// <summary>Algorithms gated behind <see cref="CryptoOptions.HybridPqEnabled"/> (§E.5.3).</summary>
+    /// <summary>Algorithms gated behind <see cref="CryptoOptions.HybridPqEnabled"/>.</summary>
     public static IReadOnlyCollection<string> PostQuantumAlgorithms => PostQuantumAlgorithmIds;
 
     /// <summary>Whether an algorithm identifier is implemented here.</summary>

@@ -37,7 +37,6 @@ public sealed class ValkeyUnavailableTests(DleInfrastructureFixture infrastructu
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("Spec", "D.6")]
     public async Task ValkeyUnreachable_ResolveStillAnswersFromL1AndPostgres()
     {
         string host = TestSeed.UniqueHost("chaos-valkey");
@@ -66,7 +65,6 @@ public sealed class ValkeyUnavailableTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "D.6")]
     public async Task ValkeyUnreachable_AMissIsStillAnsweredAsAMissRatherThanAsAFailure()
     {
         string host = TestSeed.UniqueHost("chaos-valkey-404");
@@ -82,7 +80,6 @@ public sealed class ValkeyUnavailableTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "D.6")]
     public async Task ValkeyUnreachable_AMetricReportsThatTheSharedCacheLevelIsDown()
     {
         // §D.6 names the metric: "resolve works from L1 + Postgres with higher latency; metric

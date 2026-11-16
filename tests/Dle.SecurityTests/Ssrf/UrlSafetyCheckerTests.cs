@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.SecurityTests.Ssrf;
 
 /// <summary>
-/// The composed SSRF gate: syntax, then the resolved address, then reputation (T-02, TC-162, TC-163).
+/// The composed SSRF gate: syntax, then the resolved address, then reputation.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -42,8 +42,6 @@ public sealed class UrlSafetyCheckerTests : IDisposable
     public void Dispose() => _metrics.Dispose();
 
     [Theory]
-    [Trait("TestCase", "TC-162")]
-    [Trait("Threat", "T-02")]
     [InlineData("http://169.254.169.254/latest/meta-data/")]
     [InlineData("http://[::ffff:169.254.169.254]/latest/meta-data/")]
     [InlineData("http://10.0.0.1/admin")]
@@ -60,8 +58,6 @@ public sealed class UrlSafetyCheckerTests : IDisposable
     }
 
     [Fact]
-    [Trait("TestCase", "TC-162")]
-    [Trait("Threat", "T-02")]
     public async Task CheckAsync_AHostThatDoesNotResolve_FailsClosed()
     {
         // The rebinding-shaped case that is reachable without a network. RFC 2606 guarantees `.invalid`
@@ -79,7 +75,6 @@ public sealed class UrlSafetyCheckerTests : IDisposable
     }
 
     [Theory]
-    [Trait("TestCase", "TC-161")]
     [InlineData("javascript:alert(1)")]
     [InlineData("data:text/html,<script>alert(1)</script>")]
     [InlineData("file:///etc/passwd")]
@@ -93,8 +88,6 @@ public sealed class UrlSafetyCheckerTests : IDisposable
     }
 
     [Fact]
-    [Trait("TestCase", "TC-163")]
-    [Trait("Threat", "T-01")]
     public async Task Blocklist_AHostTheOperatorListed_IsRefusedAndAttributedToTheBlocklist()
     {
         // Asserted against the reputation provider directly rather than through the composed checker,
@@ -129,7 +122,6 @@ public sealed class UrlSafetyCheckerTests : IDisposable
     }
 
     [Fact]
-    [Trait("TestCase", "TC-163")]
     public async Task Blocklist_ASubdomainOfABlockedHost_IsRefusedToo()
     {
         // An abuser who owns one host owns all of them, so a blocklist that only matches the exact
@@ -152,7 +144,6 @@ public sealed class UrlSafetyCheckerTests : IDisposable
     }
 
     [Fact]
-    [Trait("TestCase", "TC-163")]
     public async Task Blocklist_AHostTheOperatorDidNotList_IsNotApproved()
     {
         // Absence from a local blocklist is not evidence of safety, so the source stays silent rather
@@ -174,7 +165,6 @@ public sealed class UrlSafetyCheckerTests : IDisposable
     }
 
     [Fact]
-    [Trait("TestCase", "TC-163")]
     public async Task CheckAsync_ABlocklistedHost_IsNeverApproved()
     {
         // The composed judgement. Which step refuses depends on whether the name resolves on the
@@ -198,8 +188,6 @@ public sealed class UrlSafetyCheckerTests : IDisposable
     }
 
     [Theory]
-    [Trait("TestCase", "TC-162")]
-    [Trait("Threat", "T-02")]
     [InlineData("https://169.254.169.254/hook")]
     [InlineData("https://10.1.2.3/hook")]
     [InlineData("https://127.0.0.1/hook")]
@@ -221,7 +209,6 @@ public sealed class UrlSafetyCheckerTests : IDisposable
     }
 
     [Theory]
-    [Trait("Threat", "T-02")]
     [InlineData("http://127.0.0.1:8080/hook")]
     [InlineData("https://10.0.0.5/hook")]
     [InlineData("http://192.168.1.10:9000/hook")]
@@ -248,7 +235,6 @@ public sealed class UrlSafetyCheckerTests : IDisposable
     }
 
     [Fact]
-    [Trait("Threat", "T-02")]
     public async Task WebhookDestination_OverPlainHttp_IsRefused()
     {
         // A signature proves origin, not confidentiality, and the payload carries attribution data
@@ -263,7 +249,6 @@ public sealed class UrlSafetyCheckerTests : IDisposable
     }
 
     [Fact]
-    [Trait("Threat", "T-02")]
     public async Task WebhookDestination_ThatDoesNotResolve_FailsClosed()
     {
         WebhookDestinationVerdict verdict = await WebhookDestinationPolicy.ValidateAsync(

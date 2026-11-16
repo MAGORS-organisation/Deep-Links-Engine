@@ -10,11 +10,11 @@ import java.util.UUID
 
 /**
  * The installation identifier: a random UUID minted once and kept for the life of the
- * installation. It is the `install_id` of every request (FR-188, TC-143) and the key under which
- * the engine's deletion endpoint erases what it holds about this device (spec §E.6.3).
+ * installation. It is the `install_id` of every request and the key under which
+ * the engine's deletion endpoint erases what it holds about this device.
  *
  * It is random, never derived from a hardware identifier, the advertising identifier or anything
- * else about the device (FR-227). Uninstalling the application discards it, and a backup restore
+ * else about the device. Uninstalling the application discards it, and a backup restore
  * does not bring it back: [sk.magors.dle.DleClient] clears it when its no-backup install marker
  * is missing.
  *

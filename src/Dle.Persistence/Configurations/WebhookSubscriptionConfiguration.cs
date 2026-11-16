@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="WebhookSubscription"/> to the <c>webhook_subscriptions</c> table (FR-204).</summary>
+/// <summary>Maps <see cref="WebhookSubscription"/> to the <c>webhook_subscriptions</c> table.</summary>
 public sealed class WebhookSubscriptionConfiguration : IEntityTypeConfiguration<WebhookSubscription>
 {
     /// <inheritdoc />

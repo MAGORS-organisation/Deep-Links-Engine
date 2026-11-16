@@ -14,7 +14,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Registration of the abuse module (SHARED-KERNEL §15).
+/// Registration of the abuse module.
 /// </summary>
 /// <remarks>
 /// One call from <c>Dle.Control/Program.cs</c> brings up the target URL safety pipeline, the public
@@ -143,7 +143,7 @@ public static class AbuseServiceCollectionExtensions
     /// residential connection is routinely handed a whole /64, so keying on the full address would
     /// hand one household an unlimited quota. A request with no address at all — a unix socket, a
     /// misconfigured proxy — shares one bucket, which fails towards the limit rather than around
-    /// it. The key never reaches a log (SHARED-KERNEL §17.5).
+    /// it. The key never reaches a log.
     /// </remarks>
     private static string PartitionKey(IPAddress? address) =>
         IpAddressNormalization.PartitionKey64(address, "unknown");

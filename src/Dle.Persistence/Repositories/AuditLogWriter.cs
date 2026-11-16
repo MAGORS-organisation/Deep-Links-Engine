@@ -5,7 +5,7 @@ using Dle.Domain.Ports;
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Appends entries to the administrative audit trail (FR-246, §E.6.3).
+/// Appends entries to the administrative audit trail.
 /// </summary>
 /// <remarks>
 /// Append only, by design and not merely by convention: there is no update and no delete on this
@@ -172,7 +172,7 @@ public sealed class AuditLogWriter : IAuditLogWriter
                                 CultureInfo.InvariantCulture,
                                 $"Audit metadata must not carry '{property.Name}': the audit trail " +
                                 $"is immutable and therefore may never contain data about an end " +
-                                $"user (§E.6.3)."),
+                                $"user."),
                             parameterName);
                     }
                 }

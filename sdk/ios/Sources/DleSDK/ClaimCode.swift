@@ -1,8 +1,8 @@
 import Foundation
 
-/// The six-character claim code of strategy S3 (FR-184): the user reads it off the interstitial
+/// The six-character claim code of strategy S3: the user reads it off the interstitial
 /// page and types it into the app. This is the only deterministic deferred strategy on iOS that
-/// does not require the user to be signed in (spec §A.2.4, §B.6.3).
+/// does not require the user to be signed in.
 ///
 /// This type mirrors `Dle.Domain.Attribution.ClaimCode` **exactly** — same alphabet, same
 /// characters stripped, same case folding, same length — so that a code the SDK accepts locally

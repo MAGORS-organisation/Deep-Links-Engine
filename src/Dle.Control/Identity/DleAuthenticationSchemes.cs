@@ -1,7 +1,7 @@
 namespace Dle.Control.Identity;
 
 /// <summary>
-/// Names of the authentication schemes the control plane registers (FR-242).
+/// Names of the authentication schemes the control plane registers.
 /// </summary>
 /// <remarks>
 /// <para>
