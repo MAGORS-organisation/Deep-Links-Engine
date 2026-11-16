@@ -108,7 +108,7 @@ the SDK sends nothing and `hint.accepted` is `false`.
 ## Events
 
 ```ts
-dle.track({ type: 'link_open', url: 'https://link.zak.sk/aB3xK9pQ' });
+dle.track({ type: 'link_open', url: 'https://link.example.sk/aB3xK9pQ' });
 dle.track({ type: 'conversion', name: 'purchase', value: 24.9, currency: 'EUR' });
 await dle.flush(); // optional; flushes happen automatically
 ```

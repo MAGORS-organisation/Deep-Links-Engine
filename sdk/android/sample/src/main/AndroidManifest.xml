@@ -36,9 +36,14 @@
               app directly, with no chooser. Only https and only the exact host: a custom scheme
               would let any application claim the same links, and carries no verification.
 
-              Replace link.example.sk with the domain dle-edge serves. The fingerprint in
-              assetlinks.json must be the one Google Play signs the release with (Play Console >
-              App integrity), not the upload keystore's; see README.md.
+              Replace link.example.sk with the domain dle-edge serves, and register this app in the
+              engine's console (Apps) with its package name and the SHA-256 fingerprint of its
+              signing certificate; dle-edge publishes both in assetlinks.json. With Play App
+              Signing that is the certificate Google Play signs the release with (Play Console >
+              Test and release > App integrity > App signing key certificate), not the upload
+              keystore's. Add the upload or debug certificate as well for builds Google does not
+              sign. On a device, "adb shell pm get-app-links <package>" must report "verified";
+              after a change to the fingerprints, devices can take up to seven days to agree.
             -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />

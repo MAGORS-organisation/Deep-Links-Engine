@@ -212,13 +212,14 @@ public sealed record BulkLinkResult
     /// <summary>Whether the line succeeded.</summary>
     public required bool Ok { get; init; }
 
-    /// <summary>Created link identifier when <see cref="Ok"/> is true.</summary>
+    /// <summary>Created link identifier when <c>ok</c> is <c>true</c>.</summary>
     public string? Id { get; init; }
 
-    /// <summary>Short URL when <see cref="Ok"/> is true.</summary>
+    /// <summary>Short URL when <c>ok</c> is <c>true</c>.</summary>
     public string? ShortUrl { get; init; }
 
-    /// <summary>Problem type from <see cref="ProblemCodes"/> when the line failed.</summary>
+    /// <summary>Problem type URI, the same value as the <c>type</c> member of a problem document, when
+    /// the line failed.</summary>
     public string? Error { get; init; }
 
     /// <summary>Human readable failure detail.</summary>

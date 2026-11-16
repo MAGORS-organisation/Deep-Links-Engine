@@ -1,10 +1,8 @@
 # Helm chart — resolve dependencies, lint, render every supported profile, validate the manifests.
 #
-# The chart was authored without Helm available, so until this workflow existed nothing had ever
-# rendered it: the bitnami dependency ranges in Chart.yaml were unresolved and the templates were
-# checked for balanced braces and nothing more. This job is the first and only place that runs
-# `helm dependency update`, `helm lint` and `helm template`, for the three ways the chart is meant
-# to be deployed:
+# This is the chart's check on every change: the first job resolves the pinned bitnami dependencies
+# in Chart.yaml and runs `helm dependency update`, `helm lint` and `helm template` for the three
+# ways the chart is meant to be deployed:
 #
 #   external  — managed PostgreSQL and Valkey handed in as connection strings
 #   bundled   — the bitnami sub-charts, for a single-node evaluation install
@@ -85,8 +83,8 @@ jobs:
           kubeconform -v
 
       - name: Resolve chart dependencies
-        # Chart.yaml declares version ranges the authoring machine could not resolve. This is where
-        # they are resolved for the first time; a failure here means the ranges need pinning.
+        # Chart.yaml pins exact sub-chart versions. A failure here means the registry no longer
+        # serves one of them, or a bump in Chart.yaml names a version that does not exist.
         run: |
           set -euo pipefail
           helm dependency update "$CHART_DIR"

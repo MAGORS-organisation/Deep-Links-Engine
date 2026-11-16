@@ -26,10 +26,10 @@ internal static class CryptoKeyDerivation
     /// <summary>Label for the click identifier MAC key.</summary>
     internal const string ClickIdMacLabel = "dle:click-id:mac:v1";
 
-    /// <summary>Label for the IP hash secret (K9).</summary>
+    /// <summary>Label for the IP hash secret.</summary>
     internal const string IpHashLabel = "dle:ip-hash:v1";
 
-    /// <summary>Label for the claim code pepper (K3).</summary>
+    /// <summary>Label for the claim code pepper.</summary>
     internal const string ClaimCodeLabel = "dle:claim-code:v1";
 
     /// <summary>Label prefix for the derived bootstrap signing key. The algorithm identifier is

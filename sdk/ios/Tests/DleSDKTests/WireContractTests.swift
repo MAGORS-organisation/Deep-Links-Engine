@@ -183,21 +183,21 @@ final class WireContractTests: XCTestCase {
 
     func testEventBatchSerializesToTheLiteralOfTheWireContract() throws {
         let expected = """
-            {"install_id":"9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1","events":[{"type":"link_open","url":"https://link.zak.sk/aB3xK9pQ","ts":"2026-09-03T10:00:00+00:00"},{"type":"conversion","name":"purchase","value":24.9,"currency":"EUR","ts":"2026-09-03T10:05:00+00:00"}]}
+            {"install_id":"9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1","events":[{"type":"link_open","url":"https://link.example.sk/aB3xK9pQ","ts":"2026-09-03T10:00:00+00:00"},{"type":"conversion","name":"purchase","value":24.9,"currency":"EUR","ts":"2026-09-03T10:05:00+00:00"}]}
             """
         let batch = EventBatchBody(
             installId: TestSupport.installId,
             platform: nil,
             appVersion: nil,
             events: [
-                DleEvent(type: .linkOpen, url: "https://link.zak.sk/aB3xK9pQ", timestamp: moment),
+                DleEvent(type: .linkOpen, url: "https://link.example.sk/aB3xK9pQ", timestamp: moment),
                 DleEvent(type: .conversion, name: "purchase", value: 24.9, currency: "EUR", timestamp: moment.addingTimeInterval(300)),
             ])
 
         let json = try TestSupport.encode(batch)
 
         XCTAssertEqual(try TestSupport.canonical(json), try TestSupport.canonical(expected))
-        XCTAssertTrue(json.contains(#""url":"https://link.zak.sk/aB3xK9pQ""#), "slashes must not be escaped: \(json)")
+        XCTAssertTrue(json.contains(#""url":"https://link.example.sk/aB3xK9pQ""#), "slashes must not be escaped: \(json)")
         XCTAssertTrue(json.contains(#""ts":"2026-09-03T10:05:00+00:00""#), json)
         XCTAssertTrue(json.contains(#""value":24.9"#), json)
         XCTAssertFalse(json.contains("timestamp"), "the wire name is ts")

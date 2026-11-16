@@ -70,7 +70,7 @@ public static class AbuseServiceCollectionExtensions
 
         services.AddHttpClient(UrlHausReputationProvider.HttpClientName, static client =>
         {
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("dle-control/1.0 (+https://docs.dle.dev)");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("dle-control/1.0 (+https://kyberware.net/dle)");
             client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
         });
 

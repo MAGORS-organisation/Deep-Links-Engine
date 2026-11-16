@@ -4,8 +4,18 @@ import DleSDK
 /// The smallest complete integration: configure once, resolve once, route every open.
 ///
 /// Add this file, `ContentView.swift` and `DeepLinkRouter.swift` to an iOS app target that
-/// depends on the `DleSDK` package, and give the target the associated-domains entitlement
-/// described in `README.md`.
+/// depends on the `DleSDK` package (Xcode: Add Package Dependencies, Add Local, `sdk/ios`).
+/// This file declares `@main`, so remove or merge the target's own `App`. Then:
+///
+/// 1. Register the app in the engine's console (Apps) with its Apple Team ID, bundle identifier
+///    and link host. The edge then serves `/.well-known/apple-app-site-association` on that host;
+///    until Apple's CDN has fetched it, taps open Safari instead of the app.
+/// 2. Signing & Capabilities, + Capability, Associated Domains: add `applinks:<your link host>`
+///    (here `applinks:link.example.com`). `applinks:<host>?mode=developer` bypasses Apple's CDN
+///    during development and must be removed before App Store submission.
+/// 3. Below, replace the endpoint with your `dle-control` host, `dle_pk_replace_me` with the
+///    app's publishable SDK key (console, Apps, SDK keys), and list exactly the `applinks:`
+///    hosts in `linkHosts`.
 @main
 struct DleSampleApp: App {
     @StateObject private var router = DeepLinkRouter()

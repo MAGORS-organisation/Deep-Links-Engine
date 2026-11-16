@@ -30,7 +30,7 @@ public sealed record ClaimCodeResponse
     /// <summary>When the code stops being redeemable, in UTC.</summary>
     public required DateTimeOffset ExpiresAt { get; init; }
 
-    /// <summary>Seconds until <see cref="ExpiresAt"/>, so the page can count down without a clock
+    /// <summary>Seconds until <c>expires_at</c>, so the page can count down without a clock
     /// of its own.</summary>
     public required int ExpiresIn { get; init; }
 }

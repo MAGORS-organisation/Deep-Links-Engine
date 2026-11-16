@@ -1,8 +1,9 @@
 -- Deep Link Engine — PostgreSQL analytics rollup schema: Postgres partitions first, an honest
 -- attribution dashboard, aggregations, and retention with its audit trail.
 --
--- Idempotent. This is the script the persistence migration applies; nothing in this file depends
--- on the analytics module running, and nothing in the analytics module creates schema at startup.
+-- Idempotent. The analytics module applies it itself when the host starts (PostgresAnalyticsSchema),
+-- outside the EF Core migrations, because an instance on the ClickHouse provider has no use for
+-- these tables. A role that may not create tables logs the failure and runs without the rollups.
 --
 -- Grain and dimensions. The click rollups aggregate the partitioned click_events table by link,
 -- campaign, country, platform and channel, hourly and daily. Bots are rolled up too, under

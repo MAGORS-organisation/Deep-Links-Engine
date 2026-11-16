@@ -126,7 +126,7 @@ describe('consent gates', () => {
   it('with analytics consent track() reaches /v1/events in one batch', async () => {
     const { dle, calls } = client({}, () => jsonResponse(202, { accepted: 2, rejected: 0 }));
     dle.setConsent({ analytics: true });
-    dle.track([{ type: 'link_open', url: 'https://link.zak.sk/aB3xK9pQ' }, { type: 'session' }]);
+    dle.track([{ type: 'link_open', url: 'https://link.example.sk/aB3xK9pQ' }, { type: 'session' }]);
     expect(await dle.flush()).toBe(true);
     expect(calls).toHaveLength(1);
     expect(calls[0]!.url).toBe('https://links.example.sk/v1/events');

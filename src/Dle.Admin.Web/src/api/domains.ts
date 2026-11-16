@@ -32,7 +32,7 @@ export const domains = {
     return api(`${base}/${encodeURIComponent(id)}/verify`, { method: 'POST', idempotent: false });
   },
 
-  /** A5. Verifies DNS TXT ownership (_dle-verify.<host>) and activates the domain. */
+  /** Verifies DNS TXT ownership (_dle-verify.<host>) and activates the domain. */
   verifyOwnership(id: string): Promise<DomainVerificationResponse> {
     return api(`${base}/${encodeURIComponent(id)}/verify-ownership`, { method: 'POST', idempotent: false });
   },

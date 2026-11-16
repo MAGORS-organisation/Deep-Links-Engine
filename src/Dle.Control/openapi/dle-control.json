@@ -2,7 +2,7 @@
   "openapi": "3.2.0",
   "info": {
     "title": "Deep Link Engine — control plane",
-    "description": "Link, domain, application, tenant and credential management, plus attribution and analytics reporting. Errors are RFC 9457 problem documents whose type member is one of the stable identifiers documented at https://docs.dle.dev/problems/. Writes accept an Idempotency-Key header: the same key with the same body replays the stored response, and the same key with a different body is a conflict. The problem type identifiers are: https://docs.dle.dev/problems/validation-failed, https://docs.dle.dev/problems/slug-taken, https://docs.dle.dev/problems/slug-invalid, https://docs.dle.dev/problems/unsafe-target, https://docs.dle.dev/problems/rate-limited, https://docs.dle.dev/problems/missing-default-rule, https://docs.dle.dev/problems/invalid-routing-rules, https://docs.dle.dev/problems/domain-not-verified, https://docs.dle.dev/problems/domain-taken, https://docs.dle.dev/problems/domain-in-use, https://docs.dle.dev/problems/idempotency-conflict, https://docs.dle.dev/problems/unauthorized, https://docs.dle.dev/problems/forbidden, https://docs.dle.dev/problems/claim-code-invalid, https://docs.dle.dev/problems/link-quarantined, https://docs.dle.dev/problems/dependency-unavailable, https://docs.dle.dev/problems/write-conflict, https://docs.dle.dev/problems/link-too-large, https://docs.dle.dev/problems/app-taken.",
+    "description": "Link, domain, application, tenant and credential management, plus attribution and analytics reporting. Errors are RFC 9457 problem documents whose type member is one of the stable identifiers documented at https://kyberware.net/dle/problems/. Writes accept an Idempotency-Key header: the same key with the same body replays the stored response, and the same key with a different body is a conflict. The problem type identifiers are: https://kyberware.net/dle/problems/validation-failed, https://kyberware.net/dle/problems/slug-taken, https://kyberware.net/dle/problems/slug-invalid, https://kyberware.net/dle/problems/unsafe-target, https://kyberware.net/dle/problems/rate-limited, https://kyberware.net/dle/problems/missing-default-rule, https://kyberware.net/dle/problems/invalid-routing-rules, https://kyberware.net/dle/problems/domain-not-verified, https://kyberware.net/dle/problems/domain-taken, https://kyberware.net/dle/problems/domain-in-use, https://kyberware.net/dle/problems/idempotency-conflict, https://kyberware.net/dle/problems/unauthorized, https://kyberware.net/dle/problems/forbidden, https://kyberware.net/dle/problems/claim-code-invalid, https://kyberware.net/dle/problems/link-quarantined, https://kyberware.net/dle/problems/dependency-unavailable, https://kyberware.net/dle/problems/write-conflict, https://kyberware.net/dle/problems/link-too-large, https://kyberware.net/dle/problems/app-taken.",
     "version": "v1"
   },
   "paths": {
@@ -4582,7 +4582,7 @@
             "format": "double"
           }
         },
-        "description": "One row of a dimensional breakdown report, for example clicks per country or per\r\ncampaign. Rows are ordered by long BreakdownRow.Clicks descending and truncated to\r\nint AnalyticsQuery.Limit."
+        "description": "One row of a dimensional breakdown report, for example clicks per country or per\r\ncampaign. Rows are ordered by `clicks` descending and truncated to the `limit`\r\nquery parameter."
       },
       "BulkLinkItem": {
         "required": [
@@ -4626,21 +4626,21 @@
               "null",
               "string"
             ],
-            "description": "Created link identifier when bool BulkLinkResult.Ok is true."
+            "description": "Created link identifier when `ok` is `true`."
           },
           "short_url": {
             "type": [
               "null",
               "string"
             ],
-            "description": "Short URL when bool BulkLinkResult.Ok is true."
+            "description": "Short URL when `ok` is `true`."
           },
           "error": {
             "type": [
               "null",
               "string"
             ],
-            "description": "Problem type from ProblemCodes when the line failed."
+            "description": "Problem type URI, the same value as the `type` member of a problem document, when\r\n            the line failed."
           },
           "detail": {
             "type": [
@@ -4671,7 +4671,7 @@
           },
           "expires_in": {
             "type": "integer",
-            "description": "Seconds until DateTimeOffset ClaimCodeResponse.ExpiresAt, so the page can count down without a clock\r\n    of its own.",
+            "description": "Seconds until `expires_at`, so the page can count down without a clock\r\n    of its own.",
             "format": "int32"
           }
         },
@@ -5307,7 +5307,7 @@
             "items": {
               "$ref": "#/components/schemas/EventDto"
             },
-            "description": "The events. At most int EventBatchDto.MaxEventsPerBatch per request."
+            "description": "The events. At most 100 per request."
           }
         },
         "description": "Body of `POST /v1/events`. Batched on purpose: an SDK on a mobile network should spend one\r\nrequest, not one per event."
@@ -5349,7 +5349,7 @@
               "null",
               "string"
             ],
-            "description": "ISO 4217 currency code accompanying decimal? EventDto.Value."
+            "description": "ISO 4217 currency code accompanying `value`."
           },
           "ts": {
             "type": [
@@ -5903,7 +5903,7 @@
               "null",
               "string"
             ],
-            "description": "Short link URL (`https://host/slug`), resolved when string? LoginHintRequestDto.ClickId is absent."
+            "description": "Short link URL (`https://host/slug`), resolved when `click_id` is absent."
           },
           "deeplink_path": {
             "type": [
@@ -6006,14 +6006,14 @@
               "null",
               "string"
             ],
-            "description": "`og:type`. Defaults to string OgMeta.DefaultType."
+            "description": "`og:type`. Defaults to `website`."
           },
           "twitter_card": {
             "type": [
               "null",
               "string"
             ],
-            "description": "`twitter:card`. Defaults to string OgMeta.DefaultTwitterCard."
+            "description": "`twitter:card`. Defaults to `summary_large_image`."
           }
         },
         "description": "Open Graph and Twitter Card metadata rendered on the preview and interstitial pages."
@@ -6333,31 +6333,31 @@
         "properties": {
           "type": {
             "examples": [
-              "https://docs.dle.dev/problems/validation-failed",
-              "https://docs.dle.dev/problems/slug-taken",
-              "https://docs.dle.dev/problems/slug-invalid",
-              "https://docs.dle.dev/problems/unsafe-target",
-              "https://docs.dle.dev/problems/rate-limited",
-              "https://docs.dle.dev/problems/missing-default-rule",
-              "https://docs.dle.dev/problems/invalid-routing-rules",
-              "https://docs.dle.dev/problems/domain-not-verified",
-              "https://docs.dle.dev/problems/domain-taken",
-              "https://docs.dle.dev/problems/domain-in-use",
-              "https://docs.dle.dev/problems/idempotency-conflict",
-              "https://docs.dle.dev/problems/unauthorized",
-              "https://docs.dle.dev/problems/forbidden",
-              "https://docs.dle.dev/problems/claim-code-invalid",
-              "https://docs.dle.dev/problems/link-quarantined",
-              "https://docs.dle.dev/problems/dependency-unavailable",
-              "https://docs.dle.dev/problems/write-conflict",
-              "https://docs.dle.dev/problems/link-too-large",
-              "https://docs.dle.dev/problems/app-taken"
+              "https://kyberware.net/dle/problems/validation-failed",
+              "https://kyberware.net/dle/problems/slug-taken",
+              "https://kyberware.net/dle/problems/slug-invalid",
+              "https://kyberware.net/dle/problems/unsafe-target",
+              "https://kyberware.net/dle/problems/rate-limited",
+              "https://kyberware.net/dle/problems/missing-default-rule",
+              "https://kyberware.net/dle/problems/invalid-routing-rules",
+              "https://kyberware.net/dle/problems/domain-not-verified",
+              "https://kyberware.net/dle/problems/domain-taken",
+              "https://kyberware.net/dle/problems/domain-in-use",
+              "https://kyberware.net/dle/problems/idempotency-conflict",
+              "https://kyberware.net/dle/problems/unauthorized",
+              "https://kyberware.net/dle/problems/forbidden",
+              "https://kyberware.net/dle/problems/claim-code-invalid",
+              "https://kyberware.net/dle/problems/link-quarantined",
+              "https://kyberware.net/dle/problems/dependency-unavailable",
+              "https://kyberware.net/dle/problems/write-conflict",
+              "https://kyberware.net/dle/problems/link-too-large",
+              "https://kyberware.net/dle/problems/app-taken"
             ],
             "type": [
               "null",
               "string"
             ],
-            "description": "A stable identifier for the kind of failure, and the member to branch on. One of: https://docs.dle.dev/problems/validation-failed, https://docs.dle.dev/problems/slug-taken, https://docs.dle.dev/problems/slug-invalid, https://docs.dle.dev/problems/unsafe-target, https://docs.dle.dev/problems/rate-limited, https://docs.dle.dev/problems/missing-default-rule, https://docs.dle.dev/problems/invalid-routing-rules, https://docs.dle.dev/problems/domain-not-verified, https://docs.dle.dev/problems/domain-taken, https://docs.dle.dev/problems/domain-in-use, https://docs.dle.dev/problems/idempotency-conflict, https://docs.dle.dev/problems/unauthorized, https://docs.dle.dev/problems/forbidden, https://docs.dle.dev/problems/claim-code-invalid, https://docs.dle.dev/problems/link-quarantined, https://docs.dle.dev/problems/dependency-unavailable, https://docs.dle.dev/problems/write-conflict, https://docs.dle.dev/problems/link-too-large, https://docs.dle.dev/problems/app-taken. A code may be added in a minor version; an existing one never changes meaning."
+            "description": "A stable identifier for the kind of failure, and the member to branch on. One of: https://kyberware.net/dle/problems/validation-failed, https://kyberware.net/dle/problems/slug-taken, https://kyberware.net/dle/problems/slug-invalid, https://kyberware.net/dle/problems/unsafe-target, https://kyberware.net/dle/problems/rate-limited, https://kyberware.net/dle/problems/missing-default-rule, https://kyberware.net/dle/problems/invalid-routing-rules, https://kyberware.net/dle/problems/domain-not-verified, https://kyberware.net/dle/problems/domain-taken, https://kyberware.net/dle/problems/domain-in-use, https://kyberware.net/dle/problems/idempotency-conflict, https://kyberware.net/dle/problems/unauthorized, https://kyberware.net/dle/problems/forbidden, https://kyberware.net/dle/problems/claim-code-invalid, https://kyberware.net/dle/problems/link-quarantined, https://kyberware.net/dle/problems/dependency-unavailable, https://kyberware.net/dle/problems/write-conflict, https://kyberware.net/dle/problems/link-too-large, https://kyberware.net/dle/problems/app-taken. A code may be added in a minor version; an existing one never changes meaning."
           },
           "title": {
             "type": [
@@ -6652,7 +6652,7 @@
               "null",
               "string"
             ],
-            "description": "Absolute web URL, mandatory for RoutingActionKind.Web. Must use `http` or `https`.\r\nWhen absent for any other action, the link's own target URL is used as the web fallback."
+            "description": "Absolute web URL, mandatory for the `web` action. Must use `http` or `https`.\r\nWhen absent for any other action, the link's own target URL is used as the web fallback."
           },
           "deeplink_path": {
             "type": [
@@ -6666,14 +6666,14 @@
               "null",
               "string"
             ],
-            "description": "Absolute store URL, mandatory for RoutingActionKind.AppOrStore and\r\nRoutingActionKind.StoreOnly. Existing campaign parameters on this URL are preserved."
+            "description": "Absolute store URL, mandatory for the `app_or_store` and `store_only` actions.\r\nExisting campaign parameters on this URL are preserved."
           },
           "referrer_template": {
             "type": [
               "null",
               "string"
             ],
-            "description": "Android only. Template for the Play Install Referrer string, for example\r\n`\"dl_cid={click_id}&amp;utm_source={utm_source}\"`. Supported placeholders are\r\n`{click_id}`, `{utm_source}`, `{utm_medium}`, `{utm_campaign}`,\r\n`{utm_term}`, `{utm_content}` and `{link_id}`."
+            "description": "Android only. Template for the Play Install Referrer string, written as a URL query string\r\nwhose pairs are joined by ampersands, for example `dl_cid={click_id}` and\r\n`utm_source={utm_source}`. Supported placeholders are\r\n`{click_id}`, `{utm_source}`, `{utm_medium}`, `{utm_campaign}`,\r\n`{utm_term}`, `{utm_content}` and `{link_id}`."
           },
           "interstitial": {
             "description": "Per-rule override of the interstitial page.",
@@ -7103,7 +7103,7 @@
           },
           "clicks": {
             "type": "integer",
-            "description": "Number of human clicks in the bucket. Crawler traffic is excluded unless\r\n            bool AnalyticsQuery.IncludeBots is set.",
+            "description": "Number of human clicks in the bucket. Crawler traffic is excluded unless\r\n            the `include_bots=true` query parameter is passed.",
             "format": "int64"
           },
           "installs": {
@@ -7117,7 +7117,7 @@
             "format": "int64"
           }
         },
-        "description": "One bucket of a time series report. Buckets are aligned in UTC according to\r\nTimeGrain AnalyticsQuery.Grain and are returned in ascending order."
+        "description": "One bucket of a time series report. Buckets are aligned in UTC according to the\r\n`grain` query parameter and are returned in ascending order."
       },
       "TimeSeriesResponse": {
         "required": [

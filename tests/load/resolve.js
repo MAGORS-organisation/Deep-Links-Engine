@@ -15,14 +15,26 @@
 // the 404 path and the anti-enumeration budget are part of what is being measured, not noise
 // to be excluded. 12 % of all requests carry a crawler user agent.
 //
-// Run it against a seeded instance:
+// Run it against a seeded instance. Seed first: seed.js creates the links through the control plane
+// and writes corpus.json next to this file. It needs the control-plane URL, an API key with the
+// links:write scope, the id of a verified link domain and that domain's host, as environment
+// variables or as the matching --control, --api-key, --domain-id and --host flags:
 //
-//   node seed.js                      # writes corpus.json (see README.md)
+//   DLE_CONTROL_URL=https://control.example.com DLE_API_KEY=dle_<prefix>_<secret> \
+//   DLE_DOMAIN_ID=<domain id> DLE_LINK_HOST=link.example.com node seed.js
 //   k6 run -e BASE_URL=https://link.example.com resolve.js
 //
-// NOT RUN in this repository's development environment: k6 is not installed on the machine this file
-// was written on, and the profile needs a deployed edge with PostgreSQL and Valkey behind it. See
-// README.md for what has to be true before the numbers mean anything.
+// The profile needs a deployed edge with PostgreSQL and Valkey behind it; release.yml runs it against
+// staging as the k6 gate. The numbers only mean something when corpus.json was seeded against the
+// instance under test and the edge does not throttle the generator. On a test or staging instance:
+//
+//   - set Dle:RateLimits:Edge:Enabled to false, which removes the resolve and QR limiters only;
+//   - raise Dle:RateLimits:Edge:NotFound (TokensPerPeriod and Burst, per replenishment period)
+//     above the miss stream, or spread the generator across source networks. The 404 budget is
+//     always on: about 100 misses a second from one /24 (IPv4) or /48 (IPv6) drain the default
+//     bucket in under a second, and the prefix is then shadow banned for
+//     Dle:RateLimits:Edge:NotFound:ShadowBanMinutes. During the ban every request from it, hits
+//     included, is answered 404, and the run fails dle_correct_outcome.
 
 import http from 'k6/http';
 import exec from 'k6/execution';
@@ -54,7 +66,9 @@ const corpus = new SharedArray('links', function () {
 
   if (!data.hot || data.hot.length === 0 || !data.all || data.all.length === 0) {
     throw new Error(
-      'corpus.json has no links. Run `node seed.js` against the target instance first; see README.md.',
+      'corpus.json has no links. Run `node seed.js` against the target instance first, with ' +
+        'DLE_CONTROL_URL, DLE_API_KEY (links:write scope), DLE_DOMAIN_ID and DLE_LINK_HOST set ' +
+        '(or the --control, --api-key, --domain-id and --host flags).',
     );
   }
 
@@ -239,9 +253,11 @@ function record(response, kind, isCrawler) {
   let expected;
 
   if (kind === 'miss') {
-    // 429 is a correct answer once a generator address has drained its 404 budget. It is counted
-    // separately rather than treated as a failure, and the README explains how to keep the miss
-    // stream spread across enough source addresses for it to stay rare.
+    // 429 is a correct answer to the one miss that drains a prefix's 404 budget (/24 for IPv4, /48
+    // for IPv6), so it is counted separately rather than treated as a failure. What follows is not:
+    // the prefix is then shadow banned, every request from it gets 404, hits included, and those
+    // count as incorrect. Raise Dle:RateLimits:Edge:NotFound or spread the generator across source
+    // networks before the run (see the header), and say so in the report.
     expected = status === 404 || status === 429;
 
     if (status === 404) {

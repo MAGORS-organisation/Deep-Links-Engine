@@ -2,8 +2,8 @@ namespace Dle.Domain.Analytics;
 
 /// <summary>
 /// One row of a dimensional breakdown report, for example clicks per country or per
-/// campaign. Rows are ordered by <see cref="Clicks"/> descending and truncated to
-/// <see cref="AnalyticsQuery.Limit"/>.
+/// campaign. Rows are ordered by <c>clicks</c> descending and truncated to the <c>limit</c>
+/// query parameter.
 /// </summary>
 /// <param name="Key">Value of the grouped dimension. Never <see langword="null"/>: rows whose
 /// dimension is unknown are reported under the literal key <c>unknown</c> rather than dropped,

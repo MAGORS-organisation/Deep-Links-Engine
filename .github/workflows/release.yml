@@ -67,6 +67,31 @@ jobs:
           echo "owner=${OWNER,,}" >> "$GITHUB_OUTPUT"
           echo "version=$version prerelease=$prerelease owner=${OWNER,,}"
 
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # deploy/docker-compose.yml and deploy/.env.example pin the image tag a plain `docker compose
+      # pull` gets, and they are bumped by hand. The gates below override DLE_VERSION, so without
+      # this check a release could ship a compose file that still pulls the previous version. The
+      # pin is the release core: v1.0.0-rc.1 and v1.0.0 both expect 1.0.0.
+      - name: Compose pins this release
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+        run: |
+          core="${VERSION%%[-+]*}"
+          missing=0
+          count=$(grep -cF "\${DLE_VERSION:-$core}" deploy/docker-compose.yml || true)
+          images=$(grep -cF '${DLE_VERSION:-' deploy/docker-compose.yml || true)
+          if [ "$count" -eq 0 ] || [ "$count" -ne "$images" ]; then
+            echo "::error file=deploy/docker-compose.yml::every \${DLE_VERSION:-…} default must be $core ($count of $images are)"; missing=1
+          fi
+          if ! grep -qx "DLE_VERSION=$core" deploy/.env.example; then
+            echo "::error file=deploy/.env.example::DLE_VERSION must be $core"; missing=1
+          fi
+          exit "$missing"
+
   # ---------------------------------------------------------------------------------------------
   ci:
     name: CI
@@ -124,8 +149,8 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.IMAGE }}
-          # Only the exact version here. The moving tags (MAJOR.MINOR, latest) are what the compose
-          # default pulls, so the promote job sets them after the gates have passed.
+          # Only the exact version here. The moving tags (MAJOR.MINOR, latest) are what anyone who
+          # follows a release line pulls, so the promote job sets them after the gates have passed.
           tags: |
             type=semver,pattern={{version}},value=v${{ needs.version.outputs.version }}
           labels: |
@@ -220,9 +245,9 @@ jobs:
         uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
 
       - name: Resolve chart dependencies
-        # Chart.yaml declares optional bitnami postgresql/valkey sub-charts with version RANGES the
-        # authoring machine could not resolve (no Helm there). If this step fails, the ranges need
-        # pinning to what the OCI registry serves — Chart.yaml says so in its own comment.
+        # Chart.yaml declares optional bitnami postgresql/valkey sub-charts, pinned to exact versions
+        # that helm.yml resolves on every chart change. If this step fails, the registry no longer
+        # serves a pinned version and Chart.yaml needs a deliberate bump, checked by helm.yml.
         run: helm dependency update "$CHART_DIR"
 
       - name: Lint
@@ -278,6 +303,14 @@ jobs:
       DLE_TLS: internal
       DLE_HTTP_PORT: "8088"
       DLE_HTTPS_PORT: "8443"
+      # Placeholders so that the "Stack logs" and "Tear down" steps can interpolate the compose file
+      # (every :? variable must be set) even when the job fails before the throw-away-secrets step
+      # has run. That step overrides all four through GITHUB_ENV for the real stack; these values
+      # never reach a running container. DLE_DOMAIN, the fifth required variable, is set above.
+      POSTGRES_PASSWORD: placeholder-overridden-before-the-stack-starts
+      VALKEY_PASSWORD: placeholder-overridden-before-the-stack-starts
+      DLE_MASTER_SECRET: placeholder-overridden-before-the-stack-starts-32chars
+      DLE_EDGE_SECRET: placeholder-overridden-before-the-stack-starts-edge-32
       # `secrets` is not available in `if:`; it is in `env:`.
       HAS_LOADTEST_TARGET: ${{ secrets.DLE_LOADTEST_CONTROL_URL != '' && secrets.DLE_LOADTEST_API_KEY != '' && secrets.DLE_LOADTEST_DOMAIN_ID != '' && secrets.DLE_LOADTEST_LINK_HOST != '' }}
     steps:
@@ -294,10 +327,12 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Throw-away secrets for this stack
+        # All four are required by the compose file (:? interpolation). Random, masked, never reused.
         run: |
-          pg="$(openssl rand -hex 24)"; ms="$(openssl rand -base64 48 | tr -d '\n')"; es="$(openssl rand -base64 48 | tr -d '\n')"
-          echo "::add-mask::$pg"; echo "::add-mask::$ms"; echo "::add-mask::$es"
+          pg="$(openssl rand -hex 24)"; vk="$(openssl rand -hex 24)"; ms="$(openssl rand -base64 48 | tr -d '\n')"; es="$(openssl rand -base64 48 | tr -d '\n')"
+          echo "::add-mask::$pg"; echo "::add-mask::$vk"; echo "::add-mask::$ms"; echo "::add-mask::$es"
           echo "POSTGRES_PASSWORD=$pg" >> "$GITHUB_ENV"
+          echo "VALKEY_PASSWORD=$vk" >> "$GITHUB_ENV"
           echo "DLE_MASTER_SECRET=$ms" >> "$GITHUB_ENV"
           echo "DLE_EDGE_SECRET=$es" >> "$GITHUB_ENV"
 
@@ -405,8 +440,8 @@ jobs:
   # ---------------------------------------------------------------------------------------------
   promote:
     name: Promote dle-${{ matrix.image }} to MAJOR.MINOR and latest
-    # Only a non-prerelease tag whose k6 load test actually ran moves the tags the compose default
-    # pulls; without load-test evidence the release is a pre-release (see the header). The index is
+    # Only a non-prerelease tag whose k6 load test actually ran moves the tags that follow a release
+    # line; without load-test evidence the release is a pre-release (see the header). The index is
     # re-tagged by digest, so the signature and attestations made in `images` still apply.
     needs: [version, images, gates]
     if: ${{ needs.version.outputs.prerelease == 'false' && needs.gates.outputs.loadtest == 'ran' }}

@@ -4,8 +4,8 @@
 //
 // Creates the links resolve.js needs and writes corpus.json next to it. Node rather than k6, for one
 // reason: k6 has no way to write a file, and the corpus has to outlive the process that created it
-// so that a run can be repeated against the same links. Node 24 is already a build dependency of the
-// admin application, so this adds nothing to the tool chain.
+// so that a run can be repeated against the same links. Node 22 already builds the admin console and
+// runs this seeder in release.yml, so this adds nothing to the tool chain.
 //
 //   node seed.js \
 //     --control https://control.example.com \
@@ -14,13 +14,19 @@
 //     --host link.example.com \
 //     --total 10000 --hot 100
 //
+// The four required values can come from the environment instead of the flags: DLE_CONTROL_URL,
+// DLE_API_KEY, DLE_DOMAIN_ID and DLE_LINK_HOST.
+//
 // The counts default to the profile's own needs: a hundred hot links, because the hot set
 // is the top hundred, and ten thousand in total so that the 15 % "random existing" stream is spread
 // widely enough to actually miss the cache sometimes. A corpus of a few hundred would sit entirely
 // in L1 and the run would report a cache hit rate of 100 % that means nothing.
 //
-// NOT RUN in this repository's development environment: it needs a deployed control plane and a
-// verified domain. See README.md.
+// It needs a deployed control plane, an API key with the links:write scope and a verified link
+// domain (its id and its host); release.yml runs it before the k6 gate. Seeding goes
+// through the bulk endpoint by default (--bulk false creates the links one at a time, retrying on
+// 429), and every slug starts with the --prefix (default k6load), so the links can be found and
+// deleted afterwards.
 
 import { writeFile } from 'node:fs/promises';
 import { argv, exit } from 'node:process';

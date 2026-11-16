@@ -92,7 +92,7 @@ spec:
                   name: {{ include "dle.secretName" . }}
                   key: {{ .Values.secrets.keys.valkeyConnectionString }}
                   optional: true
-            # The edge's own secret, never the control plane's master secret (S12).
+            # The edge's own secret, never the control plane's master secret.
             - name: Dle__Crypto__MasterSecret
               valueFrom:
                 secretKeyRef:

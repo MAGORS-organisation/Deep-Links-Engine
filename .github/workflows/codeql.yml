@@ -5,14 +5,14 @@
 #   csharp                 src/** and tests/** (build-mode none: no compiler run needed)
 #   javascript-typescript  sdk/web, src/Dle.Admin.Web, tests/load
 #
-# NOT covered, deliberately and stated here so nobody assumes otherwise:
+# NOT analysed yet, stated here so nobody assumes otherwise:
 #   Kotlin (sdk/android)   CodeQL analyses Kotlin only through a traced build (`java-kotlin`,
-#                          build-mode autobuild/manual). The Android SDK has never compiled
-#                          (see sdk-android.yml); add a `java-kotlin` matrix entry with a Gradle
-#                          build step once that workflow is green.
-#   Swift (sdk/ios)        CodeQL `swift` needs a macOS runner and a traced xcodebuild. Same
-#                          precondition: sdk-ios.yml must be green first. Neither language is
-#                          supported by build-mode none.
+#                          build-mode autobuild/manual), which this workflow does not run. Adding
+#                          it means a `java-kotlin` matrix entry with the Gradle build step from
+#                          sdk-android.yml.
+#   Swift (sdk/ios)        CodeQL `swift` needs a macOS runner and a traced xcodebuild, which this
+#                          workflow does not run either; the build steps are in sdk-ios.yml.
+#                          Neither language is supported by build-mode none.
 # =============================================================================
 name: CodeQL
 

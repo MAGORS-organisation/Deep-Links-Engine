@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/MAGORS-organisation/Deep-Links-Engine/docs/architecture/routing-rules.schema.json",
+  "$id": "https://kyberware.net/dle/schemas/routing-rules.schema.json",
   "title": "Deep Link Engine routing rules",
   "description": "Shape of links.routing_rules (docs/zadanie.md §B.5.4, src/Dle.Domain/Routing). The schema checks structure; RoutingRuleValidator additionally enforces that the single default rule (the one without \"when\") is last, that rule ids are unique, that the A/B percentages of one rule sum to at most 100, that time windows are ordered, and that the document is at most 64 KiB.",
   "type": "array",

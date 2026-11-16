@@ -235,7 +235,7 @@ printf '%s\n' \
   | curl -s -X POST $DLE/api/v1/links/bulk -H "Authorization: Bearer $KEY" -H "Content-Type: application/x-ndjson" \
          -H "Idempotency-Key: import-2026-09-11" --data-binary @-
 # → one line per row: {"ref":"a","ok":true,"id":"…","short_url":"https://…"}
-#   or {"ref":"b","ok":false,"error":"https://docs.dle.dev/problems/…","detail":"…"}
+#   or {"ref":"b","ok":false,"error":"https://kyberware.net/dle/problems/…","detail":"…"}
 
 # Simulate
 curl -s "$DLE/api/v1/links/<ID>/simulate?platform=android&os_version=15&country=SK&channel=in_app_fb" -H "Authorization: Bearer $KEY"
@@ -270,7 +270,7 @@ The request-body field lists are the `Create*Request` records in `src/Dle.Domain
 
 Every error is `application/problem+json` with `type`, `title`, `status`, `detail`, `instance`, plus extensions where noted. The problem code — the last path segment of `type`, such as `rate-limited` — is the identifier integrators branch on; it is stable within a major version. Do not compare the whole `type` URI: the host it is published under may change. The SDKs expose the codes as `PROBLEM_CODES` / `DleError.problemCode` (web), `ProblemDocument.CODE_*` / `ProblemDocument.code` (Android) and `DleProblem.Code` / `DleProblem.code` (iOS). Source of truth: `src/Dle.Domain/Contracts/ProblemCodes.cs`; the OpenAPI document enumerates the same list.
 
-| Code (last path segment of `type`, currently under `https://docs.dle.dev/problems/`) | HTTP | When | Extensions |
+| Code (last path segment of `type`, currently under `https://kyberware.net/dle/problems/`) | HTTP | When | Extensions |
 |---|---|---|---|
 | `validation-failed` | 400 | Body or query failed validation | `errors[]` |
 | `slug-taken` | 409 | Slug already used on that domain | |
@@ -294,7 +294,7 @@ Every error is `application/problem+json` with `type`, `title`, `status`, `detai
 
 ```json
 {
-  "type": "https://docs.dle.dev/problems/validation-failed",
+  "type": "https://kyberware.net/dle/problems/validation-failed",
   "title": "The request failed validation.",
   "status": 400,
   "detail": "target_url must be an absolute http or https URL.",

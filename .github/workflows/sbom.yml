@@ -1,10 +1,11 @@
 # =============================================================================
-# SBOM + CBOM — on main: SBOM CycloneDX → CBOM.
+# SBOM + CBOM — on pushes to the long-lived branches, on pull requests that change dependencies,
+# on dispatch and when a release calls it.
 #
 #   dle-dotnet.cdx.json      CycloneDX .NET tool over Dle.sln (test projects excluded)
 #   dle-web-sdk.cdx.json     `npm sbom` of sdk/web (production tree)
 #   dle-admin-web.cdx.json   `npm sbom` of src/Dle.Admin.Web (production tree)
-#   dle-cbom.cdx.json        .github/scripts/cbom.py — cryptographic inventory (K1..K9)
+#   dle-cbom.cdx.json        .github/scripts/cbom.py — the cryptographic inventory defined there
 #
 # Every document is validated against the CycloneDX JSON schema (.github/scripts/validate-cdx.py)
 # before it is uploaded. Container-image SBOMs are produced separately by BuildKit at release

@@ -18,7 +18,7 @@ using Xunit;
 namespace Dle.UnitTests.Control;
 
 /// <summary>
-/// Covers C2: <c>POST /api/v1/webhooks/deliveries/{id}/replay</c> and
+/// Covers <c>POST /api/v1/webhooks/deliveries/{id}/replay</c> and
 /// <c>POST /api/v1/webhooks/deliveries/replay-dead</c>.
 /// </summary>
 public sealed class WebhookReplayTests

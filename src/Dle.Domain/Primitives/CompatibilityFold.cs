@@ -25,9 +25,11 @@ namespace Dle.Domain.Primitives;
 /// <para>
 /// Applying this fold after <see cref="string.Normalize(NormalizationForm)"/> is safe with or without
 /// ICU: where ICU is present the runtime has already removed every code point in this table, so the
-/// fold is a no-op and the two configurations agree. The table is generated from the Unicode data of
-/// the .NET 10 ICU build; Unicode's normalisation stability policy guarantees these mappings never
-/// change.
+/// fold is a no-op and the two configurations agree. The table was generated from the Unicode data of
+/// the ICU build used with .NET 10, before the solution moved to .NET 11, and has not been
+/// regenerated since. Unicode's normalisation stability policy guarantees that these mappings never
+/// change; a compatibility character added in a later Unicode version is simply absent from the
+/// table, so without ICU it is refused rather than folded.
 /// </para>
 /// </remarks>
 internal static class CompatibilityFold

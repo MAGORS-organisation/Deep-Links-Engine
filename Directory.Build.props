@@ -92,7 +92,7 @@
   </PropertyGroup>
 
   <!--
-    The README is packed with every library. IsPackable is set by the individual
+    The repository README, when there is one, is packed with every library. IsPackable is set by the individual
     project files, which MSBuild evaluates after this file, so the condition here
     is only Exists(): projects with IsPackable=false simply never run `pack`.
   -->
