@@ -150,7 +150,7 @@ jobs:
 
       - name: What the chart must render
         # A chart that renders an empty document set would pass every schema check. Pin the
-        # objects the deployment story of deploy/README.md relies on.
+        # objects a production deployment relies on.
         run: |
           set -euo pipefail
           for kind in Deployment Service Ingress ServiceAccount NetworkPolicy PodDisruptionBudget HorizontalPodAutoscaler Job ConfigMap Secret; do

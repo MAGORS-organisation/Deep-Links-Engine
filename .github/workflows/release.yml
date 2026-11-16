@@ -203,6 +203,7 @@ jobs:
       CHART_DIR: deploy/helm/dle
       CHART_OCI: oci://ghcr.io/${{ needs.version.outputs.owner }}/charts
       VERSION: ${{ needs.version.outputs.version }}
+      PRERELEASE: ${{ needs.version.outputs.prerelease }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -227,6 +228,9 @@ jobs:
       - name: Package
         run: |
           mkdir -p chart
+          # Artifact Hub reads the prerelease flag from Chart.yaml; derive it from the tag.
+          sed -i "s|^  artifacthub.io/prerelease: .*|  artifacthub.io/prerelease: \"$PRERELEASE\"|" "$CHART_DIR/Chart.yaml"
+          grep -q "^  artifacthub.io/prerelease: \"$PRERELEASE\"$" "$CHART_DIR/Chart.yaml"
           helm package "$CHART_DIR" --version "$VERSION" --app-version "$VERSION" --destination chart
           ls -l chart
 

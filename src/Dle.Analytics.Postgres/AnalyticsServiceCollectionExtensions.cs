@@ -109,7 +109,7 @@ public static class AnalyticsServiceCollectionExtensions
     }
 
     /// <remarks>
-    /// Experimental opt-in provider (target <c>v0.2</c>): in <c>v0.1</c> <c>AddDleAnalytics</c> is
+    /// Experimental opt-in provider: <c>AddDleAnalytics</c> is
     /// hosted by <c>Dle.Control</c> while <c>Dle.Edge</c> ingests clicks into PostgreSQL, so the
     /// ClickHouse path operates as a query-only store over an external PostgreSQL-to-ClickHouse CDC
     /// mirror.

@@ -3,14 +3,14 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Analytics.ClickHouse;
 
 /// <summary>
-/// Configuration of the experimental opt-in ClickHouse query-only analytics provider (ADR-006,
-/// target v0.2), bound from the <c>Dle:Analytics:ClickHouse</c> section. The connection string itself
+/// Configuration of the experimental opt-in ClickHouse query-only analytics provider (ADR-006),
+/// bound from the <c>Dle:Analytics:ClickHouse</c> section. The connection string itself
 /// is taken from <c>ConnectionStrings:ClickHouse</c> (SHARED-KERNEL §16) and copied into
 /// <see cref="ConnectionString"/> during registration.
 /// </summary>
 /// <remarks>
-/// Experimental query-only provider (v0.2 target): Edge ingestion still persists click events to
-/// PostgreSQL in v0.1, so selecting <c>Dle:Analytics:Provider = clickhouse</c> requires an external
+/// Experimental query-only provider: Edge ingestion still persists click events to
+/// PostgreSQL, so selecting <c>Dle:Analytics:Provider = clickhouse</c> requires an external
 /// PostgreSQL-to-ClickHouse CDC pipeline. None of these values is read unless
 /// <c>Dle:Analytics:Provider</c> is <c>clickhouse</c>: the options are only registered when the
 /// provider is actually selected, so a default installation pays neither the validation nor the

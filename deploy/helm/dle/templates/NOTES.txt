@@ -41,7 +41,10 @@ Ingress is disabled: expose the Services yourself and keep /.well-known/* free o
 
 3. First credential: there is no seeded API key. On an empty database the control plane creates
    tenant "default" with an owner key "root-bootstrap", but only when that key has a way out.
-   Either hand it a key you generated (dle_<8 chars>_<43 chars>) from a Secret:
+   Either hand it a key you generated from a Secret — "dle_", 8 base62 characters (A-Z a-z 0-9),
+   "_", 43 base62 characters, for example:
+
+     printf 'dle_%s_%s\n' "$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8)" "$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 43)"
 
      control:
        extraEnv:
@@ -54,11 +57,14 @@ Ingress is disabled: expose the Services yourself and keep /.well-known/* free o
      kubectl -n {{ .Release.Namespace }} logs -l app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=control --tail=-1 | grep -A 4 "DLE BOOTSTRAP OWNER KEY"
 
    Sign in to the admin console with it, create a named owner key and revoke "root-bootstrap".
-   With OIDC configured (Dle:Identity:Oidc), owners can sign in through SSO instead.
+   OIDC (control.config.oidc) does not create a tenant, so one of the routes above is still needed
+   on the first start. Afterwards owners may use SSO: the identity provider sends
+   dle_tenant=default (or set Dle__Identity__Oidc__DefaultTenant) and dle_role=owner.
 {{- if and (not .Values.control.config.instanceTenantId) (not .Values.control.config.allowTenantSelfService) }}
 
    NOTE: neither control.config.instanceTenantId nor control.config.allowTenantSelfService is
-   set, so the tenant routes deny every caller (deliberate). Set one of them.
+   set, so only owners of the bootstrap tenant may manage tenants (nobody, if the bootstrap was
+   skipped).
 {{- end }}
 {{- $postgresPeers := include "dle.networkPolicy.postgresPeers" . | trim }}
 {{- $valkeyPeers := include "dle.networkPolicy.valkeyPeers" . | trim }}
@@ -103,9 +109,11 @@ service, handed to this chart as externalPostgres.* / externalValkey.*.
 {{- if .Values.postgresql.enabled }}
 The Bitnami image has no pg_partman: click_events and sdk_events partition maintenance runs
 through the plain-SQL fallbacks dle_click_events_maintain() and dle_sdk_events_maintain(), which
-must run daily. The control plane's retention job calls both on every run, so a running control
-plane is enough unless Dle:Privacy:Retention:DryRun is on; otherwise schedule
-"SELECT dle_click_events_maintain(), dle_sdk_events_maintain();" (pg_cron, cron or a CronJob).
+must run daily. A running control plane does that (the rollup worker hourly, the retention job on
+every run, dry run included) unless its workers are off (Dle:Workers:Enabled, or both
+Dle:Workers:Rollup:Enabled and Dle:Workers:Retention:Enabled) or control.config.analytics.provider
+is clickhouse. Otherwise schedule "SELECT dle_click_events_maintain(), dle_sdk_events_maintain();"
+(pg_cron, cron or a CronJob); with their defaults they also drop partitions older than 180 days.
 {{- end }}
 {{- end }}
 {{- if not .Values.edge.config.geoIp.path }}
