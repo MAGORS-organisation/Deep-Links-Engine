@@ -139,9 +139,13 @@ async function seedBulk() {
   for (let start = 0; start < TOTAL; start += BATCH_SIZE) {
     const end = Math.min(start + BATCH_SIZE, TOTAL);
     let ndjson = '';
+    // The slug this client asked for, by row ref. The corpus is built from these alone, never from
+    // text the server sent back, so nothing the network says ends up in the file verbatim.
+    const requested = new Map();
 
     for (let i = start; i < end; i++) {
       const req = linkRequest(i);
+      requested.set(String(i), req.slug);
       ndjson += JSON.stringify({ ref: String(i), link: req }) + '\n';
     }
 
@@ -164,17 +168,24 @@ async function seedBulk() {
     const lines = text.split('\n').filter(Boolean);
 
     for (const line of lines) {
+      let res;
       try {
-        const res = JSON.parse(line);
-        if (res.ok && res.short_url) {
-          const parts = res.short_url.split('/');
-          slugs.push(parts[parts.length - 1]);
-        } else if (res.ref !== undefined) {
-          slugs.push(`${PREFIX}${Number(res.ref).toString(36).padStart(5, '0')}`);
-        }
+        res = JSON.parse(line);
       } catch {
-        // skip non-json line
+        continue; // skip non-json line
       }
+
+      // A row that failed because the link exists from an earlier run still names a usable slug.
+      const slug = requested.get(String(res?.ref));
+      if (slug === undefined) {
+        continue;
+      }
+
+      if (res.ok && typeof res.short_url === 'string' && !res.short_url.endsWith(`/${slug}`)) {
+        throw new Error(`Bulk row ${slug} was created under another slug; the corpus would be wrong.`);
+      }
+
+      slugs.push(slug);
     }
 
     process.stderr.write(`  bulk seeded ${Math.min(end, TOTAL)}/${TOTAL}\n`);
