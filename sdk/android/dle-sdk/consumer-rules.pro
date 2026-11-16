@@ -3,20 +3,20 @@
 # kotlinx.serialization: keep the generated serializers of the SDK's wire models.
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.**
--keepclassmembers class sk.magors.dle.** {
+-keepclassmembers class net.kyberware.dle.** {
     *** Companion;
 }
--if @kotlinx.serialization.Serializable class sk.magors.dle.**
+-if @kotlinx.serialization.Serializable class net.kyberware.dle.**
 -keepclassmembers class <1> {
     static <1>$Companion Companion;
 }
--if @kotlinx.serialization.Serializable class sk.magors.dle.** {
+-if @kotlinx.serialization.Serializable class net.kyberware.dle.** {
     static **$* *;
 }
 -keepclassmembers class <2>$<3> {
     kotlinx.serialization.KSerializer serializer(...);
 }
--if @kotlinx.serialization.Serializable class sk.magors.dle.** {
+-if @kotlinx.serialization.Serializable class net.kyberware.dle.** {
     public static ** INSTANCE;
 }
 -keepclassmembers class <1> {

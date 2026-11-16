@@ -11,12 +11,12 @@ plugins {
 }
 
 android {
-    namespace = "sk.magors.dle.sample"
+    namespace = "net.kyberware.dle.sample"
     // androidx.core 1.19 requires compiling against API 37. The sample's targetSdk stays at 35.
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "sk.magors.dle.sample"
+        applicationId = "net.kyberware.dle.sample"
         minSdk = 23
         targetSdk = 35
         versionCode = 1

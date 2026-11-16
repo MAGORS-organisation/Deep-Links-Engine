@@ -1,10 +1,10 @@
 # Web SDK integration
 
 **What this is:** the browser-side companion — a smart app banner and web fallback that never
-fingerprints. **Who it is for:** the web developer adding `@magors/dle-web` to a site. The package README
+fingerprints. **Who it is for:** the web developer adding `@kyberware/dle-web` to a site. The package README
 at [`sdk/web/README.md`](../../sdk/web/README.md) has install and API details.
 
-> Two limits first. `@magors/dle-web` is not published on npm; build it from `sdk/web` (see the README).
+> Two limits first. `@kyberware/dle-web` is not published on npm; build it from `sdk/web` (see the README).
 > And `dle-control` has no CORS support, so `resolve()` and event delivery from a page on another origin
 > fail their preflight; they work only when the SDK plane is served on the page's own origin. The banner
 > itself makes no request. Both are listed under [Known gaps](../../README.md#known-gaps).
@@ -36,7 +36,7 @@ the CORS gap above.
 or with a bundler:
 
 ```ts
-import { createDle } from '@magors/dle-web';
+import { createDle } from '@kyberware/dle-web';
 const dle = createDle({ endpoint: 'https://www.example.com', sdkKey: 'dlk_…' });
 dle.setConsent({ analytics: true, attribution: false });
 dle.showSmartBanner({ appName: 'Example', openUrl: 'https://link.example.com/aB3xK9pQ' });

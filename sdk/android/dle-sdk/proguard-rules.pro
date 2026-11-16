@@ -2,30 +2,30 @@
 # Consumers get consumer-rules.pro merged automatically; this file only matters for a minified
 # build of the library or its sample.
 
-# kotlinx.serialization: keep the generated serializers of the wire models in sk.magors.dle.internal.
+# kotlinx.serialization: keep the generated serializers of the wire models in net.kyberware.dle.internal.
 -keepattributes *Annotation*, InnerClasses, Signature
 -dontnote kotlinx.serialization.**
--keepclassmembers class sk.magors.dle.** {
+-keepclassmembers class net.kyberware.dle.** {
     *** Companion;
 }
--if @kotlinx.serialization.Serializable class sk.magors.dle.**
+-if @kotlinx.serialization.Serializable class net.kyberware.dle.**
 -keepclassmembers class <1> {
     static <1>$Companion Companion;
 }
--if @kotlinx.serialization.Serializable class sk.magors.dle.** {
+-if @kotlinx.serialization.Serializable class net.kyberware.dle.** {
     static **$* *;
 }
 -keepclassmembers class <2>$<3> {
     kotlinx.serialization.KSerializer serializer(...);
 }
--if @kotlinx.serialization.Serializable class sk.magors.dle.** {
+-if @kotlinx.serialization.Serializable class net.kyberware.dle.** {
     public static ** INSTANCE;
 }
 -keepclassmembers class <1> {
     public static <1> INSTANCE;
     kotlinx.serialization.KSerializer serializer(...);
 }
--keep,includedescriptorclasses class sk.magors.dle.**$$serializer { *; }
+-keep,includedescriptorclasses class net.kyberware.dle.**$$serializer { *; }
 
 # Google Play Install Referrer: the client talks to the Play Store over AIDL; keep its surface.
 -keep class com.android.installreferrer.** { *; }
@@ -41,5 +41,5 @@
 -dontwarn org.openjsse.**
 
 # The public API is a contract: keep it readable in stack traces from the field.
--keep public class sk.magors.dle.Dle { public *; }
--keep public class sk.magors.dle.DleClient { public *; }
+-keep public class net.kyberware.dle.Dle { public *; }
+-keep public class net.kyberware.dle.DleClient { public *; }

@@ -170,7 +170,7 @@ pipeline.
 
 **Distribution**
 
-- Nothing is published: container images, `@magors/dle-web`, the Android artifact and the iOS package
+- Nothing is published: container images, `@kyberware/dle-web`, the Android artifact and the iOS package
   are built from source.
 
 ## What it deliberately does not do
@@ -204,9 +204,9 @@ and a per-tenant webhook cap. You pay only for your own infrastructure.
 
 | Platform | Package | Notes |
 |---|---|---|
-| Android | [`sdk/android`](sdk/android) — `sk.magors.dle:dle-sdk` | Install Referrer, App Links, `resolveLink` for direct opens, offline queue; no clipboard, no ad ID |
+| Android | [`sdk/android`](sdk/android) — `net.kyberware.dle:dle-sdk` | Install Referrer, App Links, `resolveLink` for direct opens, offline queue; no clipboard, no ad ID |
 | iOS | [`sdk/ios`](sdk/ios) — Swift Package `DleSDK` | Universal Links, `resolveLink` for direct opens, claim code, offline queue; privacy manifest ships with it |
-| Web | [`sdk/web`](sdk/web) — `@magors/dle-web` | Smart banner, web fallback; zero dependencies, no fingerprinting |
+| Web | [`sdk/web`](sdk/web) — `@kyberware/dle-web` | Smart banner, web fallback; zero dependencies, no fingerprinting |
 
 None of the three is published yet; build them from source.
 

@@ -18,7 +18,7 @@ keywords:
   - attribution
   - aspnetcore
 maintainers:
-  - name: MAGORS organisation
+  - name: Kyberware
     url: https://github.com/MAGORS-organisation
 annotations:
   artifacthub.io/license: AGPL-3.0-only

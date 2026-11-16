@@ -1,7 +1,7 @@
 # Android SDK integration
 
 **What this is:** the wire-level view of what the Android SDK does and what your app must do around it.
-**Who it is for:** the Android developer integrating `sk.magors.dle:dle-sdk`. The package README at
+**Who it is for:** the Android developer integrating `net.kyberware.dle:dle-sdk`. The package README at
 [`sdk/android/README.md`](../../sdk/android/README.md) has the dependency, initialisation and sample code;
 this page explains the protocol underneath.
 

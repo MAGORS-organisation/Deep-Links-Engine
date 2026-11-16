@@ -1,5 +1,5 @@
 /**
- * Public type surface of `@magors/dle-web`.
+ * Public type surface of `@kyberware/dle-web`.
  *
  * The wire format of the DLE HTTP API is snake_case (`Dle.Domain.Contracts.SdkContracts`). The
  * public TypeScript surface is camelCase. The translation between the two happens in `api.ts`

@@ -6,8 +6,8 @@ event delivery against the DLE SDK plane (`dle-control`, `POST /v1/resolve` and 
 
 | | |
 |---|---|
-| Coordinates | `sk.magors.dle:dle-sdk:0.1.0` |
-| Package | `sk.magors.dle` |
+| Coordinates | `net.kyberware.dle:dle-sdk:0.1.0` |
+| Package | `net.kyberware.dle` |
 | minSdk / compileSdk | 23 / 35 (an app using the SDK compiles against API 35 or later) |
 | Kotlin / JVM | 2.4 / 17 |
 | Runtime dependencies | OkHttp, kotlinx-coroutines, kotlinx-serialization, `com.android.installreferrer` |
@@ -27,7 +27,7 @@ local Maven repository ([Known gaps](../../README.md#known-gaps)):
 
 ```sh
 cd sdk/android
-gradle :dle-sdk:publishToMavenLocal      # → ~/.m2/repository/sk/magors/dle/dle-sdk/0.1.0/
+gradle :dle-sdk:publishToMavenLocal      # → ~/.m2/repository/net/kyberware/dle/dle-sdk/0.1.0/
 ```
 
 ```kotlin
@@ -42,7 +42,7 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("sk.magors.dle:dle-sdk:0.1.0")
+    implementation("net.kyberware.dle:dle-sdk:0.1.0")
     // Optional. With it, the install id lives in EncryptedSharedPreferences; without it, in a
     // private SharedPreferences file. The SDK detects the library at runtime.
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
@@ -361,7 +361,7 @@ record consent and track a conversion. Point it at a local `dle-control`:
 
 ```sh
 gradle :sample:installDebug -Pdle.sample.endpoint=http://10.0.2.2:8081 -Pdle.sample.sdkKey=dle_pk_…
-adb shell am start -a android.intent.action.VIEW -d "https://link.example.sk/promo/autumn?promo=AUTUMN20" sk.magors.dle.sample
+adb shell am start -a android.intent.action.VIEW -d "https://link.example.sk/promo/autumn?promo=AUTUMN20" net.kyberware.dle.sample
 ```
 
 ## 9. Building and testing

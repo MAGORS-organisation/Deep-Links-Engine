@@ -1,5 +1,5 @@
 {
-  "name": "@magors/dle-admin",
+  "name": "@kyberware/dle-admin",
   "version": "1.0.0",
   "private": true,
   "description": "Administration console for the Deep Link Engine (DLE) control plane. React 19, TypeScript, Vite; no component library, no charting dependency, no CDN.",
