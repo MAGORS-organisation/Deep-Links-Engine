@@ -30,8 +30,10 @@ conversion_agg AS (
            count(*)::bigint                                        AS conversions,
            -- Saturated, not cast blindly: this statement covers every tenant in one transaction,
            -- so a sum that does not fit numeric(18, 4) must not be able to fail it for all of them.
-           least(greatest(sum(s.event_value), -99999999999999.9999), 99999999999999.9999)::numeric(18, 4)
-                                                                   AS conversion_value
+           -- GREATEST/LEAST skip NULLs, so a group without values must stay NULL explicitly.
+           CASE WHEN sum(s.event_value) IS NULL THEN NULL
+                ELSE least(greatest(sum(s.event_value), -99999999999999.9999), 99999999999999.9999)
+           END::numeric(18, 4)                                     AS conversion_value
     FROM sdk_events AS s
     LEFT JOIN installs AS ins
            ON ins.app_id = s.app_id

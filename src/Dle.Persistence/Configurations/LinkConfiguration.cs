@@ -69,7 +69,7 @@ public sealed class LinkConfiguration : IEntityTypeConfiguration<Link>
         builder.Property(l => l.CampaignId)
             .HasColumnName("campaign_id");
 
-        builder.Property(l => l.Tags)
+        builder.PrimitiveCollection(l => l.Tags)
             .HasColumnName("tags")
             .HasColumnType(PostgresConventions.TextArray)
             .HasDefaultValueSql(PostgresConventions.EmptyTextArrayDefault)
