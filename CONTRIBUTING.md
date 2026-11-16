@@ -23,7 +23,7 @@ from.
 | .NET solution | .NET SDK **11.0.100 or later 11.0.x** (`global.json`, roll-forward `latestFeature`) |
 | Integration tests | Docker (Testcontainers pulls `postgres:18` and `valkey/valkey:8`) |
 | Admin console, Web SDK | Node **22** (Node 20 is the minimum for the console, 18 for the SDK) |
-| Android SDK | JDK 17, Android SDK (compileSdk 35), Gradle **8.11.1** — there is no `gradlew` in the repo; install Gradle or use `gradle/actions/setup-gradle` as CI does |
+| Android SDK | JDK 17, Android SDK (platforms 35 and 37.0, build-tools 37.0.0), Gradle **9.7.1** (version from `gradle-wrapper.properties`) — there is no `gradlew` in the repo; install Gradle or use `gradle/actions/setup-gradle` as CI does |
 | iOS SDK | Xcode **16.4** (Swift 6, swift-tools 6.0) on macOS |
 | Compose stack | Docker Compose v2 |
 | Helm chart | Helm 3 |
@@ -81,7 +81,7 @@ Front-end and SDKs:
 ```sh
 cd src/Dle.Admin.Web && npm ci && npm run lint && npm run build
 cd sdk/web           && npm ci && npm run lint && npm run typecheck && npm run build && npm test && npm run size
-cd sdk/android       && gradle :dle-sdk:assembleRelease :dle-sdk:testReleaseUnitTest :sample:assembleDebug
+cd sdk/android       && gradle :dle-sdk:assembleRelease :dle-sdk:testDebugUnitTest :sample:assembleDebug
 cd sdk/ios           && xcodebuild build-for-testing -scheme DleSDK-Package -destination 'platform=iOS Simulator,name=iPhone 16' \
                      && xcodebuild test-without-building -scheme DleSDK-Package -destination 'platform=iOS Simulator,name=iPhone 16'
 ```

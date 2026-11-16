@@ -12,7 +12,8 @@
 # gradle/actions/setup-gradle, so the properties file stays the single source of truth.
 #
 # Toolchain (from sdk/android/gradle/libs.versions.toml and the module build files):
-#   AGP 8.7.3, Kotlin 2.0.21, compileSdk 35, JDK 17 (JavaVersion.VERSION_17).
+#   AGP 9.3.1 (built-in Kotlin), Kotlin 2.4.21, compileSdk 35 (:dle-sdk) / 37 (:sample),
+#   JDK 17 (JavaVersion.VERSION_17).
 # =============================================================================
 name: Android SDK
 
@@ -57,8 +58,9 @@ jobs:
         uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
           # AGP downloads anything else it needs once the licences are accepted; these are the
-          # components the modules declare (compileSdk 35).
-          packages: platform-tools platforms;android-35 build-tools;35.0.0
+          # components the modules declare (:dle-sdk compileSdk 35, :sample compileSdk 37; AGP 9.3
+          # needs build-tools 36 or later).
+          packages: platform-tools platforms;android-35 platforms;android-37.0 build-tools;37.0.0
           accept-android-sdk-licenses: true
           log-accepted-android-sdk-licenses: false
 
@@ -82,7 +84,8 @@ jobs:
 
       - name: Build SDK (release), run unit tests, build sample (debug)
         working-directory: sdk/android
-        run: gradle --no-daemon --stacktrace --warning-mode all :dle-sdk:assembleRelease :dle-sdk:testReleaseUnitTest :sample:assembleDebug
+        # AGP 9 creates unit-test tasks for the tested build type (debug) only.
+        run: gradle --no-daemon --stacktrace --warning-mode all :dle-sdk:assembleRelease :dle-sdk:testDebugUnitTest :sample:assembleDebug
 
       - name: Upload AAR
         if: ${{ success() }}

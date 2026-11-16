@@ -8,8 +8,8 @@ event delivery against the DLE SDK plane (`dle-control`, `POST /v1/resolve` and 
 |---|---|
 | Coordinates | `sk.magors.dle:dle-sdk:0.1.0` |
 | Package | `sk.magors.dle` |
-| minSdk / compileSdk | 23 / 35 |
-| Kotlin / JVM | 2.0 / 17 |
+| minSdk / compileSdk | 23 / 35 (an app using the SDK compiles against API 35 or later) |
+| Kotlin / JVM | 2.4 / 17 |
 | Runtime dependencies | OkHttp, kotlinx-coroutines, kotlinx-serialization, `com.android.installreferrer` |
 | Optional | `androidx.security:security-crypto` (encrypted install id when the app ships it) |
 | Licence | MIT |

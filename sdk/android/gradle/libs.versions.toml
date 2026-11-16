@@ -1,20 +1,25 @@
 [versions]
-agp = "8.7.3"
-kotlin = "2.0.21"
-coroutines = "1.9.0"
-serialization = "1.7.3"
+# AGP 9.3 is the newest line inside Kotlin 2.4's supported range (AGP <= 9.3.1, Gradle <= 9.7.0)
+# and compiles against API 37. AGP 9 has Kotlin built in, so there is no kotlin-android plugin.
+agp = "9.3.1"
+kotlin = "2.4.21"
+coroutines = "1.11.0"
+serialization = "1.13.0"
 okhttp = "4.12.0"
 installreferrer = "2.2"
 securityCrypto = "1.1.0-alpha06"
 junit5 = "5.11.3"
 junitPlatform = "6.1.3"
-androidxCore = "1.13.1"
-androidxAppcompat = "1.7.0"
+androidxCore = "1.19.1"
+androidxAppcompat = "1.8.0"
 androidxActivity = "1.9.3"
 androidxLifecycle = "2.8.7"
-material = "1.12.0"
+material = "1.14.0"
 
 [libraries]
+# Put on the root buildscript classpath so AGP's built-in Kotlin compiles with this Kotlin version.
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
@@ -40,5 +45,4 @@ material = { module = "com.google.android.material:material", version.ref = "mat
 [plugins]
 android-library = { id = "com.android.library", version.ref = "agp" }
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

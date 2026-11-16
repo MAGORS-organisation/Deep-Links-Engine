@@ -6,11 +6,12 @@
 // added. androidx.security:security-crypto is compileOnly: the SDK uses it when the host
 // application ships it and falls back to plain SharedPreferences otherwise.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
+    // No org.jetbrains.kotlin.android: AGP 9 compiles Kotlin itself (built-in Kotlin).
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     `maven-publish`
 }
@@ -23,6 +24,8 @@ version = sdkVersion
 
 android {
     namespace = "sk.magors.dle"
+    // Kept at 35 on purpose: AGP 9 requires an app that consumes this library to compile against
+    // at least the library's compileSdk, and the SDK needs no API above 35.
     compileSdk = 35
 
     defaultConfig {
@@ -74,7 +77,9 @@ kotlin {
 
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
-        freeCompilerArgs.add("-Xjvm-default=all")
+        // The stable replacement of the former -Xjvm-default=all: interface default methods only,
+        // no DefaultImpls classes.
+        jvmDefault.set(JvmDefaultMode.NO_COMPATIBILITY)
     }
 }
 
