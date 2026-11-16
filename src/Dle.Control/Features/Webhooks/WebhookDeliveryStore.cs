@@ -149,9 +149,14 @@ public sealed class WebhookDeliveryStore
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == subscriptionId, cancellationToken);
 
-    /// <summary>Counts the subscriptions of the tenant in scope, for the quota check.</summary>
+    /// <summary>Counts the active subscriptions of the tenant in scope, for the quota check.</summary>
+    /// <remarks>
+    /// Active only. Deleting a subscription deactivates it and keeps the row for its delivery
+    /// history, so counting every row would let a tenant that has ever created and removed the
+    /// maximum never create another.
+    /// </remarks>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The number of subscriptions the tenant already has.</returns>
+    /// <returns>The number of subscriptions that still receive deliveries.</returns>
     public async Task<int> CountAsync(CancellationToken cancellationToken) =>
-        await _db.WebhookSubscriptions.AsNoTracking().CountAsync(cancellationToken);
+        await _db.WebhookSubscriptions.AsNoTracking().CountAsync(s => s.IsActive, cancellationToken);
 }

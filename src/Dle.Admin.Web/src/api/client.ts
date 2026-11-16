@@ -11,9 +11,12 @@ import { problemKeyOf, type ProblemKey } from './problems';
  * no storage a script on the same origin cannot read, and the same script could read the key from
  * memory or hook `fetch`. What the storage adds is that the key survives a reload within the tab,
  * which is what makes the console usable as a console rather than a form to be refilled. The
- * mitigations are elsewhere: the control host serves the console under a CSP without
- * `unsafe-inline` (T-11), the key is a tenant-scoped credential the operator can revoke, and the
- * default scope is the tab. The alert is dismissed on the repository with this reasoning.
+ * mitigations are elsewhere: the control host serves the console under a Content-Security-Policy
+ * that allows scripts and styles only from the console's own files, no framing and network access
+ * only to the control plane and the configured identity provider (T-11,
+ * src/Dle.Control/Infrastructure/AdminConsoleSecurityHeaders.cs); the key is a tenant-scoped
+ * credential the operator can revoke; and the default scope is the tab. The alert is dismissed on
+ * the repository with this reasoning.
  */
 export interface Connection {
   baseUrl: string;
@@ -166,7 +169,7 @@ function buildQuery(query: Record<string, QueryValue> | undefined): string {
   return text ? `?${text}` : '';
 }
 
-function newIdempotencyKey(): string {
+export function createIdempotencyKey(): string {
   // lib.dom declares randomUUID as always present, which narrows `crypto` to `never` after the
   // guard and breaks the fallback. Widen the view so the guard is honest about engines without it.
   const c = globalThis.crypto as Crypto & { randomUUID?: () => string };
@@ -220,7 +223,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
 
   const idempotent = options.idempotent ?? method !== 'GET';
   if (idempotent) {
-    headers['Idempotency-Key'] = newIdempotencyKey();
+    headers['Idempotency-Key'] = createIdempotencyKey();
   }
 
   const url = `${connection.baseUrl}${path}${buildQuery(options.query)}`;

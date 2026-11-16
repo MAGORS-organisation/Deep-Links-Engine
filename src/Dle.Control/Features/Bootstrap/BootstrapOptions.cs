@@ -41,4 +41,11 @@ public sealed class BootstrapOptions
     /// Useful for local developer automation and Docker startup scripts.
     /// </summary>
     public string? ExportKeyPath { get; set; }
+
+    /// <summary>
+    /// Whether the bootstrap owner key may be printed to standard output when no
+    /// <see cref="ExportKeyPath"/> is written. Defaults to <see langword="false"/> so container
+    /// logs and stdout streams do not capture raw root credentials outside explicit development setups.
+    /// </summary>
+    public bool AllowConsoleSecretOutput { get; set; }
 }

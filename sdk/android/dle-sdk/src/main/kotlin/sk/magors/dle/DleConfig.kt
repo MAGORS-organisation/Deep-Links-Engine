@@ -28,8 +28,9 @@ import okhttp3.OkHttpClient
  * @property connectTimeoutMillis TCP connect timeout. Default 5000.
  * @property readTimeoutMillis time allowed for the server to answer. Default 10000.
  * @property referrerTimeoutMillis how long a resolve waits for the Play Install Referrer before
- * proceeding without it. Default 8000. The SDK retries later when the referrer arrives after a
- * `none` answer.
+ * proceeding without it. Default 8000. A read that timed out or failed transiently is attempted
+ * again by the next resolve that goes to the server; a final `none` answer is not re-requested
+ * for it. Zero skips the read.
  * @property flushDelayMillis debounce before an automatic event flush. Default 3000; keeps the SDK
  * inside the documented `/v1/events` budget of sixty events a minute (spec §E.9).
  * @property maxQueueSize maximum number of buffered events before the oldest are dropped.

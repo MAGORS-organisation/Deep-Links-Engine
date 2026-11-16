@@ -6,7 +6,9 @@ import Foundation
 /// not a post-hoc filter (spec §E.6.2, SHARED-KERNEL §2). Concretely, for this SDK:
 ///
 /// * `attribution == false` ⇒ the SDK omits the `signals` object from `POST /v1/resolve`
-///   entirely, so there is nothing for the server to discard (TC-145 / TC-146).
+///   entirely, so there is nothing for the server to discard (TC-145 / TC-146), and the engine
+///   links nothing to this installation: it answers `none` with a non-final `expires_in`, and a
+///   claim code or login key is not redeemed (the code stays unspent).
 /// * `analytics == false` ⇒ behavioural events (`session`, `conversion`, `custom`) are not
 ///   queued at all, unless the integrator opts out of that gate in ``DleConfig``.
 ///

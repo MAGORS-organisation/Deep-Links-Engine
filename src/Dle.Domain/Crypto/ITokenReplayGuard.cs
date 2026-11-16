@@ -1,14 +1,14 @@
-namespace Dle.Crypto;
+namespace Dle.Domain.Crypto;
 
 /// <summary>
 /// Remembers the identifiers of single use tokens so that one cannot be presented twice
 /// (§E.4.2: replay protection over <c>jti</c>, with a time to live).
 /// </summary>
 /// <remarks>
-/// The seam exists because the durable implementation belongs to Valkey, and this project must not
-/// reference a cache client. The in-memory implementation shipped here is correct for a single
-/// instance; a horizontally scaled deployment needs a shared one, because a token consumed on one
-/// instance has to be refused on every other.
+/// The process-local implementation (<c>Dle.Crypto.InMemoryTokenReplayGuard</c>) is correct for
+/// a single instance; horizontally scaled deployments use a shared implementation
+/// (<c>Dle.Persistence.Fast.Caching.ValkeyTokenReplayGuard</c>) so that a token consumed on one
+/// node is refused on every other.
 /// </remarks>
 public interface ITokenReplayGuard
 {

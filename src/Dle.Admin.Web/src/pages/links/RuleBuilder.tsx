@@ -27,7 +27,7 @@ export interface RuleBuilderProps {
   onChange: (rules: RoutingRule[]) => void;
   /** Client-side problems from validateRules(); shown inline by path. */
   problems: RuleProblem[];
-  /** Server problems keyed by wire path (`rules[1].then.url`). */
+  /** Server problems keyed by wire path (`routing_rules[1].then.url`); other fields are ignored here. */
   serverErrors: Record<string, string[]>;
   /** The link target, offered as the default rule's URL. */
   targetUrl: string;
@@ -51,7 +51,9 @@ export function RuleBuilder({ rules, onChange, problems, serverErrors, targetUrl
       list.push(t(p.key, p.params));
       map.set(p.path, list);
     }
-    for (const [path, messages] of Object.entries(serverErrors)) {
+    for (const [wirePath, messages] of Object.entries(serverErrors)) {
+      if (!wirePath.startsWith('routing_rules')) continue;
+      const path = wirePath.slice('routing_'.length);
       const list = map.get(path) ?? [];
       list.push(...messages);
       map.set(path, list);

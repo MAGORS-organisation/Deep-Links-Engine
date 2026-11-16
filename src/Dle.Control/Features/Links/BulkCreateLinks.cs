@@ -234,11 +234,20 @@ public static class BulkCreateLinks
                 }
             }
         }
-        catch (OperationCanceledException)
+        catch
         {
-            // The client hung up mid-batch. Everything already written was created and the client
-            // saw it; the reservation is released so the same key can carry the retry.
+            // The batch ended early: the client hung up, the body broke off or was too large, or the
+            // store failed part way. Everything already written was created and the client saw it.
+            // The reservation is released whatever the cause, so the same key can carry the retry
+            // instead of answering "still in progress" until it expires, and the hosts that gained
+            // links still drop the negative entries the edge may hold for them.
             await reservation.AbandonAsync(idempotency, CancellationToken.None);
+
+            foreach (string host in hosts)
+            {
+                await cache.InvalidateHostAsync(host, CancellationToken.None);
+            }
+
             throw;
         }
 

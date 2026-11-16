@@ -86,11 +86,6 @@ public static class AttributionServiceCollectionExtensions
         services.TryAddScoped<ResolveInstall>();
         services.TryAddScoped<RecordEvents>();
 
-        // Kept registered even though the endpoints authenticate through the SDK key scheme: it is
-        // the seam a host uses when it terminates SDK authentication somewhere other than the
-        // ASP.NET Core authentication stack, and it is what the security tests exercise directly.
-        services.TryAddScoped<SdkKeyAuthenticator>();
-
         return services;
     }
 }

@@ -198,20 +198,25 @@ public sealed class ClaimCodeService
         return new ClaimCodeRedemption(ClaimCodeStatus.Valid, record);
     }
 
-    /// <summary>Spends a code so it can never be redeemed again.</summary>
+    /// <summary>Spends a code so it can never be redeemed again — if nobody spent it first.</summary>
     /// <param name="record">The code row returned by <see cref="InspectAsync"/>.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that completes when the code is spent.</returns>
+    /// <returns>
+    /// <see langword="true"/> when this call spent the code; <see langword="false"/> when a concurrent
+    /// redemption already had, in which case the caller must not use it.
+    /// </returns>
     /// <remarks>
-    /// The code is spent whether or not the attribution it pointed at could be written. If another
-    /// installation already claimed that click, the code has nothing left to buy, and leaving it
-    /// outstanding would only widen the window in which it can be guessed.
+    /// The code is spent whether or not the attribution it points at can be written afterwards. If
+    /// another installation already claimed that click, the code has nothing left to buy, and leaving
+    /// it outstanding would only widen the window in which it can be guessed.
     /// </remarks>
-    public async Task ConsumeAsync(ClaimCodeRecord record, CancellationToken cancellationToken)
+    public async Task<bool> TryConsumeAsync(ClaimCodeRecord record, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(record);
 
-        await _store.ConsumeClaimCodeAsync(record.Id, _timeProvider.GetUtcNow(), cancellationToken);
-        _metrics.ClaimCode("redeemed");
+        bool spent = await _store.ConsumeClaimCodeAsync(record.Id, _timeProvider.GetUtcNow(), cancellationToken);
+        _metrics.ClaimCode(spent ? "redeemed" : "consumed");
+
+        return spent;
     }
 }

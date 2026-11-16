@@ -293,6 +293,11 @@ public static class LinkTemplates
             return failure!;
         }
 
+        if (!ControlJson.TryValidateOgMeta(request.Og, out string? ogError))
+        {
+            return DleProblem.Validation("og.image_url", ogError);
+        }
+
         DleCaller caller = http.RequireDleCaller();
         Campaign campaign = await templates.CreateAsync(name, ToDocument(request), cancellationToken);
 
@@ -334,6 +339,11 @@ public static class LinkTemplates
         if (!TryReadName(request.Name, out string name, out IResult? failure))
         {
             return failure!;
+        }
+
+        if (!ControlJson.TryValidateOgMeta(request.Og, out string? ogError))
+        {
+            return DleProblem.Validation("og.image_url", ogError);
         }
 
         DleCaller caller = http.RequireDleCaller();

@@ -36,9 +36,11 @@ public sealed class DapperDomainConfigStore : IDomainConfigStore
         FROM apps a
         JOIN app_domains ad ON ad.app_id = a.id
         JOIN domains d ON d.id = ad.domain_id
+        JOIN tenants t ON t.id = d.tenant_id
         WHERE d.host = @host::citext
           AND lower(a.platform) = 'ios'
           AND d.is_active
+          AND t.status = 'active'
         ORDER BY a.bundle_id
         """;
 
@@ -49,9 +51,11 @@ public sealed class DapperDomainConfigStore : IDomainConfigStore
         FROM apps a
         JOIN app_domains ad ON ad.app_id = a.id
         JOIN domains d ON d.id = ad.domain_id
+        JOIN tenants t ON t.id = d.tenant_id
         WHERE d.host = @host::citext
           AND lower(a.platform) = 'android'
           AND d.is_active
+          AND t.status = 'active'
         ORDER BY a.bundle_id
         """;
 
@@ -71,6 +75,7 @@ public sealed class DapperDomainConfigStore : IDomainConfigStore
         FROM domains d
         JOIN tenants t ON t.id = d.tenant_id
         WHERE d.host = @host::citext
+          AND t.status = 'active'
         """;
 
     private readonly DleReadDataSource _readDataSource;

@@ -1,11 +1,8 @@
 # =============================================================================
 # Build-context ignore rules for deploy/docker/Dockerfile.* (context = repository root).
 #
-# Docker reads ignore rules from TWO places only: `.dockerignore` at the ROOT of the build
-# context, or — with BuildKit — a file named `<Dockerfile-name>.dockerignore` next to the
-# Dockerfile. This file is the single source of truth; Dockerfile.edge.dockerignore and
-# Dockerfile.control.dockerignore next to it are verbatim copies that BuildKit actually applies.
-# Keep the three identical (deploy/README.md has a one-liner that checks this).
+# Every image build (compose, the release, security and helm workflows) uses the repository root
+# as its context, so this is the one file Docker applies. There is no per-Dockerfile copy.
 # =============================================================================
 
 # Version control and editors

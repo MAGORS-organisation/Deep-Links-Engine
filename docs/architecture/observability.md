@@ -65,7 +65,7 @@ The attribution service has its own `resolve_install` span (`/v1/resolve`) whose
 
 Structured (JSON) through the .NET logging pipeline into OTel. Rules that matter for privacy:
 
-- No raw IP is ever logged on the resolve path; the click stream stores only `ip_hash` (HMAC with a daily-rotated salt) and, under `consent_mode = full`, an `ip_prefix`. The salt is derived from a long-lived secret (the master secret by default), so whoever holds that secret can recompute past salts; rotation does not make the hashes unlinkable for the operator.
+- No raw IP is ever logged on the resolve path; the click stream stores only `ip_hash` (HMAC with a daily-rotated salt) and, under `consent_mode = full`, an `ip_prefix`. The salt is derived from a long-lived secret (the edge secret, `DLE_EDGE_SECRET`), so whoever holds that secret can recompute past salts; rotation does not make the hashes unlinkable for the operator.
 - EF Core 10's default literal redaction is left on, so SQL parameters do not appear in logs.
 - Every log line on a request carries the trace id and, where known, the `tenant_id`; audit-relevant control-plane actions go additionally to the immutable `audit_log` table, not only to logs.
 

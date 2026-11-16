@@ -15,6 +15,7 @@ import { describeError, linkStatus, parseList, type LinkStatus } from '../domain
 import { useAsync } from '../hooks/useAsync';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useI18n } from '../i18n';
+import { ImportLinksDrawer } from './ImportLinksDrawer';
 
 const PAGE_SIZE = 50;
 
@@ -64,6 +65,7 @@ export default function LinksPage() {
 
   const [quick, setQuick] = useState<LinkResponse | null>(null);
   const [qr, setQr] = useState<LinkResponse | null>(null);
+  const [importing, setImporting] = useState(false);
   const [confirm, setConfirm] = useState<{ kind: 'archive' | 'delete'; link: LinkResponse } | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -199,9 +201,14 @@ export default function LinksPage() {
         title={t('links.title')}
         subtitle={t('links.subtitle')}
         actions={
-          <Link className="btn btn-primary" to="/links/new">
-            {t('links.create')}
-          </Link>
+          <span className="row">
+            <button type="button" className="btn" onClick={() => setImporting(true)}>
+              {t('links.import.button')}
+            </button>
+            <Link className="btn btn-primary" to="/links/new">
+              {t('links.create')}
+            </Link>
+          </span>
         }
       />
 
@@ -258,7 +265,7 @@ export default function LinksPage() {
               resetPaging();
             }}
           />
-          {t('links.includeArchived')}
+          {t('links.includeQuarantined')}
         </label>
       </div>
 
@@ -356,6 +363,13 @@ export default function LinksPage() {
         )}
       </Drawer>
 
+      <ImportLinksDrawer
+        open={importing}
+        domains={domainList.data?.items ?? []}
+        onClose={() => setImporting(false)}
+        onImported={() => page.reload()}
+      />
+
       <ConfirmDialog
         open={confirm !== null}
         danger
@@ -391,7 +405,7 @@ function QuickEditDrawer({ link, onClose, onSaved }: { link: LinkResponse | null
     setError(undefined);
     try {
       await links.update(link.id, {
-        title: form.title.trim() || null,
+        title: form.title.trim(), // '' clears; null would mean "unchanged"
         target_url: form.target_url.trim(),
         tags: parseList(form.tags),
         is_active: form.is_active,

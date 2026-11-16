@@ -59,13 +59,15 @@ flowchart TD
 | Data | `off` | `aggregate_only` | `full` | Retention |
 |---|---|---|---|---|
 | Click count per link | yes | yes | yes | aggregates: 730 days (`Dle:Privacy:Retention:AggregatedDays`) |
-| IP address | no | HMAC-SHA-256 hash under a salt that changes every 24 h. Hashes from different days do not match, but each day's salt is derived from the master secret, so the operator (whoever holds that secret) can recompute any past salt and link them | prefix (per `IpStorage` ceiling) | raw/hashed events: 30 days (`Dle:Privacy:Retention:RawDays`, read by the control plane's retention job; the `90` in the edge's `appsettings.json` is not read) |
+| IP address | no | HMAC-SHA-256 hash under a salt that changes every 24 h. Hashes from different days do not match, but each day's salt is derived from the edge secret, so the operator (whoever holds that secret) can recompute any past salt and link them | prefix (per `IpStorage` ceiling) | raw/hashed events: 30 days (`Dle:Privacy:Retention:RawDays`, read by the control plane's retention job; the `90` in the edge's `appsettings.json` is not read) |
 | User-agent | no | parsed families only (browser, OS, device class) — never the full string | same | as events |
 | Referrer | no | host only | host only | as events |
 | Query parameters | no | allowlist only | allowlist only | as events |
-| Country | no | yes, from an **offline** GeoIP file — no third-party call on the resolve path (NFR-14) | yes | as events |
+| Country (and region, when the GeoIP file carries one) | no | yes, from an **offline** GeoIP file — no third-party call on the resolve path (NFR-14) | yes | as events |
+| Language — the primary subtag of `Accept-Language` only, e.g. `sk` | no | yes | yes | as events |
+| `click_id` on the click row | no — the row carries no identifier | yes, but nothing may be linked to it | yes | as events |
 | `click_id` ↔ install binding | no | no | yes | not deleted automatically: the retention job does not cover `attributions` |
-| Device signals (`language`, `screen`, `tz_offset`) | no | no | only with consent, only while the probabilistic module is on | 60-minute matching window, then as events |
+| Device signals (`screen`, `tz_offset`) | no | no | only with consent, only while the probabilistic module is on | 60-minute matching window, then as events |
 | `install_id` | yes (see the note under the modes table) | yes (same) | yes | SDK events: as events. The `installs` row: not deleted automatically — the retention job does not cover it |
 | Consent record (`analytics`, `attribution`, `ts`) | — | — | yes, as evidence | as long as the data it justifies |
 

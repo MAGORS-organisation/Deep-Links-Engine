@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.ServerSentEvents;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -56,6 +57,15 @@ public static class StreamAnalytics
     /// <summary>Event name of a keep-alive sent when nothing changed.</summary>
     public const string HeartbeatEvent = "heartbeat";
 
+    /// <summary>Maximum concurrent SSE analytics streams allowed per tenant.</summary>
+    public const int MaxConcurrentStreamsPerTenant = 10;
+
+    /// <summary>Maximum duration of a single SSE analytics stream before the client reconnects.</summary>
+    public static readonly TimeSpan MaxStreamDuration = TimeSpan.FromMinutes(30);
+
+    private static readonly Lock ActiveStreamsGate = new();
+    private static readonly Dictionary<Guid, int> ActiveStreamsByTenant = [];
+
     /// <summary>
     /// Opens the stream.
     /// </summary>
@@ -67,6 +77,10 @@ public static class StreamAnalytics
     /// <param name="timeProvider">Clock.</param>
     /// <returns>The event stream, or a problem document when the query is not valid.</returns>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
+    [SuppressMessage(
+        "Reliability",
+        "CA2000:Dispose objects before losing scope",
+        Justification = "StreamLease ownership transfers to HttpResponse.RegisterForDispose and PollAsync's finally block.")]
     public static IResult Handle(
         int? intervalSeconds,
         HttpContext context,
@@ -89,20 +103,39 @@ public static class StreamAnalytics
             return binding.Problem!;
         }
 
+        if (TryAcquireStreamSlot(query.TenantId) is not { } lease)
+        {
+            return Dle.Control.Infrastructure.DleProblem.Create(
+                StatusCodes.Status429TooManyRequests,
+                ProblemCodes.Base + "too-many-streams",
+                "Too Many Concurrent Streams",
+                $"A tenant may open at most {MaxConcurrentStreamsPerTenant} concurrent analytics streams.");
+        }
+
+        context.Response.RegisterForDispose(lease);
+
         TimeSpan interval = TimeSpan.FromSeconds(
             Math.Clamp(intervalSeconds ?? DefaultIntervalSeconds, MinIntervalSeconds, MaxIntervalSeconds));
 
+        // Without an explicit end the window is "until now", and now moves. The binder resolved it to
+        // one instant at connect; holding on to that would keep asking for the same closed window, so
+        // a live view would show its first snapshot and then heartbeats for ever.
+        bool follow = !context.Request.Query.ContainsKey("to");
+
         return TypedResults.ServerSentEvents(
-            PollAsync(query, store, timeProvider, interval, context.RequestAborted));
+            PollAsync(query, follow, store, timeProvider, interval, lease, context.RequestAborted));
     }
 
     /// <summary>
     /// Polls the store and yields a snapshot whenever the numbers move.
     /// </summary>
     /// <param name="query">The bound, tenant scoped query.</param>
+    /// <param name="follow">Whether the window keeps its width and moves with the clock, which is
+    /// the case when the caller named no end.</param>
     /// <param name="store">The analytics store.</param>
     /// <param name="timeProvider">Clock, also driving the timer so a test can advance it.</param>
     /// <param name="interval">Polling interval.</param>
+    /// <param name="lease">Per-tenant concurrent stream lease released on stream completion.</param>
     /// <param name="cancellationToken">Cancelled when the client disconnects.</param>
     /// <returns>The stream of events.</returns>
     /// <remarks>
@@ -111,57 +144,128 @@ public static class StreamAnalytics
     /// </remarks>
     private static async IAsyncEnumerable<SseItem<string>> PollAsync(
         AnalyticsQuery query,
+        bool follow,
         IClickAnalyticsStore store,
         TimeProvider timeProvider,
         TimeSpan interval,
+        StreamLease lease,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        string? previous = null;
-
-        using PeriodicTimer timer = new(interval, timeProvider);
-
-        while (!cancellationToken.IsCancellationRequested)
+        try
         {
-            FunnelSummary? summary = null;
+            string? previous = null;
+            TimeSpan width = query.To - query.From;
+            DateTimeOffset deadline = timeProvider.GetUtcNow().Add(MaxStreamDuration);
 
-            try
+            using PeriodicTimer timer = new(interval, timeProvider);
+
+            while (!cancellationToken.IsCancellationRequested && timeProvider.GetUtcNow() < deadline)
             {
-                summary = await store.GetFunnelAsync(query, cancellationToken);
+                FunnelSummary? summary = null;
+
+                if (follow)
+                {
+                    DateTimeOffset now = timeProvider.GetUtcNow();
+                    query = query with { From = now - width, To = now };
+                }
+
+                try
+                {
+                    summary = await store.GetFunnelAsync(query, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // The client went away. Ending the enumeration is the whole of the cleanup.
+                    yield break;
+                }
+
+                string payload = JsonSerializer.Serialize(summary, AnalyticsJsonContext.Default.FunnelSummary);
+
+                if (!string.Equals(payload, previous, StringComparison.Ordinal))
+                {
+                    previous = payload;
+                    yield return new SseItem<string>(payload, SnapshotEvent);
+                }
+                else
+                {
+                    // Ordinal equality on the rendered bytes rather than a field-by-field comparison:
+                    // the payload is what the client receives, so it is the right thing to compare.
+                    yield return new SseItem<string>(string.Empty, HeartbeatEvent);
+                }
+
+                if (timeProvider.GetUtcNow() >= deadline)
+                {
+                    yield break;
+                }
+
+                bool ticked;
+
+                try
+                {
+                    ticked = await timer.WaitForNextTickAsync(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    yield break;
+                }
+
+                if (!ticked)
+                {
+                    yield break;
+                }
             }
-            catch (OperationCanceledException)
+        }
+        finally
+        {
+            lease.Dispose();
+        }
+    }
+
+    internal static StreamLease? TryAcquireStreamSlot(Guid tenantId)
+    {
+        lock (ActiveStreamsGate)
+        {
+            int active = ActiveStreamsByTenant.GetValueOrDefault(tenantId);
+
+            if (active >= MaxConcurrentStreamsPerTenant)
             {
-                // The client went away. Ending the enumeration is the whole of the cleanup.
-                yield break;
+                return null;
             }
 
-            string payload = JsonSerializer.Serialize(summary, AnalyticsJsonContext.Default.FunnelSummary);
+            ActiveStreamsByTenant[tenantId] = active + 1;
+            return new StreamLease(tenantId);
+        }
+    }
 
-            if (!string.Equals(payload, previous, StringComparison.Ordinal))
+    private static void ReleaseStreamSlot(Guid tenantId)
+    {
+        lock (ActiveStreamsGate)
+        {
+            if (!ActiveStreamsByTenant.TryGetValue(tenantId, out int active))
             {
-                previous = payload;
-                yield return new SseItem<string>(payload, SnapshotEvent);
+                return;
+            }
+
+            if (active <= 1)
+            {
+                _ = ActiveStreamsByTenant.Remove(tenantId);
             }
             else
             {
-                // Ordinal equality on the rendered bytes rather than a field-by-field comparison:
-                // the payload is what the client receives, so it is the right thing to compare.
-                yield return new SseItem<string>(string.Empty, HeartbeatEvent);
+                ActiveStreamsByTenant[tenantId] = active - 1;
             }
+        }
+    }
 
-            bool ticked;
+    internal sealed class StreamLease(Guid tenantId) : IDisposable
+    {
+        private int _disposed;
 
-            try
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
             {
-                ticked = await timer.WaitForNextTickAsync(cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                yield break;
-            }
-
-            if (!ticked)
-            {
-                yield break;
+                ReleaseStreamSlot(tenantId);
             }
         }
     }

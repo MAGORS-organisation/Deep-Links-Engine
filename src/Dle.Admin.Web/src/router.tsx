@@ -3,10 +3,9 @@ import { createHashRouter } from 'react-router';
 import { Layout } from './app/Layout';
 
 /*
- * Hash routing on purpose. The control plane serves wwwroot/admin/ as static files and keeps its
- * own SPA fallback pointed at the committed no-Node console (Dle:Control:SpaIndexFile), so a
- * history-mode deep link such as /admin/links would be answered by that page rather than by this
- * bundle. With the hash router every route lives under /admin/#/…, which is one static file.
+ * Hash routing on purpose. The control plane serves wwwroot/admin/ (Dle:Control:SpaIndexFile =
+ * admin/index.html), so every client route lives under /admin/#/… and resolves via a single static
+ * HTML entry point without path conflicts with control-plane APIs or health probes.
  */
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const LinksPage = lazy(() => import('./pages/LinksPage'));

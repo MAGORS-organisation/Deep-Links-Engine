@@ -139,11 +139,15 @@ describe('smart banner (FR-224, WCAG 2.2 AA)', () => {
     expect(store.get(DISMISSED_UNTIL_KEY)).toMatch(/^\d+$/);
   });
 
-  it('dismisses on Escape from anywhere on the page, once', () => {
+  it('dismisses on Escape inside the banner once, without swallowing page-level Escape', () => {
     const onDismiss = vi.fn();
-    show({ onDismiss });
+    const { handle } = show({ onDismiss });
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(onDismiss).not.toHaveBeenCalled();
+
+    const close = handle!.shadowRoot.querySelector<HTMLButtonElement>('button.x')!;
+    close.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }));
+    handle!.host.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
     expect(onDismiss).toHaveBeenCalledWith('escape');
     expect(document.querySelector('[data-dle-banner]')).toBeNull();
@@ -190,11 +194,15 @@ describe('smart banner (FR-224, WCAG 2.2 AA)', () => {
     expect(show({ enabled: false }).handle).toBeNull();
   });
 
-  it('refuses a custom-scheme openUrl and a missing appName', () => {
+  it('refuses a custom-scheme or non-https openUrl and a missing appName', () => {
     const scheme = show({ openUrl: 'zak://promo?token=abc' });
     expect(scheme.handle).toBeNull();
     expect(scheme.errors.length).toBe(1);
     expect(show({ openUrl: 'javascript:alert(1)' }).handle).toBeNull();
+    expect(show({ openUrl: 'http://links.example.sk/abc' }).handle).toBeNull();
+    expect(show({ openUrl: 'https://user:pass@links.example.sk/abc' }).handle).toBeNull();
+    expect(show({ openUrl: 'http://localhost:8080/abc' }).handle).not.toBeNull();
+    expect(show({ openUrl: 'http://links.example.sk/abc', allowInsecureHttp: true }).handle).not.toBeNull();
     expect(show({ appName: '  ' }).handle).toBeNull();
   });
 

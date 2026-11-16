@@ -109,7 +109,7 @@ public static class CreateWebhook
                 ProblemCodes.RateLimited,
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"This tenant already has {existing} webhook subscriptions, which is the configured maximum."));
+                    $"This tenant already has {existing} active webhook subscriptions, which is the configured maximum."));
         }
 
         byte[] secret = WebhookSecretProtector.NewSecret();

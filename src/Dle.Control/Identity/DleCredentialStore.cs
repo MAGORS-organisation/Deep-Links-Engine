@@ -122,6 +122,7 @@ public sealed class DleCredentialStore
 
         var row = await (
             from key in _db.SdkKeys.AsNoTracking().AcrossTenants()
+            join app in _db.Apps.AsNoTracking().AcrossTenants() on key.AppId equals app.Id
             join tenant in _db.Tenants.AsNoTracking().AcrossTenants() on key.TenantId equals tenant.Id
             where key.KeyPrefix == prefix && key.IsActive
             select new

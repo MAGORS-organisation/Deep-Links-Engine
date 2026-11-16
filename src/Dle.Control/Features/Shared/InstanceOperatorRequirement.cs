@@ -21,31 +21,42 @@ public sealed record DleInstanceOperatorRequirement : IAuthorizationRequirement;
 /// </summary>
 /// <remarks>
 /// <para>
-/// There are exactly two ways to satisfy it. Either <c>Dle:Control:InstanceTenantId</c> names the
-/// tenant whose owners run the instance — the multi-tenant answer — or
-/// <c>Dle:Control:AllowTenantSelfService</c> is switched on, which only makes sense for a deployment
-/// serving one organisation.
+/// Multi-tenant instance administration is gated strictly to callers whose tenant matches
+/// <c>Dle:Control:InstanceTenantId</c> (or the bootstrap operator tenant registered on
+/// <see cref="DleInstanceOperator"/>).
 /// </para>
 /// <para>
-/// With neither set, the requirement is not met and the tenant routes deny every caller. That is the
-/// correct posture for a deployment that has not decided: an unconfigured instance should refuse to
-/// let anybody create tenants rather than let everybody (SHARED-KERNEL §17.9).
+/// When <c>Dle:Control:AllowTenantSelfService</c> is switched on without an explicit
+/// <c>InstanceTenantId</c>, the deployment operates in single-tenant self-service mode: only the
+/// operator tenant (or the sole active tenant when none was discovered by bootstrap) satisfies the
+/// requirement, and provisioning additional tenants is blocked so another tenant can never acquire
+/// cross-tenant privileges.
 /// </para>
 /// </remarks>
 public sealed class DleInstanceOperatorHandler : AuthorizationHandler<DleInstanceOperatorRequirement>
 {
     private readonly IOptionsMonitor<DleControlOptions> _options;
+    private readonly DleInstanceOperator _operator;
+    private readonly IServiceScopeFactory? _scopeFactory;
 
     /// <summary>Creates the handler.</summary>
     /// <param name="options">Control-plane options, read on every evaluation.</param>
-    public DleInstanceOperatorHandler(IOptionsMonitor<DleControlOptions> options)
+    /// <param name="instanceOperator">Knows the operator tenant.</param>
+    /// <param name="scopeFactory">Scope factory used to verify single-tenant boundaries.</param>
+    public DleInstanceOperatorHandler(
+        IOptionsMonitor<DleControlOptions> options,
+        DleInstanceOperator instanceOperator,
+        IServiceScopeFactory? scopeFactory = null)
     {
         ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(instanceOperator);
         _options = options;
+        _operator = instanceOperator;
+        _scopeFactory = scopeFactory;
     }
 
     /// <inheritdoc />
-    protected override Task HandleRequirementAsync(
+    protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
         DleInstanceOperatorRequirement requirement)
     {
@@ -56,21 +67,30 @@ public sealed class DleInstanceOperatorHandler : AuthorizationHandler<DleInstanc
 
         if (caller is null)
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        DleControlOptions options = _options.CurrentValue;
-
-        bool isOperator = options.AllowTenantSelfService
-            || (options.InstanceTenantId is Guid instance && instance == caller.TenantId);
-
-        if (isOperator)
+        if (_operator.IsOperator(caller.TenantId))
         {
             context.Succeed(requirement);
+            return;
         }
 
-        // Nothing calls Fail(): not succeeding is enough, and failing would veto every other policy
-        // evaluated in the same request.
-        return Task.CompletedTask;
+        if (_options.CurrentValue.AllowTenantSelfService
+            && _operator.TenantId is null
+            && _scopeFactory is not null)
+        {
+            using IServiceScope scope = _scopeFactory.CreateScope();
+            TenantRepository tenants = scope.ServiceProvider.GetRequiredService<TenantRepository>();
+            IReadOnlyList<Tenant> existing = await tenants.ListAsync(
+                includeDeleted: false,
+                limit: 2,
+                CancellationToken.None);
+
+            if (existing.Count == 0 || (existing.Count == 1 && existing[0].Id == caller.TenantId))
+            {
+                context.Succeed(requirement);
+            }
+        }
     }
 }

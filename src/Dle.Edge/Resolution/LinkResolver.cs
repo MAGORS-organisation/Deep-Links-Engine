@@ -3,11 +3,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 using Dle.Crypto;
+using Dle.Domain.Contracts;
 using Dle.Domain.Entities;
 using Dle.Edge.Configuration;
 using Dle.Edge.RateLimiting;
 using Dle.Edge.Rendering;
 using Dle.Edge.Telemetry;
+using Dle.Persistence.Fast.Attribution;
 using Dle.Persistence.Fast.Caching;
 using Dle.Persistence.Fast.Configuration;
 
@@ -50,6 +52,14 @@ namespace Dle.Edge.Resolution;
 /// </remarks>
 public sealed class LinkResolver
 {
+    /// <summary>Audience for single-use interstitial deferred-consent form tokens.</summary>
+    internal const string ConsentTokenAudience = "dle:interstitial-consent";
+
+    private const string ConsentHostClaim = "host";
+    private const string ConsentSlugClaim = "slug";
+    private const int MaxConsentFormContentLength = 8192;
+    private static readonly TimeSpan ConsentTokenLifetime = TimeSpan.FromMinutes(10);
+
     private readonly HybridCache _cache;
     private readonly ILinkStore _links;
     private readonly IDomainConfigStore _domains;
@@ -68,6 +78,7 @@ public sealed class LinkResolver
     private readonly ILogger<LinkResolver> _logger;
     private readonly ClaimCodeGenerator? _claimCodes;
     private readonly IClaimCodeWriter? _claimCodeWriter;
+    private readonly SignedTokenCodec? _tokenCodec;
 
     /// <summary>Creates the pipeline.</summary>
     /// <param name="cache">The two-level link cache.</param>
@@ -88,6 +99,7 @@ public sealed class LinkResolver
     /// <param name="logger">Logger.</param>
     /// <param name="claimCodes">Generator for deterministic iOS claim codes.</param>
     /// <param name="claimCodeWriter">Storage writer for issued claim codes.</param>
+    /// <param name="tokenCodec">Optional signed token codec used for zero-JS deferred consent forms.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public LinkResolver(
         HybridCache cache,
@@ -107,7 +119,8 @@ public sealed class LinkResolver
         TimeProvider timeProvider,
         ILogger<LinkResolver> logger,
         ClaimCodeGenerator? claimCodes = null,
-        IClaimCodeWriter? claimCodeWriter = null)
+        IClaimCodeWriter? claimCodeWriter = null,
+        SignedTokenCodec? tokenCodec = null)
     {
         ArgumentNullException.ThrowIfNull(cache);
         ArgumentNullException.ThrowIfNull(links);
@@ -144,6 +157,7 @@ public sealed class LinkResolver
         _logger = logger;
         _claimCodes = claimCodes;
         _claimCodeWriter = claimCodeWriter;
+        _tokenCodec = tokenCodec;
     }
 
     /// <summary>
@@ -178,7 +192,7 @@ public sealed class LinkResolver
 
         // The only short circuit in the pipeline, and §E.9 requires it: a shadow banned prefix is
         // answered without a cache read or a query, and sees the same document as every other miss.
-        if (_guard.IsShadowBanned(networkKey))
+        if (await _guard.IsShadowBannedAsync(networkKey, cancellationToken))
         {
             EdgeLog.NotServed(_logger, host, NotFoundReasons.ShadowBanned);
             Record(started, ResolveOutcomes.NotFound, CacheLevels.None, ClientContext.Empty, DecisionNames.NotFound);
@@ -238,18 +252,34 @@ public sealed class LinkResolver
         using (Activity? renderSpan = EdgeActivitySource.StartRender())
         {
             outcome = await RespondAsync(
-                context, host, slug, slugUsable, link, state, decision, client, consent, clickId, cancellationToken);
+                context, host, slug, slugUsable, link, state, decision, client, consent, signal is not null, clickId, cancellationToken);
 
-            outcome = ChargeNotFoundBudget(outcome, client, networkKey);
+            // Only a slug that names nothing is a probe. A real link that has expired, is scheduled or
+            // is switched off answers with the same 404, but the people following it are its audience,
+            // not a scanner: charging them would shadow ban a whole office or carrier NAT prefix, for
+            // every tenant's links, on the day a campaign ends.
+            if (link is null)
+            {
+                outcome = await ChargeNotFoundBudgetAsync(outcome, client, networkKey, cancellationToken);
+            }
         }
 
         double elapsedSeconds = Stopwatch.GetElapsedTime(started).TotalSeconds;
 
         // FR-166: preview runs the whole pipeline and records nothing, so a rule can be debugged
-        // against production data without moving a campaign's numbers.
-        if (!IsPreview(context.Request))
+        // against production data without moving a campaign's numbers. A HEAD is the same kind of
+        // request: nobody followed the link, a mail gateway or a chat client checked that it exists.
+        if (!IsProbe(context.Request))
         {
             WriteClickEvent(link, client, consent, decision, outcome.DecisionName, clickId, now, networkKey, remoteIp, elapsedSeconds);
+        }
+
+        if (string.Equals(outcome.Metric, ResolveOutcomes.Redirect, StringComparison.Ordinal))
+        {
+            // The Location carries this visitor's click identifier and was chosen for this visitor's
+            // device. A shared cache in front of the edge that kept the answer would hand both to
+            // everybody else (ADR-0009: a redirect is never cached).
+            context.Response.Headers.CacheControl = "no-store";
         }
 
         if (outcome.Reason is { } reason)
@@ -274,6 +304,162 @@ public sealed class LinkResolver
     }
 
     /// <summary>
+    /// Handles a zero-JS explicit attribution consent POST from an interstitial page (<c>POST /_dl/consent</c>).
+    /// </summary>
+    /// <param name="context">The incoming form submission request.</param>
+    /// <param name="cancellationToken">Cancellation for replay-guard validation and store reads.</param>
+    /// <returns>The updated interstitial page, or an error response.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="context"/> is <see langword="null"/>.</exception>
+    public async Task<IResult> HandleConsentAsync(HttpContext context, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        long started = Stopwatch.GetTimestamp();
+
+        using Activity? span = EdgeActivitySource.StartResolve();
+
+        DateTimeOffset now = _timeProvider.GetUtcNow();
+        IPAddress? remoteIp = ClientRequestFactory.Canonical(context.Connection.RemoteIpAddress);
+        string networkKey = EdgeRateLimitPartitions.NetworkKey(_ipHasher, remoteIp);
+
+        if (!HostNormalizer.TryNormalize(context.Request.Host.Host, out string host))
+        {
+            EdgeLog.NotServed(_logger, "-", NotFoundReasons.UnusableHost);
+            Record(started, ResolveOutcomes.NotFound, CacheLevels.None, ClientContext.Empty, DecisionNames.NotFound);
+
+            return InterstitialResults.NotFound(language: null);
+        }
+
+        if (await _guard.IsShadowBannedAsync(networkKey, cancellationToken))
+        {
+            EdgeLog.NotServed(_logger, host, NotFoundReasons.ShadowBanned);
+            Record(started, ResolveOutcomes.NotFound, CacheLevels.None, ClientContext.Empty, DecisionNames.NotFound);
+
+            return InterstitialResults.NotFound(language: null);
+        }
+
+        if (_tokenCodec is null
+            || !context.Request.HasFormContentType
+            || context.Request.ContentLength is > MaxConsentFormContentLength)
+        {
+            Record(started, ResolveOutcomes.NotFound, CacheLevels.None, ClientContext.Empty, DecisionNames.NotFound);
+
+            return InterstitialResults.NotFound(language: null);
+        }
+
+        if (ConsentSignalReader.Read(context.Request, now) is { Attribution: false })
+        {
+            Record(started, ResolveOutcomes.NotFound, CacheLevels.None, ClientContext.Empty, DecisionNames.NotFound);
+
+            return Results.Problem(
+                title: "Global Privacy Control prohibits attribution consent.",
+                statusCode: StatusCodes.Status403Forbidden,
+                type: ProblemCodes.Forbidden);
+        }
+
+        string? submittedToken;
+        try
+        {
+            IFormCollection form = await context.Request.ReadFormAsync(cancellationToken);
+            submittedToken = form["token"].ToString();
+        }
+        catch (InvalidDataException)
+        {
+            Record(started, ResolveOutcomes.NotFound, CacheLevels.None, ClientContext.Empty, DecisionNames.NotFound);
+            return InterstitialResults.NotFound(language: null);
+        }
+
+        TokenValidationResult validation = await _tokenCodec.ValidateOnceAsync(
+            submittedToken,
+            ConsentTokenAudience,
+            cancellationToken);
+
+        if (!validation.IsValid
+            || validation.Payload?.Claims is not { } claims
+            || !claims.TryGetValue(ConsentHostClaim, out string? tokenHost)
+            || !string.Equals(tokenHost, host, StringComparison.OrdinalIgnoreCase)
+            || !claims.TryGetValue(ConsentSlugClaim, out string? rawSlug)
+            || !SlugPolicy.TryNormalize(rawSlug, out string slug)
+            || SlugPolicy.IsReserved(slug))
+        {
+            Record(started, ResolveOutcomes.NotFound, CacheLevels.None, ClientContext.Empty, DecisionNames.NotFound);
+            return InterstitialResults.NotFound(language: null);
+        }
+
+        LookupResult lookup = await LookupAsync(host, slug, cancellationToken);
+
+        if (lookup.Failed)
+        {
+            Record(started, ResolveOutcomes.Unavailable, CacheLevels.Miss, ClientContext.Empty, DecisionNames.NotFound);
+            return DependencyUnavailable();
+        }
+
+        LinkSnapshot? link = lookup.Link;
+        string cacheLevel = lookup.FactoryRan ? CacheLevels.Miss : CacheLevels.Local;
+
+        if (link is null || link.GetServeState(now) != LinkServeState.Servable)
+        {
+            Record(started, ResolveOutcomes.NotFound, cacheLevel, ClientContext.Empty, DecisionNames.NotFound);
+            return InterstitialResults.NotFound(language: null);
+        }
+
+        ClientContext client = await ClassifyAsync(context, host, now, networkKey, cancellationToken);
+
+        var signal = new ConsentSignal
+        {
+            Analytics = true,
+            Attribution = true,
+            Timestamp = now,
+            Source = ConsentSignalReader.CmpSource,
+        };
+
+        ConsentDecision consent = ConsentGate.Evaluate(link.TenantConsentMode, link.DomainConsentMode, signal);
+        string clickId = _clickIds.New(now);
+
+        RoutingDecision decision;
+        using (EdgeActivitySource.StartRoute())
+        {
+            decision = _routing.Evaluate(link.RoutingRules, client, consent, clickId);
+        }
+
+        ResolveOutcome outcome;
+        using (EdgeActivitySource.StartRender())
+        {
+            outcome = decision.Kind switch
+            {
+                DecisionKind.Blocked => await GoneAsync(host, client, ResolveOutcomes.Blocked, cancellationToken),
+                DecisionKind.Gone => await GoneAsync(host, client, ResolveOutcomes.Gone, cancellationToken),
+                _ => await InterstitialAsync(
+                    host,
+                    slug,
+                    link,
+                    decision,
+                    client,
+                    consent,
+                    consentSignalPresent: true,
+                    clickId,
+                    probe: false,
+                    cancellationToken),
+            };
+        }
+
+        double elapsedSeconds = Stopwatch.GetElapsedTime(started).TotalSeconds;
+        WriteClickEvent(link, client, consent, decision, outcome.DecisionName, clickId, now, networkKey, remoteIp, elapsedSeconds);
+        EdgeLog.Resolved(_logger, host, slug, outcome.DecisionName, cacheLevel, elapsedSeconds * 1000d);
+
+        _metrics.RecordResolve(
+            elapsedSeconds,
+            outcome.Metric,
+            cacheLevel,
+            ChannelNames.From(client.Channel),
+            outcome.DecisionName,
+            client.Platform,
+            client.IsCrawler);
+
+        return outcome.Result;
+    }
+
+    /// <summary>
     /// Charges a 404 to the enumeration budget and switches to 429 for the request that drains it
     /// (§E.9, T-07, TC-108).
     /// </summary>
@@ -284,14 +470,18 @@ public sealed class LinkResolver
     /// which is what keeps a legitimate campaign spike from exhausting the anti-enumeration budget and
     /// switching the defence off exactly when the service is most worth scanning.
     /// </remarks>
-    private ResolveOutcome ChargeNotFoundBudget(ResolveOutcome outcome, ClientContext client, string networkKey)
+    private async ValueTask<ResolveOutcome> ChargeNotFoundBudgetAsync(
+        ResolveOutcome outcome,
+        ClientContext client,
+        string networkKey,
+        CancellationToken cancellationToken)
     {
         if (!string.Equals(outcome.Metric, ResolveOutcomes.NotFound, StringComparison.Ordinal))
         {
             return outcome;
         }
 
-        if (_guard.Register(networkKey) == NotFoundVerdict.WithinBudget)
+        if (await _guard.RegisterAsync(networkKey, cancellationToken) == NotFoundVerdict.WithinBudget)
         {
             return outcome;
         }
@@ -357,6 +547,9 @@ public sealed class LinkResolver
             {
                 _metrics.RecordFactoryRun();
 
+                // GetOrCreateAsync already populated L1+L2 with DefaultEntryOptions and HostTag.
+                // Only shorten TTL on a negative miss (null) so a newly published link becomes
+                // visible within NegativeSeconds instead of waiting for DefaultEntryOptions.
                 if (link is null)
                 {
                     await _cache.SetAsync<LinkSnapshot?>(
@@ -364,15 +557,6 @@ public sealed class LinkResolver
                         null,
                         _cacheOptions.NegativeEntryOptions,
                         tags: [LinkCacheKeys.HostTag(host)],
-                        cancellationToken: cancellationToken);
-                }
-                else
-                {
-                    await _cache.SetAsync(
-                        key,
-                        link,
-                        _cacheOptions.DefaultEntryOptions,
-                        tags: [LinkCacheKeys.HostTag(host), LinkCacheKeys.TenantTag(link.TenantId)],
                         cancellationToken: cancellationToken);
                 }
             }
@@ -464,6 +648,7 @@ public sealed class LinkResolver
         RoutingDecision decision,
         ClientContext client,
         ConsentDecision consent,
+        bool consentSignalPresent,
         string clickId,
         CancellationToken cancellationToken)
     {
@@ -522,7 +707,7 @@ public sealed class LinkResolver
                 return await GoneAsync(host, client, ResolveOutcomes.Blocked, cancellationToken);
 
             case DecisionKind.Interstitial:
-                return await InterstitialAsync(host, link, decision, client, consent, clickId, cancellationToken);
+                return await InterstitialAsync(host, slug, link, decision, client, consent, consentSignalPresent, clickId, IsProbe(context.Request), cancellationToken);
 
             case DecisionKind.AppDirect:
             {
@@ -534,7 +719,7 @@ public sealed class LinkResolver
 
                 return SafeUrl.Web(deeplink) is { } universalLink
                     ? new ResolveOutcome(Results.Redirect(universalLink, permanent: false), ResolveOutcomes.Redirect, DecisionNames.AppOpen, Reason: null)
-                    : await InterstitialAsync(host, link, decision, client, consent, clickId, cancellationToken);
+                    : await InterstitialAsync(host, slug, link, decision, client, consent, consentSignalPresent, clickId, IsProbe(context.Request), cancellationToken);
             }
 
             case DecisionKind.Store:
@@ -585,11 +770,14 @@ public sealed class LinkResolver
 
     private async ValueTask<ResolveOutcome> InterstitialAsync(
         string host,
+        string slug,
         LinkSnapshot link,
         RoutingDecision decision,
         ClientContext client,
         ConsentDecision consent,
+        bool consentSignalPresent,
         string clickId,
+        bool probe,
         CancellationToken cancellationToken)
     {
         bool storeBound = decision.Action is RoutingActionKind.AppOrStore or RoutingActionKind.StoreOnly;
@@ -598,11 +786,20 @@ public sealed class LinkResolver
             ? RoutingUrlBuilder.BuildStoreUrl(decision, link, client, clickId, consent)
             : RoutingUrlBuilder.BuildWebUrl(decision, link, client, clickId, consent);
 
+        // A claim code is shown only when it can work. Redemption links the installation to this click,
+        // which the control plane allows only under the `full` consent mode (with the user's consent
+        // recorded by the app at redemption time). Under `aggregate_only` and `off` the code could never
+        // be redeemed, so issuing one would show the user a promise the product cannot keep — and under
+        // `off` it would also store a click identifier the mode says is never stored.
         string? claimCode = null;
-        if (client.Platform == Platform.Ios && storeBound && _claimCodes is not null && _claimCodeWriter is not null)
+        if (!probe
+            && client.Platform == Platform.Ios
+            && storeBound
+            && consent.EffectiveMode == ConsentMode.Full
+            && _claimCodes is not null
+            && _claimCodeWriter is not null)
         {
             ClaimCodeCredential credential = _claimCodes.Create();
-            claimCode = credential.Code;
             DateTimeOffset now = _timeProvider.GetUtcNow();
             var record = new ClaimCodeRecord
             {
@@ -617,11 +814,39 @@ public sealed class LinkResolver
             try
             {
                 await _claimCodeWriter.WriteAsync(record, cancellationToken);
+
+                // Shown only once it is stored: a code the app cannot redeem is worse than none.
+                claimCode = credential.Code;
             }
             catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
             {
-                _logger.LogWarning(ex, "Failed to persist claim code for click {ClickId}", clickId);
+                _logger.LogWarning(ex, "Failed to persist claim code for click {ClickId}; the page is served without one", clickId);
             }
+        }
+
+        // Deferred consent paradox fix: when a tenant/domain allows full attribution consent, the store
+        // target benefits from an attribution click id / iOS claim code, and no consent decision arrived
+        // yet, emit a signed single-use POST form so the visitor can opt in without PII in URLs or JS.
+        bool policyAllowsFull = link.TenantConsentMode == ConsentMode.Full
+            && link.DomainConsentMode is null or ConsentMode.Full;
+
+        string? consentToken = null;
+        if (!probe
+            && storeBound
+            && claimCode is null
+            && policyAllowsFull
+            && !consent.AllowClickIdLinking
+            && !consentSignalPresent
+            && _tokenCodec is not null)
+        {
+            consentToken = _tokenCodec.Issue(
+                ConsentTokenAudience,
+                new Dictionary<string, string>(2, StringComparer.Ordinal)
+                {
+                    [ConsentHostClaim] = host,
+                    [ConsentSlugClaim] = slug,
+                },
+                ConsentTokenLifetime);
         }
 
         return new ResolveOutcome(
@@ -632,7 +857,8 @@ public sealed class LinkResolver
                 fallback,
                 RoutingUrlBuilder.BuildDeeplinkUrl(decision, link, CustomScheme(link, client), clickId, consent),
                 await LoadDomainAsync(host, cancellationToken),
-                claimCode),
+                claimCode,
+                consentToken),
             ResolveOutcomes.Interstitial,
             DecisionNames.Interstitial,
             Reason: null);
@@ -721,23 +947,29 @@ public sealed class LinkResolver
             && _privacy.AllowsIpPrefix
             && !string.Equals(networkKey, EdgeRateLimitPartitions.UnknownClientKey, StringComparison.Ordinal);
 
+        // `off` keeps a click counter and nothing about the visitor (docs/compliance/privacy.md): no
+        // click identifier, no user agent, no geography, no language, no referrer. The row still
+        // says which link was followed, when, and what the engine decided, which is the counter.
+        bool describeVisitor = consent.EffectiveMode != ConsentMode.Off;
+        string? deeplinkPath = describeVisitor ? decision.DeeplinkPath ?? link?.DeeplinkPath : null;
+
         var clickEvent = new ClickEvent
         {
             Id = Guid.CreateVersion7(now),
             OccurredAt = now,
             TenantId = link?.TenantId ?? Guid.Empty,
             LinkId = link?.Id ?? 0L,
-            ClickId = clickId,
+            ClickId = describeVisitor ? clickId : string.Empty,
             IpHash = storeHash ? _ipHasher.Hash(remoteIp!, now) : null,
             IpPrefix = storePrefix ? networkKey : null,
-            UaFamily = client.UaFamily,
-            OsFamily = client.OsFamily,
-            OsVersion = client.OsVersion,
-            DeviceClass = DeviceClassName(client.DeviceClass),
-            Country = client.Country,
-            Region = client.Region,
-            Language = client.Language,
-            ReferrerHost = client.ReferrerHost,
+            UaFamily = describeVisitor ? client.UaFamily : null,
+            OsFamily = describeVisitor ? client.OsFamily : null,
+            OsVersion = describeVisitor ? client.OsVersion : null,
+            DeviceClass = describeVisitor ? DeviceClassName(client.DeviceClass) : null,
+            Country = describeVisitor ? client.Country : null,
+            Region = describeVisitor ? client.Region : null,
+            Language = describeVisitor ? client.Language : null,
+            ReferrerHost = describeVisitor ? client.ReferrerHost : null,
             Channel = ChannelNames.From(client.Channel),
             Decision = decisionName,
             AbBucket = decision.AbBucket,
@@ -745,6 +977,12 @@ public sealed class LinkResolver
             IsBot = client.IsCrawler,
             SpoofedBot = client.IsSpoofedBot,
             LatencyMs = (short)Math.Clamp(Math.Round(elapsedSeconds * 1000d), 0d, short.MaxValue),
+            Extra = string.IsNullOrEmpty(deeplinkPath)
+                ? null
+                : new Dictionary<string, string>(1, StringComparer.Ordinal)
+                {
+                    [DapperClickLookup.DeeplinkPathKey] = deeplinkPath,
+                },
         };
 
         if (!_sink.TryWrite(clickEvent))
@@ -752,6 +990,13 @@ public sealed class LinkResolver
             EdgeLog.ClickEventDropped(_logger, _sink.DroppedCount);
         }
     }
+
+    /// <summary>
+    /// Whether the request must leave no trace: a decision preview (FR-166), or a <c>HEAD</c>, which
+    /// asks whether the link exists without following it. Neither is a click, and neither is shown a
+    /// claim code, so neither may store one.
+    /// </summary>
+    private bool IsProbe(HttpRequest request) => HttpMethods.IsHead(request.Method) || IsPreview(request);
 
     /// <summary>Whether the request asked for a decision preview (FR-166).</summary>
     private bool IsPreview(HttpRequest request) =>

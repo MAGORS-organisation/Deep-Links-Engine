@@ -2,7 +2,7 @@
 # Local development overrides — merged automatically by `docker compose up` when run in this
 # directory. Aspire-free: this is the plain compose stack, nothing here depends on deploy/aspire.
 #
-#   cp .env.example .env    # set POSTGRES_PASSWORD and DLE_MASTER_SECRET (any 32+ characters)
+#   cp .env.example .env    # set POSTGRES_PASSWORD, DLE_MASTER_SECRET and DLE_EDGE_SECRET (32+ characters each) — or run setup-dev.sh / setup-dev.ps1
 #   docker compose up --build
 #
 # What it changes:
@@ -44,6 +44,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       Dle__Control__PublicScheme: http
       Dle__Control__AllowTenantSelfService: "true"
+      Dle__Bootstrap__Enabled: ${DLE_BOOTSTRAP_ENABLED:-true}
+      Dle__Bootstrap__AllowConsoleSecretOutput: ${DLE_BOOTSTRAP_ALLOW_CONSOLE_SECRET:-true}
       Dle__Identity__Oidc__RequireHttpsMetadata: "false"
 
   postgres:

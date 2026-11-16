@@ -31,6 +31,8 @@ namespace Dle.Control.Features.Attribution;
 [JsonSerializable(typeof(EventBatchAcceptedDto))]
 [JsonSerializable(typeof(IssueClaimCodeRequest))]
 [JsonSerializable(typeof(ClaimCodeResponse))]
+[JsonSerializable(typeof(LoginHintRequestDto))]
+[JsonSerializable(typeof(LoginHintResponseDto))]
 [JsonSerializable(typeof(WebhookPayload))]
 [JsonSerializable(typeof(Dictionary<string, string>))]
 public sealed partial class AttributionJsonContext : JsonSerializerContext;

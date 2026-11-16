@@ -152,11 +152,13 @@ public sealed partial class EfAttributionStore : IAttributionStore
     }
 
     /// <inheritdoc />
-    public async Task ConsumeClaimCodeAsync(Guid claimCodeId, DateTimeOffset consumedAt, CancellationToken cancellationToken)
+    public async Task<bool> ConsumeClaimCodeAsync(Guid claimCodeId, DateTimeOffset consumedAt, CancellationToken cancellationToken)
     {
-        _ = await _db.ClaimCodes
+        int changed = await _db.ClaimCodes
             .Where(c => c.Id == claimCodeId && c.ConsumedAt == null)
             .ExecuteUpdateAsync(c => c.SetProperty(x => x.ConsumedAt, consumedAt), cancellationToken);
+
+        return changed == 1;
     }
 
     /// <inheritdoc />
@@ -231,7 +233,8 @@ public sealed partial class EfAttributionStore : IAttributionStore
             campaign,
             snapshot.Title,
             snapshot.Utm,
-            snapshot.RoutingRules);
+            snapshot.RoutingRules,
+            snapshot.IsServable(DateTimeOffset.UtcNow));
     }
 
     private static Dle.Domain.Routing.RoutingRule[] ReadRoutingRules(string? json)

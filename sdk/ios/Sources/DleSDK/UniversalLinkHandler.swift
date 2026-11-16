@@ -80,14 +80,47 @@ public enum DleUniversalLink {
         return scheme == "https" || scheme == "http"
     }
 
-    /// The form of a URL that is reported as `EventDto.url`: the URL without its fragment.
-    /// A fragment never reaches a server and can carry client-side state, so it is not the
-    /// engine's to see. Everything else — including the query, which carries the click id and
-    /// the UTM set — is kept verbatim.
-    public static func reportable(_ url: URL) -> String {
-        let absolute = url.absoluteString
-        guard let hash = absolute.firstIndex(of: "#") else { return absolute }
-        return String(absolute[..<hash])
+    /// Maximum length in characters accepted for a reported Universal Link URL (aligned with Android).
+    public static let maxURLLength = 2048
+
+    /// The form of a URL that is reported as `EventDto.url` and sent to `/v1/resolve-link`:
+    /// `scheme://host[:port]/path`. Strips embedded credentials (`user:pass@`), query string, and
+    /// fragment, omits default ports (`80`/`443`), lowercases scheme and host, and rejects non-HTTP(S)
+    /// or oversized (> 2048 characters) URLs.
+    public static func reportable(_ url: URL) -> String? {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let scheme = components.scheme?.lowercased(),
+              (scheme == "https" || scheme == "http"),
+              let host = components.host?.lowercased(),
+              !host.isEmpty
+        else {
+            return nil
+        }
+
+        var clean = URLComponents()
+        clean.scheme = scheme
+        clean.host = host
+        if let port = components.port, port > 0, port != defaultPort(for: scheme) {
+            clean.port = port
+        }
+
+        let encodedPath = components.percentEncodedPath
+        if encodedPath.isEmpty {
+            clean.percentEncodedPath = "/"
+        } else if encodedPath.hasPrefix("/") {
+            clean.percentEncodedPath = encodedPath
+        } else {
+            clean.percentEncodedPath = "/" + encodedPath
+        }
+
+        guard let result = clean.string, result.count <= maxURLLength else {
+            return nil
+        }
+        return result
+    }
+
+    private static func defaultPort(for scheme: String) -> Int {
+        scheme == "https" ? 443 : 80
     }
 
     /// The web page URL of a Universal Link continuation, or `nil` when `activity` is not a
@@ -203,8 +236,10 @@ public struct UniversalLinkHandler: Sendable {
             }
             return
         }
-        guard DleLinkPolicy.isReportable(url, hosts: linkHosts) else {
-            DleLog.debug("URL host is not in linkHosts; not reported: \(DleLog.redact(url))")
+        guard DleLinkPolicy.isReportable(url, hosts: linkHosts),
+              DleUniversalLink.reportable(url) != nil
+        else {
+            DleLog.debug("URL host is not in linkHosts or exceeds limit; not reported: \(DleLog.redact(url))")
             return
         }
         DleLog.info("link_open: \(DleLog.redact(url))")

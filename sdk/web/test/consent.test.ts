@@ -188,8 +188,13 @@ describe('consent gates (spec §0.2, §E.6, FR-227, TC-145/146)', () => {
     expect(isDeterministic(result)).toBe(false);
   });
 
-  it('refuses a malformed endpoint or a missing key at construction', () => {
+  it('refuses a malformed, non-https, credentialed, or missing-key endpoint at construction', () => {
     expect(() => createDle({ endpoint: 'links.example.sk', sdkKey: 'k' })).toThrow(/endpoint/);
+    expect(() => createDle({ endpoint: 'http://links.example.sk', sdkKey: 'k' })).toThrow(/endpoint/);
+    expect(() => createDle({ endpoint: 'https://user:pass@links.example.sk', sdkKey: 'k' })).toThrow(/endpoint/);
+    expect(() => createDle({ endpoint: 'http://localhost:8081', sdkKey: 'k' })).not.toThrow();
+    expect(() => createDle({ endpoint: 'http://127.0.0.1:8081', sdkKey: 'k' })).not.toThrow();
+    expect(() => createDle({ endpoint: 'http://links.example.sk', sdkKey: 'k', allowInsecureHttp: true })).not.toThrow();
     expect(() => createDle({ endpoint: 'https://links.example.sk', sdkKey: '' })).toThrow(/sdkKey/);
   });
 });

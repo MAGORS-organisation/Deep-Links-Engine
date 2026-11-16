@@ -17,6 +17,12 @@ public sealed class AbuseOptions
     /// <summary>Name of the configuration section this type is bound from.</summary>
     public const string SectionName = "Dle:Abuse";
 
+    /// <summary>Validation failure reported when URLhaus is enabled without an auth key.</summary>
+    public const string MissingUrlHausAuthKeyMessage =
+        "Dle:Abuse:UrlHausEnabled is true but Dle:Abuse:UrlHausAuthKey is empty. abuse.ch requires an "
+        + "Auth-Key; without one every lookup fails and targets would pass unchecked. Set the key or "
+        + "set UrlHausEnabled to false.";
+
     /// <summary>Whether the URLhaus reputation source is consulted (§E.3 step 3).</summary>
     public bool UrlHausEnabled { get; set; } = true;
 
@@ -26,7 +32,9 @@ public sealed class AbuseOptions
 
     /// <summary>
     /// Auth key sent as the <c>Auth-Key</c> header. abuse.ch has required one for API access since
-    /// 2025; without it the provider is skipped rather than silently treated as a clean verdict.
+    /// 2025, so it is required whenever <see cref="UrlHausEnabled"/> is on: without it every lookup
+    /// would fail, a failed lookup counts as no opinion, and every target would pass unchecked.
+    /// Startup validation refuses that combination (<see cref="MissingUrlHausAuthKeyMessage"/>).
     /// </summary>
     public string? UrlHausAuthKey { get; set; }
 

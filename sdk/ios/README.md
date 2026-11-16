@@ -18,19 +18,18 @@ It does three things:
 
 ## Install
 
-The package cannot be added by URL yet: SwiftPM expects `Package.swift` at the repository root and a
-version tag, and this package lives in `sdk/ios` and the repository has no tags
-([Known gaps](../../README.md#known-gaps)). Use a local checkout:
+The repository root carries a `Package.swift` that exposes `DleSDK`, so the package can be added by
+URL. The repository has no version tags yet, so pin a branch or a revision:
 
 ```swift
-// Package.swift — a path dependency's identity is its directory name, here "ios"
-.package(path: "../Deep-Links-Engine/sdk/ios"),
+// Package.swift
+.package(url: "https://github.com/MAGORS-organisation/Deep-Links-Engine", branch: "master"),
 // target
-.product(name: "DleSDK", package: "ios"),
+.product(name: "DleSDK", package: "Deep-Links-Engine"),
 ```
 
-or in Xcode: File → Add Package Dependencies… → Add Local… → select `sdk/ios`, and add the
-`DleSDK` product to your target. The package ships its own `PrivacyInfo.xcprivacy`; Xcode
+or in Xcode: File → Add Package Dependencies… → enter the repository URL, choose a branch, and add
+the `DleSDK` product to your target. A local checkout works too: Add Local… → select `sdk/ios`. The package ships its own `PrivacyInfo.xcprivacy`; Xcode
 aggregates it into your app's privacy report automatically.
 
 ## Configure
@@ -52,15 +51,20 @@ it empty and nothing is reported.
 ## Resolve the deferred link
 
 ```swift
-let link = try await Dle.shared.resolve()
-if link.matched, link.isDeterministic, let path = link.deeplinkPath {
+let dle = try Dle.shared
+let delivered = dle.deferredLink?.matched == true   // routed on a previous launch
+let link = try await dle.resolve()
+if delivered {
+    // the stored answer again; nothing new to route
+} else if link.matched, link.isDeterministic, let path = link.deeplinkPath {
     router.route(path: path)                 // validate `path` against your own allowlist first
 } else if link.isProbabilisticHint {
     showSuggestion(link)                     // a hint, never a certainty, never a reward
 }
 ```
 
-Call it on every launch; only the first one costs a request. The answer says how the match
+Call it on every launch; only the first one costs a request, and every later one returns the same
+stored answer — which is why the snippet routes on a match only once. The answer says how the match
 was made (`matchType`) and how much to trust it (`confidence`). **Branch on
 `isDeterministic` before doing anything irreversible** — granting a referral bonus, skipping
 onboarding — because a `probabilistic` result is a statistical guess even if it looks
@@ -73,9 +77,12 @@ try await Dle.shared.submitClaimCode(typed)               // S3: the code shown 
 try await Dle.shared.reconcileLogin(loginKey: hashedId)   // S2: after sign-in; opaque, already hashed
 ```
 
-Neither matches anything today: the engine never issues or shows a claim code on the link page, and
-its login matching reads a click field nothing writes ([Known gaps](../../README.md#known-gaps)). Only
-the SDK side is implemented.
+The engine shows a claim code on the link page only under the tenant's `full` consent mode, and redeems
+it only when the resolve carries attribution consent: with `attribution == false` the answer is
+`matched == false` and the code stays unspent, so ask for consent before asking for the code. A
+login match needs your signed-in web page to call the web SDK's `recordLoginHint` for that click;
+this SDK sends the account key on resolve but records no hint
+([Known gaps](../../README.md#known-gaps)).
 
 `DleClaimCode.normalize` and `DleClaimCode.isWellFormed` mirror the engine's rules exactly,
 so a code can be validated locally before the request. A refusal surfaces as
@@ -99,23 +106,27 @@ yours) and returns the URL for you to route. Custom-scheme URLs are returned unr
 never logged in full.
 
 The URL is the short link as tapped (`https://link.example.com/aB3xK9pQ`), not the link's
-`deeplink_path`: nothing on the SDK plane expands a slug, and an SDK key cannot read the link API.
-Your app can open the right screen only when the operator uses readable slugs your router parses,
-like the sample's `/promo/…` and `/p/…` ([Known gaps](../../README.md#known-gaps)).
+`deeplink_path`. Ask the engine which screen it leads to — `POST /v1/resolve-link`, which records
+nothing, so the open is still counted exactly once:
+
+```swift
+let link = try await Dle.shared.resolveLink(shortURL)   // match_type direct_open, confidence 1.0
+if link.matched, let path = link.deeplinkPath { router.open(path) }
+```
 
 ## Events and consent
 
 ```swift
-Dle.shared.track(.conversion(name: "purchase", value: 24.9, currency: "EUR"))
-Dle.shared.track(.custom(name: "onboarding_done", properties: ["step": "3"]))
-Dle.shared.updateConsent(DleConsent(analytics: true, attribution: true))
+try Dle.shared.track(.conversion(name: "purchase", value: 24.9, currency: "EUR"))
+try Dle.shared.track(.custom(name: "onboarding_done", properties: ["step": "3"]))
+try Dle.shared.updateConsent(DleConsent(analytics: true, attribution: true))
 ```
 
 Consent is an input, not a filter after the fact:
 
 | Consent | Effect |
 | --- | --- |
-| `attribution == false` | The `signals` object is **omitted** from `POST /v1/resolve` — not sent empty. |
+| `attribution == false` | The `signals` object is **omitted** from `POST /v1/resolve` — not sent empty. The engine links nothing: the answer is `none` with a non-final `expires_in`, and a claim code or login key is not redeemed. |
 | `analytics == false` | `first_open`, `session`, `conversion`, `custom` are dropped at `track` time; withdrawing it also discards queued behavioural events. |
 | any | `link_open` is always reported: it is a first-party observation of a URL the OS handed the app. |
 
@@ -141,9 +152,9 @@ Be honest with your stakeholders about deferred deep linking on iOS (spec §A.2.
 Hence the defaults: **claim code** (the user types six characters from the link page),
 **login reconciliation** (an opaque account key sent after sign-in) and **direct open** (the
 app is installed; the Universal Link opens it and the SDK reports it). All three are
-deterministic. Probabilistic matching is available, off by default. On the engine side only direct
-open works today, and it is not deferred: claim codes are never issued and login matching has
-nothing to match (see [Resolve the deferred link](#resolve-the-deferred-link)).
+deterministic. Probabilistic matching is available, off by default. On the engine side claim codes
+need the tenant's `full` consent mode and the user's attribution consent, and login matching needs
+a hint from your signed-in web page (see [Resolve the deferred link](#resolve-the-deferred-link)).
 
 ## Universal Links checklist
 

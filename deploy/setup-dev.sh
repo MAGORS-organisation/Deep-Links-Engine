@@ -61,15 +61,22 @@ printf "[3/4] Checking deploy/.env configuration... "
 if [ ! -f "$ENV_FILE" ]; then
   echo "Generating fresh .env..."
   if [ -f "$ENV_EXAMPLE" ]; then
-    MASTER_SECRET="$(openssl rand -base64 48 2>/dev/null || head -c 48 /dev/urandom | base64 | tr -d '\n')"
-    PG_PASSWORD="$(openssl rand -base64 16 2>/dev/null || head -c 16 /dev/urandom | base64 | tr -d '/+=\n')"
+    # Hex, not base64: base64 contains '/' and '+', which would break the sed expressions below.
+    random_hex() { openssl rand -hex "$1" 2>/dev/null || od -An -tx1 -N"$1" /dev/urandom | tr -d ' \n'; }
+    MASTER_SECRET="$(random_hex 32)"
+    EDGE_SECRET="$(random_hex 32)"
+    PG_PASSWORD="$(random_hex 18)"
+    VK_PASSWORD="$(random_hex 18)"
 
     sed -e "s/^POSTGRES_PASSWORD=.*$/POSTGRES_PASSWORD=$PG_PASSWORD/" \
+        -e "s/^VALKEY_PASSWORD=.*$/VALKEY_PASSWORD=$VK_PASSWORD/" \
         -e "s/^DLE_MASTER_SECRET=.*$/DLE_MASTER_SECRET=$MASTER_SECRET/" \
+        -e "s/^DLE_EDGE_SECRET=.*$/DLE_EDGE_SECRET=$EDGE_SECRET/" \
         -e "s/^DLE_DOMAIN=.*$/DLE_DOMAIN=localhost/" \
         -e "s/^DLE_TLS=.*$/DLE_TLS=internal/" \
         "$ENV_EXAMPLE" > "$ENV_FILE"
-    echo "      Created $ENV_FILE with generated DLE_MASTER_SECRET and POSTGRES_PASSWORD."
+    chmod 600 "$ENV_FILE"
+    echo "      Created $ENV_FILE with generated POSTGRES_PASSWORD, VALKEY_PASSWORD, DLE_MASTER_SECRET and DLE_EDGE_SECRET."
   else
     echo "FAILED ($ENV_EXAMPLE template not found)"
     exit 1
@@ -90,8 +97,8 @@ echo "  * Control Health Check:             http://localhost:8081/healthz"
 echo ""
 echo "Automatic Bootstrap:"
 echo "  When the database is empty on first start, Dle.Control automatically provisions"
-echo "  an initial tenant ('default') and a root Owner API key. Find your key by running:"
-echo "    docker compose logs dle-control | grep -A 8 'BOOTSTRAP'"
+echo "  an initial tenant ('default') and an owner API key, printed once. Find it with:"
+echo "    docker compose logs dle-control | grep -A 4 'DLE BOOTSTRAP OWNER KEY'"
 echo ""
 
 if [ "$CHECK_ONLY" = true ]; then

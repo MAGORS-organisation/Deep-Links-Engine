@@ -43,14 +43,13 @@ public static class QuarantineLink
             return DleProblemResults.NotFound("There is no link with that identifier.");
         }
 
-        if (string.IsNullOrWhiteSpace(request.Reason))
-        {
-            return DleProblemResults.ValidationFailed(
+        if (!TryValidateReason(
+                request.Reason,
                 "A quarantine decision has to carry a reason.",
-                new Dictionary<string, string[]>(StringComparer.Ordinal)
-                {
-                    ["reason"] = ["Say why the link is being withdrawn. It is served with the 410 trail."],
-                });
+                "Say why the link is being withdrawn. It is served with the 410 trail.",
+                out IResult? validationFailure))
+        {
+            return validationFailure!;
         }
 
         LocatedLink? link = await locator.FindByIdAsync(id, cancellationToken);
@@ -62,7 +61,7 @@ public static class QuarantineLink
 
         await quarantine.QuarantineAsync(
             link,
-            request.Reason,
+            request.Reason.Trim(),
             RequestActor.FromPrincipal(user),
             cancellationToken);
 
@@ -96,14 +95,13 @@ public static class QuarantineLink
             return DleProblemResults.NotFound("There is no link with that identifier.");
         }
 
-        if (string.IsNullOrWhiteSpace(request.Reason))
-        {
-            return DleProblemResults.ValidationFailed(
+        if (!TryValidateReason(
+                request.Reason,
                 "Lifting a quarantine has to carry a reason.",
-                new Dictionary<string, string[]>(StringComparer.Ordinal)
-                {
-                    ["reason"] = ["Say why the withdrawal is being lifted. The appeal is part of the record."],
-                });
+                "Say why the withdrawal is being lifted. The appeal is part of the record.",
+                out IResult? validationFailure))
+        {
+            return validationFailure!;
         }
 
         LocatedLink? link = await locator.FindByIdAsync(id, cancellationToken);
@@ -115,11 +113,43 @@ public static class QuarantineLink
 
         await quarantine.ReleaseAsync(
             link,
-            request.Reason,
+            request.Reason.Trim(),
             RequestActor.FromPrincipal(user),
             cancellationToken);
 
         return TypedResults.NoContent();
+    }
+
+    private static bool TryValidateReason(
+        string? reason,
+        string emptyTitle,
+        string emptyDetail,
+        out IResult? failure)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            failure = DleProblemResults.ValidationFailed(
+                emptyTitle,
+                new Dictionary<string, string[]>(StringComparer.Ordinal)
+                {
+                    ["reason"] = [emptyDetail],
+                });
+            return false;
+        }
+
+        if (reason.Trim().Length > 1000)
+        {
+            failure = DleProblemResults.ValidationFailed(
+                "The quarantine reason is too long.",
+                new Dictionary<string, string[]>(StringComparer.Ordinal)
+                {
+                    ["reason"] = ["A quarantine reason must be at most 1000 characters."],
+                });
+            return false;
+        }
+
+        failure = null;
+        return true;
     }
 
     /// <summary>Parses the route value.</summary>

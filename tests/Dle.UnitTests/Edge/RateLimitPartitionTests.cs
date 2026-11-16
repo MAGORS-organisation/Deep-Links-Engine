@@ -40,8 +40,8 @@ public sealed class RateLimitPartitionTests : IDisposable
         Assert.Equal(expected, EdgeRateLimitPartitions.NetworkKey(Hasher(), IPAddress.Parse(address)));
 
     [Theory]
-    [InlineData("2001:db8:1234:5678::1", "2001:0db8:1234::/48")]
-    [InlineData("2001:db8:1234:ffff:ffff:ffff:ffff:ffff", "2001:0db8:1234::/48")]
+    [InlineData("2001:db8:1234:5678::1", "2001:db8:1234::/48")]
+    [InlineData("2001:db8:1234:ffff:ffff:ffff:ffff:ffff", "2001:db8:1234::/48")]
     public void NetworkKey_IPv6_CollapsesToTheSlashFortyEight(string address, string expected) =>
         Assert.Equal(expected, EdgeRateLimitPartitions.NetworkKey(Hasher(), IPAddress.Parse(address)));
 
@@ -77,6 +77,26 @@ public sealed class RateLimitPartitionTests : IDisposable
             EdgeRateLimitPartitions.NetworkKey(Hasher(), address: null));
 
     [Fact]
+    public void AddressKey_IPv6_IsTheSlash64SoOneSubscriberHasOneQrBudget()
+    {
+        // A /64 is what one connection is handed; per-address keys would be 2^64 budgets.
+        Assert.Equal(
+            EdgeRateLimitPartitions.AddressKey(IPAddress.Parse("2001:db8:1:2::1")),
+            EdgeRateLimitPartitions.AddressKey(IPAddress.Parse("2001:db8:1:2:ffff:ffff:ffff:fffe")));
+
+        Assert.NotEqual(
+            EdgeRateLimitPartitions.AddressKey(IPAddress.Parse("2001:db8:1:2::1")),
+            EdgeRateLimitPartitions.AddressKey(IPAddress.Parse("2001:db8:1:3::1")));
+    }
+
+    [Fact]
+    public void AddressKey_IPv4_IsTheExactAddressInEitherSocketFamily()
+    {
+        Assert.Equal("203.0.113.42", EdgeRateLimitPartitions.AddressKey(IPAddress.Parse("203.0.113.42")));
+        Assert.Equal("203.0.113.42", EdgeRateLimitPartitions.AddressKey(IPAddress.Parse("::ffff:203.0.113.42")));
+    }
+
+    [Fact]
     public void Partitions_OfDifferentKinds_NeverShareABucket()
     {
         const string key = "203.0.113.0/24";
@@ -97,6 +117,7 @@ public sealed class RateLimitPartitionTests : IDisposable
     [InlineData("GET", "/abc123/qr", EdgeRateLimitKind.Qr)]
     [InlineData("GET", "/abc123/QR", EdgeRateLimitKind.Qr)]
     [InlineData("POST", "/abc123", EdgeRateLimitKind.Unlimited)]
+    [InlineData("POST", "/_dl/consent", EdgeRateLimitKind.Resolve)]
     [InlineData("GET", "/", EdgeRateLimitKind.Unlimited)]
     [InlineData("GET", "/.well-known/assetlinks.json", EdgeRateLimitKind.Unlimited)]
     [InlineData("GET", "/healthz", EdgeRateLimitKind.Unlimited)]
@@ -216,5 +237,45 @@ public sealed class RateLimitPartitionTests : IDisposable
         Assert.Equal(600, resolve.PermitsPerWindow);
         Assert.Equal(60, resolve.WindowSeconds);
         Assert.Equal(30, new QrRateLimitOptions().PermitsPerWindow);
+    }
+
+    [Fact]
+    public void NotFoundBudget_WhenCapacityReached_EvictsEarliestExpiringAndRetainsActiveBans()
+    {
+        var options = new EdgeRateLimitOptions
+        {
+            NotFound = new NotFoundRateLimitOptions
+            {
+                TokensPerPeriod = 1,
+                Burst = 1,
+                ReplenishmentPeriodSeconds = 60,
+                ShadowBanMinutes = 15,
+                TrackedPrefixCapacity = 2,
+            },
+        };
+
+        var clock = new EdgeTestClock(Now);
+        using var guard = new NotFoundEnumerationGuard(
+            Options.Create(options),
+            clock,
+            _metrics,
+            NullLogger<NotFoundEnumerationGuard>.Instance);
+
+        static void Drain(NotFoundEnumerationGuard g, string key)
+        {
+            Assert.Equal(NotFoundVerdict.WithinBudget, g.Register(key));
+            Assert.Equal(NotFoundVerdict.Exhausted, g.Register(key));
+        }
+
+        Drain(guard, "198.51.100.0/24");
+        clock.Now = clock.Now.AddMinutes(1);
+        Drain(guard, "198.51.101.0/24");
+        clock.Now = clock.Now.AddMinutes(1);
+        Drain(guard, "198.51.102.0/24");
+
+        // Oldest expiring ban is evicted to stay within capacity, while active newer bans stay enforced.
+        Assert.False(guard.IsShadowBanned("198.51.100.0/24"));
+        Assert.True(guard.IsShadowBanned("198.51.101.0/24"));
+        Assert.True(guard.IsShadowBanned("198.51.102.0/24"));
     }
 }

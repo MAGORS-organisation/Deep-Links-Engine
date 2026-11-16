@@ -4,7 +4,6 @@ import type {
   AttributionQualityResponse,
   BreakdownDimension,
   BreakdownResponse,
-  FunnelSummary,
   TimeSeriesResponse,
 } from './types';
 
@@ -30,16 +29,8 @@ export const analytics = {
     return api(`${base}/clicks`, { query: toQuery(query), signal });
   },
 
-  installs(query: AnalyticsQuery, signal?: AbortSignal): Promise<TimeSeriesResponse> {
-    return api(`${base}/installs`, { query: toQuery(query), signal });
-  },
-
   breakdown(dimension: BreakdownDimension, query: AnalyticsQuery, signal?: AbortSignal): Promise<BreakdownResponse> {
     return api(`${base}/breakdown`, { query: { ...toQuery(query), dimension }, signal });
-  },
-
-  funnel(query: AnalyticsQuery, signal?: AbortSignal): Promise<FunnelSummary> {
-    return api(`${base}/funnels`, { query: toQuery(query), signal });
   },
 
   /** ADR-008. Deterministic vs probabilistic vs unmatched, with the mean confidence of the guesses. */

@@ -62,6 +62,17 @@ public static class ControlTelemetryServiceCollectionExtensions
 
         services.AddMetrics();
         services.TryAddSingleton(static sp => new ControlMetrics(sp.GetService<IMeterFactory>()));
+        services.TryAddSingleton(static _ => new Dle.Persistence.Fast.Telemetry.PrometheusMetricsCollector(
+            [
+                ControlMetrics.MeterName,
+                Dle.Control.Features.Abuse.AbuseMetrics.MeterName,
+                Dle.Control.Features.Attribution.AttributionMetrics.MeterName,
+                Dle.Control.Features.Webhooks.WebhookMetrics.MeterName,
+                Dle.Control.Workers.WorkerMetrics.MeterName,
+                Dle.Persistence.Fast.Telemetry.FastPersistenceMetrics.MeterName,
+                "Microsoft.AspNetCore.Hosting",
+                "System.Runtime",
+            ]));
 
         string? otlpEndpoint = string.IsNullOrWhiteSpace(options.OtlpEndpoint)
             ? null
@@ -126,7 +137,15 @@ public static class ControlTelemetryServiceCollectionExtensions
         DleTelemetryOptions options,
         string? otlpEndpoint)
     {
-        metrics.AddMeter(ControlMetrics.MeterName);
+        // Every meter the process records on. A meter that is not named here is collected by nobody:
+        // its instruments accept measurements and export nothing.
+        metrics.AddMeter(
+            ControlMetrics.MeterName,
+            Dle.Control.Features.Abuse.AbuseMetrics.MeterName,
+            Dle.Control.Features.Attribution.AttributionMetrics.MeterName,
+            Dle.Control.Features.Webhooks.WebhookMetrics.MeterName,
+            Dle.Control.Workers.WorkerMetrics.MeterName,
+            Dle.Persistence.Fast.Telemetry.FastPersistenceMetrics.MeterName);
 
         if (options.TraceRequests)
         {
@@ -165,5 +184,6 @@ public static class ControlTelemetryServiceCollectionExtensions
     private static bool IsProbe(PathString path) =>
         path.StartsWithSegments("/healthz", StringComparison.OrdinalIgnoreCase)
         || path.StartsWithSegments("/readyz", StringComparison.OrdinalIgnoreCase)
-        || path.StartsWithSegments("/livez", StringComparison.OrdinalIgnoreCase);
+        || path.StartsWithSegments("/livez", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWithSegments("/metrics", StringComparison.OrdinalIgnoreCase);
 }

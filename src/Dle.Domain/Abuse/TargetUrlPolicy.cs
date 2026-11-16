@@ -34,8 +34,18 @@ public static class TargetUrlPolicy
     /// <summary>Maximum length of a target URL in characters.</summary>
     public const int MaxUrlLength = 2048;
 
+    /// <summary>
+    /// Source name of a verdict about where a target host points: an internal name, an address that
+    /// is not a permitted target, or a name that could not be resolved at all.
+    /// </summary>
+    /// <remarks>
+    /// Public so that callers can tell this refusal from a reputation verdict. A resolver that fails
+    /// for a moment produces it too, which is the right answer when a link is being created and the
+    /// wrong reason to withdraw one that is already live.
+    /// </remarks>
+    public const string AddressSource = "private_ip";
+
     private const string SyntaxSource = "syntax";
-    private const string AddressSource = "private_ip";
 
     /// <summary>Special use suffixes that never point at a public target.</summary>
     private static readonly string[] s_forbiddenHostSuffixes =
@@ -202,6 +212,13 @@ public static class TargetUrlPolicy
         if (value.Length == 0)
         {
             return true;
+        }
+
+        // An IPv6 literal is an address, not a name, and is judged as one. It has no dot, so the
+        // single-label rule below would otherwise refuse every public IPv6 target as "internal".
+        if (value.Contains(':', StringComparison.Ordinal) && IPAddress.TryParse(value, out IPAddress? literal))
+        {
+            return IsForbiddenAddress(literal);
         }
 
         // A single label is an intranet name, and an intranet name is never a public target.

@@ -21,8 +21,4 @@ export const tenants = {
   update(id: string, body: UpdateTenantRequest): Promise<TenantResponse> {
     return api(`${base}/${encodeURIComponent(id)}`, { method: 'PATCH', body });
   },
-
-  remove(id: string): Promise<void> {
-    return api(`${base}/${encodeURIComponent(id)}`, { method: 'DELETE' });
-  },
 };

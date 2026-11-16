@@ -19,7 +19,8 @@ image:
     tag: "0.1.0"          # CHANGE ME
 
 # A Secret you manage (External Secrets Operator, sealed-secrets, SOPS, kubectl) carrying:
-#   master-secret                    Dle:Crypto:MasterSecret (openssl rand -base64 48)
+#   master-secret                    Dle:Crypto:MasterSecret, control plane only (openssl rand -base64 48)
+#   edge-secret                      the edge's own secret, different from master-secret (openssl rand -base64 48)
 #   postgres-connection-string       Host=<primary>;Port=5432;Database=dle;Username=dle;Password=...;SSL Mode=Require
 #   postgres-read-connection-string  the same against the read-only service (edge only)
 #   valkey-connection-string         node-0:6379,node-1:6379,node-2:6379,ssl=true,password=...
@@ -170,5 +171,5 @@ networkPolicy:
     restrictEgress: false
 
 serviceMonitor:
-  # Off until a Prometheus scrape endpoint exists on the services (values.yaml).
+  # Turning it on needs the metrics-scrape-token key in the existing Secret (values.yaml).
   enabled: false

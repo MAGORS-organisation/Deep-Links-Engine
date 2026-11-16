@@ -24,15 +24,25 @@ final class UniversalLinkTests: XCTestCase {
         XCTAssertFalse(DleLinkPolicy.matches(host: "links.example.sk.evil.test", patterns: patterns))
     }
 
-    func testWebLinkOnAConfiguredHostIsReportedWithoutItsFragment() throws {
+    func testWebLinkOnAConfiguredHostIsReportedWithoutUserinfoQueryOrFragment() throws {
         let dle = try TestSupport.makeDle(transport: StubTransport(), storage: nil)
-        let url = URL(string: "https://links.example.test/aB3xK9pQ?utm_source=fb#state")!
+        let url = URL(string: "https://user:secret@Links.Example.Test:443/aB3xK9pQ?utm_source=fb&token=abc#state")!
 
         let routed = dle.handle(url: url)
 
         XCTAssertEqual(routed, url, "the host app routes the URL as delivered")
         XCTAssertEqual(dle.queue.events.map(\.type), [.linkOpen])
-        XCTAssertEqual(dle.queue.events.first?.url, "https://links.example.test/aB3xK9pQ?utm_source=fb")
+        XCTAssertEqual(dle.queue.events.first?.url, "https://links.example.test/aB3xK9pQ")
+    }
+
+    func testReportablePreservesNonDefaultPortNormalizesEmptyPathAndRejectsOversizedOrNonWebURLs() {
+        XCTAssertEqual(
+            DleUniversalLink.reportable(URL(string: "http://links.example.test:8080")!),
+            "http://links.example.test:8080/"
+        )
+        XCTAssertNil(DleUniversalLink.reportable(URL(string: "sampleapp://open?token=1")!))
+        let oversized = URL(string: "https://links.example.test/" + String(repeating: "a", count: 2050))!
+        XCTAssertNil(DleUniversalLink.reportable(oversized))
     }
 
     func testCustomSchemeURLIsReturnedButNeverReported() throws {

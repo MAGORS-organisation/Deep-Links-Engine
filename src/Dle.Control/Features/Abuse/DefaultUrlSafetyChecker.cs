@@ -31,7 +31,7 @@ namespace Dle.Control.Features.Abuse;
 public sealed class DefaultUrlSafetyChecker : IUrlSafetyChecker
 {
     /// <summary>Source name used for verdicts about the resolved address.</summary>
-    private const string AddressSource = "private_ip";
+    private const string AddressSource = TargetUrlPolicy.AddressSource;
 
     private readonly IEnumerable<IUrlReputationProvider> _providers;
     private readonly AbuseMetrics _metrics;

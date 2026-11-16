@@ -10,7 +10,7 @@ attribution history. **Who it is for:** the operator of a self-hosted instance.
 | Read the release notes and [CHANGELOG.md](../../CHANGELOG.md) for the versions you are crossing | Migrations and configuration keys are listed there per release |
 | Take a backup ([backup-restore.md](backup-restore.md)) and confirm you can restore it | An upgrade that touches the schema is the moment a backup earns its keep |
 | Confirm the PostgreSQL major version | Minimum **16**, recommended **18**. On 16 and 17 the schema installs a `dle_uuidv7()` shim; on 18 it uses the native `uuidv7()` ([ADR-0003](../adr/0003-postgresql-as-primary-store.md)) |
-| Check `Dle:Crypto:MasterSecret` is in your secret store, not only in the running container | It keys the slug permutation ([ADR-0007](../adr/0007-slug-generation-keyed-feistel-base62.md)), click ids, IP hashes, the webhook signing key and the encryption of stored webhook secrets. Losing it does not break stored links, but it changes every one of those keys ([backup-restore.md](backup-restore.md)) |
+| Check both secrets — `DLE_MASTER_SECRET` and `DLE_EDGE_SECRET` — are in your secret store, not only in the running containers | The master secret keys the slug permutation ([ADR-0007](../adr/0007-slug-generation-keyed-feistel-base62.md)), the webhook signing key and the encryption of stored webhook secrets; the edge secret keys click ids, IP hashes and claim codes. Losing either does not break stored links, but it changes every key derived from it ([backup-restore.md](backup-restore.md)) |
 
 ## How the schema is migrated
 
@@ -50,7 +50,7 @@ the cluster can pull from:
 
 ```bash
 git pull                                             # or check out the version you are upgrading to
-helm upgrade dle deploy/helm/dle -n dle -f values-production.yaml \
+helm upgrade dle deploy/helm/dle -n dle -f deploy/helm/dle/values-production.yaml \
   --set image.edge.repository=<registry>/dle-edge --set image.edge.tag=<tag> \
   --set image.control.repository=<registry>/dle-control --set image.control.tag=<tag>
 kubectl -n dle rollout status deploy/dle-edge

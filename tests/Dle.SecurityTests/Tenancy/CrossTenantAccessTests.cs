@@ -22,10 +22,10 @@ namespace Dle.SecurityTests.Tenancy;
 /// <para>
 /// <b>What runs here and what does not.</b> The control-plane matrix — every tenant-scoped resource,
 /// with tenant A's key against tenant B's identifier — is an HTTP test against a real deployment,
-/// because the property is produced by PostgreSQL row level security, the EF Core query filters and
-/// the tenant scope middleware acting together, and a substituted store would assert the substitute.
-/// This machine has no PostgreSQL and no container runtime, so that test skips with a reason and says
-/// how to run it. What does run is the part that is decidable without a database: the answer the
+/// because the property is produced by the EF Core query filters, the explicit <c>tenant_id</c>
+/// predicates and the tenant scope middleware acting together (there is no PostgreSQL row level
+/// security behind them), and a substituted store would assert the substitute. Without a seeded
+/// deployment that test skips with a reason and says how to run it. What does run is the part that is decidable without a database: the answer the
 /// handlers give for "not yours", and the deny-by-default posture of the tenant context that makes a
 /// query without a tenant impossible rather than global.
 /// </para>
@@ -180,9 +180,9 @@ public sealed class CrossTenantAccessTests
             string.IsNullOrWhiteSpace(baseUrl)
                 || string.IsNullOrWhiteSpace(key)
                 || string.IsNullOrWhiteSpace(resources),
-            "Cross-tenant isolation is enforced by PostgreSQL row level security together with the EF "
-            + "Core query filters, so it can only be asserted against a real database with two seeded "
-            + "tenants. Neither Docker nor PostgreSQL is available on this machine. Set "
+            "Cross-tenant isolation is enforced by the EF Core query filters and explicit tenant_id "
+            + "predicates (there is no PostgreSQL row level security), so it can only be asserted "
+            + "against a deployment seeded with two tenants. Set "
             + BaseUrlVariable + ", " + TenantAKeyVariable + " and " + TenantBResourcesVariable
             + " to run it against a deployment.");
 

@@ -1,18 +1,31 @@
-import { api } from './client';
+import { ApiError, api, createIdempotencyKey, getConnection } from './client';
 import type {
+  BulkLinkItem,
+  BulkLinkResult,
   CreateLinkRequest,
   LinkListQuery,
   LinkResponse,
-  LinkTemplateRequest,
-  LinkTemplateResponse,
   LinkVersionSummary,
   PagedResponse,
+  ProblemDocument,
   SimulateRequest,
   SimulateResponse,
   UpdateLinkRequest,
 } from './types';
 
 const base = '/api/v1/links';
+
+async function readBulkProblem(response: Response): Promise<ProblemDocument | undefined> {
+  const ct = response.headers.get('content-type') ?? '';
+  if (!ct.includes('json')) {
+    return undefined;
+  }
+  try {
+    return (await response.json()) as ProblemDocument;
+  } catch {
+    return undefined;
+  }
+}
 
 export const links = {
   list(query: LinkListQuery = {}, signal?: AbortSignal): Promise<PagedResponse<LinkResponse>> {
@@ -67,15 +80,81 @@ export const links = {
     });
   },
 
-  templates: {
-    list(signal?: AbortSignal): Promise<PagedResponse<LinkTemplateResponse>> {
-      return api(`${base}/templates`, { signal });
-    },
-    create(body: LinkTemplateRequest): Promise<LinkTemplateResponse> {
-      return api(`${base}/templates`, { method: 'POST', body });
-    },
-    remove(id: string): Promise<void> {
-      return api(`${base}/templates/${encodeURIComponent(id)}`, { method: 'DELETE' });
-    },
+  /** FR-103. Streams BulkLinkItem rows as application/x-ndjson and emits per-row results. */
+  async bulkCreateNdjson(
+    items: readonly BulkLinkItem[],
+    onResult?: (result: BulkLinkResult) => void,
+    signal?: AbortSignal,
+  ): Promise<BulkLinkResult[]> {
+    const connection = getConnection();
+    if (!connection) {
+      throw new ApiError({ status: 0, key: 'no_credential', message: 'No API key configured.' });
+    }
+
+    const body = items.map((item) => JSON.stringify(item)).join('\n');
+    let response: Response;
+    try {
+      response = await fetch(`${connection.baseUrl}${base}/bulk`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/x-ndjson, application/problem+json',
+          'Content-Type': 'application/x-ndjson',
+          Authorization: `Bearer ${connection.apiKey}`,
+          'Idempotency-Key': createIdempotencyKey(),
+        },
+        body,
+        signal,
+        credentials: 'omit',
+        referrerPolicy: 'no-referrer',
+      });
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw error;
+      }
+      throw new ApiError({ status: 0, key: 'network', message: 'The control plane could not be reached.' });
+    }
+
+    if (!response.ok) {
+      const problem = await readBulkProblem(response);
+      throw new ApiError({ status: response.status, problem });
+    }
+
+    const results: BulkLinkResult[] = [];
+    const emitLine = (line: string) => {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        return;
+      }
+      const parsed = JSON.parse(trimmed) as BulkLinkResult;
+      results.push(parsed);
+      onResult?.(parsed);
+    };
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      const text = await response.text();
+      for (const line of text.split(/\r?\n/)) {
+        emitLine(line);
+      }
+      return results;
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() ?? '';
+      for (const line of lines) {
+        emitLine(line);
+      }
+    }
+    buffer += decoder.decode();
+    emitLine(buffer);
+    return results;
   },
 };

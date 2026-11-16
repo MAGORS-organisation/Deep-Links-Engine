@@ -3,8 +3,7 @@
 **What this is:** the walkthrough from an empty box to a short link that opens your app, in the order the pieces depend on each other, with the places it usually goes wrong.
 **Who it is for:** the person doing the first install — an engineer or a technical operator — and the independent person who re-runs it on a clean machine before a release ([§D.7 item 6](../zadanie.md#d7-akceptačné-kritériá-pre-release)).
 
-> Status: the .NET services, the web SDK and the admin console build and pass their test suites in CI against PostgreSQL 18 and Valkey 8.
-> Bootstrap seeding, OIDC SSO with claim mapping, iOS claim codes, and direct-open link resolution (`POST /v1/resolve-link`) are fully implemented.
+> Status: pre-release. The .NET services, the SDKs and the admin console build and pass their test suites in CI (integration suite against PostgreSQL 18 and Valkey 8). Bootstrap seeding, OIDC SSO, direct-open resolution (`POST /v1/resolve-link`, SDK `resolveLink`) and iOS claim codes are implemented; nothing has yet been exercised on a real phone ([README — Where this stands](../../README.md#where-this-stands)).
 
 ## Before you start
 
@@ -24,8 +23,8 @@ Follow [deploy/README.md — Profile A](../../deploy/README.md#profile-a--one-se
 ```bash
 git clone https://github.com/MAGORS-organisation/Deep-Links-Engine.git
 cd Deep-Links-Engine/deploy
-cp .env.example .env      # DLE_DOMAIN, DLE_TLS, POSTGRES_PASSWORD, DLE_MASTER_SECRET (openssl rand -base64 48)
-                          # DLE_OIDC_* and DLE_ALLOW_TENANT_SELF_SERVICE do not help yet — see step 2
+./setup-dev.sh            # writes .env with random POSTGRES_PASSWORD, DLE_MASTER_SECRET, DLE_EDGE_SECRET
+                          # (Windows: .\setup-dev.ps1); then set DLE_DOMAIN and DLE_TLS in .env
 docker compose -f docker-compose.yml up -d --build   # no images are published yet; this builds them from source
 docker compose -f docker-compose.yml ps -a           # -a: plain `ps` hides the exited migrate container
 ```
@@ -46,7 +45,8 @@ The `404` is the edge's deliberate answer for a host with no iOS application (Ap
 | Symptom | Cause | Fix |
 |---|---|---|
 | `migrate` exits non-zero | `POSTGRES_PASSWORD` changed after the volume was initialised, or the migration failed on your PostgreSQL (CI applies it against PostgreSQL 18 only) | Check `docker compose -f docker-compose.yml logs migrate`; for a fresh box, `docker compose -f docker-compose.yml down -v` and start again with the final password; otherwise report the SQL error verbatim |
-| `dle-control` restarts in a loop | `DLE_MASTER_SECRET` shorter than 32 characters — options validation fails at start-up by design | Generate a longer one. Changing it later changes the slug permutation and every key derived from it ([backup-restore.md](backup-restore.md)), so set it once |
+| `docker compose` refuses to start: `DLE_EDGE_SECRET is required` | An `.env` written before the edge got its own secret | Add `DLE_EDGE_SECRET=` with `openssl rand -hex 32` (different from `DLE_MASTER_SECRET`) |
+| `dle-control` or `dle-edge` restarts in a loop | `DLE_MASTER_SECRET` or `DLE_EDGE_SECRET` shorter than 32 characters — options validation fails at start-up by design | Generate a longer one. Changing the master secret later changes the slug permutation and every key derived from it ([backup-restore.md](backup-restore.md)), so set it once |
 | Caddy has no certificate | Port 80 unreachable for the ACME challenge, or `DLE_TLS` not an e-mail address | Open the port or use `DLE_TLS=internal` for a lab |
 | Well-known answers `308` | Something in front of Caddy (CDN, WAF, a second proxy) forces HTTPS | Exempt `/.well-known/*` there |
 
@@ -55,20 +55,20 @@ The `404` is the edge's deliberate answer for a host with no iOS application (Ap
 On a fresh installation, you have two ways to obtain your initial credentials ([deploy/README — First credential](../../deploy/README.md#first-credential-and-onboarding)):
 
 1. **Automatic Root Bootstrap (Default):**
-   When `dle-control` boots on an empty database, it automatically provisions an initial root tenant (`default`) and mints an `owner` API key (`root-bootstrap`). Retrieve it from the container logs:
+   When `dle-control` boots on an empty database, it provisions an initial root tenant (`default`) and mints an `owner` API key (`root-bootstrap`), printed **once** to its standard output (not to the structured log):
    ```bash
-   docker compose logs dle-control | grep -A 8 "BOOTSTRAP"
+   docker compose -f docker-compose.yml logs dle-control | grep -A 4 "DLE BOOTSTRAP OWNER KEY"
    # On Windows PowerShell:
-   docker compose logs dle-control | findstr /i BOOTSTRAP
+   docker compose -f docker-compose.yml logs dle-control | Select-String -Context 0,4 "DLE BOOTSTRAP OWNER KEY"
    ```
    Set this key as your environment variable:
    ```bash
    export DLE_KEY="dle_..."
    ```
-   You can immediately paste this key into the Admin Console (`https://go.example.com/admin/`) or present it as `Authorization: Bearer $DLE_KEY`.
+   You can immediately paste this key into the Admin Console (`https://go.example.com/admin/`) or present it as `Authorization: Bearer $DLE_KEY`. Once you have created a named owner key, revoke `root-bootstrap`. The `default` tenant is the operator tenant: its owners may create further tenants.
 
 2. **Enterprise OIDC SSO:**
-   If `DLE_OIDC_AUTHORITY` and `DLE_OIDC_CLIENT_ID` are configured, open `https://go.example.com/admin/` and click "Sign in with SSO". The console uses PKCE authorization flow, and incoming token claims (`dle_tenant` and `dle_role`) are mapped to internal principal claims.
+   If `DLE_OIDC_AUTHORITY` and `DLE_OIDC_CLIENT_ID` are configured, open `https://go.example.com/admin/` and click "Sign in with SSO". The console uses the PKCE authorization flow. The token must carry the tenant (`dle_tenant`: id or slug) and the role (`dle_role`: `owner`, `admin`, `editor` or `viewer`); a token without a tenant is refused unless `Dle:Identity:Oidc:DefaultTenant` is set.
 
 Steps 3–6 assume an API key with role `admin` or `owner` in `$DLE_KEY`. For reference, a caller creating further scoped keys can call:
 
@@ -83,14 +83,15 @@ curl -s -X POST $DLE/api/v1/api-keys \
 # the secret is shown exactly once; it is stored as an Argon2id hash
 ```
 
-A new tenant's `consent_mode` defaults to `aggregate_only`, the mode that needs no consent banner — IP addresses are hashed with a daily-rotated salt and never stored raw ([§E.6.2](../zadanie.md#e62-tri-režimy-prevádzky-produktová-funkcia-nie-prepínač-v-kóde), [compliance/privacy.md](../compliance/privacy.md)). In this mode the Play referrer carries no `dl_cid`, so Android deferred deep linking is off (step 6).
+A new tenant's `consent_mode` defaults to `aggregate_only`, the mode that needs no consent banner — IP addresses are hashed with a daily-rotated salt and never stored raw ([§E.6.2](../zadanie.md#e62-tri-režimy-prevádzky-produktová-funkcia-nie-prepínač-v-kóde), [compliance/privacy.md](../compliance/privacy.md)). In this mode no install is linked to a click: the Play referrer carries no `dl_cid` and the iOS interstitial shows no claim code, so deferred deep linking is off on both platforms (step 6). Switch the tenant to `full` and record consent to turn it on.
 
 **Where it goes wrong**
 
 | Symptom | Cause |
 |---|---|
-| An OIDC token is refused | Expected today, see above — adding `dle_tenant` / `dle_role` claims to the token does not help |
-| `403` with `type: …/forbidden` on `POST /api/v1/tenants` | Self-service is off and the caller's tenant is not `Dle:Control:InstanceTenantId` — with neither set, tenant routes deny everyone, deliberately |
+| An OIDC token is refused (`401`/`403`) | The token lacks the `dle_tenant` claim or carries no known role in `dle_role` — add them in the identity provider, or set `Dle:Identity:Oidc:DefaultTenant` |
+| `400 validation-failed` with a `credentials` error | The request carries two credentials (for example `Authorization` and `X-Api-Key`) — send exactly one |
+| `403` with `type: …/forbidden` on `POST /api/v1/tenants` | The caller's tenant is not the operator tenant (the bootstrapped one, or `Dle:Control:InstanceTenantId`) and self-service is off — deliberately |
 | `429` on the key endpoints | Authentication is rate-limited at 10/min per IP + identifier ([§E.9](../zadanie.md#e9-rate-limity-a-kvóty--konkrétne-hodnoty)) |
 
 ## Step 3 — register the link domain (≈ 3 min, plus propagation)
@@ -175,9 +176,9 @@ Then the real thing. The third column is what the engine does today where that d
 | `curl -sI https://go.example.com/aB3xK9pQ` | `302` to `target_url` (desktop class, no app) — **never `301`** (ADR-009) | As expected |
 | `curl -s -A facebookexternalhit/1.1 https://go.example.com/aB3xK9pQ` | `200` HTML with `og:*` tags, no redirect ([§A.2.6](../zadanie.md#a26-in-app-prehliadače-a-crawlery)) | As expected |
 | `curl -sI https://go.example.com/aB3xK9pQ/qr?format=svg&size=512` | `200 image/svg+xml` | As expected |
-| Phone, app installed, tap in Safari/Chrome | App opens on `/promo/autumn`; the SDK reports `link_open` | As expected: the app opens and resolves the short link via `POST /v1/resolve-link`, returning the full navigation target and rule-matched `deeplink_path` |
-| Phone, app not installed | Interstitial with a real button → store → after install `POST /v1/resolve` returns `match_type: install_referrer` (Android) or `claim_code` / `login` / `none` (iOS — [§B.6.3](../zadanie.md#b63-deferred-deep-link--ios-bez-determinizmu-z-platformy)) | With an `app_or_store` rule, Android receives `install_referrer` in `full` consent mode. On iOS, edge generates and renders a 6-character claim code on the interstitial, which the iOS SDK redeems via `POST /v1/claim-codes` and `/v1/resolve` |
-| Phone, tap from **inside Instagram** | Interstitial with the button; the button opens the app, the page load does not | With an `app_or_store` rule the interstitial appears, offering direct app open via custom scheme or target host Universal Link / App Link fallback button |
+| Phone, app installed, tap in Safari/Chrome | App opens on `/promo/autumn`; the SDK reports `link_open` | The app opens with the short URL; `handle(url:)` / `handleIntent` reports the open and `resolveLink` (`POST /v1/resolve-link`) returns the rule-matched `deeplink_path`. Not yet exercised on a device |
+| Phone, app not installed | Interstitial with a real button → store → after install `POST /v1/resolve` returns `match_type: install_referrer` (Android) or `claim_code` / `login` / `none` (iOS — [§B.6.3](../zadanie.md#b63-deferred-deep-link--ios-bez-determinizmu-z-platformy)) | Only in `full` consent mode with consent: Android gets `install_referrer` when the click carries `dl_consent=all`; on iOS the interstitial shows a 6-character claim code that the SDK redeems with `resolve(claimCode:)` (`POST /v1/resolve`). Under `aggregate_only` both answer `none` / `consent_missing` |
+| Phone, tap from **inside Instagram** | Interstitial with the button; the button opens the app, the page load does not | With an `app_or_store` rule the interstitial appears, with a button that opens the app through the Universal Link / App Link when `deeplink_path` is an absolute `https` URL, otherwise through the app's custom scheme |
 
 Check the dashboard (`/admin/`) or `GET /api/v1/analytics/clicks?…` — the click is there with `is_bot=false`, and the crawler hit with `is_bot=true`.
 

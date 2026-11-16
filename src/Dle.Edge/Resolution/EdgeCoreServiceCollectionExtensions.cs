@@ -75,7 +75,7 @@ public static class EdgeCoreServiceCollectionExtensions
                 failureStatus: HealthStatus.Degraded,
                 tags: [ResolvePipelineHealthCheck.ReadyTag]);
 
-        ConfigureForwardedHeaders(services, configuration);
+        ConfigureForwardedHeaders(services);
 
         // The server banner is free reconnaissance and the edge has no reason to publish its version
         // to every scanner on the internet.
@@ -98,20 +98,24 @@ public static class EdgeCoreServiceCollectionExtensions
     {
         Bind<EdgeOptions>(services, configuration, EdgeOptions.SectionName);
 
-        // Fully qualified because two types named InterstitialOptions currently bind to the same
-        // section: this one, which every rendered page reads through HtmlPageResult, and an older
-        // string-typed twin in Dle.Edge.Configuration that nothing consumes. Binding the one the
-        // pages actually use is the choice that cannot be wrong; the duplicate belongs to the
-        // rendering and configuration owners to remove.
-        Bind<Dle.Edge.Rendering.InterstitialOptions>(
-            services,
-            configuration,
-            Dle.Edge.Rendering.InterstitialOptions.SectionName);
+        Bind<InterstitialOptions>(services, configuration, InterstitialOptions.SectionName);
 
         Bind<BotDetectionOptions>(services, configuration, BotDetectionOptions.SectionName);
         Bind<GeoIpOptions>(services, configuration, GeoIpOptions.SectionName);
         Bind<SecurityHeaderOptions>(services, configuration, SecurityHeaderOptions.SectionName);
-        Bind<NetworkOptions>(services, configuration, NetworkOptions.SectionName);
+        // Refused at start-up rather than at the first request: with forwarded headers on and no
+        // proxy that parses, the framework would trust the header from every peer.
+        services.AddOptions<NetworkOptions>()
+            .Bind(configuration.GetSection(NetworkOptions.SectionName))
+            .ValidateDataAnnotations()
+            .Validate(
+                static network => !network.UseForwardedHeaders
+                    || TrustedProxies.TryParse(network.KnownProxies, network.KnownNetworks, out _),
+                NetworkOptions.SectionName + ": UseForwardedHeaders is on, so KnownProxies or KnownNetworks "
+                    + "must name at least one proxy and every entry must parse. With none, X-Forwarded-For "
+                    + "would be trusted from any client.")
+            .ValidateOnStart();
+
         Bind<EdgePrivacyOptions>(services, configuration, EdgePrivacyOptions.SectionName);
     }
 
@@ -162,43 +166,46 @@ public static class EdgeCoreServiceCollectionExtensions
     /// to the hashed identifier in the click stream (FR-247) and the geographic lookup key. Honouring
     /// <c>X-Forwarded-For</c> from an arbitrary peer would let any client choose its own rate limit
     /// bucket and its own country, so the header is only trusted when the immediate peer is a
-    /// configured proxy — which is why the framework's default of "no known proxies" is cleared here
-    /// rather than left in place.
+    /// configured proxy.
     /// </para>
     /// <para>
-    /// An entry that does not parse is dropped rather than silently widening trust. The default
-    /// loopback entries are removed for the same reason: a deployment that names its proxies means
-    /// those proxies.
+    /// The framework's default loopback entries are replaced by the configured ones: a deployment
+    /// that names its proxies means those proxies. Replacing them with <em>nothing</em> is the one
+    /// state that must not happen, because the middleware trusts every peer once both lists are
+    /// empty; <see cref="TrustedProxies"/> refuses it, and the options validation in
+    /// <c>AddOptions</c> turns that refusal into a failed start.
     /// </para>
     /// </remarks>
-    private static void ConfigureForwardedHeaders(IServiceCollection services, IConfiguration configuration)
+    private static void ConfigureForwardedHeaders(IServiceCollection services)
     {
-        NetworkOptions network = configuration.GetSection(NetworkOptions.SectionName).Get<NetworkOptions>()
-            ?? new NetworkOptions();
-
-        services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-            options.ForwardLimit = network.ForwardLimit;
-
-            options.KnownProxies.Clear();
-            options.KnownIPNetworks.Clear();
-
-            foreach (string candidate in network.KnownProxies)
+        services.AddOptions<ForwardedHeadersOptions>()
+            .Configure<Microsoft.Extensions.Options.IOptions<NetworkOptions>>(static (options, configured) =>
             {
-                if (IPAddress.TryParse(candidate, out IPAddress? address))
+                NetworkOptions network = configured.Value;
+
+                if (!network.UseForwardedHeaders
+                    || !TrustedProxies.TryParse(network.KnownProxies, network.KnownNetworks, out TrustedProxies? trusted))
+                {
+                    // Not installed (Program.cs), or refused by validation: leave the framework's
+                    // loopback-only default in place rather than an empty, trust-everyone list.
+                    return;
+                }
+
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.ForwardLimit = network.ForwardLimit;
+
+                options.KnownProxies.Clear();
+                options.KnownIPNetworks.Clear();
+
+                foreach (IPAddress address in trusted.Addresses)
                 {
                     options.KnownProxies.Add(address);
                 }
-            }
 
-            foreach (string candidate in network.KnownNetworks)
-            {
-                if (System.Net.IPNetwork.TryParse(candidate, out System.Net.IPNetwork parsed))
+                foreach (System.Net.IPNetwork trustedNetwork in trusted.Networks)
                 {
-                    options.KnownIPNetworks.Add(parsed);
+                    options.KnownIPNetworks.Add(trustedNetwork);
                 }
-            }
-        });
+            });
     }
 }

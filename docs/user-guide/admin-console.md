@@ -37,13 +37,13 @@ Do konzoly sa môžete prihlásiť dvoma spôsobmi podľa toho, ako vašu inšta
 
 2. **Prihlásenie pomocou API kľúča:**
    - Zadajte adresu control plane (napr. `http://localhost:8081` alebo produkčnú URL ako `https://control.example.com`). Ak konzolu servíruje samotná služba control plane, pole nechajte prázdne.
-   - Do poľa **API kľúč** vložte svoj vygenerovaný token (začínajúci prefixom `dle_live_...`).
+   - Do poľa **API kľúč** vložte svoj vygenerovaný token (tvar `dle_<prefix>_<tajomstvo>`, napr. `dle_k7QpX2mA_…`).
    - Kľúč sa odosiela v každej požiadavke ako `Bearer` token. Na serveri je bezpečne uložený iba jeho jednosmerný Argon2id odtlačok.
 
 > [!TIP]
 > **Zapamätať na tomto zariadení:**
 > - Ak je voľba **vypnutá**, kľúč sa uchováva iba v pamäti aktuálnej záložky prehliadača (ideálne na zdieľaných počítačoch).
-> - Ak je voľba **zapnutá**, kľúč sa uloží do chráneného lokálneho úložiska prehliadača (`localStorage`) pre váš profil.
+> - Ak je voľba **zapnutá**, kľúč sa uloží do lokálneho úložiska prehliadača (`localStorage`) pre váš profil a prežije zatvorenie prehliadača. Zapínajte ju len na vlastnom zariadení. Konzolu chráni Content-Security-Policy (žiadne cudzie skripty na jej doméne), no kľúč v `localStorage` si môže prečítať každý, kto má prístup k vášmu profilu prehliadača.
 
 ### Používateľské roly a oprávnenia
 

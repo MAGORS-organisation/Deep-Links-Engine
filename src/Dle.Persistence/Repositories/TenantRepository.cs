@@ -13,7 +13,7 @@ namespace Dle.Persistence.Repositories;
 /// reason and drops only the tenant filter by name, so the step over is visible in the code rather
 /// than implied by an <c>IgnoreQueryFilters()</c> somewhere.
 /// </remarks>
-public sealed class TenantRepository
+public sealed class TenantRepository : ITenantLookup
 {
     private readonly DleDbContext _db;
 
@@ -34,6 +34,21 @@ public sealed class TenantRepository
     {
         return await _db.Tenants
             .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+    }
+
+    /// <summary>Finds a tenant by its identifier, before authentication has established one.</summary>
+    /// <param name="id">The tenant identifier, as carried by an identity-provider token.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The tenant, or <see langword="null"/>.</returns>
+    public async Task<Tenant?> FindByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        using CrossTenantScope scope = _db.BeginCrossTenantScope(
+            "resolving a tenant from its identifier during sign in, before a tenant is in scope");
+
+        return await _db.Tenants
+            .AsNoTracking()
+            .AcrossTenants()
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
     }
 
@@ -80,6 +95,25 @@ public sealed class TenantRepository
             .OrderBy(t => t.Id)
             .Take(limit)
             .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>Counts provisioned tenants across the instance.</summary>
+    /// <param name="includeDeleted">Whether to include tenants marked deleted.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The tenant count.</returns>
+    public async Task<int> CountAsync(bool includeDeleted, CancellationToken cancellationToken)
+    {
+        using CrossTenantScope scope = _db.BeginCrossTenantScope(
+            "checking single-tenant self-service provisioning limits");
+
+        IQueryable<Tenant> query = _db.Tenants.AsNoTracking().AcrossTenants();
+
+        if (includeDeleted)
+        {
+            query = query.IncludeSoftDeleted();
+        }
+
+        return await query.CountAsync(cancellationToken);
     }
 
     /// <summary>Provisions a tenant.</summary>
@@ -145,5 +179,24 @@ public sealed class TenantRepository
         tenant.Status = "deleted";
         await _db.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    /// <summary>Lists normalised domain hosts owned by <paramref name="tenantId"/> across tenant scopes.</summary>
+    /// <param name="tenantId">The tenant identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The tenant's domain hosts.</returns>
+    public async Task<IReadOnlyList<string>> ListDomainHostsAsync(
+        Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        using CrossTenantScope scope = _db.BeginCrossTenantScope(
+            "listing a tenant's domain hosts so edge caches can be invalidated alongside tenant changes");
+
+        return await _db.Domains
+            .AsNoTracking()
+            .AcrossTenants()
+            .Where(d => d.TenantId == tenantId)
+            .Select(d => d.Host)
+            .ToListAsync(cancellationToken);
     }
 }

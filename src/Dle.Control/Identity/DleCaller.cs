@@ -75,10 +75,28 @@ public static class DleCallerExtensions
             return null;
         }
 
-        string? tenantValue = principal.FindFirstValue(DleClaimTypes.TenantId);
+        // A principal can carry several identities (an endpoint policy that lists more than one scheme
+        // merges them). If they name different tenants the caller has no tenant at all: picking the
+        // first would make the answer depend on scheme order (T-09).
+        Guid tenantId = Guid.Empty;
 
-        if (!Guid.TryParse(tenantValue, CultureInfo.InvariantCulture, out Guid tenantId)
-            || tenantId == Guid.Empty)
+        foreach (Claim claim in principal.FindAll(DleClaimTypes.TenantId))
+        {
+            if (!Guid.TryParse(claim.Value, CultureInfo.InvariantCulture, out Guid parsed)
+                || parsed == Guid.Empty)
+            {
+                return null;
+            }
+
+            if (tenantId != Guid.Empty && parsed != tenantId)
+            {
+                return null;
+            }
+
+            tenantId = parsed;
+        }
+
+        if (tenantId == Guid.Empty)
         {
             return null;
         }

@@ -75,6 +75,15 @@ internal sealed record PageStrings
     /// <summary>Accessible name prefix read before the claim code's characters.</summary>
     internal required string ClaimCodeAccessiblePrefix { get; init; }
 
+    /// <summary>Heading of the deferred attribution consent block on the interstitial.</summary>
+    internal required string ConsentPromptHeading { get; init; }
+
+    /// <summary>Explanation of what granting attribution consent unlocks after app install.</summary>
+    internal required string ConsentPromptBody { get; init; }
+
+    /// <summary>Submit button label for granting single-click attribution consent.</summary>
+    internal required string ConsentPromptSubmit { get; init; }
+
     /// <summary>Title of the 404 document.</summary>
     internal required string NotFoundDocumentTitle { get; init; }
 
@@ -164,6 +173,9 @@ internal sealed record PageStrings
         ClaimCodeLede = "After installing, enter this code in the app to open the screen this link points to.",
         ClaimCodeNote = "The code is valid for one hour and can be used once.",
         ClaimCodeAccessiblePrefix = "Code",
+        ConsentPromptHeading = "Open this screen after install",
+        ConsentPromptBody = "Allow attribution for this click before opening the store so the app can restore this screen after installation.",
+        ConsentPromptSubmit = "Allow attribution for this link",
         NotFoundDocumentTitle = "Link not available",
         NotFoundHeading = "This link is not available",
         NotFoundBody = "The address you opened does not lead anywhere on this domain.",
@@ -209,6 +221,9 @@ internal sealed record PageStrings
         ClaimCodeLede = "Po inštalácii zadajte tento kód v aplikácii, aby sa otvorila obrazovka, na ktorú odkaz smeruje.",
         ClaimCodeNote = "Kód platí jednu hodinu a dá sa použiť raz.",
         ClaimCodeAccessiblePrefix = "Kód",
+        ConsentPromptHeading = "Otvoriť túto obrazovku po inštalácii",
+        ConsentPromptBody = "Povoľte atribúciu tohto kliknutia pred otvorením obchodu, aby aplikácia po inštalácii obnovila túto obrazovku.",
+        ConsentPromptSubmit = "Povoliť atribúciu pre tento odkaz",
         NotFoundDocumentTitle = "Odkaz nie je dostupný",
         NotFoundHeading = "Tento odkaz nie je dostupný",
         NotFoundBody = "Adresa, ktorú ste otvorili, na tejto doméne nikam nevedie.",

@@ -5,6 +5,7 @@ using Dle.Edge.RateLimiting;
 using Dle.Edge.Rendering;
 using Dle.Edge.Resolution;
 using Dle.Edge.Telemetry;
+using Dle.Persistence.Fast.Caching;
 
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Configuration;
@@ -60,6 +61,7 @@ public static class EdgeRateLimitingServiceCollectionExtensions
             ServiceDescriptor.Singleton<IValidateOptions<EdgeRateLimitOptions>, EdgeRateLimitOptionsValidator>());
 
         services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<ValkeyRateLimitStore>();
         services.TryAddSingleton<NotFoundEnumerationGuard>();
 
         EdgeRateLimitOptions options = configuration.GetSection(EdgeRateLimitOptions.SectionName)
@@ -103,35 +105,31 @@ public static class EdgeRateLimitingServiceCollectionExtensions
                 {
                     IIpHasher hasher = context.RequestServices.GetRequiredService<IIpHasher>();
                     string key = EdgeRateLimitPartitions.NetworkKey(hasher, context.Connection.RemoteIpAddress);
+                    ValkeyRateLimitStore? store = context.RequestServices.GetService<ValkeyRateLimitStore>();
 
-                    return RateLimitPartition.GetSlidingWindowLimiter(
+                    return RateLimitPartition.Get(
                         new EdgeRateLimitPartition(EdgeRateLimitKind.Resolve, key),
-                        _ => new SlidingWindowRateLimiterOptions
-                        {
-                            PermitLimit = resolve.PermitsPerWindow,
-                            Window = TimeSpan.FromSeconds(resolve.WindowSeconds),
-                            SegmentsPerWindow = resolve.SegmentsPerWindow,
-                            QueueLimit = 0,
-                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                            AutoReplenishment = true,
-                        });
+                        partition => new EdgeValkeyRateLimiter(
+                            "edge:resolve:" + partition.Key,
+                            resolve.PermitsPerWindow,
+                            TimeSpan.FromSeconds(resolve.WindowSeconds),
+                            resolve.SegmentsPerWindow,
+                            store));
                 }
 
                 case EdgeRateLimitKind.Qr:
                 {
                     string key = EdgeRateLimitPartitions.AddressKey(context.Connection.RemoteIpAddress);
+                    ValkeyRateLimitStore? store = context.RequestServices.GetService<ValkeyRateLimitStore>();
 
-                    return RateLimitPartition.GetSlidingWindowLimiter(
+                    return RateLimitPartition.Get(
                         new EdgeRateLimitPartition(EdgeRateLimitKind.Qr, key),
-                        _ => new SlidingWindowRateLimiterOptions
-                        {
-                            PermitLimit = qr.PermitsPerWindow,
-                            Window = TimeSpan.FromSeconds(qr.WindowSeconds),
-                            SegmentsPerWindow = qr.SegmentsPerWindow,
-                            QueueLimit = 0,
-                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                            AutoReplenishment = true,
-                        });
+                        partition => new EdgeValkeyRateLimiter(
+                            "edge:qr:" + partition.Key,
+                            qr.PermitsPerWindow,
+                            TimeSpan.FromSeconds(qr.WindowSeconds),
+                            qr.SegmentsPerWindow,
+                            store));
                 }
 
                 case EdgeRateLimitKind.Unlimited:

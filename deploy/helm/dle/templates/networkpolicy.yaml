@@ -73,7 +73,10 @@ spec:
           protocol: UDP
         - port: {{ .Values.networkPolicy.dns.port }}
           protocol: TCP
-    # PostgreSQL (primary and read replica).
+    # PostgreSQL (primary and read replica). Omit unscoped 0.0.0.0/0 egress when peers are unset
+    # unless allowUnscopedDataStoreEgress is explicitly true.
+    {{- if or $postgres .Values.networkPolicy.allowUnscopedDataStoreEgress }}
+    {{- if or $postgres .Values.networkPolicy.allowUnscopedDataStoreEgress }}
     -
       {{- if $postgres }}
       to:
@@ -82,7 +85,10 @@ spec:
       ports:
         - port: {{ .Values.networkPolicy.postgres.port }}
           protocol: TCP
+    {{- end }}
+    {{- end }}
     # Valkey (L2 cache).
+    {{- if or $valkey .Values.networkPolicy.allowUnscopedDataStoreEgress }}
     -
       {{- if $valkey }}
       to:
@@ -91,6 +97,7 @@ spec:
       ports:
         - port: {{ .Values.networkPolicy.valkey.port }}
           protocol: TCP
+    {{- end }}
     {{- with .Values.networkPolicy.edge.extraEgress }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -145,6 +152,8 @@ spec:
           protocol: UDP
         - port: {{ .Values.networkPolicy.dns.port }}
           protocol: TCP
+    {{- if or $postgres .Values.networkPolicy.allowUnscopedDataStoreEgress }}
+    {{- if or $postgres .Values.networkPolicy.allowUnscopedDataStoreEgress }}
     -
       {{- if $postgres }}
       to:
@@ -153,6 +162,9 @@ spec:
       ports:
         - port: {{ .Values.networkPolicy.postgres.port }}
           protocol: TCP
+    {{- end }}
+    {{- end }}
+    {{- if or $valkey .Values.networkPolicy.allowUnscopedDataStoreEgress }}
     -
       {{- if $valkey }}
       to:
@@ -161,7 +173,8 @@ spec:
       ports:
         - port: {{ .Values.networkPolicy.valkey.port }}
           protocol: TCP
-    {{- if .Values.externalClickHouse.connectionString }}
+    {{- end }}
+    {{- if and .Values.externalClickHouse.connectionString (or $clickhouse .Values.networkPolicy.allowUnscopedDataStoreEgress) }}
     -
       {{- if $clickhouse }}
       to:
@@ -207,6 +220,7 @@ spec:
           protocol: UDP
         - port: {{ .Values.networkPolicy.dns.port }}
           protocol: TCP
+    {{- if or $postgres .Values.networkPolicy.allowUnscopedDataStoreEgress }}
     -
       {{- if $postgres }}
       to:
@@ -215,5 +229,6 @@ spec:
       ports:
         - port: {{ .Values.networkPolicy.postgres.port }}
           protocol: TCP
+    {{- end }}
 {{- end }}
 {{- end }}

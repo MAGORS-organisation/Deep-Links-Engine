@@ -35,10 +35,30 @@ export default function DomainsPage() {
 
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<DomainResponse | null>(null);
+  const [ownershipDomain, setOwnershipDomain] = useState<DomainResponse | null>(null);
+  const [verifyingOwnership, setVerifyingOwnership] = useState<string | null>(null);
   const [verifying, setVerifying] = useState<string | null>(null);
   const [verification, setVerification] = useState<{ domain: DomainResponse; result: DomainVerificationResponse } | null>(null);
   const [deleting, setDeleting] = useState<DomainResponse | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const verifyOwnership = async (domain: DomainResponse) => {
+    setVerifyingOwnership(domain.id);
+    try {
+      const res = await domains.verifyOwnership(domain.id);
+      if (res.ok) {
+        toast.success(t('domains.ownership.okToast'));
+        setOwnershipDomain(null);
+      } else {
+        toast.error(res.checks[0]?.detail ?? t('domains.ownership.failedToast'));
+      }
+      list.reload();
+    } catch (error) {
+      toast.error(describeError(t, error));
+    } finally {
+      setVerifyingOwnership(null);
+    }
+  };
 
   const verify = async (domain: DomainResponse) => {
     setVerifying(domain.id);
@@ -87,6 +107,16 @@ export default function DomainsPage() {
         </span>
       ),
     },
+    {
+      key: 'ownership',
+      header: t('domains.col.ownership'),
+      width: '1%',
+      render: (row) => (
+        <StatusPill tone={row.ownership_verified_at ? 'ok' : 'pending'}>
+          {row.ownership_verified_at ? t('domains.ownership.verified') : t('domains.ownership.pending')}
+        </StatusPill>
+      ),
+    },
     { key: 'tls', header: t('domains.col.tls'), width: '1%', render: (row) => pill(row.tls_status) },
     { key: 'aasa', header: t('domains.col.aasa'), width: '1%', render: (row) => pill(row.aasa_status) },
     { key: 'assetlinks', header: t('domains.col.assetlinks'), width: '1%', render: (row) => pill(row.assetlinks_status) },
@@ -104,6 +134,11 @@ export default function DomainsPage() {
       align: 'right',
       render: (row) => (
         <span className="row" style={{ gap: 4, justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+          {row.ownership_txt_host && !row.ownership_verified_at && (
+            <button type="button" className="btn btn-sm" onClick={() => setOwnershipDomain(row)}>
+              {t('domains.ownership.setup')}
+            </button>
+          )}
           <button type="button" className="btn btn-sm btn-primary" onClick={() => void verify(row)} disabled={verifying === row.id}>
             {verifying === row.id ? t('state.loading') : t('action.verifyNow')}
           </button>
@@ -169,6 +204,53 @@ export default function DomainsPage() {
           list.reload();
         }}
       />
+
+      <Drawer
+        open={ownershipDomain !== null}
+        title={ownershipDomain ? t('domains.ownership.title', { host: ownershipDomain.host }) : ''}
+        onClose={() => setOwnershipDomain(null)}
+        footer={
+          ownershipDomain && (
+            <>
+              <button type="button" className="btn" onClick={() => setOwnershipDomain(null)}>
+                {t('action.close')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={verifyingOwnership === ownershipDomain.id}
+                onClick={() => void verifyOwnership(ownershipDomain)}
+              >
+                {verifyingOwnership === ownershipDomain.id ? t('state.loading') : t('domains.ownership.verifyButton')}
+              </button>
+            </>
+          )
+        }
+      >
+        {ownershipDomain && (
+          <div className="stack">
+            <p className="small muted" style={{ margin: 0 }}>
+              {t('domains.ownership.detail', { host: ownershipDomain.host })}
+            </p>
+            <dl className="dl">
+              <dt>{t('domains.ownership.recordHost')}</dt>
+              <dd className="row">
+                <code className="mono">{ownershipDomain.ownership_txt_host ?? `_dle-verify.${ownershipDomain.host}`}</code>
+                <CopyButton value={ownershipDomain.ownership_txt_host ?? `_dle-verify.${ownershipDomain.host}`} />
+              </dd>
+              {ownershipDomain.ownership_txt_value && (
+                <>
+                  <dt>{t('domains.ownership.recordValue')}</dt>
+                  <dd className="row">
+                    <code className="mono" style={{ wordBreak: 'break-all' }}>{ownershipDomain.ownership_txt_value}</code>
+                    <CopyButton value={ownershipDomain.ownership_txt_value} />
+                  </dd>
+                </>
+              )}
+            </dl>
+          </div>
+        )}
+      </Drawer>
 
       <Drawer open={verification !== null} title={verification ? t('domains.verify.title', { host: verification.domain.host }) : ''} onClose={() => setVerification(null)} wide>
         {verification && <VerificationResult domain={verification.domain} result={verification.result} />}

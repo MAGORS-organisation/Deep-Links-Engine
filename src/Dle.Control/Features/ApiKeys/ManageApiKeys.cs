@@ -160,6 +160,30 @@ public static class ManageApiKeys
             scopes.Add(candidate);
         }
 
+        // A stored empty list means "governed by the role alone", which is every scope. A credential
+        // that is itself limited to some scopes must not be able to issue that by naming none: the
+        // new key then gets the issuer's own scopes, never more.
+        if (scopes.Count == 0 && caller.Scopes.Count > 0 && !errors.ContainsKey("scopes"))
+        {
+            foreach (string held in caller.Scopes)
+            {
+                string inherited = held.Trim().ToLowerInvariant();
+
+                if (DleScopes.IsGrantable(inherited))
+                {
+                    scopes.Add(inherited);
+                }
+            }
+
+            if (scopes.Count == 0)
+            {
+                errors["scopes"] =
+                [
+                    "The issuing credential holds no scope that a key may be issued with.",
+                ];
+            }
+        }
+
         DateTimeOffset now = timeProvider.GetUtcNow();
 
         if (request.ExpiresAt is DateTimeOffset expiry && expiry <= now)
@@ -222,6 +246,7 @@ public static class ManageApiKeys
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="keys">Key storage.</param>
     /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="credentialCache">Drops any cached verification entry for the revoked key.</param>
     /// <param name="timeProvider">Clock used to stamp the revocation.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>204, or 404.</returns>
@@ -234,12 +259,14 @@ public static class ManageApiKeys
         HttpContext http,
         ApiKeyRepository keys,
         AuditLogWriter audit,
+        DleCredentialCache credentialCache,
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(http);
         ArgumentNullException.ThrowIfNull(keys);
         ArgumentNullException.ThrowIfNull(audit);
+        ArgumentNullException.ThrowIfNull(credentialCache);
         ArgumentNullException.ThrowIfNull(timeProvider);
 
         DleCaller caller = http.RequireDleCaller();
@@ -248,6 +275,8 @@ public static class ManageApiKeys
         {
             return DleProblem.NotFound("There is no key with that identifier.");
         }
+
+        await credentialCache.InvalidateKeyAsync(id, cancellationToken);
 
         await AdministrativeAudit.RecordAsync(
             audit,

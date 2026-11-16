@@ -28,7 +28,9 @@ internal class AppLinkHandler(
      * Reports the intent's link when it is an `http(s)` `ACTION_VIEW`.
      *
      * The intent is marked once reported, so the same intent handed back by a configuration
-     * change or by both `onCreate` and `onResume` produces one event, not several.
+     * change or by both `onCreate` and `onResume` produces one event, not several. An intent the
+     * system relaunched from Recents (`FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY`) is the original
+     * open delivered again and is not reported either.
      *
      * @param intent the intent, or `null`.
      * @return the open, or `null` when the intent is not a reportable link.
@@ -42,6 +44,7 @@ internal class AppLinkHandler(
             val open = AppLinkOpen(url = data.toString(), reportedUrl = reported)
             if (intent.getBooleanExtra(EXTRA_REPORTED, false)) return open
             intent.putExtra(EXTRA_REPORTED, true)
+            if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return open
             enqueue(DleEvent.linkOpen(reported))
             log.info("link_open reported for host ${data.host ?: "?"}")
             open
@@ -49,6 +52,19 @@ internal class AppLinkHandler(
             // A hostile intent with an unparcelable extra must not crash the host.
             log.warn("intent could not be inspected", e)
             null
+        }
+    }
+
+    /**
+     * Marks the intent of an activity the system recreated from saved state as reported. Its
+     * link was reported when the activity first started; the mark set then lives only in the
+     * process, so after process death the restored intent would otherwise be reported again.
+     */
+    fun markReported(intent: Intent?) {
+        try {
+            if (intent != null && intent.action == Intent.ACTION_VIEW) intent.putExtra(EXTRA_REPORTED, true)
+        } catch (e: RuntimeException) {
+            log.warn("intent could not be inspected", e)
         }
     }
 

@@ -208,6 +208,20 @@ export interface LinkVersionSummary {
   snapshot: unknown;
 }
 
+export interface BulkLinkItem {
+  ref?: string | null;
+  link: CreateLinkRequest;
+}
+
+export interface BulkLinkResult {
+  ref?: string | null;
+  ok: boolean;
+  id?: string | null;
+  short_url?: string | null;
+  error?: string | null;
+  detail?: string | null;
+}
+
 export interface SimulateRequest {
   user_agent?: string | null;
   platform?: string | null;
@@ -231,28 +245,6 @@ export interface SimulateResponse {
   ab_variant?: string | null;
   consent_mode: string;
   trace: string[];
-}
-
-export interface LinkTemplateRequest {
-  name: string;
-  utm?: Record<string, string>;
-  routing_rules?: RoutingRule[];
-  target_url?: string | null;
-  deeplink_path?: string | null;
-  og?: OgMeta | null;
-  tags?: string[];
-}
-
-export interface LinkTemplateResponse {
-  id: string;
-  name: string;
-  utm: Record<string, string>;
-  routing_rules: RoutingRule[];
-  target_url?: string | null;
-  deeplink_path?: string | null;
-  og?: OgMeta | null;
-  tags: string[];
-  created_at: string;
 }
 
 // ---- Domains -----------------------------------------------------------------------------------
@@ -285,6 +277,9 @@ export interface DomainResponse {
   assetlinks_status: VerificationStatus;
   last_verified_at?: string | null;
   consent_mode_override?: string | null;
+  ownership_verified_at?: string | null;
+  ownership_txt_host?: string | null;
+  ownership_txt_value?: string | null;
   created_at: string;
 }
 
@@ -557,6 +552,17 @@ export interface TestWebhookResponse {
   elapsed_ms: number;
   payload: string;
   signing_key_id?: string | null;
+}
+
+export interface WebhookDeliveryReplayResponse {
+  replayed_count: number;
+  delivery_ids: string[];
+}
+
+export interface InstallErasureResponse {
+  erased_installs: number;
+  erased_attributions: number;
+  erased_sdk_events: number;
 }
 
 // ---- Abuse -------------------------------------------------------------------------------------

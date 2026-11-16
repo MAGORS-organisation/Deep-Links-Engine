@@ -28,7 +28,10 @@ conversion_agg AS (
            coalesce(s.link_id, 0)                                  AS link_id,
            lower(coalesce(nullif(ins.platform, ''), 'unknown'))    AS platform,
            count(*)::bigint                                        AS conversions,
-           sum(s.event_value)::numeric(18, 4)                            AS conversion_value
+           -- Saturated, not cast blindly: this statement covers every tenant in one transaction,
+           -- so a sum that does not fit numeric(18, 4) must not be able to fail it for all of them.
+           least(greatest(sum(s.event_value), -99999999999999.9999), 99999999999999.9999)::numeric(18, 4)
+                                                                   AS conversion_value
     FROM sdk_events AS s
     LEFT JOIN installs AS ins
            ON ins.app_id = s.app_id

@@ -13,7 +13,8 @@ SELECT date_trunc('day', h.bucket, 'UTC') AS bucket,
        sum(h.installs)::bigint            AS installs,
        sum(h.attributed)::bigint          AS attributed,
        sum(h.conversions)::bigint         AS conversions,
-       sum(h.conversion_value)            AS conversion_value,
+       least(greatest(sum(h.conversion_value), -99999999999999.9999), 99999999999999.9999)::numeric(18, 4)
+                                          AS conversion_value,
        @now                               AS updated_at
 FROM install_rollup_hourly AS h
 WHERE h.bucket >= @from

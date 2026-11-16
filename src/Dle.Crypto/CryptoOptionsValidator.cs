@@ -50,7 +50,7 @@ public sealed class CryptoOptionsValidator : IValidateOptions<CryptoOptions>
             failures.Add(
                 "Dle:Crypto:SigningAlgorithm is '" + options.SigningAlgorithm +
                 "', which is a post-quantum algorithm. Set Dle:Crypto:HybridPqEnabled to true to enable it; " +
-                "docs/zadanie.md section E.5.3 keeps these off in phase 0 on purpose.");
+                "post-quantum signing is off by default in this release on purpose.");
         }
 
         bool needsGeneratedKey = string.Equals(

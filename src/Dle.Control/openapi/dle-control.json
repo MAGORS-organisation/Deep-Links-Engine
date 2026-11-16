@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "Deep Link Engine — control plane",
-    "description": "Link, domain, application, tenant and credential management, plus attribution and analytics reporting. Errors are RFC 9457 problem documents whose type member is one of the stable identifiers documented at https://docs.dle.dev/problems/. Writes accept an Idempotency-Key header: the same key with the same body replays the stored response, and the same key with a different body is a conflict.",
+    "description": "Link, domain, application, tenant and credential management, plus attribution and analytics reporting. Errors are RFC 9457 problem documents whose type member is one of the stable identifiers documented at https://docs.dle.dev/problems/. Writes accept an Idempotency-Key header: the same key with the same body replays the stored response, and the same key with a different body is a conflict. The problem type identifiers are: https://docs.dle.dev/problems/validation-failed, https://docs.dle.dev/problems/slug-taken, https://docs.dle.dev/problems/slug-invalid, https://docs.dle.dev/problems/unsafe-target, https://docs.dle.dev/problems/rate-limited, https://docs.dle.dev/problems/missing-default-rule, https://docs.dle.dev/problems/invalid-routing-rules, https://docs.dle.dev/problems/domain-not-verified, https://docs.dle.dev/problems/domain-taken, https://docs.dle.dev/problems/domain-in-use, https://docs.dle.dev/problems/idempotency-conflict, https://docs.dle.dev/problems/unauthorized, https://docs.dle.dev/problems/forbidden, https://docs.dle.dev/problems/claim-code-invalid, https://docs.dle.dev/problems/link-quarantined, https://docs.dle.dev/problems/dependency-unavailable, https://docs.dle.dev/problems/write-conflict, https://docs.dle.dev/problems/link-too-large, https://docs.dle.dev/problems/app-taken.",
     "version": "v1"
   },
   "paths": {
@@ -1856,7 +1856,7 @@
           "Applications"
         ],
         "summary": "Revokes a key.",
-        "description": "The row is kept and switched off rather than deleted, so that the audit entries referring to\r\nit keep referring to something that exists. The authentication lookup requires\r\n`is_active`, so a revoked key stops authenticating immediately.",
+        "description": "The row is kept and switched off rather than deleted, so that the audit entries referring to\r\nit keep referring to something that exists. The authentication lookup requires\r\n`is_active`, so a revoked key stops authenticating as soon as the lookup runs again:\r\nwithin `Dle:Identity:CredentialCacheSeconds` (60 by default) for a key that was in use,\r\nand at once for one that was not. An operator who needs revocation to bite immediately sets\r\nthat to 0 and pays a credential verification per request.",
         "operationId": "RevokeSdkKey",
         "parameters": [
           {
@@ -2791,6 +2791,78 @@
         }
       }
     },
+    "/v1/resolve-link": {
+      "post": {
+        "tags": [
+          "SDK"
+        ],
+        "summary": "Resolves the destination context of a short link opened directly by an installed app.",
+        "description": "Called when an installed application is opened via a Universal Link or App Link. Accepts the short URL delivered by the operating system, looks up the link, evaluates routing rules for the platform, and answers with the target deeplink_path and link parameters. It records nothing: the SDK reports the open as a link_open event through /v1/events. Rate limited per install_id, or per caller network when install_id is absent.",
+        "operationId": "ResolveLinkContext",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveLinkRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolveResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/events": {
       "post": {
         "tags": [
@@ -3003,6 +3075,37 @@
               "application/jwk-set+json": {
                 "schema": {
                   "$ref": "#/components/schemas/JwksDocument"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/config": {
+      "get": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Reads public authentication and OIDC configuration for the administration console.",
+        "operationId": "GetAuthConfig",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthConfigResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -3401,6 +3504,26 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       },
@@ -3434,6 +3557,26 @@
           },
           "400": {
             "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3478,6 +3621,26 @@
           "204": {
             "description": "No Content"
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
@@ -3517,6 +3680,26 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TestWebhookResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -3577,6 +3760,26 @@
                   "items": {
                     "$ref": "#/components/schemas/WebhookDeliveryResponse"
                   }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -3938,6 +4141,44 @@
           }
         },
         "description": "The honest attribution split. This is the number commercial measurement partners systematically\r\nblur, and stating it plainly is the product argument, not a footnote (ADR-008, §0.2)."
+      },
+      "AuthConfigResponse": {
+        "type": "object",
+        "properties": {
+          "oidc_enabled": {
+            "type": "boolean",
+            "description": "Whether an OpenID Connect provider is configured for SSO."
+          },
+          "authority": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Issuer / Authority URL of the identity provider, if configured."
+          },
+          "client_id": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Client identifier for interactive PKCE login, if configured."
+          },
+          "audience": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Token audience expected by the API, if configured."
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Scopes to request during interactive sign in."
+          }
+        },
+        "description": "Public authentication and OIDC configuration for the administration UI (FR-242)."
       },
       "BreakdownResponse": {
         "required": [
@@ -4448,8 +4689,11 @@
             "description": "Event types to deliver, for example `attribution.created`."
           },
           "is_active": {
-            "type": "boolean",
-            "description": "Whether the subscription is active on creation."
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether the subscription is active on creation. Omitted means active; only an explicit\r\n`false` registers a subscription that receives nothing until it is enabled."
           }
         },
         "description": "Body of `POST /api/v1/webhooks` (FR-204)."
@@ -5626,10 +5870,32 @@
         "type": "object",
         "properties": {
           "type": {
+            "examples": [
+              "https://docs.dle.dev/problems/validation-failed",
+              "https://docs.dle.dev/problems/slug-taken",
+              "https://docs.dle.dev/problems/slug-invalid",
+              "https://docs.dle.dev/problems/unsafe-target",
+              "https://docs.dle.dev/problems/rate-limited",
+              "https://docs.dle.dev/problems/missing-default-rule",
+              "https://docs.dle.dev/problems/invalid-routing-rules",
+              "https://docs.dle.dev/problems/domain-not-verified",
+              "https://docs.dle.dev/problems/domain-taken",
+              "https://docs.dle.dev/problems/domain-in-use",
+              "https://docs.dle.dev/problems/idempotency-conflict",
+              "https://docs.dle.dev/problems/unauthorized",
+              "https://docs.dle.dev/problems/forbidden",
+              "https://docs.dle.dev/problems/claim-code-invalid",
+              "https://docs.dle.dev/problems/link-quarantined",
+              "https://docs.dle.dev/problems/dependency-unavailable",
+              "https://docs.dle.dev/problems/write-conflict",
+              "https://docs.dle.dev/problems/link-too-large",
+              "https://docs.dle.dev/problems/app-taken"
+            ],
             "type": [
               "null",
               "string"
-            ]
+            ],
+            "description": "A stable identifier for the kind of failure, and the member to branch on. One of: https://docs.dle.dev/problems/validation-failed, https://docs.dle.dev/problems/slug-taken, https://docs.dle.dev/problems/slug-invalid, https://docs.dle.dev/problems/unsafe-target, https://docs.dle.dev/problems/rate-limited, https://docs.dle.dev/problems/missing-default-rule, https://docs.dle.dev/problems/invalid-routing-rules, https://docs.dle.dev/problems/domain-not-verified, https://docs.dle.dev/problems/domain-taken, https://docs.dle.dev/problems/domain-in-use, https://docs.dle.dev/problems/idempotency-conflict, https://docs.dle.dev/problems/unauthorized, https://docs.dle.dev/problems/forbidden, https://docs.dle.dev/problems/claim-code-invalid, https://docs.dle.dev/problems/link-quarantined, https://docs.dle.dev/problems/dependency-unavailable, https://docs.dle.dev/problems/write-conflict, https://docs.dle.dev/problems/link-too-large, https://docs.dle.dev/problems/app-taken. A code may be added in a minor version; an existing one never changes meaning."
           },
           "title": {
             "type": [
@@ -5707,6 +5973,40 @@
         },
         "description": "The link an install was attributed to, reduced to what the client needs to navigate."
       },
+      "ResolveLinkRequestDto": {
+        "required": [
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The short URL delivered by the operating system, e.g. `https://go.example.com/aB3xK9pQ`."
+          },
+          "install_id": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Identifier the SDK generated and persisted for this installation, if available."
+          },
+          "platform": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Client platform: `ios`, `android`, `desktop` or `other`."
+          },
+          "app_version": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Host application version, for version scoped routing rules."
+          }
+        },
+        "description": "Body of `POST /v1/resolve-link`, called when an installed application is opened directly\r\nby an operating system Universal Link or App Link."
+      },
       "ResolveRequestDto": {
         "required": [
           "install_id",
@@ -5774,7 +6074,7 @@
                 "type": "null"
               },
               {
-                "description": "Recorded consent. Absent or negative consent disables every non-deterministic\r\n            strategy and suppresses storage of the signals (ePrivacy art. 5(3), §E.6.2).",
+                "description": "Recorded consent. Under a tenant in `full` mode, click-id linking of any kind -\r\n            the deterministic install referrer included - happens only when `attribution` is true;\r\n            absent or negative consent answers `match_type=none` with reason `consent_missing`\r\n            and a non-zero `expires_in`, so the SDK asks again once consent is recorded\r\n            (ePrivacy art. 5(3), §E.6.2). Device signals are stored only with it too.",
                 "$ref": "#/components/schemas/ConsentDto"
               }
             ]
@@ -5830,7 +6130,7 @@
           },
           "expires_in": {
             "type": "integer",
-            "description": "Seconds this result stays valid. Zero means it is final and must not be re-requested.",
+            "description": "Seconds this result stays valid. Zero means it is final and must not be re-requested;\r\n            a no-match answer given for want of consent carries the remaining install-referrer window\r\n            instead, and an SDK re-asks after it, or sooner once attribution consent is recorded.",
             "format": "int32"
           }
         },
@@ -7000,6 +7300,9 @@
     },
     {
       "name": "Keys"
+    },
+    {
+      "name": "Auth"
     },
     {
       "name": "Abuse triage"

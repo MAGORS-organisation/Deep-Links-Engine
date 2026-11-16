@@ -28,4 +28,5 @@ namespace Dle.Control.Features.Analytics;
 [JsonSerializable(typeof(TimeSeriesPoint))]
 [JsonSerializable(typeof(List<TimeSeriesPoint>))]
 [JsonSerializable(typeof(TenantExportManifest))]
+[JsonSerializable(typeof(InstallErasureResponse))]
 public sealed partial class AnalyticsJsonContext : JsonSerializerContext;

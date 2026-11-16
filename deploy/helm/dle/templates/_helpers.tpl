@@ -215,6 +215,7 @@ pre-install,pre-upgrade
 {{/* The data block shared by the release Secret and its hook-scoped copy. */}}
 {{- define "dle.secretData" -}}
 {{ .Values.secrets.keys.masterSecret }}: {{ required "secrets.masterSecret is required (at least 32 characters) unless secrets.existingSecret is set" .Values.secrets.masterSecret | quote }}
+{{ .Values.secrets.keys.edgeSecret }}: {{ required "secrets.edgeSecret is required (at least 32 characters, different from masterSecret) unless secrets.existingSecret is set" .Values.secrets.edgeSecret | quote }}
 {{ .Values.secrets.keys.postgresConnectionString }}: {{ include "dle.postgres.connectionString" . | quote }}
 {{- with (include "dle.postgres.readConnectionString" .) }}
 {{ $.Values.secrets.keys.postgresReadConnectionString }}: {{ . | quote }}
@@ -225,6 +226,29 @@ pre-install,pre-upgrade
 {{- with .Values.externalClickHouse.connectionString }}
 {{ $.Values.secrets.keys.clickHouseConnectionString }}: {{ . | quote }}
 {{- end }}
+{{- with .Values.secrets.metricsScrapeToken }}
+{{ $.Values.secrets.keys.metricsScrapeToken }}: {{ . | quote }}
+{{- end }}
+{{- end -}}
+
+{{/*
+dle.metricsEnv — pod `env` entries for GET /metrics. The chart turns the endpoint on only for its
+own ServiceMonitor, and the token comes from the Secret. Under the monitor the key is mandatory:
+a Secret without it stops the pod (CreateContainerConfigError) instead of serving an anonymous
+/metrics through the Ingress. Without the monitor the key stays optional. Pod `env` takes
+precedence over the ConfigMap, so config.extra cannot switch the endpoint off under the monitor.
+*/}}
+{{- define "dle.metricsEnv" -}}
+{{- if .Values.serviceMonitor.enabled }}
+- name: Dle__Telemetry__ExposePrometheusMetrics
+  value: "true"
+{{- end }}
+- name: Dle__Telemetry__PrometheusScrapeToken
+  valueFrom:
+    secretKeyRef:
+      name: {{ include "dle.secretName" . }}
+      key: {{ .Values.secrets.keys.metricsScrapeToken }}
+      optional: {{ not .Values.serviceMonitor.enabled }}
 {{- end -}}
 
 {{/* ---- configuration → environment --------------------------------------------------------- */}}

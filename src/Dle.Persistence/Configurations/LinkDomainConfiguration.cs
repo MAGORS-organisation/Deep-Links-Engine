@@ -77,6 +77,9 @@ public sealed class LinkDomainConfiguration : IEntityTypeConfiguration<LinkDomai
             .HasSentinel(true)
             .IsRequired();
 
+        builder.Property(d => d.OwnershipVerifiedAt)
+            .HasColumnName("ownership_verified_at");
+
         builder.Property(d => d.CreatedAt)
             .HasColumnName("created_at")
             .HasDefaultValueSql(PostgresConventions.NowDefault)

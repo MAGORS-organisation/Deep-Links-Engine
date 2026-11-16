@@ -56,6 +56,7 @@ app.MapResolve();
 app.MapWellKnown();
 app.MapQr();
 app.MapHealth();
+app.MapMetrics();
 
 await app.RunAsync();
 

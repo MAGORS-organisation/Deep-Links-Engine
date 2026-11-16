@@ -1,8 +1,10 @@
+using Dle.Control.Configuration;
 using Dle.Control.Features.Shared;
 using Dle.Control.Identity;
 using Dle.Control.Infrastructure;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 using Npgsql;
 
@@ -24,20 +26,27 @@ public static class ManageDomains
 
     /// <summary>Lists the tenant's domains.</summary>
     /// <param name="domains">Domain storage.</param>
+    /// <param name="ownership">DNS TXT challenge generator.</param>
+    /// <param name="controlOptions">Control-plane options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The domains, ordered by host.</returns>
     public static async Task<IResult> ListAsync(
         DomainRepository domains,
+        DomainOwnershipVerifier ownership,
+        IOptions<DleControlOptions> controlOptions,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(domains);
+        ArgumentNullException.ThrowIfNull(ownership);
+        ArgumentNullException.ThrowIfNull(controlOptions);
 
+        bool includeTxt = controlOptions.Value.RequireDomainOwnershipVerification;
         IReadOnlyList<LinkDomain> rows = await domains.ListAsync(cancellationToken);
         List<DomainResponse> items = new(rows.Count);
 
         foreach (LinkDomain row in rows)
         {
-            items.Add(Project(row));
+            items.Add(Project(row, includeTxt ? ownership : null));
         }
 
         return TypedResults.Ok(new PagedResponse<DomainResponse>
@@ -50,20 +59,26 @@ public static class ManageDomains
     /// <summary>Reads one domain.</summary>
     /// <param name="id">The domain identifier.</param>
     /// <param name="domains">Domain storage.</param>
+    /// <param name="ownership">DNS TXT challenge generator.</param>
+    /// <param name="controlOptions">Control-plane options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>200 with the domain, or 404.</returns>
     public static async Task<IResult> GetAsync(
         Guid id,
         DomainRepository domains,
+        DomainOwnershipVerifier ownership,
+        IOptions<DleControlOptions> controlOptions,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(domains);
+        ArgumentNullException.ThrowIfNull(ownership);
+        ArgumentNullException.ThrowIfNull(controlOptions);
 
         LinkDomain? domain = await domains.GetAsync(id, cancellationToken);
 
         return domain is null
             ? DleProblem.NotFound("There is no domain with that identifier.")
-            : TypedResults.Ok(Project(domain));
+            : TypedResults.Ok(Project(domain, controlOptions.Value.RequireDomainOwnershipVerification ? ownership : null));
     }
 
     /// <summary>Registers a domain (FR-145).</summary>
@@ -73,6 +88,9 @@ public static class ManageDomains
     /// <param name="tenants">Tenant storage, read for the consent mode the override may not widen.</param>
     /// <param name="audit">The administrative audit trail (FR-246).</param>
     /// <param name="cache">Drops any cached configuration the edge holds for the host.</param>
+    /// <param name="ownership">DNS TXT challenge generator.</param>
+    /// <param name="controlOptions">Control-plane options.</param>
+    /// <param name="clock">Time provider.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>201 with the domain, or a problem document.</returns>
     public static async Task<IResult> CreateAsync(
@@ -82,6 +100,9 @@ public static class ManageDomains
         TenantRepository tenants,
         AuditLogWriter audit,
         ILinkCacheInvalidator cache,
+        DomainOwnershipVerifier ownership,
+        IOptions<DleControlOptions> controlOptions,
+        TimeProvider clock,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -90,6 +111,12 @@ public static class ManageDomains
         ArgumentNullException.ThrowIfNull(tenants);
         ArgumentNullException.ThrowIfNull(audit);
         ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(ownership);
+        ArgumentNullException.ThrowIfNull(controlOptions);
+        ArgumentNullException.ThrowIfNull(clock);
+
+        DleControlOptions config = controlOptions.Value;
+        bool requireOwnership = config.RequireDomainOwnershipVerification;
 
         DleCaller caller = http.RequireDleCaller();
 
@@ -116,6 +143,21 @@ public static class ManageDomains
             return consentFailure!;
         }
 
+        string? defaultLanguage = request.DefaultLanguage?.Trim().ToLowerInvariant();
+
+        if (!string.IsNullOrEmpty(defaultLanguage)
+            && (defaultLanguage.Length is < 2 or > 3 || !defaultLanguage.All(char.IsAsciiLetterLower)))
+        {
+            return DleProblem.Validation(
+                "default_language",
+                "The default language is a primary language subtag such as en or sk.");
+        }
+
+        if (!ControlJson.TryValidateOgMeta(request.DefaultOg, out string? ogError))
+        {
+            return DleProblem.Validation("default_og.image_url", ogError);
+        }
+
         LinkDomain domain = new()
         {
             TenantId = caller.TenantId,
@@ -123,8 +165,15 @@ public static class ManageDomains
             IsDefault = request.IsDefault,
             ConsentModeOverride = consentOverride,
             DefaultOg = ControlJson.WriteOgMeta(request.DefaultOg),
-            IsActive = true,
+            IsActive = !requireOwnership,
         };
+
+        if (!string.IsNullOrEmpty(defaultLanguage))
+        {
+            // The edge reads the interstitial language of a host from the branding document
+            // (DapperDomainConfigStore). The value is two or three ASCII letters, checked above.
+            domain.Branding = "{\"default_language\":\"" + defaultLanguage + "\"}";
+        }
 
         try
         {
@@ -132,13 +181,34 @@ public static class ManageDomains
         }
         catch (DbUpdateException exception) when (IsUniqueViolation(exception))
         {
-            // The host is taken. The answer says so without saying by whom: which tenant holds a host
-            // is not the caller's business, and a message that revealed it would be a disclosure
-            // dressed up as a validation error.
-            return DleProblem.Conflict(
-                ProblemCodes.DomainTaken,
-                "The host is already registered.",
-                "That host is already registered on this instance. A host serves exactly one tenant.");
+            bool reclaimed = false;
+            if (requireOwnership)
+            {
+                DateTimeOffset cutoff = clock.GetUtcNow().AddHours(-config.UnverifiedDomainTtlHours);
+                if (await domains.ReclaimExpiredUnverifiedAsync(host, cutoff, cancellationToken) > 0)
+                {
+                    try
+                    {
+                        await domains.AddAsync(domain, cancellationToken);
+                        reclaimed = true;
+                    }
+                    catch (DbUpdateException)
+                    {
+                        reclaimed = false;
+                    }
+                }
+            }
+
+            if (!reclaimed)
+            {
+                // The host is taken. The answer says so without saying by whom: which tenant holds a host
+                // is not the caller's business, and a message that revealed it would be a disclosure
+                // dressed up as a validation error.
+                return DleProblem.Conflict(
+                    ProblemCodes.DomainTaken,
+                    "The host is already registered.",
+                    "That host is already registered on this instance. A host serves exactly one tenant.");
+            }
         }
 
         await AdministrativeAudit.RecordAsync(
@@ -154,7 +224,7 @@ public static class ManageDomains
 
         return TypedResults.Created(
             string.Create(CultureInfo.InvariantCulture, $"/api/v1/domains/{domain.Id}"),
-            Project(domain));
+            Project(domain, requireOwnership ? ownership : null));
     }
 
     /// <summary>Changes a domain.</summary>
@@ -165,6 +235,8 @@ public static class ManageDomains
     /// <param name="tenants">Tenant storage, read for the consent mode the override may not widen.</param>
     /// <param name="audit">The administrative audit trail (FR-246).</param>
     /// <param name="cache">Drops the cached configuration the edge holds for the host.</param>
+    /// <param name="ownership">DNS TXT challenge generator.</param>
+    /// <param name="controlOptions">Control-plane options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>200 with the domain, or a problem document.</returns>
     public static async Task<IResult> UpdateAsync(
@@ -175,6 +247,8 @@ public static class ManageDomains
         TenantRepository tenants,
         AuditLogWriter audit,
         ILinkCacheInvalidator cache,
+        DomainOwnershipVerifier ownership,
+        IOptions<DleControlOptions> controlOptions,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -183,6 +257,11 @@ public static class ManageDomains
         ArgumentNullException.ThrowIfNull(tenants);
         ArgumentNullException.ThrowIfNull(audit);
         ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(ownership);
+        ArgumentNullException.ThrowIfNull(controlOptions);
+
+        DleControlOptions config = controlOptions.Value;
+        bool requireOwnership = config.RequireDomainOwnershipVerification;
 
         DleCaller caller = http.RequireDleCaller();
 
@@ -214,11 +293,26 @@ public static class ManageDomains
             domain.ConsentModeOverride = consentOverride;
         }
 
+        if (request.IsActive == true && requireOwnership && domain.OwnershipVerifiedAt is null)
+        {
+            return DleProblem.Conflict(
+                ProblemCodes.DomainNotVerified,
+                "Domain ownership has not been verified.",
+                $"Publish a DNS TXT record at {DomainOwnershipVerifier.GetTxtHost(domain.Host)} "
+                + $"with value '{ownership.GetExpectedTxtValue(domain.TenantId, domain.Host)}' "
+                + "and call POST /api/v1/domains/{id}/verify-ownership before activating.");
+        }
+
         domain.IsDefault = request.IsDefault ?? domain.IsDefault;
         domain.IsActive = request.IsActive ?? domain.IsActive;
 
         if (request.DefaultOg is not null)
         {
+            if (!ControlJson.TryValidateOgMeta(request.DefaultOg, out string? ogError))
+            {
+                return DleProblem.Validation("default_og.image_url", ogError);
+            }
+
             domain.DefaultOg = ControlJson.WriteOgMeta(request.DefaultOg);
         }
 
@@ -238,7 +332,7 @@ public static class ManageDomains
         // ignored for as long as the entry lives (§E.6.2).
         await cache.InvalidateHostAsync(domain.Host, cancellationToken);
 
-        return TypedResults.Ok(Project(domain));
+        return TypedResults.Ok(Project(domain, requireOwnership ? ownership : null));
     }
 
     /// <summary>Removes a domain.</summary>
@@ -306,8 +400,9 @@ public static class ManageDomains
 
     /// <summary>Projects a stored domain.</summary>
     /// <param name="domain">The stored row.</param>
+    /// <param name="ownership">Optional DNS TXT challenge generator when ownership verification is enabled.</param>
     /// <returns>The representation.</returns>
-    internal static DomainResponse Project(LinkDomain domain) => new()
+    internal static DomainResponse Project(LinkDomain domain, DomainOwnershipVerifier? ownership = null) => new()
     {
         Id = domain.Id,
         TenantId = domain.TenantId,
@@ -319,6 +414,9 @@ public static class ManageDomains
         AssetlinksStatus = domain.AssetlinksStatus,
         LastVerifiedAt = domain.LastVerifiedAt,
         ConsentModeOverride = domain.ConsentModeOverride,
+        OwnershipVerifiedAt = domain.OwnershipVerifiedAt,
+        OwnershipTxtHost = ownership is null ? null : DomainOwnershipVerifier.GetTxtHost(domain.Host),
+        OwnershipTxtValue = ownership is null ? null : ownership.GetExpectedTxtValue(domain.TenantId, domain.Host),
         CreatedAt = domain.CreatedAt,
     };
 

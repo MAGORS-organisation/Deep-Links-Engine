@@ -90,12 +90,31 @@ public sealed class DleControlOptions
     /// </summary>
     /// <remarks>
     /// Two replicas sharing one node identifier can mint the same identifier in the same
-    /// millisecond, so a multi-replica deployment gives each replica its own — usually from the
-    /// ordinal of the stateful set or from the replica index. A single-process deployment can leave
-    /// it at zero.
+    /// millisecond, and the insert that loses is reported as a slug that is already taken. Left
+    /// unset, the identifier is derived from the host name (<see cref="DeriveNodeId"/>), which is the
+    /// pod name under Kubernetes and the container id under compose, so replicas differ without any
+    /// configuration. Set it explicitly, one value per replica, to rule out the remaining
+    /// one-in-1024 chance of two host names hashing alike.
     /// </remarks>
     [Range(0, 1023)]
-    public int NodeId { get; set; }
+    public int? NodeId { get; set; }
+
+    /// <summary>Maps a host name onto the 0 to 1023 node identifier range, stably.</summary>
+    /// <param name="hostName">The host name of this process.</param>
+    /// <returns>The same value for the same name, in every process and on every platform.</returns>
+    public static int DeriveNodeId(string? hostName)
+    {
+        // FNV-1a over the UTF-16 code units. string.GetHashCode is randomised per process, which
+        // would defeat the point of a stable identifier.
+        uint hash = 2166136261;
+
+        foreach (char c in hostName ?? string.Empty)
+        {
+            hash = (hash ^ c) * 16777619;
+        }
+
+        return (int)(hash % 1024);
+    }
 
     /// <summary>Whether the bundled administration single-page application is served.</summary>
     /// <remarks>
@@ -104,8 +123,40 @@ public sealed class DleControlOptions
     /// </remarks>
     public bool ServeAdminSpa { get; set; } = true;
 
-    /// <summary>File served for any SPA route that is neither an API path nor a real file.</summary>
+    /// <summary>File served under <c>wwwroot</c> for any SPA route that is neither an API path nor a real file.</summary>
     [Required]
     [StringLength(128, MinimumLength = 1)]
-    public string SpaIndexFile { get; set; } = "index.html";
+    public string SpaIndexFile { get; set; } = "admin/index.html";
+
+    /// <summary>
+    /// Browser origins allowed to call the administration API (<c>/api/*</c>) cross-origin. Empty by
+    /// default.
+    /// </summary>
+    /// <remarks>
+    /// The bundled console is served by the control plane itself and needs no entry here. Only a
+    /// console hosted elsewhere — a developer's <c>http://localhost:5173</c>, say — does. The SDK
+    /// endpoints under <c>/v1</c> are a different matter: they are called from the customer's own web
+    /// pages, authenticate with a publishable key in a header, never with a cookie, and therefore allow
+    /// any origin regardless of this list.
+    /// </remarks>
+    public IList<string> AdminCorsOrigins { get; } = [];
+
+    /// <summary>
+    /// Whether the OpenAPI document and Scalar API reference endpoints are exposed outside the
+    /// <c>Development</c> environment. Defaults to <see langword="false"/>.
+    /// </summary>
+    public bool ExposeApiDocs { get; set; }
+
+    /// <summary>
+    /// When <see langword="true"/> (multi-tenant clusters), newly registered domains stay inactive
+    /// (<c>IsActive = false</c>) until DNS TXT ownership (<c>_dle-verify.&lt;host&gt;</c>) is
+    /// verified. Defaults to <see langword="false"/> for single-tenant self-hosted deployments.
+    /// </summary>
+    public bool RequireDomainOwnershipVerification { get; set; }
+
+    /// <summary>
+    /// Hours before an unverified inactive domain registration may be reclaimed by another tenant.
+    /// </summary>
+    [Range(1, 720)]
+    public int UnverifiedDomainTtlHours { get; set; } = 24;
 }

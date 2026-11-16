@@ -24,7 +24,14 @@ public sealed partial class SpecTraitTests
     [Fact]
     public void EverySpecTraitOnATest_NamesARequirementTheSpecificationDefines()
     {
-        string specification = File.ReadAllText(Path.Combine(RepositoryLayout.Root, "docs", "zadanie.md"));
+        string specPath = Path.Combine(RepositoryLayout.Root, "docs", "zadanie.md");
+        string specIdsPath = Path.Combine(RepositoryLayout.Root, "tests", "Dle.ContractTests", "Traceability", "spec-ids.txt");
+        string? specification = File.Exists(specPath) ? File.ReadAllText(specPath) : null;
+        HashSet<string> knownIds = new(
+            File.ReadLines(specIdsPath)
+                .Select(static line => line.Trim())
+                .Where(static line => line.Length > 0 && !line.StartsWith('#')),
+            StringComparer.Ordinal);
         string testsRoot = Path.Combine(RepositoryLayout.Root, "tests");
 
         SortedSet<string> missing = new(StringComparer.Ordinal);
@@ -52,7 +59,11 @@ public sealed partial class SpecTraitTests
 
                 _ = checkedIdentifiers.Add(identifier);
 
-                if (!specification.Contains($"| {identifier} |", StringComparison.Ordinal))
+                bool defined = specification is not null
+                    ? specification.Contains($"| {identifier} |", StringComparison.Ordinal) && knownIds.Contains(identifier)
+                    : knownIds.Contains(identifier);
+
+                if (!defined)
                 {
                     _ = missing.Add($"{identifier} (first seen in {Path.GetFileName(file)})");
                 }
@@ -62,8 +73,8 @@ public sealed partial class SpecTraitTests
         Assert.True(checkedIdentifiers.Count > 0, "no Spec traits were found at all, so this test is checking nothing");
         Assert.True(
             missing.Count == 0,
-            "These Spec traits name requirements docs/zadanie.md does not define, so a report grouped "
-            + "by requirement credits the wrong one:\n  " + string.Join("\n  ", missing));
+            "These Spec traits name requirements missing from the specification baseline (docs/zadanie.md or spec-ids.txt), "
+            + "so a report grouped by requirement credits the wrong one:\n  " + string.Join("\n  ", missing));
     }
 
     [GeneratedRegex(@"Trait\(""Spec"",\s*""(?<id>[^""]+)""\)")]

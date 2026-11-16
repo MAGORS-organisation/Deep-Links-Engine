@@ -7,7 +7,7 @@
 
 Accepted
 
-**Status note (2026-09-24).** Abuse quarantine does not invalidate the edge cache: a quarantined link keeps redirecting to its old target for up to `L2Minutes + L1Seconds` (10 min 30 s by default). See [Known gaps](../../README.md#known-gaps).
+**Status note (2026-09-24, superseded 2026-10-11).** Abuse quarantine and release now invalidate the link and its tenant in Valkey and publish the invalidation to every edge's in-process cache; if the message is lost, an edge serves the old snapshot for up to `L1Seconds`.
 
 ## Date
 

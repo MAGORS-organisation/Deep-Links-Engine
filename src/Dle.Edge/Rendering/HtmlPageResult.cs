@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Buffers.Text;
 using System.Globalization;
 using System.Security.Cryptography;
@@ -28,6 +29,8 @@ namespace Dle.Edge.Rendering;
 internal abstract class HtmlPageResult : IResult
 {
     private const int NonceBytes = 16;
+
+    private static readonly SearchValues<char> OriginDelimiterChars = SearchValues.Create(";,'\r\n\t ");
 
     private readonly SortedSet<string> _imageSources = new(StringComparer.Ordinal);
 
@@ -164,20 +167,32 @@ internal abstract class HtmlPageResult : IResult
             return;
         }
 
-        if (url.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        if (SafeUrl.ImageDataUri(url) is not null)
         {
             _ = _imageSources.Add("data:");
             return;
         }
 
-        if (Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed)
-            && (parsed.Scheme == Uri.UriSchemeHttps || parsed.Scheme == Uri.UriSchemeHttp))
+        if (SafeUrl.Web(url) is string safeUrl
+            && Uri.TryCreate(safeUrl, UriKind.Absolute, out Uri? parsed)
+            && string.IsNullOrEmpty(parsed.UserInfo)
+            && !string.IsNullOrEmpty(parsed.Host))
         {
-            _ = _imageSources.Add(parsed.GetLeftPart(UriPartial.Authority));
+            string origin = parsed.GetComponents(UriComponents.SchemeAndServer, UriFormat.UriEscaped);
+
+            if (!string.IsNullOrEmpty(origin)
+                && System.Text.Ascii.IsValid(origin)
+                && !origin.AsSpan().ContainsAny(OriginDelimiterChars))
+            {
+                _ = _imageSources.Add(origin);
+            }
         }
     }
 
     private static string CreateNonce() => Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(NonceBytes));
+
+    /// <summary>The CSP <c>form-action</c> directive value for this document.</summary>
+    protected virtual string FormAction => "'none'";
 
     /// <summary>
     /// Builds the policy for the page that has just been rendered.
@@ -192,7 +207,9 @@ internal abstract class HtmlPageResult : IResult
     /// request. §E.8 S-04.
     /// </remarks>
     private string BuildContentSecurityPolicy(string nonce) => string.Concat(
-        "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; ",
+        "default-src 'none'; base-uri 'none'; form-action ",
+        FormAction,
+        "; frame-ancestors 'none'; ",
         "img-src 'self'",
         _imageSources.Count == 0 ? string.Empty : " " + string.Join(' ', _imageSources),
         "; style-src 'self' 'nonce-" + nonce + "'; script-src 'nonce-" + nonce + "'; ",

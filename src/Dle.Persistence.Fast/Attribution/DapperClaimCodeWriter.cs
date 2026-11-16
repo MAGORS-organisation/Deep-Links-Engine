@@ -15,10 +15,21 @@ namespace Dle.Persistence.Fast.Attribution;
 /// </summary>
 public sealed class DapperClaimCodeWriter : IClaimCodeWriter
 {
+    // A code is six letters, so the same code is eventually issued twice. When the earlier row is
+    // spent (expired or consumed) the new click takes it over; skipping the insert instead would
+    // leave the person who was just shown this code holding one that redeems as "expired" or as
+    // somebody else's click. Only a row that is still live is left alone.
     private const string InsertSql = """
         INSERT INTO claim_codes (id, tenant_id, code_hash, click_id, link_id, expires_at, created_at)
         VALUES (@id, @tenant_id, @code_hash, @click_id, @link_id, @expires_at, @created_at)
-        ON CONFLICT (tenant_id, code_hash) DO NOTHING
+        ON CONFLICT (tenant_id, code_hash) DO UPDATE
+            SET click_id = EXCLUDED.click_id,
+                link_id = EXCLUDED.link_id,
+                expires_at = EXCLUDED.expires_at,
+                created_at = EXCLUDED.created_at,
+                consumed_at = NULL
+          WHERE claim_codes.consumed_at IS NOT NULL
+             OR claim_codes.expires_at <= EXCLUDED.created_at
         """;
 
     private readonly NpgsqlDataSource _dataSource;

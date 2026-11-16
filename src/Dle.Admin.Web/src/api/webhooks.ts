@@ -3,6 +3,7 @@ import type {
   CreateWebhookRequest,
   TestWebhookResponse,
   WebhookCreatedResponse,
+  WebhookDeliveryReplayResponse,
   WebhookDeliveryResponse,
   WebhookResponse,
 } from './types';
@@ -36,5 +37,17 @@ export const webhooks = {
     signal?: AbortSignal,
   ): Promise<WebhookDeliveryResponse[]> {
     return api(`${base}/deliveries`, { query: { subscriptionId, limit, includePayload }, signal });
+  },
+
+  replayDelivery(id: string): Promise<WebhookDeliveryReplayResponse> {
+    return api(`${base}/deliveries/${encodeURIComponent(id)}/replay`, { method: 'POST', idempotent: false });
+  },
+
+  replayDead(subscriptionId?: string, limit?: number): Promise<WebhookDeliveryReplayResponse> {
+    return api(`${base}/deliveries/replay-dead`, {
+      method: 'POST',
+      query: { subscriptionId, limit },
+      idempotent: false,
+    });
   },
 };

@@ -123,6 +123,7 @@ public static class FastPersistenceServiceCollectionExtensions
         services.TryAddSingleton<IDomainConfigStore, DapperDomainConfigStore>();
         services.TryAddSingleton<IClickLookup, DapperClickLookup>();
         services.TryAddSingleton<IClaimCodeWriter, DapperClaimCodeWriter>();
+        services.TryAddSingleton<ILoginHintStore, DapperLoginHintStore>();
     }
 
     /// <summary>
@@ -176,9 +177,27 @@ public static class FastPersistenceServiceCollectionExtensions
             // HybridCache hides a dead L2 from the request path on purpose, so the only thing that
             // can report the shared cache as down is a probe on a clock (§D.6, cache_l2_down).
             services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, DistributedCacheProbe>());
+
+            services.AddDleValkeyTokenReplayGuard();
         }
 
         services.TryAddSingleton<ILinkCacheInvalidator, LinkCacheInvalidator>();
+        services.TryAddSingleton<ValkeyRateLimitStore>();
+    }
+
+    /// <summary>
+    /// Registers <see cref="ValkeyTokenReplayGuard"/> as the shared <see cref="ITokenReplayGuard"/>
+    /// when Valkey is configured, overriding the in-memory default registered by <c>AddDleCrypto</c>.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The same collection, for chaining.</returns>
+    public static IServiceCollection AddDleValkeyTokenReplayGuard(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.Replace(ServiceDescriptor.Singleton<ITokenReplayGuard, ValkeyTokenReplayGuard>());
+        return services;
     }
 
     private static NpgsqlDataSource BuildDataSource(

@@ -128,6 +128,12 @@ public sealed class LinkWriteService
     private readonly LinkRepository _links;
     private readonly DomainRepository _domains;
     private readonly SlugSequenceAllocator _sequence;
+    /// <summary>
+    /// Counter values tried before a generated slug is given up on. Each attempt collides only with
+    /// probability (links on the domain) / (generated slug space), so eight is far more than enough.
+    /// </summary>
+    private const int MaxGeneratedSlugAttempts = 8;
+
     private readonly ISlugGenerator _slugs;
     private readonly IUrlSafetyChecker _safety;
     private readonly SnowflakeIdGenerator _ids;
@@ -224,6 +230,12 @@ public sealed class LinkWriteService
         ValidateTags(tags, fieldErrors);
         ValidateWindow(request.StartsAt, request.ExpiresAt, fieldErrors);
         ValidateDeeplinkPath(deeplinkPath, "deeplink_path", fieldErrors);
+
+        OgMeta? effectiveOg = request.Og ?? template?.Og;
+        if (!ControlJson.TryValidateOgMeta(effectiveOg, out string? ogError))
+        {
+            fieldErrors["og.image_url"] = [ogError];
+        }
 
         if (fieldErrors.Count > 0)
         {
@@ -366,6 +378,18 @@ public sealed class LinkWriteService
         if (request.DeeplinkPath is not null)
         {
             ValidateDeeplinkPath(request.DeeplinkPath, "deeplink_path", fieldErrors);
+        }
+
+        if (request.Og is not null && !ControlJson.TryValidateOgMeta(request.Og, out string? ogError))
+        {
+            fieldErrors["og.image_url"] = [ogError];
+        }
+
+        if (request.TargetUrl is not null && string.IsNullOrWhiteSpace(request.TargetUrl))
+        {
+            // An empty target is not "no change" and cannot be stored either: the rules would keep
+            // serving the old URL while the link itself showed none.
+            fieldErrors["target_url"] = ["A link needs a target URL; it cannot be cleared."];
         }
 
         if (fieldErrors.Count > 0)
@@ -742,10 +766,17 @@ public sealed class LinkWriteService
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The settled slug, or the failure that prevents one being settled.</returns>
     /// <remarks>
-    /// A generated slug needs no collision check at all: the counter value is unique and the
-    /// permutation is a bijection, so the slug is unique by construction. Only a custom slug is
-    /// looked up, and the unique index remains the final arbiter for the race between the check and
-    /// the insert.
+    /// <para>
+    /// A generated slug is unique as a byte string by construction — the counter value is unique and
+    /// the permutation is a bijection — but the slug column is <c>citext</c>, so two generated slugs
+    /// that differ only in letter case are the same slug to the unique index. At a million links on
+    /// one domain the odds of such a pair are about one in four (ADR-0007). So a generated slug is
+    /// looked up like a custom one, and a case-insensitive collision simply takes the next counter
+    /// value; a handful of attempts makes a failure astronomically unlikely.
+    /// </para>
+    /// <para>
+    /// The unique index remains the final arbiter for the race between the check and the insert.
+    /// </para>
     /// </remarks>
     private async Task<(string? Slug, LinkWriteOutcome? Failure)> ResolveSlugAsync(
         string? requested,
@@ -754,8 +785,20 @@ public sealed class LinkWriteService
     {
         if (string.IsNullOrWhiteSpace(requested))
         {
-            long sequence = await _sequence.NextAsync(cancellationToken);
-            return (_slugs.FromSequence(sequence), null);
+            for (int attempt = 0; attempt < MaxGeneratedSlugAttempts; attempt++)
+            {
+                long sequence = await _sequence.NextAsync(cancellationToken);
+                string generated = _slugs.FromSequence(sequence);
+
+                if (!await _links.SlugExistsAsync(domainId, generated, cancellationToken))
+                {
+                    return (generated, null);
+                }
+            }
+
+            return (null, LinkWriteOutcome.Failure(
+                LinkWriteError.SlugTaken,
+                "No free generated slug was found on this domain; retry the request."));
         }
 
         if (!SlugPolicy.TryNormalize(requested, out string slug))
@@ -856,23 +899,11 @@ public sealed class LinkWriteService
         string field,
         Dictionary<string, string[]> errors)
     {
-        if (string.IsNullOrEmpty(deeplinkPath))
-        {
-            return;
-        }
+        string? error = RoutingRuleValidator.ValidateDeeplinkPath(deeplinkPath);
 
-        bool looksAbsolute =
-            deeplinkPath.Contains("://", StringComparison.Ordinal)
-            || deeplinkPath.StartsWith("//", StringComparison.Ordinal)
-            || deeplinkPath.StartsWith(@"\\", StringComparison.Ordinal);
-
-        if (looksAbsolute)
+        if (error is not null)
         {
-            errors[field] =
-            [
-                "The deep link path must be a path such as \"/product/123\", not an absolute or "
-                + "protocol-relative URL.",
-            ];
+            errors[field] = [error];
         }
     }
 

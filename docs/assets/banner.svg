@@ -116,9 +116,9 @@
 
     <!-- Badges Row -->
     <g transform="translate(0, 186)" filter="url(#badgeShadow)">
-      <!-- Badge 1: .NET 10 -->
+      <!-- Badge 1: .NET 11 -->
       <rect x="0" y="0" width="102" height="30" rx="6" fill="#1e1e38" stroke="#6366f1" stroke-width="1" stroke-opacity="0.5" />
-      <text x="12" y="19" font-family="system-ui, sans-serif" font-size="12" font-weight="650" fill="#a5b4fc">⚡ .NET 10 LTS</text>
+      <text x="12" y="19" font-family="system-ui, sans-serif" font-size="12" font-weight="650" fill="#a5b4fc">⚡ .NET 11 STS</text>
 
       <!-- Badge 2: Postgres & Valkey -->
       <rect x="112" y="0" width="168" height="30" rx="6" fill="#0f2338" stroke="#0284c7" stroke-width="1" stroke-opacity="0.5" />

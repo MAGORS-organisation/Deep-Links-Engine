@@ -49,7 +49,7 @@ jobs:
           cache-dependency-path: src/Dle.Admin.Web/package-lock.json
 
       - name: Install (clean, from the lock file)
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Lint (zero warnings)
         run: npm run lint

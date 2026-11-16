@@ -87,7 +87,24 @@ public sealed class DleOidcOptions
     [StringLength(128, MinimumLength = 1)]
     public string TenantClaim { get; set; } = "dle_tenant";
 
+    /// <summary>
+    /// Tenant (identifier or slug) assigned to a token that carries no <see cref="TenantClaim"/>.
+    /// Empty by default.
+    /// </summary>
+    /// <remarks>
+    /// Meant for a single-organisation deployment whose identity provider cannot emit a tenant claim.
+    /// It is an explicit opt-in: without it such a token establishes no tenant and is refused. It is
+    /// never implied from <c>Dle:Control:InstanceTenantId</c> — that would hand every account of a
+    /// shared identity provider the operator tenant.
+    /// </remarks>
+    [StringLength(128)]
+    public string? DefaultTenant { get; set; }
+
     /// <summary>Claim carrying the role of the signed-in operator.</summary>
+    /// <remarks>
+    /// Only this claim is read, and only the values <c>owner</c>, <c>admin</c>, <c>editor</c> and
+    /// <c>viewer</c> (case-insensitive) are accepted; anything else grants no role.
+    /// </remarks>
     [Required]
     [StringLength(128, MinimumLength = 1)]
     public string RoleClaim { get; set; } = "dle_role";

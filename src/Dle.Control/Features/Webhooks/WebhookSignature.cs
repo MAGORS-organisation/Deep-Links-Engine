@@ -121,7 +121,7 @@ public static class WebhookSignature
     /// from it.
     /// </para>
     /// <para>
-    /// The comparison is <see cref="CryptographicOperations.FixedTimeEquals"/>. An equality
+    /// The comparison is <see cref="CryptographicOperations.FixedTimeEquals(ReadOnlySpan{byte}, ReadOnlySpan{byte})"/>. An equality
     /// comparison on a MAC leaks it one byte at a time to anyone who can measure the response
     /// (SHARED-KERNEL §17.6, T-17).
     /// </para>

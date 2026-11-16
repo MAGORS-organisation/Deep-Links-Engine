@@ -22,11 +22,13 @@ Destinations must be public `https` hosts; private and link-local addresses are 
 
 | Event | When | `data` carries |
 |---|---|---|
-| `attribution.created` | `POST /v1/resolve` produced a match (any `match_type` except `none`) | `install_id`, `click_id`, `link_id`, `match_type`, `confidence`, `platform`, campaign / UTM keys |
-| `link.created`, `link.updated`, `link.archived`, `link.deleted`, `link.bulk_imported` | Link lifecycle | `link_id`, `slug`, `host`, `version` |
-| `link.quarantined`, `link.released` | Abuse pipeline decisions | `link_id`, `reason` |
-| `domain.created`, `domain.updated`, `domain.deleted`, `domain.verified`, `domain.verification_failed` | Domain lifecycle and the nightly verifier | `domain_id`, `host`, failing check codes |
-| `webhook.created`, `webhook.deactivated`, `webhook.test` | Subscription lifecycle; `test` is what `POST /webhooks/{id}/test` sends | `subscription_id` |
+| `attribution.created` | `POST /v1/resolve` produced a match (any `match_type` except `none`) | `install_id`, `app_id`, `match_type`, `confidence` (two decimals, as a string), and `click_id` and `link_id` when the match has them |
+| `link.quarantined`, `link.released` | Abuse pipeline decisions | `link_id`, `reason`, `decided_at` |
+| `domain.verification_failed` | The nightly verifier found a failing check | `domain_id`, `host`, failing check codes, `takeover_risk` |
+| `webhook.test` | What `POST /webhooks/{id}/test` sends | `subscription_id`, `message` |
+| `link.created`, `link.updated` | **Reserved.** A subscription may name them, but nothing is delivered for them yet | — |
+
+These are all the event types. A subscription that names any other is refused with a validation error.
 
 Payload values are pseudonymous by design (a `click_id`, never an IP); what a receiver can re-identify decides whether it holds personal data ([privacy.md](../compliance/privacy.md#the-legal-frame-the-design-rests-on)).
 
@@ -47,7 +49,7 @@ User-Agent: dle-webhooks/1
 |---|---|
 | `t` | Unix seconds when the delivery was signed |
 | `v1` | Base64 (standard alphabet, padded) of `HMAC-SHA256(secret, signing_input)` — the symmetric slot; `secret` is the subscription secret **base64-decoded** (the 32 raw bytes, not the string you were shown) |
-| `v2` | Base64 of `Ed25519_sign(signing_input)` with the instance's webhook key — the asymmetric slot, verifiable by a third party without the secret; **omitted** when the deployment publishes no webhook key |
+| `v2` | Base64 of `Ed25519_sign(signing_input)` with the instance's webhook key — the asymmetric slot, verifiable by a third party without the secret. If no webhook signing key is available the delivery is not sent: it is recorded as unsendable and dead-lettered |
 | `kid` | Identifier of the key behind `v2`, resolvable in JWKS |
 | `DLE-Alg` | Algorithms in use, e.g. `HS256+Ed25519`; a future `+MLDSA65` announces the `v3` slot |
 
@@ -169,16 +171,16 @@ The key does not rotate. Automatic key rotation is not implemented, and `Dle:Cry
 
 | Setting (`Dle:Webhooks:*`) | Default | Meaning |
 |---|---|---|
-| `MaxAttempts` | 8 | Attempts before dead-lettering |
-| `BaseDelaySeconds` | 5 | First retry delay; each attempt doubles: 5, 10, 20, 40, 80, 160, 320, 640 s (≈ 21 minutes in total) |
+| `MaxAttempts` | 8 | Attempts before dead-lettering (set in `appsettings.json`; the built-in default without it is 6) |
+| `BaseDelaySeconds` | 5 | First retry delay; each attempt doubles: with 8 attempts the 7 delays are 5, 10, 20, 40, 80, 160, 320 s (≈ 10.5 minutes in total) |
 | `MaxDelaySeconds` | 3600 | Cap on a single delay |
 | `JitterRatio` | 0.2 | ±20 % randomisation to avoid thundering herds |
 | `TimeoutSeconds` / `ConnectTimeoutSeconds` | 10 / 5 | Per attempt |
 | `BatchSize`, `PollIntervalSeconds` | 50 / 5 | Outbox worker cadence |
 
-What counts as success: any `2xx`. `3xx` is **not** followed. `4xx` other than `408` and `429` is retried too — a receiver that is temporarily misconfigured should not lose events — until `MaxAttempts` is spent.
+What counts as success: any `2xx`. `3xx` is **not** followed. `408`, `429` and `5xx` are retried until `MaxAttempts` is spent. Any other `4xx` (and any `3xx`) is **not** retried: the delivery is dead-lettered immediately.
 
-After the last attempt the delivery is **dead-lettered**: it stays in `GET /api/v1/webhooks/deliveries` with `status: dead`, `attempt`, `response_code`, `last_error` and (with `includePayload=true`) the full `payload`, and the instance-wide gauge `dle_webhook_dlq_size` goes above zero — which deserves an alert, though no alert rule ships ([§C.6](../zadanie.md#c6-pozorovateľnosť), [operations/runbook.md](../operations/runbook.md), [Known gaps](../../README.md#known-gaps)). There is no replay endpoint and no console action: a dead-lettered delivery is not sent again, and recovering it means working from the stored payload.
+After the last attempt, or a response that is not retried, the delivery is **dead-lettered**: it stays in `GET /api/v1/webhooks/deliveries` with `status: dead`, `attempt`, `response_code`, `last_error` and (with `includePayload=true`) the full `payload`, and the instance-wide gauge `dle_webhook_dlq_size` goes above zero — which deserves an alert, though no alert rule ships ([§C.6](../zadanie.md#c6-pozorovateľnosť), [operations/runbook.md](../operations/runbook.md), [Known gaps](../../README.md#known-gaps)). There is no replay endpoint and no console action: a dead-lettered delivery is not sent again, and recovering it means working from the stored payload.
 
 Delivery is **at-least-once**; ordering is per subscription best-effort, not guaranteed across retries. Idempotent processing keyed on the event `id` is the receiver's job.
 

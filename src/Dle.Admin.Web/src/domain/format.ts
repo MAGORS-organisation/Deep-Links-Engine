@@ -83,6 +83,14 @@ export function describeError(t: Translate, error: unknown): string {
         return t('error.domainNotVerified');
       case 'DomainTaken':
         return t('error.domainTaken');
+      case 'DomainInUse':
+        return t('error.domainInUse');
+      case 'WriteConflict':
+        return t('error.writeConflict');
+      case 'LinkTooLarge':
+        return t('error.linkTooLarge');
+      case 'AppTaken':
+        return t('error.appTaken');
       case 'IdempotencyConflict':
         return t('error.idempotencyConflict');
       case 'LinkQuarantined':

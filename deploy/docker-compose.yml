@@ -7,8 +7,9 @@
 #                                                      └→ valkey:8
 #   Sized for 2 vCPU / 4 GB RAM / 20 GB disk (NFR-10); ~1 000 req/s.
 #
-# Configuration comes from ./.env (copy .env.example). Two values are REQUIRED:
-# POSTGRES_PASSWORD and DLE_MASTER_SECRET. Every other variable has a default below.
+# Configuration comes from ./.env (copy .env.example, or let setup-dev.sh / setup-dev.ps1 generate
+# it). Three values are REQUIRED: POSTGRES_PASSWORD, DLE_MASTER_SECRET and DLE_EDGE_SECRET. Every
+# other variable has a default below.
 #
 # Start-up order (all enforced with depends_on conditions):
 #   postgres, valkey  →  migrate (one-shot EF Core migration, exits 0)  →  dle-control, dle-edge
@@ -110,8 +111,12 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8080"
       ConnectionStrings__Postgres: *postgres-connection
-      ConnectionStrings__Valkey: "valkey:6379"
-      Dle__Crypto__MasterSecret: ${DLE_MASTER_SECRET:?DLE_MASTER_SECRET is required — at least 32 characters, see .env.example}
+      ConnectionStrings__Valkey: "valkey:6379,password=${VALKEY_PASSWORD:?VALKEY_PASSWORD is required — see .env.example}"
+      # The internet-facing edge never holds DLE_MASTER_SECRET (from which the control plane derives
+      # its signing and slug keys). It gets its own secret, from which it derives only what it needs:
+      # the click-identifier, IP-hash and claim-code keys. The control plane receives the same secret
+      # for exactly those three purposes, so both sides agree on them.
+      Dle__Crypto__MasterSecret: ${DLE_EDGE_SECRET:?DLE_EDGE_SECRET is required — at least 32 characters and different from DLE_MASTER_SECRET, see .env.example}
       # Caddy terminates TLS and is the only peer whose X-Forwarded-* headers may be honoured.
       # KnownNetworks is the compose subnet; a wider range would let any client choose its own
       # address for rate limiting, click attribution and GeoIP (src/Dle.Edge/appsettings.json).
@@ -158,12 +163,27 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8081"
       ConnectionStrings__Postgres: *postgres-connection
-      ConnectionStrings__Valkey: "valkey:6379"
+      ConnectionStrings__Valkey: "valkey:6379,password=${VALKEY_PASSWORD:?VALKEY_PASSWORD is required — see .env.example}"
       Dle__Crypto__MasterSecret: ${DLE_MASTER_SECRET:?DLE_MASTER_SECRET is required — at least 32 characters, see .env.example}
+      # The three keys the edge also holds come from the edge's secret, not from the master secret.
+      Dle__Crypto__ClickIdSecret: ${DLE_EDGE_SECRET:?DLE_EDGE_SECRET is required — at least 32 characters and different from DLE_MASTER_SECRET, see .env.example}
+      Dle__Crypto__IpHashSecret: ${DLE_EDGE_SECRET:?DLE_EDGE_SECRET is required, see .env.example}
+      Dle__Crypto__ClaimCodeSecret: ${DLE_EDGE_SECRET:?DLE_EDGE_SECRET is required, see .env.example}
       # Links are rendered with this scheme; Caddy serves https even when the control plane is
       # reached over plain http on the compose network.
       Dle__Control__PublicScheme: https
+      # Same trust boundary as the edge: Caddy is the only peer whose X-Forwarded-* is honoured.
+      # Without it every request reaches the control plane from Caddy's address, so the abuse-report
+      # and failed-authentication limiters would share one bucket across all clients.
+      Dle__Control__Network__UseForwardedHeaders: "true"
+      Dle__Control__Network__ForwardLimit: "1"
+      Dle__Control__Network__KnownNetworks__0: ${DLE_NETWORK_SUBNET:-172.28.0.0/24}
       Dle__Control__InstanceTenantId: ${DLE_INSTANCE_TENANT_ID:-}
+      # First credential (see .env.example): disabled by default in production. Enable explicitly
+      # for initial empty-DB setup, ideally with ExportKeyPath and without console secret output.
+      Dle__Bootstrap__Enabled: ${DLE_BOOTSTRAP_ENABLED:-false}
+      Dle__Bootstrap__ExportKeyPath: ${DLE_BOOTSTRAP_EXPORT_PATH:-}
+      Dle__Bootstrap__AllowConsoleSecretOutput: ${DLE_BOOTSTRAP_ALLOW_CONSOLE_SECRET:-false}
       Dle__Control__AllowTenantSelfService: ${DLE_ALLOW_TENANT_SELF_SERVICE:-false}
       # The image ships the built admin SPA under wwwroot/admin/ (Dockerfile.control); this makes
       # the SPA fallback serve its index for client-side routes under /admin/.
@@ -258,10 +278,14 @@ services:
   valkey:
     image: ${VALKEY_IMAGE:-valkey/valkey:8}
     restart: unless-stopped
+    environment:
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:?VALKEY_PASSWORD is required — see .env.example}
     # Cache only (HybridCache L2): bounded memory, LRU eviction, nothing written to disk. A cold
     # Valkey after a restart costs one round of L1 misses, which is fine; a volume would not be.
     command:
       - valkey-server
+      - --requirepass
+      - ${VALKEY_PASSWORD:?VALKEY_PASSWORD is required — see .env.example}
       - --maxmemory
       - ${VALKEY_MAXMEMORY:-256mb}
       - --maxmemory-policy
@@ -271,7 +295,7 @@ services:
       - --appendonly
       - "no"
     healthcheck:
-      test: ["CMD", "valkey-cli", "ping"]
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$${VALKEY_PASSWORD}\" valkey-cli ping"]
       interval: 10s
       timeout: 3s
       retries: 5

@@ -12,6 +12,7 @@ import sk.magors.dle.internal.DleJson
 import sk.magors.dle.internal.EventBatch
 import sk.magors.dle.internal.EventWire
 import sk.magors.dle.internal.Iso8601
+import sk.magors.dle.internal.ResolveLinkRequest
 import sk.magors.dle.internal.ResolveRequest
 import sk.magors.dle.internal.ResolveResponse
 import sk.magors.dle.internal.SignalsWire
@@ -46,6 +47,26 @@ class WireModelsTest {
         val request = ResolveRequest(installId = "a", platform = "android")
 
         assertEquals("""{"install_id":"a","platform":"android"}""", DleJson.encodeToString(ResolveRequest.serializer(), request))
+    }
+
+    @Test
+    fun resolveLinkRequest_serialisesInSnakeCaseAndOmitsAbsentMembers() {
+        val full = ResolveLinkRequest(
+            url = "https://go.example.com/AbC12345",
+            installId = CONTRACT_INSTALL_ID,
+            platform = "android",
+            appVersion = "3.4.1",
+        )
+        val anonymous = ResolveLinkRequest(url = "https://go.example.com/AbC12345", platform = "android")
+
+        assertEquals(
+            """{"url":"https://go.example.com/AbC12345","install_id":"$CONTRACT_INSTALL_ID","platform":"android","app_version":"3.4.1"}""",
+            DleJson.encodeToString(ResolveLinkRequest.serializer(), full),
+        )
+        assertEquals(
+            """{"url":"https://go.example.com/AbC12345","platform":"android"}""",
+            DleJson.encodeToString(ResolveLinkRequest.serializer(), anonymous),
+        )
     }
 
     @Test

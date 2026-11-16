@@ -352,6 +352,9 @@ internal sealed class IdempotencyBufferingMiddleware
     /// <summary>Bodies above this size spill to a temporary file rather than to memory.</summary>
     private const int MemoryThresholdBytes = 64 * 1024;
 
+    /// <summary>Upper bound on buffered request bodies for idempotency hashing.</summary>
+    private const int MaxBufferedBodyBytes = 1024 * 1024;
+
     private readonly RequestDelegate _next;
 
     /// <summary>Creates the middleware.</summary>
@@ -371,7 +374,18 @@ internal sealed class IdempotencyBufferingMiddleware
 
         if (ShouldBuffer(context.Request))
         {
-            context.Request.EnableBuffering(MemoryThresholdBytes, bufferLimit: long.MaxValue);
+            if (context.Request.ContentLength is > MaxBufferedBodyBytes)
+            {
+                await DleProblem.Create(
+                        StatusCodes.Status413PayloadTooLarge,
+                        ProblemCodes.Base + "payload-too-large",
+                        "Payload Too Large",
+                        "The request body exceeds the maximum size permitted for an idempotent request.")
+                    .ExecuteAsync(context);
+                return;
+            }
+
+            context.Request.EnableBuffering(MemoryThresholdBytes, bufferLimit: MaxBufferedBodyBytes);
         }
 
         await _next(context);
@@ -381,9 +395,9 @@ internal sealed class IdempotencyBufferingMiddleware
     /// <param name="request">The request.</param>
     /// <returns><see langword="true"/> when buffering is needed.</returns>
     /// <remarks>
-    /// The streamed bulk import is excluded by name. Its whole point is that ten thousand rows never
-    /// have to exist at once, and buffering the request to hash it would undo that; the endpoint
-    /// reserves its key without a body hash instead, and says so in its own documentation (FR-103).
+    /// Both known-length and chunked bodies (<c>Content-Length</c> absent) are buffered up to
+    /// <see cref="MaxBufferedBodyBytes"/> so a chunked caller cannot bypass body-hash binding for an
+    /// idempotency key. The streamed bulk import is excluded by name (FR-103).
     /// </remarks>
     private static bool ShouldBuffer(HttpRequest request)
     {
@@ -392,7 +406,12 @@ internal sealed class IdempotencyBufferingMiddleware
             return false;
         }
 
-        if (request.ContentLength is null or 0)
+        if (HttpMethods.IsGet(request.Method) || HttpMethods.IsHead(request.Method))
+        {
+            return false;
+        }
+
+        if (request.ContentLength == 0)
         {
             return false;
         }

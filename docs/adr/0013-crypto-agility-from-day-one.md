@@ -11,7 +11,7 @@ Accepted
 
 - **Signing-key rotation is not implemented.** Only the configuration-backed key store (`ConfigurationSigningKeyStore`) is registered; `Dle:Crypto:KeyRotationDays` is read only by `KeyRing.RotateAsync`, which nothing in the product calls; the `signing_keys` table is never used. The webhook Ed25519 key is derived from the master secret and never rotates. The rotation described under Consequences, and the bootstrap-key fix under Verification, exist in `KeyRing` and its unit tests only.
 - **`click_id` carries no `alg` and no `kid`.** It is a Feistel-permuted timestamp and sequence followed by a truncated (32-bit) HMAC ([`ClickIdCodec`](../../src/Dle.Crypto/ClickIdCodec.cs)).
-- **The edge receives the master secret** (Compose and Helm), and the control plane's webhook signing key and the key that wraps webhook secrets are derived from it too. The separation T-15 asks for — an edge that holds no signing keys — does not hold today.
+- ~~**The edge receives the master secret.**~~ **Resolved (2026-11-08):** the edge receives only `DLE_EDGE_SECRET`, from which it derives the click-identifier, IP-hash and claim-code keys; the control plane receives the same secret for exactly those three (`Dle:Crypto:ClickIdSecret`, `IpHashSecret`, `ClaimCodeSecret`) and keeps `DLE_MASTER_SECRET` to itself. The separation T-15 asks for — an edge that holds no signing keys — now holds.
 
 See [Known gaps](../../README.md#known-gaps) in the root README.
 

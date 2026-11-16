@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { DleError, PROBLEM_TYPES, createApiClient, createTraceparent, parseRetryAfter } from '../src/api';
+import { createDle } from '../src/index';
 import type { Logger } from '../src/log';
 import { createFetchMock, jsonResponse } from './helpers';
 
@@ -126,6 +127,31 @@ describe('api client', () => {
     expect(error.message).toContain('1500');
   });
 
+  it('keeps the timeout running while the body is read', async () => {
+    vi.useFakeTimers();
+    const stalledBody = vi.fn(
+      (_input: RequestInfo | URL, init?: RequestInit) =>
+        Promise.resolve({
+          ok: true,
+          status: 200,
+          headers: new Headers(),
+          text: () =>
+            new Promise<string>((_resolve, reject) => {
+              init?.signal?.addEventListener('abort', () => {
+                reject(new DOMException('aborted', 'AbortError'));
+              });
+            }),
+        } as unknown as Response),
+    ) as unknown as typeof fetch;
+    const api = createApiClient({ endpoint: 'https://links.example.sk', sdkKey: SDK_KEY, timeoutMs: 1500, fetchImpl: stalledBody });
+    const settled = api.resolve({ install_id: 'a', platform: 'ios' }).catch((e: unknown) => e);
+    await vi.advanceTimersByTimeAsync(1501);
+    const error = (await settled) as DleError;
+    expect(error).toBeInstanceOf(DleError);
+    expect(error.code).toBe('timeout');
+    expect(error.retriable).toBe(true);
+  });
+
   it('reports a network failure as retriable', async () => {
     const failing = vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))) as unknown as typeof fetch;
     const api = createApiClient({ endpoint: 'https://links.example.sk', sdkKey: SDK_KEY, timeoutMs: 4000, fetchImpl: failing });
@@ -160,5 +186,47 @@ describe('api client', () => {
     const now = Date.parse('2026-09-03T10:00:00Z');
     expect(parseRetryAfter('Thu, 03 Sep 2026 10:00:10 GMT', now)).toBe(10_000);
     expect(parseRetryAfter('Thu, 03 Sep 2026 09:00:00 GMT', now)).toBe(0);
+  });
+
+  it('posts login hints to /v1/login-hints via sendLoginHint', async () => {
+    const { fetch, calls } = createFetchMock(() =>
+      jsonResponse(202, { accepted: true, expires_at: '2026-09-04T10:00:00+00:00' }),
+    );
+    const api = createApiClient({ endpoint: 'https://links.example.sk', sdkKey: SDK_KEY, timeoutMs: 4000, fetchImpl: fetch });
+    const res = await api.sendLoginHint({
+      login_key: 'acct_hash',
+      click_id: 'clk_123',
+      consent: { analytics: true, attribution: true },
+    });
+    expect(calls[0]!.url).toBe('https://links.example.sk/v1/login-hints');
+    expect(res).toEqual({ accepted: true, expires_at: '2026-09-04T10:00:00+00:00' });
+  });
+
+  it('recordLoginHint gates on attribution consent and extracts dl_cid from location.search', async () => {
+    const { fetch, calls } = createFetchMock(() =>
+      jsonResponse(202, { accepted: true, expires_at: '2026-09-04T10:00:00+00:00' }),
+    );
+    const originalUrl = window.location.href;
+    window.history.replaceState({}, '', '?dl_cid=clk_url_99&utm_source=ig');
+    try {
+      const dle = createDle({ endpoint: 'https://links.example.sk', sdkKey: SDK_KEY, fetchImpl: fetch });
+      const denied = await dle.recordLoginHint({ loginKey: 'usr_1' });
+      expect(denied).toEqual({ accepted: false });
+      expect(calls).toHaveLength(0);
+
+      dle.setConsent({ attribution: true });
+      const accepted = await dle.recordLoginHint({ loginKey: 'usr_1', deeplinkPath: '/vip' });
+      expect(accepted).toEqual({ accepted: true, expiresAt: '2026-09-04T10:00:00+00:00' });
+      expect(calls).toHaveLength(1);
+      expect(JSON.parse(calls[0]!.rawBody)).toMatchObject({
+        login_key: 'usr_1',
+        click_id: 'clk_url_99',
+        deeplink_path: '/vip',
+        consent: { attribution: true },
+      });
+      dle.destroy();
+    } finally {
+      window.history.replaceState({}, '', originalUrl);
+    }
   });
 });

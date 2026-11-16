@@ -21,9 +21,9 @@ that integrates it, so the list above is the whole list.
 
 Nothing is published yet: the artifact is not on Maven Central (the build has no Maven Central
 configuration) and the repository has no Gradle wrapper (`gradlew` and its JAR are not committed; only
-`gradle/wrapper/gradle-wrapper.properties`, which pins Gradle 8.11.1). Build it from a checkout with a
-locally installed Gradle 8.11.1, the way CI does, and publish it to your local Maven repository
-([Known gaps](../../README.md#known-gaps)):
+`gradle/wrapper/gradle-wrapper.properties`, which pins the Gradle version). Build it from a checkout
+with a locally installed Gradle of the version that file names, the way CI does, and publish it to your
+local Maven repository ([Known gaps](../../README.md#known-gaps)):
 
 ```sh
 cd sdk/android
@@ -93,13 +93,15 @@ Every option is documented on `DleConfig.Builder`. The ones you are most likely 
 
 ## 3. Resolve the deferred link
 
-On the first screen, once:
+On the first screen, on every launch. Only the first call costs a request, but every later call
+returns the same stored answer, so route on a match only the first time:
 
 ```kotlin
 lifecycleScope.launch {
     try {
+        val delivered = Dle.shared.cachedLink?.matched == true   // routed on a previous launch
         val link: DeferredLink = Dle.resolve()
-        if (link.isDeterministic) {
+        if (!delivered && link.isDeterministic) {
             // Never route on a raw string. Validate deeplink_path like any other deep link.
             allowlist.parsePath(link.link?.deeplinkPath)?.let { safe -> router.open(safe) }
         }
@@ -120,12 +122,13 @@ Dle.resolve(new DleCallback<DeferredLink>() {
 
 What happens on the first call:
 
-1. The Google Play Install Referrer is read **exactly once** per installation and the outcome
-   persisted, whatever it was (`OK`, not supported, permission error, unavailable after retries,
-   timeout). Play only answers for a limited time after installation and a second read can never
-   say more than the first.
+1. With attribution consent, the Google Play Install Referrer is read and the outcome persisted. A
+   final outcome (`OK`, not supported, permission or developer error) is never read again. A timeout
+   or a Play Store that stayed unavailable is read again by the next resolve that goes to the
+   server. Without attribution consent the referrer is not read at all.
 2. `POST /v1/resolve` goes out with `platform: "android"`, the app version (from `PackageInfo`),
-   the OS version, the raw referrer, the recorded consent, and any evidence you passed.
+   the OS version, the raw referrer (with attribution consent only), the recorded consent, and any
+   evidence you passed.
 3. The answer is persisted. **Every later call returns it without a request** (TC-143). A referrer
    without `dl_cid` is an organic install: the engine answers `match_type: "none"`, and that is a
    normal answer, not an error (TC-142).
@@ -136,8 +139,9 @@ consent (`dl_consent=all` or `gdpr=0` on the short URL — asserted by whoever b
 interstitial collects none). Under the default `aggregate_only` every install resolves to `none`
 ([Known gaps](../../README.md#known-gaps)).
 
-Two things make the SDK ask again: a non final answer (`expires_in > 0`) that has aged out, and a
-call carrying new deterministic evidence while the stored answer is not deterministic:
+Three things make the SDK ask again: a non final answer (`expires_in > 0`) that has aged out,
+attribution consent recorded with `setConsent` after a non final `none`, and a call carrying new
+deterministic evidence while the stored answer is not deterministic:
 
 ```kotlin
 // S3 — the user typed the code from the interstitial page. Normalised like the server does.
@@ -147,9 +151,11 @@ Dle.resolve(ResolveOptions.claimCode("ACD-EFG"))
 Dle.resolve(ResolveOptions.loginKey(hashedAccountId))
 ```
 
-Neither supplement matches anything today: the edge never issues or shows a claim code, and login
-matching reads a click field nothing writes ([Known gaps](../../README.md#known-gaps)). Only the SDK side
-is implemented.
+The edge shows a claim code on the interstitial only under the tenant's `full` consent mode, and the
+engine redeems it only when the resolve carries recorded attribution consent; without it the answer is
+`none` and the code stays unspent. A login match needs your signed-in web page to call the web
+SDK's `recordLoginHint` for that click; this SDK sends the account key on resolve but records no
+hint ([Known gaps](../../README.md#known-gaps)).
 
 A malformed claim code fails locally with `DleException.InvalidArgument`. An unknown, consumed or
 expired one comes back as `DleException.Http` with `isClaimCodeInvalid == true`; read
@@ -172,6 +178,12 @@ Dle.setConsent(DleConsent.denied().copy(timestampMillis = System.currentTimeMill
 
 - `attribution == false` (or `probabilisticSignals` off): the `signals` object is **omitted** from
   the request, not sent empty (TC-145, TC-146), and the signals are not even collected.
+- `attribution == false`: the Install Referrer is neither read nor sent, and the engine links
+  nothing: it answers `none` with a non-final `expires_in`, and a claim code or login key is not
+  redeemed. Recording attribution consent later drops that cached `none`, so the next resolve asks
+  again.
+- Only a recorded decision (one with a timestamp, as `setConsent` stamps it) is sent. The
+  `DleConfig.consent` default has none, so the engine treats it as no consent.
 - `analytics == false`: `first_open`, `session`, `conversion` and `custom` events are dropped at
   `trackEvent` time, never buffered. `link_open` is exempt (FR-223).
 
@@ -268,9 +280,16 @@ often it is handed in, so calling it in addition to the automatic reporting is h
 `ACTION_VIEW` intent with `http(s)` data is reported; the SDK has no host list of its own.
 
 The URL is the short link as tapped (`https://link.example.sk/aB3xK9pQ`), not the link's
-`deeplink_path`: nothing on the SDK plane expands a slug, and an SDK key cannot read the link API.
-Your app can open the right screen only when the operator uses readable slugs your allowlist parses,
-like the sample's `/promo/…` and `/p/…` ([Known gaps](../../README.md#known-gaps)).
+`deeplink_path`. Ask the engine which screen it leads to — `POST /v1/resolve-link`, which records
+nothing, so the open is still counted exactly once:
+
+```kotlin
+val open = Dle.handleIntent(intent) ?: return
+lifecycleScope.launch {
+    val link = Dle.resolveLink(open)                     // MatchType.DIRECT_OPEN, confidence 1.0
+    if (link.matched) link.link?.deeplinkPath?.let { router.open(it) }   // validate it first (5.5)
+}
+```
 
 ### 5.5 Validate before you route
 
@@ -326,8 +345,13 @@ What the SDK does **not** do, and is tested not to do:
   string, raw install ids and raw Install Referrers never reach a log line.
 
 What it sends: the install id, platform and versions, the raw Install Referrer (clipped to 1024
-characters), the evidence you pass in, the recorded consent, App Link opens reduced to scheme, host
-and path, and the events you track.
+characters, with attribution consent only), the evidence you pass in, the recorded consent, App Link
+opens reduced to scheme, host and path, and the events you track.
+
+What it keeps: the install id, the resolve answer and the recorded consent in private
+SharedPreferences, and the event buffer in `noBackupFilesDir`. A marker in `noBackupFilesDir` tells a
+fresh install or an Auto Backup restore from a relaunch; when it is missing, the restored install id,
+answer and consent are discarded, so a restore onto a new device starts as a new installation.
 
 ## 8. Sample
 
@@ -342,7 +366,8 @@ adb shell am start -a android.intent.action.VIEW -d "https://link.example.sk/pro
 
 ## 9. Building and testing
 
-With Gradle 8.11.1 installed locally (there is no `gradlew`), from `sdk/android`:
+With the Gradle version from `gradle/wrapper/gradle-wrapper.properties` installed locally (there is no
+`gradlew`), from `sdk/android`:
 
 ```sh
 gradle :dle-sdk:test              # JUnit 5 + MockWebServer, JVM only, no emulator

@@ -12,7 +12,7 @@
 | [integration](integration) | HTTP API, the three SDKs, webhooks, migrating from Firebase Dynamic Links | the API reference; the live one is served at `/scalar/v1` on the control host |
 | [compliance](compliance) | Privacy model, DPIA and RoPA templates, regulatory map, security overview | the privacy model — it explains the three consent modes |
 | [operations](operations) | Runbook, release checklist, device test matrix | the runbook |
-| [adr](adr) | The thirteen architecture decisions, the one deviation from the specification recorded as a decision (the licence), and the departures that are not recorded as decisions | [adr/README.md](adr/README.md) — process, status lifecycle, index, departures |
+| [adr](adr) | The thirteen accepted architecture decisions, the one deviation from the specification recorded as a decision (the licence), and the departures that are not recorded as decisions | [adr/README.md](adr/README.md) — process, status lifecycle, index, departures |
 | [architecture](architecture) | The three product layers, two deployment units, request flows, data model, routing-rule language, trust boundaries, observability, performance targets | [architecture/README.md](architecture/README.md) |
 | [dev](dev) | [SHARED-KERNEL.md](dev/SHARED-KERNEL.md), the binding contract every project codes against; [API-INVENTORY.md](dev/API-INVENTORY.md); per-project working notes | SHARED-KERNEL.md |
 | [zadanie.md](zadanie.md) | The Slovak specification everything traces back to. Every document here links the exact section it derives from | §0 (management summary) and [§F.3](zadanie.md#f3-gono-go-odporúčanie) (go/no-go) |

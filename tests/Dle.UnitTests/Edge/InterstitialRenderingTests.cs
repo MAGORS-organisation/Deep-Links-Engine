@@ -172,10 +172,31 @@ public sealed class InterstitialRenderingTests
         Assert.DoesNotContain("unsafe-hashes", csp, StringComparison.OrdinalIgnoreCase);
 
         Assert.Contains("default-src 'none'", csp, StringComparison.Ordinal);
+        Assert.Contains("form-action 'none'", csp, StringComparison.Ordinal);
         Assert.Contains("object-src 'none'", csp, StringComparison.Ordinal);
         Assert.Contains("base-uri 'none'", csp, StringComparison.Ordinal);
         Assert.Contains("frame-ancestors 'none'", csp, StringComparison.Ordinal);
         Assert.Contains("script-src 'nonce-", csp, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("TestCase", "S-04")]
+    public async Task Interstitial_WithDeferredConsentToken_RendersZeroJsPostFormAndAllowsSelfFormAction()
+    {
+        RenderedPage page = await RenderedPage.RenderAsync(InterstitialResults.Page(
+            Link(),
+            WebDecision(),
+            MobileClient(),
+            "https://apps.apple.com/app/id123",
+            deeplinkUrl: "myapp://shop/summer",
+            domain: null,
+            claimCode: null,
+            consentToken: "dlt1.Ed25519.k1.payload.sig"));
+
+        Assert.Contains("form-action 'self';", page.ContentSecurityPolicy, StringComparison.Ordinal);
+        Assert.Contains("<form method=\"post\" action=\"/_dl/consent\">", page.Html, StringComparison.Ordinal);
+        Assert.Contains("<input type=\"hidden\" name=\"token\" value=\"dlt1.Ed25519.k1.payload.sig\">", page.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("data-dle-delay", page.Html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -383,6 +404,23 @@ public sealed class InterstitialRenderingTests
         Language = "en",
         ReceivedAt = Now,
     };
+
+    [Fact]
+    [Trait("Criterion", "S-04")]
+    public async Task OgPreview_ImageUrlWithUserInfo_IsExcludedFromImageAndPolicy()
+    {
+        LinkSnapshot link = Link(og: new OgMeta
+        {
+            Title = "Sale",
+            ImageUrl = "https://user:secret@cdn.example/logo.png",
+        });
+
+        RenderedPage page = await RenderedPage.RenderAsync(
+            InterstitialResults.OgPreview(link, Crawler(), domain: null, canonicalUrl: "https://go.example/abc"));
+
+        Assert.Contains("img-src 'self';", page.ContentSecurityPolicy, StringComparison.Ordinal);
+        Assert.DoesNotContain("user:secret", page.Html, StringComparison.Ordinal);
+    }
 
     private static ClientContext Crawler() => new()
     {

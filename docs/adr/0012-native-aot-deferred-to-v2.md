@@ -18,7 +18,7 @@ Native AOT promises faster start-up and lower memory — attractive for an edge 
 ## Decision
 
 - **Not in v1.**
-- The edge resolver is designed **AOT-ready** from the start: Dapper instead of EF Core ([ADR-0004](0004-split-data-access-efcore-and-dapper.md)), source-generated `System.Text.Json` serialisation, no reflection-based binding or DI tricks.
+- The edge resolver is designed **AOT-ready** from the start: raw Npgsql instead of EF Core ([ADR-0004](0004-split-data-access-efcore-and-dapper.md)), source-generated `System.Text.Json` serialisation, no reflection-based binding or DI tricks.
 - The AOT build is enabled in v2 as a **separate publish profile** for the edge only, after an in-house benchmark justifies it.
 
 ## Consequences

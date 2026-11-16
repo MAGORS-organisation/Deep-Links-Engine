@@ -7,6 +7,8 @@
 
 Accepted
 
+**Status note (2026-11-12).** The hot path (`Dle.Persistence.Fast`) uses raw Npgsql with ordinal mapping, not Dapper; the `Dapper*` class names there are historical. Dapper is used only in `Dle.Analytics.Postgres`.
+
 ## Date
 
 Decided: in the specification ([§B.4 ADR-004](../zadanie.md#adr-004--prístup-k-dátam-ef-core-pre-control-plane-dapper-pre-hot-path)) · Recorded: 2026-09-11

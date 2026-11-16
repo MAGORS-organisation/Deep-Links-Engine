@@ -165,18 +165,30 @@
           "type": "object",
           "properties": {
             "masterSecret": { "$ref": "#/definitions/nonEmptyString" },
+            "edgeSecret": { "$ref": "#/definitions/nonEmptyString" },
             "postgresConnectionString": { "$ref": "#/definitions/nonEmptyString" },
             "postgresReadConnectionString": { "$ref": "#/definitions/nonEmptyString" },
             "valkeyConnectionString": { "$ref": "#/definitions/nonEmptyString" },
-            "clickHouseConnectionString": { "$ref": "#/definitions/nonEmptyString" }
+            "clickHouseConnectionString": { "$ref": "#/definitions/nonEmptyString" },
+            "metricsScrapeToken": { "$ref": "#/definitions/nonEmptyString" }
           },
-          "required": ["masterSecret", "postgresConnectionString", "postgresReadConnectionString", "valkeyConnectionString", "clickHouseConnectionString"],
+          "required": ["masterSecret", "edgeSecret", "postgresConnectionString", "postgresReadConnectionString", "valkeyConnectionString", "clickHouseConnectionString", "metricsScrapeToken"],
           "additionalProperties": false
         },
         "masterSecret": {
-          "description": "Dle:Crypto:MasterSecret — at least 32 characters, or empty when existingSecret is set.",
+          "description": "Dle:Crypto:MasterSecret of the control plane — at least 32 characters, or empty when existingSecret is set.",
           "type": "string",
           "anyOf": [ { "const": "" }, { "minLength": 32 } ]
+        },
+        "edgeSecret": {
+          "description": "The edge's own secret (click-id, IP-hash and claim-code keys) — at least 32 characters, different from masterSecret, or empty when existingSecret is set.",
+          "type": "string",
+          "anyOf": [ { "const": "" }, { "minLength": 32 } ]
+        },
+        "metricsScrapeToken": {
+          "description": "Bearer token GET /metrics requires on both services; required when serviceMonitor.enabled unless existingSecret holds it. At least 16 characters, or empty.",
+          "type": "string",
+          "anyOf": [ { "const": "" }, { "minLength": 16 } ]
         }
       },
       "additionalProperties": false

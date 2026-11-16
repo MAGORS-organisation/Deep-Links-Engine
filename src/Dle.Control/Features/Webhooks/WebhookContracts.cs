@@ -111,3 +111,13 @@ public sealed record TestWebhookResponse
     /// <summary>Key identifier named in the <c>v2</c> slot of the signature.</summary>
     public string? SigningKeyId { get; init; }
 }
+
+/// <summary>Result of re-queueing failed or dead webhook deliveries (§B.7.3, FR-204).</summary>
+public sealed record WebhookDeliveryReplayResponse
+{
+    /// <summary>Number of deliveries transitioned back to <c>pending</c>.</summary>
+    public required int ReplayedCount { get; init; }
+
+    /// <summary>Identifiers of the re-queued deliveries.</summary>
+    public required IReadOnlyList<Guid> DeliveryIds { get; init; }
+}

@@ -47,7 +47,7 @@ jobs:
           cache-dependency-path: sdk/web/package-lock.json
 
       - name: Install (clean, from the lock file)
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Lint
         run: npm run lint

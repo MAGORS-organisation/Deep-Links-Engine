@@ -9,7 +9,7 @@
 # Routing (single host):
 #   /.well-known/jwks.json                       → dle-control  (public signing keys, §B.7)
 #   /.well-known/*                               → dle-edge     (AASA, assetlinks.json)
-#   /api/*  /v1/*  /admin*  /scalar*  /openapi/* → dle-control  (API, admin console, API reference)
+#   /api/*  /v1/*  /admin*  /abuse-reports*      → dle-control  (API, admin console; API reference disabled in Production by default)
 #   everything else, i.e. /{slug}, /{slug}/qr    → dle-edge
 #
 # !!! /.well-known RESPONSES MUST NEVER BE REDIRECTED (docs/zadanie.md §A.2.1, TC-124) !!!
@@ -102,7 +102,14 @@
 (dle_routes) {
 	import well_known_routes
 
-	@control path /api/* /v1/* /admin /admin/* /scalar /scalar/* /openapi/* /abuse-reports /abuse-reports/*
+	# /metrics is intended for internal Prometheus scraping only, never public ingress. The services'
+	# routing also answers /metrics/ (trailing slash), so both forms are blocked.
+	@metrics path /metrics /metrics/*
+	handle @metrics {
+		respond 404
+	}
+
+	@control path /api/* /v1/* /admin /admin/* /abuse-reports /abuse-reports/*
 	handle @control {
 		import to_control
 	}
@@ -146,8 +153,8 @@ http://{$DLE_DOMAIN} {
 
 # ---- optional: a separate host name for the control plane ---------------------------------------
 # Many deployments keep the admin console and API off the link domain. Uncomment, set the name,
-# and remove `/admin*`, `/scalar*`, `/openapi/*` from @control above if the link host should not
-# expose them at all. /.well-known/jwks.json stays reachable on both hosts.
+# and remove `/admin*` (and optionally `/api/*` for API calls) from @control above if the link
+# host should not expose them at all. /.well-known/jwks.json stays reachable on both hosts.
 #
 # admin.example.com {
 # 	tls {$DLE_TLS}

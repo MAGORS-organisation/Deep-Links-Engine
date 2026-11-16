@@ -1,5 +1,5 @@
 # =============================================================================
-# CodeQL — SAST (docs/zadanie.md §C.8 "PR: SAST (CodeQL)", §C.7 DoD 6 "SAST bez nových nálezov").
+# CodeQL — SAST on every pull request; the Definition of Done allows no new findings.
 #
 # Covered:
 #   csharp                 src/** and tests/** (build-mode none: no compiler run needed)

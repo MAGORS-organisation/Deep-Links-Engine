@@ -1,5 +1,8 @@
 using System.Net;
 
+using Dle.Domain.Primitives;
+using Dle.Edge.Resolution;
+
 namespace Dle.Edge.RateLimiting;
 
 /// <summary>
@@ -90,16 +93,21 @@ public static class EdgeRateLimitPartitions
 
         // A proxy on the same host presents ::ffff:10.0.0.7; unwrapping it first keeps one client in
         // one bucket regardless of which socket family the hop in front happened to use.
-        IPAddress canonical = address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;
+        IPAddress? canonical = IpAddressNormalization.Canonicalize(address);
 
-        return hasher.Prefix(canonical) ?? UnknownClientKey;
+        return canonical is null ? UnknownClientKey : (hasher.Prefix(canonical) ?? UnknownClientKey);
     }
 
     /// <summary>
-    /// Returns the exact-address key the QR limit is counted under (§E.9 keys that row by IP).
+    /// Returns the per-client key the QR limit is counted under (§E.9 keys that row by IP).
     /// </summary>
+    /// <remarks>
+    /// The exact address for IPv4. For IPv6 the <c>/64</c>: one subscriber is routinely handed a whole
+    /// <c>/64</c>, so keying on the full address would give anyone 2^64 fresh budgets for the most
+    /// CPU-expensive route the edge has.
+    /// </remarks>
     /// <param name="address">The client address, or <see langword="null"/> when it is unknown.</param>
-    /// <returns>The address in its canonical text form, or <see cref="UnknownClientKey"/>.</returns>
+    /// <returns>The IPv4 address, the IPv6 <c>/64</c>, or <see cref="UnknownClientKey"/>.</returns>
     public static string AddressKey(IPAddress? address)
     {
         if (address is null)
@@ -107,9 +115,28 @@ public static class EdgeRateLimitPartitions
             return UnknownClientKey;
         }
 
-        IPAddress canonical = address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;
+        IPAddress? canonical = IpAddressNormalization.Canonicalize(address);
 
-        return canonical.ToString();
+        if (canonical is null)
+        {
+            return UnknownClientKey;
+        }
+
+        if (canonical.AddressFamily != System.Net.Sockets.AddressFamily.InterNetworkV6)
+        {
+            return canonical.ToString();
+        }
+
+        Span<byte> bytes = stackalloc byte[16];
+
+        if (!canonical.TryWriteBytes(bytes, out _))
+        {
+            return UnknownClientKey;
+        }
+
+        bytes[8..].Clear();
+
+        return new IPAddress(bytes).ToString() + "/64";
     }
 
     /// <summary>
@@ -125,6 +152,12 @@ public static class EdgeRateLimitPartitions
     /// </remarks>
     public static EdgeRateLimitKind Classify(string method, PathString path)
     {
+        if (HttpMethods.IsPost(method)
+            && path.Equals(ResolveEndpointExtensions.ConsentRoutePattern, StringComparison.OrdinalIgnoreCase))
+        {
+            return EdgeRateLimitKind.Resolve;
+        }
+
         if (!HttpMethods.IsGet(method) && !HttpMethods.IsHead(method))
         {
             return EdgeRateLimitKind.Unlimited;

@@ -41,10 +41,10 @@ Write-Host "====================================================================
 Write-Host "[1/4] Checking .NET SDK..." -NoNewline
 try {
     $dotnetVersion = (dotnet --version)
-    if ($dotnetVersion -like "10.*") {
+    if ($dotnetVersion -like "11.*") {
         Write-Host " OK (.NET $dotnetVersion)" -ForegroundColor Green
     } else {
-        Write-Host " WARNING (Found .NET $dotnetVersion; .NET 10 SDK is recommended)" -ForegroundColor Yellow
+        Write-Host " WARNING (Found .NET $dotnetVersion; .NET 11 SDK is recommended)" -ForegroundColor Yellow
     }
 } catch {
     Write-Host " FAILED (.NET SDK not found in PATH)" -ForegroundColor Red
@@ -69,24 +69,29 @@ if (-not (Test-Path $EnvFile)) {
     if (Test-Path $EnvExample) {
         $content = Get-Content -Raw $EnvExample
 
-        # Generate secrets
-        $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
-        $secretBytes = New-Object byte[] 48
-        $rng.GetBytes($secretBytes)
-        $masterSecret = [Convert]::ToBase64String($secretBytes)
+        # Generate secrets (hex: safe in any .env parser and in the replacements below)
+        # Works on Windows PowerShell 5.1 (.NET Framework) as well as PowerShell 7.
+        function New-HexSecret([int]$bytes) {
+            $buffer = New-Object byte[] $bytes
+            $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+            try { $rng.GetBytes($buffer) } finally { $rng.Dispose() }
+            return -join ($buffer | ForEach-Object { $_.ToString('x2') })
+        }
+        $masterSecret = New-HexSecret 32
+        $edgeSecret = New-HexSecret 32
+        $pgPassword = New-HexSecret 18
+        $valkeyPassword = New-HexSecret 18
 
-        $passBytes = New-Object byte[] 18
-        $rng.GetBytes($passBytes)
-        $pgPassword = [Convert]::ToBase64String($passBytes) -replace '[/+=]', 'x'
-
-        # Replace required secrets & defaults
-        $content = $content -replace 'POSTGRES_PASSWORD=', "POSTGRES_PASSWORD=$pgPassword"
-        $content = $content -replace 'DLE_MASTER_SECRET=', "DLE_MASTER_SECRET=$masterSecret"
-        $content = $content -replace 'DLE_DOMAIN=go.example.com', 'DLE_DOMAIN=localhost'
-        $content = $content -replace 'DLE_TLS=admin@example.com', 'DLE_TLS=internal'
+        # Replace required secrets & defaults (anchored to the start of a line)
+        $content = $content -replace '(?m)^POSTGRES_PASSWORD=.*$', "POSTGRES_PASSWORD=$pgPassword"
+        $content = $content -replace '(?m)^VALKEY_PASSWORD=.*$', "VALKEY_PASSWORD=$valkeyPassword"
+        $content = $content -replace '(?m)^DLE_MASTER_SECRET=.*$', "DLE_MASTER_SECRET=$masterSecret"
+        $content = $content -replace '(?m)^DLE_EDGE_SECRET=.*$', "DLE_EDGE_SECRET=$edgeSecret"
+        $content = $content -replace '(?m)^DLE_DOMAIN=.*$', 'DLE_DOMAIN=localhost'
+        $content = $content -replace '(?m)^DLE_TLS=.*$', 'DLE_TLS=internal'
 
         Set-Content -Path $EnvFile -Value $content -NoNewline
-        Write-Host "      Created $EnvFile with generated DLE_MASTER_SECRET and POSTGRES_PASSWORD." -ForegroundColor Green
+        Write-Host "      Created $EnvFile with generated POSTGRES_PASSWORD, VALKEY_PASSWORD, DLE_MASTER_SECRET and DLE_EDGE_SECRET." -ForegroundColor Green
     } else {
         Write-Host " FAILED ($EnvExample template not found)" -ForegroundColor Red
         exit 1
@@ -107,8 +112,8 @@ Write-Host "  * Control Health Check:             http://localhost:8081/healthz"
 Write-Host ""
 Write-Host "Automatic Bootstrap:" -ForegroundColor Yellow
 Write-Host "  When the database is empty on first start, Dle.Control automatically provisions" -ForegroundColor Gray
-Write-Host "  an initial tenant ('default') and a root Owner API key. Find your key by running:" -ForegroundColor Gray
-Write-Host "    docker compose logs dle-control | findstr /i BOOTSTRAP" -ForegroundColor Cyan
+Write-Host "  an initial tenant ('default') and an owner API key, printed once. Find it with:" -ForegroundColor Gray
+Write-Host "    docker compose logs dle-control | Select-String -Context 0,4 'DLE BOOTSTRAP OWNER KEY'" -ForegroundColor Cyan
 Write-Host ""
 
 if ($CheckOnly) {

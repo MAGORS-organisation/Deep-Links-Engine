@@ -9,7 +9,7 @@ import sk.magors.dle.DeferredLink
 import sk.magors.dle.DleConsent
 import sk.magors.dle.ResolveOptions
 
-/** How the one and only Install Referrer read ended (spec §A.2.4). */
+/** How the last Install Referrer read ended (spec §A.2.4). Only a terminal status is final. */
 internal enum class ReferrerStatus {
     /** The Play Store answered; [ReferrerOutcome.referrer] holds the raw string. */
     OK,
@@ -147,7 +147,7 @@ internal class StateStore(
     // Install Referrer
     // -------------------------------------------------------------------------------------------
 
-    /** The outcome of the one Install Referrer read, or `null` when it has not been attempted. */
+    /** The outcome of the last Install Referrer read, or `null` when it has not been attempted. */
     fun referrerOutcome(): ReferrerOutcome? {
         val text = prefs.getString(KEY_REFERRER, null) ?: return null
         return try {
@@ -203,7 +203,7 @@ internal class StateStore(
             .commit()
     }
 
-    /** Forgets everything. Used by tests and by a host that erases the installation. */
+    /** Forgets everything. Used by tests and when a backup restored another installation's state. */
     fun clear() {
         prefs.edit().clear().commit()
     }

@@ -2,6 +2,8 @@ using System.Buffers.Binary;
 using System.Net;
 using System.Net.Sockets;
 
+using Dle.Domain.Primitives;
+
 namespace Dle.Crypto;
 
 /// <summary>
@@ -100,13 +102,14 @@ public sealed class IpHasher : IIpHasher
                 $"{bytes[0]}.{bytes[1]}.{bytes[2]}.0/24");
         }
 
-        ushort group0 = BinaryPrimitives.ReadUInt16BigEndian(bytes[..2]);
-        ushort group1 = BinaryPrimitives.ReadUInt16BigEndian(bytes[2..4]);
-        ushort group2 = BinaryPrimitives.ReadUInt16BigEndian(bytes[4..6]);
+        // The canonical (RFC 5952) text form, which is also what PostgreSQL prints for an inet. The
+        // prefix is stored as inet and read back as text, and the two are compared as text when a
+        // click is matched to an install: zero-padded groups here ("2a02:0908:0001::/48") never
+        // equalled what came back ("2a02:908:1::/48"), so the network signal was lost for IPv6.
+        Span<byte> network = stackalloc byte[16];
+        bytes[..6].CopyTo(network);
 
-        return string.Create(
-            CultureInfo.InvariantCulture,
-            $"{group0:x4}:{group1:x4}:{group2:x4}::/48");
+        return new IPAddress(network).ToString() + "/48";
     }
 
     /// <summary>
@@ -139,9 +142,10 @@ public sealed class IpHasher : IIpHasher
     /// </summary>
     private static bool TryWriteCanonical(IPAddress address, Span<byte> destination, out int written)
     {
-        IPAddress canonical = address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address;
+        IPAddress? canonical = IpAddressNormalization.Canonicalize(address);
 
-        if (canonical.AddressFamily is not (AddressFamily.InterNetwork or AddressFamily.InterNetworkV6))
+        if (canonical is null
+            || canonical.AddressFamily is not (AddressFamily.InterNetwork or AddressFamily.InterNetworkV6))
         {
             written = 0;
             return false;

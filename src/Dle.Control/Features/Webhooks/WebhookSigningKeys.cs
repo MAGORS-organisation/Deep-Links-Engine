@@ -61,9 +61,10 @@ public sealed partial class WebhookSigningKeys : IJwksContributor, IDisposable
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly SigningKeyMaterial _derived;
 
-    private WebhookKeySet _keys;
-    private DateTimeOffset _loadedAt = DateTimeOffset.MinValue;
+    private KeySnapshot _snapshot;
     private bool _disposed;
+
+    private sealed record KeySnapshot(WebhookKeySet Keys, DateTimeOffset LoadedAt);
 
     /// <summary>
     /// Creates the key source and derives the bootstrap key.
@@ -93,7 +94,9 @@ public sealed partial class WebhookSigningKeys : IJwksContributor, IDisposable
         _timeProvider = timeProvider;
         _logger = logger;
         _derived = Derive(crypto.Value.MasterSecret);
-        _keys = WebhookKeySet.From([_derived], _timeProvider.GetUtcNow());
+        _snapshot = new KeySnapshot(
+            WebhookKeySet.From([_derived], _timeProvider.GetUtcNow()),
+            DateTimeOffset.MinValue);
     }
 
     /// <summary>
@@ -116,7 +119,7 @@ public sealed partial class WebhookSigningKeys : IJwksContributor, IDisposable
     /// </remarks>
     public IReadOnlyList<JsonWebKey> GetKeys(DateTimeOffset asOf)
     {
-        WebhookKeySet keys = Volatile.Read(ref _keys);
+        WebhookKeySet keys = Volatile.Read(ref _snapshot).Keys;
         List<JsonWebKey> published = [];
 
         foreach (JsonWebKey key in keys.PublicKeys)
@@ -146,19 +149,23 @@ public sealed partial class WebhookSigningKeys : IJwksContributor, IDisposable
     private async ValueTask<WebhookKeySet> EnsureLoadedAsync(CancellationToken cancellationToken)
     {
         DateTimeOffset now = _timeProvider.GetUtcNow();
+        KeySnapshot current = Volatile.Read(ref _snapshot);
 
-        if (now - _loadedAt < RefreshInterval)
+        if (now - current.LoadedAt < RefreshInterval)
         {
-            return Volatile.Read(ref _keys);
+            return current.Keys;
         }
 
         await _gate.WaitAsync(cancellationToken);
 
         try
         {
-            if (now - _loadedAt < RefreshInterval)
+            now = _timeProvider.GetUtcNow();
+            current = _snapshot;
+
+            if (now - current.LoadedAt < RefreshInterval)
             {
-                return Volatile.Read(ref _keys);
+                return current.Keys;
             }
 
             IReadOnlyList<SigningKeyMaterial> stored =
@@ -177,8 +184,7 @@ public sealed partial class WebhookSigningKeys : IJwksContributor, IDisposable
 
             WebhookKeySet refreshed = WebhookKeySet.From(material, now);
 
-            Volatile.Write(ref _keys, refreshed);
-            _loadedAt = now;
+            Volatile.Write(ref _snapshot, new KeySnapshot(refreshed, now));
 
             return refreshed;
         }

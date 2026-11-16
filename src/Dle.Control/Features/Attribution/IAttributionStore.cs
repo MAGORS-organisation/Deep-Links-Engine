@@ -16,6 +16,9 @@ namespace Dle.Control.Features.Attribution;
 /// <param name="Title">Human readable link title.</param>
 /// <param name="Parameters">Parameters handed to the application, typically the UTM set.</param>
 /// <param name="RoutingRules">The link's rule set, evaluated for device targeting.</param>
+/// <param name="IsServable">Whether the edge would serve the link right now: active, not
+/// quarantined, inside its start and expiry window. A link that answers 404 or 410 on the edge must
+/// not hand an installed application a destination either.</param>
 public sealed record AttributedLink(
     long Id,
     Guid TenantId,
@@ -23,7 +26,8 @@ public sealed record AttributedLink(
     string? Campaign,
     string? Title,
     IReadOnlyDictionary<string, string> Parameters,
-    IReadOnlyList<RoutingRule>? RoutingRules = null);
+    IReadOnlyList<RoutingRule>? RoutingRules = null,
+    bool IsServable = true);
 
 /// <summary>
 /// Everything the attribution use cases persist or read, behind one seam.
@@ -108,12 +112,15 @@ public interface IAttributionStore
     /// <returns>The record, or <see langword="null"/> when no such code was issued for this tenant.</returns>
     Task<ClaimCodeRecord?> FindClaimCodeAsync(byte[] codeHash, CancellationToken cancellationToken);
 
-    /// <summary>Marks a claim code as spent.</summary>
+    /// <summary>Marks a claim code as spent, unless it already is.</summary>
     /// <param name="claimCodeId">The code row.</param>
     /// <param name="consumedAt">The instant of redemption.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A task that completes when the code can no longer be redeemed.</returns>
-    Task ConsumeClaimCodeAsync(Guid claimCodeId, DateTimeOffset consumedAt, CancellationToken cancellationToken);
+    /// <returns>
+    /// <see langword="true"/> when this call changed the row from unspent to spent;
+    /// <see langword="false"/> when it was already spent (a concurrent redemption won).
+    /// </returns>
+    Task<bool> ConsumeClaimCodeAsync(Guid claimCodeId, DateTimeOffset consumedAt, CancellationToken cancellationToken);
 
     /// <summary>Stores a newly issued claim code.</summary>
     /// <param name="record">The code row, carrying only the hash of the code.</param>

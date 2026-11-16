@@ -1,13 +1,16 @@
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 
+using Dle.Control.Configuration;
 using Dle.Control.Features.Shared;
 using Dle.Control.Features.Webhooks;
 using Dle.Control.Identity;
 using Dle.Domain.Contracts;
+using Dle.Domain.Ports;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Options;
 
@@ -105,7 +108,9 @@ public static class WebhookEndpointExtensions
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
                 SendTestWebhook.HandleAsync(id, store, dispatcher, keys, timeProvider, cancellationToken))
-            .RequireAuthorization(DlePolicies.KeysRead)
+            // A write scope: the route makes the control plane send a real, signed request to the
+            // tenant's receiver, which a read-only key has no business triggering.
+            .RequireAuthorization(DlePolicies.KeysWrite)
             .WithName("TestWebhook")
             .WithSummary("Sends one signed test delivery and reports the result.")
             .WithDescription(
@@ -138,6 +143,53 @@ public static class WebhookEndpointExtensions
                 "The integrator's debugger: status, attempt count, response code and error for the "
                 + "recent deliveries, optionally with the exact body that was signed and sent.")
             .Produces<List<WebhookDeliveryResponse>>(StatusCodes.Status200OK, "application/json")
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+
+        group.MapPost("/deliveries/{id:guid}/replay", static (
+                Guid id,
+                HttpContext context,
+                IWebhookReplayStore store,
+                IAuditLogWriter audit,
+                CancellationToken cancellationToken) =>
+                ReplayWebhookDelivery.HandleSingleAsync(id, context, store, audit, cancellationToken))
+            .RequireAuthorization(DlePolicies.KeysWrite)
+            .RequireRateLimiting(DleRateLimitPolicies.Write)
+            .WithName("ReplayWebhookDelivery")
+            .WithSummary("Re-queues one failed or dead webhook delivery.")
+            .WithDescription(
+                "Moves a failed or dead delivery back to pending using its originally stored and "
+                + "signed payload so transient downstream outages can recover without re-emitting events.")
+            .Produces<WebhookDeliveryReplayResponse>(StatusCodes.Status200OK, "application/json")
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
+
+        group.MapPost("/deliveries/replay-dead", static (
+                Guid? subscriptionId,
+                int? limit,
+                HttpContext context,
+                IWebhookReplayStore store,
+                IOptionsMonitor<WebhookOptions> options,
+                IAuditLogWriter audit,
+                CancellationToken cancellationToken) =>
+                ReplayWebhookDelivery.HandleDeadAsync(
+                    subscriptionId,
+                    limit,
+                    context,
+                    store,
+                    options,
+                    audit,
+                    cancellationToken))
+            .RequireAuthorization(DlePolicies.KeysWrite)
+            .RequireRateLimiting(DleRateLimitPolicies.Write)
+            .WithName("ReplayDeadWebhookDeliveries")
+            .WithSummary("Re-queues dead-letter webhook deliveries for active subscriptions.")
+            .WithDescription(
+                "Transitions exhausted ('dead') deliveries for active tenant subscriptions back to "
+                + "pending in bounded batches.")
+            .Produces<WebhookDeliveryReplayResponse>(StatusCodes.Status200OK, "application/json")
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden);
 

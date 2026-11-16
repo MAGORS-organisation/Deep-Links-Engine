@@ -58,6 +58,12 @@ public sealed partial class RecordEvents
     /// <summary>Confidence of a direct open. It is an observation, not an estimate (TC-149).</summary>
     private const decimal DirectOpenConfidence = 1.00m;
 
+    /// <summary>
+    /// Magnitude from which an event value is refused. Far above any real purchase and two orders
+    /// below what the <c>numeric(18, 4)</c> columns downstream can hold.
+    /// </summary>
+    private const decimal MaxEventValue = 1_000_000_000_000m;
+
     /// <summary>Evidence value recorded in place of a strategy name for a direct open.</summary>
     private const string DirectOpenStrategy = MatchTypeNames.DirectOpen;
 
@@ -168,6 +174,15 @@ public sealed partial class RecordEvents
 
             if (!TryReadTimestamp(candidate.Ts, now, out DateTimeOffset occurredAt))
             {
+                rejected++;
+                continue;
+            }
+
+            if (candidate.Value is { } value && Math.Abs(value) >= MaxEventValue)
+            {
+                // The key that signs this request ships inside an app, so the number is whatever
+                // anybody chooses to send. One absurd value must not be able to fail the write of the
+                // whole batch, or to overflow the conversion totals every tenant's reports share.
                 rejected++;
                 continue;
             }

@@ -1,5 +1,5 @@
 name: Bug report
-description: Something behaves differently from what the documentation or the spec says.
+description: Something behaves differently from what the documentation says.
 title: "[bug] "
 labels: [bug, needs-triage]
 body:
@@ -8,7 +8,7 @@ body:
       value: |
         Thanks for the report. Before filing: a security vulnerability goes through **private vulnerability reporting** (see SECURITY.md), not here.
 
-        **Do not paste secrets or personal data.** No API keys, master secrets, connection strings, install IDs, IP addresses or end-user identifiers. Logs at `Information` and below contain no PII by design (S-08); if yours do, that is a separate bug — report it privately.
+        **Do not paste secrets or personal data.** No API keys, master secrets, connection strings, install IDs, IP addresses or end-user identifiers. Logs at `Information` and below contain no PII by design; if yours do, that is a separate bug — report it privately.
   - type: dropdown
     id: component
     attributes:
@@ -48,7 +48,7 @@ body:
     id: expected
     attributes:
       label: Expected behaviour
-      description: What the docs, the OpenAPI description or docs/zadanie.md say should happen (cite the section if you can).
+      description: What the docs or the OpenAPI description say should happen (cite the section if you can).
     validations:
       required: true
   - type: textarea

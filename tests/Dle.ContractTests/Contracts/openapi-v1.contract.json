@@ -1,5 +1,5 @@
 {
-  "openapi": "3.1.1",
+  "openapi": "3.1.2",
   "operations": {
     "GET /.well-known/jwks.json": {
       "operationId": "GetJwks",
@@ -935,6 +935,27 @@
         }
       }
     },
+    "GET /api/v1/auth/config": {
+      "operationId": "GetAuthConfig",
+      "parameters": {},
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/AuthConfigResponse"
+            }
+          }
+        },
+        "500": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
     "GET /api/v1/domains": {
       "operationId": "ListDomains",
       "parameters": {},
@@ -1133,6 +1154,13 @@
               "$ref": "#/components/schemas/ProblemDetails"
             }
           }
+        },
+        "409": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
         }
       }
     },
@@ -1176,6 +1204,51 @@
     },
     "POST /api/v1/domains/{id}/verify": {
       "operationId": "VerifyDomain",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/DomainVerificationResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/domains/{id}/verify-ownership": {
+      "operationId": "VerifyDomainOwnership",
       "parameters": {
         "id@path": {
           "required": true,
@@ -2041,6 +2114,50 @@
         }
       }
     },
+    "DELETE /api/v1/privacy/installs/{installId}": {
+      "operationId": "EraseInstallData",
+      "parameters": {
+        "installId@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ]
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/InstallErasureResponse"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
     "GET /api/v1/tenants": {
       "operationId": "ListTenants",
       "parameters": {
@@ -2451,6 +2568,105 @@
         }
       }
     },
+    "POST /api/v1/webhooks/deliveries/replay-dead": {
+      "operationId": "ReplayDeadWebhookDeliveries",
+      "parameters": {
+        "limit@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "integer"
+            ],
+            "format": "int32"
+          }
+        },
+        "subscriptionId@query": {
+          "required": false,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/WebhookDeliveryReplayResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /api/v1/webhooks/deliveries/{id}/replay": {
+      "operationId": "ReplayWebhookDelivery",
+      "parameters": {
+        "id@path": {
+          "required": true,
+          "schema": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "requestBody": null,
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/WebhookDeliveryReplayResponse"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "403": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "409": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
     "DELETE /api/v1/webhooks/{id}": {
       "operationId": "DeleteWebhook",
       "parameters": {
@@ -2635,6 +2851,62 @@
         }
       }
     },
+    "POST /v1/login-hints": {
+      "operationId": "RecordLoginHint",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/LoginHintRequestDto"
+          }
+        }
+      },
+      "responses": {
+        "202": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/LoginHintResponseDto"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "404": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "413": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "429": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
     "POST /v1/resolve": {
       "operationId": "ResolveInstall",
       "parameters": {},
@@ -2643,6 +2915,55 @@
         "content": {
           "application/json": {
             "$ref": "#/components/schemas/ResolveRequestDto"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "$ref": "#/components/schemas/ResolveResponseDto"
+            }
+          }
+        },
+        "400": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "401": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "413": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        },
+        "429": {
+          "content": {
+            "application/problem\u002Bjson": {
+              "$ref": "#/components/schemas/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
+    "POST /v1/resolve-link": {
+      "operationId": "ResolveLinkContext",
+      "parameters": {},
+      "requestBody": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "$ref": "#/components/schemas/ResolveLinkRequestDto"
           }
         }
       },
@@ -3074,6 +3395,46 @@
             "integer"
           ],
           "format": "int64"
+        }
+      }
+    },
+    "AuthConfigResponse": {
+      "type": [
+        "object"
+      ],
+      "properties": {
+        "audience": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "authority": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "client_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "oidc_enabled": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "scopes": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ]
+          }
         }
       }
     },
@@ -3722,6 +4083,25 @@
           ],
           "format": "date-time"
         },
+        "ownership_txt_host": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "ownership_txt_value": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "ownership_verified_at": {
+          "type": [
+            "null",
+            "string"
+          ],
+          "format": "date-time"
+        },
         "tenant_id": {
           "type": [
             "string"
@@ -3983,6 +4363,36 @@
             "integer"
           ],
           "format": "int64"
+        }
+      }
+    },
+    "InstallErasureResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "erased_attributions",
+        "erased_installs",
+        "erased_sdk_events"
+      ],
+      "properties": {
+        "erased_attributions": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
+        },
+        "erased_installs": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
+        },
+        "erased_sdk_events": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
         }
       }
     },
@@ -4464,6 +4874,73 @@
         }
       }
     },
+    "LoginHintRequestDto": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "login_key"
+      ],
+      "properties": {
+        "click_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "consent": {
+          "oneOf": [
+            {
+              "type": [
+                "null"
+              ]
+            },
+            {
+              "$ref": "#/components/schemas/ConsentDto"
+            }
+          ]
+        },
+        "deeplink_path": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "login_key": {
+          "type": [
+            "string"
+          ]
+        },
+        "url": {
+          "type": [
+            "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "LoginHintResponseDto": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "accepted",
+        "expires_at"
+      ],
+      "properties": {
+        "accepted": {
+          "type": [
+            "boolean"
+          ]
+        },
+        "expires_at": {
+          "type": [
+            "string"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
     "MatchTypeSummary": {
       "type": [
         "object"
@@ -4929,6 +5406,39 @@
         "title": {
           "type": [
             "null",
+            "string"
+          ]
+        }
+      }
+    },
+    "ResolveLinkRequestDto": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "url"
+      ],
+      "properties": {
+        "app_version": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "install_id": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "platform": {
+          "type": [
+            "null",
+            "string"
+          ]
+        },
+        "url": {
+          "type": [
             "string"
           ]
         }
@@ -6098,6 +6608,34 @@
           "type": [
             "string"
           ]
+        }
+      }
+    },
+    "WebhookDeliveryReplayResponse": {
+      "type": [
+        "object"
+      ],
+      "required": [
+        "delivery_ids",
+        "replayed_count"
+      ],
+      "properties": {
+        "delivery_ids": {
+          "type": [
+            "array"
+          ],
+          "items": {
+            "type": [
+              "string"
+            ],
+            "format": "uuid"
+          }
+        },
+        "replayed_count": {
+          "type": [
+            "integer"
+          ],
+          "format": "int32"
         }
       }
     },

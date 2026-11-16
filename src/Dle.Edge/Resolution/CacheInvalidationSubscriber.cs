@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Threading.Channels;
 
 using Dle.Persistence.Fast.Caching;
 
@@ -42,80 +43,148 @@ public sealed class CacheInvalidationSubscriber : BackgroundService
             return;
         }
 
-        try
+        Channel<CacheInvalidationMessage> queue = Channel.CreateBounded<CacheInvalidationMessage>(
+            new BoundedChannelOptions(4096)
+            {
+                FullMode = BoundedChannelFullMode.DropOldest,
+                SingleReader = true,
+                SingleWriter = false,
+            });
+
+        Task consumerTask = DrainQueueAsync(queue.Reader, stoppingToken);
+
+        int attempt = 0;
+        while (!stoppingToken.IsCancellationRequested)
         {
-            ISubscriber subscriber = _redis.GetSubscriber();
+            ISubscriber? subscriber = null;
+            bool subscribed = false;
 
-            await subscriber.SubscribeAsync(
-                RedisChannel.Literal(LinkCacheInvalidator.InvalidationChannel),
-                (redisChannel, message) =>
-                {
-                    if (message.IsNullOrEmpty)
-                    {
-                        return;
-                    }
+            try
+            {
+                subscriber = _redis.GetSubscriber();
 
-                    _ = Task.Run(async () =>
+                await subscriber.SubscribeAsync(
+                    RedisChannel.Literal(LinkCacheInvalidator.InvalidationChannel),
+                    (_, message) =>
                     {
+                        if (message.IsNullOrEmpty)
+                        {
+                            return;
+                        }
+
                         try
                         {
                             CacheInvalidationMessage? msg = JsonSerializer.Deserialize(
                                 (string)message!,
                                 FastPersistenceJsonContext.Default.CacheInvalidationMessage);
 
-                            if (msg is null)
+                            if (msg is not null && !queue.Writer.TryWrite(msg))
                             {
-                                return;
-                            }
-
-                            if (string.Equals(msg.Type, "link", StringComparison.Ordinal) &&
-                                !string.IsNullOrEmpty(msg.Host) &&
-                                !string.IsNullOrEmpty(msg.Slug))
-                            {
-                                await _cache.RemoveAsync(LinkCacheKeys.Link(msg.Host, msg.Slug));
-                            }
-                            else if (string.Equals(msg.Type, "host", StringComparison.Ordinal) &&
-                                     !string.IsNullOrEmpty(msg.Host))
-                            {
-                                await _cache.RemoveByTagAsync(LinkCacheKeys.HostTag(msg.Host));
-                                await _cache.RemoveAsync(
-                                [
-                                    LinkCacheKeys.Domain(msg.Host),
-                                    LinkCacheKeys.Aasa(msg.Host),
-                                    LinkCacheKeys.AssetLinks(msg.Host),
-                                ]);
-                            }
-                            else if (string.Equals(msg.Type, "tenant", StringComparison.Ordinal) &&
-                                     msg.TenantId.HasValue)
-                            {
-                                await _cache.RemoveByTagAsync(LinkCacheKeys.TenantTag(msg.TenantId.Value));
+                                _logger.LogWarning("Cache invalidation queue full; dropped message.");
                             }
                         }
                         catch (Exception ex)
                         {
-                            _logger.LogWarning(ex, "Failed to apply cache invalidation message from pub/sub");
+                            _logger.LogWarning(ex, "Ignoring malformed cache invalidation payload from pub/sub");
                         }
                     });
-                });
 
-            var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            using (stoppingToken.Register(state => ((TaskCompletionSource)state!).TrySetResult(), tcs))
-            {
-                await tcs.Task;
-            }
+                subscribed = true;
+                attempt = 0;
 
-            try
-            {
-                await subscriber.UnsubscribeAsync(RedisChannel.Literal(LinkCacheInvalidator.InvalidationChannel));
+                var disconnected = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                using (stoppingToken.Register(static state => ((TaskCompletionSource)state!).TrySetResult(), disconnected))
+                {
+                    await disconnected.Task;
+                }
             }
-            catch
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
-                // Unsubscribe on best-effort during shutdown
+                break;
+            }
+            catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
+            {
+                attempt++;
+                TimeSpan delay = TimeSpan.FromSeconds(Math.Min(30, 1 << Math.Min(attempt - 1, 5)));
+                _logger.LogWarning(
+                    ex,
+                    "Cache invalidation subscriber connection failed; retrying in {DelaySeconds}s.",
+                    delay.TotalSeconds);
+
+                try
+                {
+                    await Task.Delay(delay, stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+            }
+            finally
+            {
+                if (subscribed && subscriber is not null)
+                {
+                    try
+                    {
+                        await subscriber.UnsubscribeAsync(RedisChannel.Literal(LinkCacheInvalidator.InvalidationChannel));
+                    }
+                    catch
+                    {
+                        // Best-effort unsubscribe during reconnect or shutdown.
+                    }
+                }
             }
         }
-        catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
+
+        queue.Writer.TryComplete();
+        await consumerTask;
+    }
+
+    private async Task DrainQueueAsync(ChannelReader<CacheInvalidationMessage> reader, CancellationToken stoppingToken)
+    {
+        try
         {
-            _logger.LogWarning(ex, "Cache invalidation subscriber could not subscribe to pub/sub");
+            await foreach (CacheInvalidationMessage msg in reader.ReadAllAsync(stoppingToken))
+            {
+                try
+                {
+                    if (string.Equals(msg.Type, "link", StringComparison.Ordinal)
+                        && !string.IsNullOrEmpty(msg.Host)
+                        && !string.IsNullOrEmpty(msg.Slug))
+                    {
+                        await _cache.RemoveAsync(LinkCacheKeys.Link(msg.Host, msg.Slug), stoppingToken);
+                    }
+                    else if (string.Equals(msg.Type, "host", StringComparison.Ordinal)
+                        && !string.IsNullOrEmpty(msg.Host))
+                    {
+                        await _cache.RemoveByTagAsync(LinkCacheKeys.HostTag(msg.Host), stoppingToken);
+                        await _cache.RemoveAsync(
+                            [
+                                LinkCacheKeys.Domain(msg.Host),
+                                LinkCacheKeys.Aasa(msg.Host),
+                                LinkCacheKeys.AssetLinks(msg.Host),
+                            ],
+                            stoppingToken);
+                    }
+                    else if (string.Equals(msg.Type, "tenant", StringComparison.Ordinal)
+                        && msg.TenantId.HasValue)
+                    {
+                        await _cache.RemoveByTagAsync(LinkCacheKeys.TenantTag(msg.TenantId.Value), stoppingToken);
+                    }
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to apply cache invalidation message from pub/sub");
+                }
+            }
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            // Normal shutdown.
         }
     }
 }

@@ -16,7 +16,7 @@ forwarding old URLs.
 | Firebase Dynamic Links | Deep Link Engine | Notes |
 |---|---|---|
 | `https://example.page.link/abc` | `https://link.example.com/<slug>` on a domain you register | You own the domain and serve its association files now ([self-hosting/domains.md](../self-hosting/domains.md)) |
-| `link=` (deep link URL) | `target_url` + `deeplink_path` | The web target is the fallback. The app receives `deeplink_path` only from a deferred `/v1/resolve`; an installed app opened by the link gets only the short URL, and nothing on the SDK plane expands it ([Known gaps](../../README.md#known-gaps)) |
+| `link=` (deep link URL) | `target_url` + `deeplink_path` | The web target is the fallback. The app receives `deeplink_path` from a deferred `/v1/resolve` after an install, and from `/v1/resolve-link` (SDK `resolveLink`) when the installed app is opened by the link directly |
 | `apn=` (Android package) / `ibi=` (iOS bundle) | Registered apps, associated with the domain | Plus the Play App Signing fingerprint and Apple team id |
 | `afl=` / `ifl=` (per-platform fallback) | Routing rules with `platform: ["android"]` / `["ios"]` and `action: web` | [architecture/routing-rules.md](../architecture/routing-rules.md) |
 | `ofl=` (desktop fallback) | The mandatory `default` rule | Every rule set must end with one |
@@ -26,7 +26,7 @@ forwarding old URLs.
 | `efr=1` (skip preview page) | Interstitial mode `never` in an `app_or_store` rule | In-app webviews get the interstitial whatever the mode. Its "open in app" button is a custom-scheme URL today, not a Universal Link, and is absent when the app has no custom scheme ([Known gaps](../../README.md#known-gaps)) |
 | `d=1` (debug) | `GET /api/v1/links/{id}/simulate` and `?_dl=preview` | Evaluates rules without writing a click |
 | Deferred deep link on Android | Play Install Referrer, `match_type: install_referrer` | Same mechanism Firebase used, but **off by default**: the click id reaches the referrer only in consent mode `full` and when the click carries attribution consent (`dl_consent=all` on the short URL). See step 5 and [Known gaps](../../README.md#known-gaps) |
-| Deferred deep link on iOS | Designed: claim code and login reconciliation; probabilistic opt-in | No deterministic path works today: the edge never issues a claim code and login matching has nothing to match ([Known gaps](../../README.md#known-gaps)). Firebase relied on the pasteboard, which iOS 16 made unusable ([sdk-ios.md](sdk-ios.md)) |
+| Deferred deep link on iOS | Claim code (and, designed, login reconciliation); probabilistic opt-in | The claim code works in the `full` consent mode with the user's consent: the interstitial shows it, the user types it into the app. Under the default `aggregate_only` nothing links an install to a click, and login reconciliation has nothing to match yet ([Known gaps](../../README.md#known-gaps)). Firebase relied on the pasteboard, which iOS 16 made unusable ([sdk-ios.md](sdk-ios.md)) |
 | Firebase Analytics events | `POST /v1/events` and your own analytics | The engine reports attribution; it is not an analytics suite |
 
 ## Cutover order
@@ -42,8 +42,7 @@ forwarding old URLs.
    per batch ([api.md](api.md#examples)). Send every corrected file under a new `Idempotency-Key`: the key
    is not bound to the body, and a reused one replays the first batch's summary for 24 hours instead of
    importing. Custom slugs are allowed if you want to keep the old short codes; they must be 3–7 or 9+
-   characters so they cannot collide with generated ones. Readable slugs are also, today, the only way an
-   app opened directly by a link can tell where to go.
+   characters so they cannot collide with generated ones.
 4. **App release.** Replace the Firebase SDK calls with the engine SDK, add the associated-domains
    entitlement and the App Links intent filter, and ship. Until the new app version is widely installed,
    direct opens still work through the OS — but only the new version reports them.

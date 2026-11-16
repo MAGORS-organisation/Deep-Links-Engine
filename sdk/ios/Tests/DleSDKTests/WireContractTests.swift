@@ -75,6 +75,27 @@ final class WireContractTests: XCTestCase {
 
     // MARK: - ResolveResponseDto
 
+    // MARK: - ResolveLinkRequestDto
+
+    func testResolveLinkRequestSerializesInSnakeCaseAndOmitsAbsentMembers() throws {
+        let expected = """
+            {"url":"https://go.example.com/AbC12345","install_id":"9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1","platform":"ios","app_version":"3.4.1"}
+            """
+        let body = ResolveLinkRequestBody(
+            url: "https://go.example.com/AbC12345",
+            installId: TestSupport.installId,
+            platform: "ios",
+            appVersion: "3.4.1")
+
+        XCTAssertEqual(try TestSupport.canonical(try TestSupport.encode(body)), try TestSupport.canonical(expected))
+
+        let anonymous = ResolveLinkRequestBody(url: "https://go.example.com/AbC12345", installId: nil, platform: "ios", appVersion: nil)
+        let json = try TestSupport.encode(anonymous)
+        XCTAssertFalse(json.contains("install_id"), "absent members are omitted, not null")
+        XCTAssertFalse(json.contains("null"))
+        XCTAssertEqual(DleAPI.resolveLinkPath, "/v1/resolve-link")
+    }
+
     func testResolveResponseDecodesTheLiteralOfB72() throws {
         let literal = """
             {"matched":true,"match_type":"install_referrer","confidence":1.0,"click_id":"aB3xK9pQ","link":{"id":"7286414500000000001","deeplink_path":"/promo/jesen","campaign":"jesen26"},"params":{"utm_source":"fb","utm_campaign":"jesen26","promo":"AUTUMN20"},"expires_in":0}

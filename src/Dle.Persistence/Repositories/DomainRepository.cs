@@ -112,6 +112,36 @@ public sealed class DomainRepository
     }
 
     /// <summary>
+    /// Removes stale, unverified inactive domain claims for <paramref name="host"/> whose
+    /// registration pre-dates <paramref name="createdBefore"/> so legitimate owners are not locked out.
+    /// </summary>
+    /// <param name="host">Normalized domain host.</param>
+    /// <param name="createdBefore">Cutoff timestamp for stale claims.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Number of reclaimed rows.</returns>
+    public async Task<int> ReclaimExpiredUnverifiedAsync(
+        string host,
+        DateTimeOffset createdBefore,
+        CancellationToken cancellationToken)
+    {
+        if (!HostNormalizer.TryNormalize(host, out string normalized))
+        {
+            return 0;
+        }
+
+        using CrossTenantScope scope = _db.BeginCrossTenantScope(
+            "reclaiming an expired unverified custom domain claim so legitimate owners are not permanently locked out");
+
+        return await _db.Domains
+            .AcrossTenants()
+            .Where(d => d.Host == normalized
+                && !d.IsActive
+                && d.OwnershipVerifiedAt == null
+                && d.CreatedAt < createdBefore)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    /// <summary>
     /// Appends a verification run and updates the summary columns of the domain (FR-143).
     /// </summary>
     /// <param name="verification">The run to record. Its checked instant is filled in when unset.</param>

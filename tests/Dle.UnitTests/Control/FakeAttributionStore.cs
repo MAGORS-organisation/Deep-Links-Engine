@@ -159,18 +159,20 @@ internal sealed class FakeAttributionStore : IAttributionStore
     public Task<ClaimCodeRecord?> FindClaimCodeAsync(byte[] codeHash, CancellationToken cancellationToken) =>
         Task.FromResult(_claimCodes.Find(record => record.CodeHash.AsSpan().SequenceEqual(codeHash)));
 
-    public Task ConsumeClaimCodeAsync(Guid claimCodeId, DateTimeOffset consumedAt, CancellationToken cancellationToken)
+    public Task<bool> ConsumeClaimCodeAsync(Guid claimCodeId, DateTimeOffset consumedAt, CancellationToken cancellationToken)
     {
-        ConsumedClaimCodes.Add(claimCodeId);
-
         ClaimCodeRecord? record = _claimCodes.Find(candidate => candidate.Id == claimCodeId);
 
-        if (record is not null)
+        // Mirrors the conditional UPDATE: only an unspent row changes.
+        if (record is null || record.ConsumedAt is not null)
         {
-            record.ConsumedAt = consumedAt;
+            return Task.FromResult(false);
         }
 
-        return Task.CompletedTask;
+        ConsumedClaimCodes.Add(claimCodeId);
+        record.ConsumedAt = consumedAt;
+
+        return Task.FromResult(true);
     }
 
     public Task<ClaimCodeRecord> AddClaimCodeAsync(ClaimCodeRecord record, CancellationToken cancellationToken)

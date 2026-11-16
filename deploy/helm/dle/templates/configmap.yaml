@@ -62,6 +62,17 @@ data:
   {{- include "dle.env" (dict "key" "Dle:Control:PublicScheme" "value" .Values.control.config.publicScheme) }}
   {{- include "dle.env" (dict "key" "Dle:Control:InstanceTenantId" "value" .Values.control.config.instanceTenantId) }}
   {{- include "dle.env" (dict "key" "Dle:Control:AllowTenantSelfService" "value" .Values.control.config.allowTenantSelfService) }}
+  # ---- Dle:Control:Network — the same ingress fronts the control plane, so the same trust list
+  # applies (edge.config.network). Without it every caller shares the ingress controller's address
+  # in the abuse-report and failed-authentication limiters. ----
+  {{- include "dle.env" (dict "key" "Dle:Control:Network:UseForwardedHeaders" "value" .Values.edge.config.network.useForwardedHeaders) }}
+  {{- include "dle.env" (dict "key" "Dle:Control:Network:ForwardLimit" "value" .Values.edge.config.network.forwardLimit) }}
+  {{- range $i, $cidr := .Values.edge.config.network.knownNetworks }}
+  {{- include "dle.env" (dict "key" (printf "Dle:Control:Network:KnownNetworks:%d" $i) "value" $cidr) }}
+  {{- end }}
+  {{- range $i, $ip := .Values.edge.config.network.knownProxies }}
+  {{- include "dle.env" (dict "key" (printf "Dle:Control:Network:KnownProxies:%d" $i) "value" $ip) }}
+  {{- end }}
   # The image ships the admin SPA under wwwroot/admin/ (Dockerfile.control); client-side routes
   # under /admin/ need the SPA fallback to serve that index.
   {{- include "dle.env" (dict "key" "Dle:Control:SpaIndexFile" "value" "admin/index.html") }}

@@ -79,14 +79,16 @@ class MainActivity : ComponentActivity() {
         deferredView.setText(R.string.status_resolving)
         lifecycleScope.launch {
             try {
-                showDeferred(Dle.resolve())
+                // A match comes back on every launch; it was delivered if it was already cached.
+                val delivered = Dle.shared.cachedLink?.matched == true
+                showDeferred(Dle.resolve(), navigate = !delivered)
             } catch (e: DleException) {
                 deferredView.text = getString(R.string.status_resolve_failed, "${e.javaClass.simpleName}: ${e.message}")
             }
         }
     }
 
-    private fun showDeferred(link: DeferredLink) {
+    private fun showDeferred(link: DeferredLink, navigate: Boolean) {
         val safePath: SafeDeepLink? = allowlist.parsePath(link.link?.deeplinkPath)
         deferredView.text = buildString {
             appendLine(getString(R.string.heading_deferred))
@@ -101,7 +103,7 @@ class MainActivity : ComponentActivity() {
             appendLine("params: ${link.params}")
         }
         // Only a deterministic match may drive navigation; a probabilistic one is a hint at most.
-        if (link.isDeterministic && safePath != null) {
+        if (navigate && link.isDeterministic && safePath != null) {
             navigateTo(safePath)
         }
     }

@@ -1,3 +1,5 @@
+using System.Formats.Tar;
+using System.IO.Compression;
 using System.Net.Http;
 
 using Microsoft.Extensions.Logging;
@@ -25,9 +27,9 @@ namespace Dle.Control.Workers;
 /// "no geography" rather than as an error.
 /// </para>
 /// <para>
-/// The write is atomic: the archive is downloaded to a temporary file beside the destination and
-/// then moved over it. A half-written database is worse than an old one, because the reader opens
-/// it successfully and answers wrongly.
+/// The write is atomic: the download goes to a temporary file beside the destination, a
+/// <c>.tar.gz</c> is unpacked, the result is checked to be a MaxMind database, and only then is it
+/// moved over the live file. A half-written or foreign file is worse than an old database.
 /// </para>
 /// </remarks>
 public sealed partial class GeoIpUpdateWorker : LeaderElectedBackgroundService
@@ -37,6 +39,22 @@ public sealed partial class GeoIpUpdateWorker : LeaderElectedBackgroundService
 
     /// <summary>Name of the outbound client used for the download.</summary>
     public const string HttpClientName = "dle-geoip";
+
+    /// <summary>Suffix of the file an archive is unpacked into, beside the download.</summary>
+    private const string UnpackedSuffix = ".mmdb";
+
+    /// <summary>How far from the end of a database its metadata marker may sit.</summary>
+    private const int MetadataSearchBytes = 128 * 1024;
+
+    /// <summary>First bytes of a gzip stream.</summary>
+    private static readonly byte[] GzipMagic = [0x1F, 0x8B];
+
+    /// <summary>The bytes <c>\xAB\xCD\xEFMaxMind.com</c> that introduce a database's metadata.</summary>
+    private static readonly byte[] MetadataMarker =
+    [
+        0xAB, 0xCD, 0xEF,
+        (byte)'M', (byte)'a', (byte)'x', (byte)'M', (byte)'i', (byte)'n', (byte)'d', (byte)'.', (byte)'c', (byte)'o', (byte)'m',
+    ];
 
     private readonly IHttpClientFactory _clients;
     private readonly IOptionsMonitor<WorkerOptions> _options;
@@ -128,6 +146,7 @@ public sealed partial class GeoIpUpdateWorker : LeaderElectedBackgroundService
         client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
 
         long written;
+        string database;
 
         try
         {
@@ -156,16 +175,18 @@ public sealed partial class GeoIpUpdateWorker : LeaderElectedBackgroundService
             }
 
             written = await DownloadAsync(response, temporary, options.MaxDownloadBytes, cancellationToken);
+            database = await UnpackAsync(temporary, options.MaxDownloadBytes, cancellationToken);
         }
         catch
         {
             TryDelete(temporary);
+            TryDelete(temporary + UnpackedSuffix);
             throw;
         }
 
         // Atomic swap. A reader either sees the previous database or the new one, never a partial
         // file it would happily open and answer from.
-        File.Move(temporary, destination, overwrite: true);
+        File.Move(database, destination, overwrite: true);
 
         Metrics.Items(Job, "geoip_bytes", written);
         LogUpdated(_logger, destination, written);
@@ -217,6 +238,128 @@ public sealed partial class GeoIpUpdateWorker : LeaderElectedBackgroundService
         await destination.FlushAsync(cancellationToken);
 
         return total;
+    }
+
+    /// <summary>
+    /// Turns the download into a database file that is safe to put where the edge reads it.
+    /// </summary>
+    /// <remarks>
+    /// MaxMind's permalink serves a <c>.tar.gz</c> with the <c>.mmdb</c> inside a dated directory,
+    /// and a server in trouble answers 200 with an HTML page. Either one moved over the live file
+    /// would replace a working database with something the reader cannot open, so an archive is
+    /// unpacked and whatever is left has to carry the MaxMind metadata marker before it is used.
+    /// </remarks>
+    /// <returns>The path of the validated database file.</returns>
+    internal static async Task<string> UnpackAsync(string downloaded, long maxBytes, CancellationToken cancellationToken)
+    {
+        string candidate = downloaded;
+
+        if (await StartsWithAsync(downloaded, GzipMagic, cancellationToken))
+        {
+            candidate = downloaded + UnpackedSuffix;
+
+            try
+            {
+                await ExtractDatabaseAsync(downloaded, candidate, maxBytes, cancellationToken);
+            }
+            finally
+            {
+                TryDelete(downloaded);
+            }
+        }
+
+        if (!await HasMetadataMarkerAsync(candidate, cancellationToken))
+        {
+            TryDelete(candidate);
+
+            throw new InvalidOperationException(
+                "The GeoIP download is not a MaxMind database; the existing database was left in place.");
+        }
+
+        return candidate;
+    }
+
+    /// <summary>Copies the first <c>.mmdb</c> entry of a gzipped tar archive to a file.</summary>
+    /// <remarks>
+    /// The entry name is only ever matched, never used as a path, so an archive cannot choose where
+    /// it is written.
+    /// </remarks>
+    private static async Task ExtractDatabaseAsync(
+        string archivePath,
+        string destinationPath,
+        long maxBytes,
+        CancellationToken cancellationToken)
+    {
+        await using FileStream archive = new(
+            archivePath,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            bufferSize: 81920,
+            useAsync: true);
+        await using GZipStream gzip = new(archive, CompressionMode.Decompress);
+        await using TarReader tar = new(gzip);
+
+        while (await tar.GetNextEntryAsync(copyData: false, cancellationToken) is { } entry)
+        {
+            if (entry.DataStream is null
+                || entry.EntryType is not (TarEntryType.RegularFile or TarEntryType.V7RegularFile)
+                || !entry.Name.EndsWith(".mmdb", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (entry.Length > maxBytes)
+            {
+                throw new InvalidOperationException(
+                    "The GeoIP database inside the archive exceeds the configured maximum size.");
+            }
+
+            await using FileStream output = new(
+                destinationPath,
+                FileMode.Create,
+                FileAccess.Write,
+                FileShare.None,
+                bufferSize: 81920,
+                useAsync: true);
+
+            await entry.DataStream.CopyToAsync(output, cancellationToken);
+
+            return;
+        }
+
+        throw new InvalidOperationException("The GeoIP archive contains no .mmdb file.");
+    }
+
+    /// <summary>Whether a file begins with the given bytes.</summary>
+    private static async Task<bool> StartsWithAsync(string path, byte[] prefix, CancellationToken cancellationToken)
+    {
+        await using FileStream file = new(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1, useAsync: true);
+
+        byte[] head = new byte[prefix.Length];
+        int read = await file.ReadAtLeastAsync(head, head.Length, throwOnEndOfStream: false, cancellationToken);
+
+        return read == prefix.Length && head.AsSpan().SequenceEqual(prefix);
+    }
+
+    /// <summary>
+    /// Whether a file carries the marker every MaxMind database ends its data section with.
+    /// </summary>
+    /// <remarks>
+    /// The format places the metadata, introduced by this marker, within the last 128 KiB of the
+    /// file; it is what the reader itself looks for when it opens a database.
+    /// </remarks>
+    private static async Task<bool> HasMetadataMarkerAsync(string path, CancellationToken cancellationToken)
+    {
+        await using FileStream file = new(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 81920, useAsync: true);
+
+        int tailLength = (int)Math.Min(file.Length, MetadataSearchBytes);
+        byte[] tail = new byte[tailLength];
+
+        file.Seek(-tailLength, SeekOrigin.End);
+        int read = await file.ReadAtLeastAsync(tail, tailLength, throwOnEndOfStream: false, cancellationToken);
+
+        return tail.AsSpan(0, read).LastIndexOf(MetadataMarker) >= 0;
     }
 
     /// <summary>Appends the licence key to the configured URL when one is set.</summary>

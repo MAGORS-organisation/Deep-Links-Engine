@@ -4,8 +4,7 @@ Deep Link Engine (DLE) redirects people. A bug in it can send a person somewhere
 intend to go, or tell a third party something about them that they did not consent to share.
 Reports are taken seriously and handled in the open once they are fixed.
 
-This document is the S-11 deliverable of `docs/zadanie.md` §E.8: a published contact and a
-90-day coordinated-disclosure window.
+This policy gives a published contact and a 90-day coordinated-disclosure window.
 
 ## Reporting a vulnerability
 
@@ -83,7 +82,7 @@ Of particular interest, because they are the acceptance criteria in §E.8:
 
 - Vulnerabilities in third-party dependencies with no DLE-specific exploit path — report those
   upstream; we track them through the Security workflow and Dependabot.
-- Misconfiguration of a particular self-hosted instance (weak `DLE_MASTER_SECRET`, an exposed
+- Misconfiguration of a particular self-hosted instance (weak `DLE_MASTER_SECRET` or `DLE_EDGE_SECRET`, an exposed
   Postgres port, a Caddy running with a custom, weaker TLS policy). Configuration guidance is a
   documentation issue, not a vulnerability.
 - Denial of service by volume against an instance you do not own. Rate limiting is in scope; load
@@ -115,12 +114,13 @@ What the software gives operators to act on a notice, in the sense of Regulation
 (Digital Services Act) **Article 16** — notice-and-action mechanisms:
 
 - `POST /abuse-reports`, rate-limited per §E.9 (no captcha), so that a notice can be submitted for
-  any slug without an account. It is served by the control plane, but the shipped Caddy and Helm
-  routing send that path to the edge, which does not serve it, and no page links to it: it is not
-  reachable from outside today (see [Known gaps](README.md#known-gaps));
+  any slug without an account. It is a JSON endpoint served by the control plane, and the shipped
+  Caddy and Helm routing send that path there; no web form ships, so an operator who wants one
+  builds it on top;
 - a quarantine state for links and a reputation check on targets (off until a source is
-  configured), so that a notified link can be taken down and the decision recorded. The edge keeps
-  serving a quarantined link from its cache for up to 10 min 30 s with the default settings;
+  configured), so that a notified link can be taken down and the decision recorded. Quarantine
+  invalidates the edge caches through Valkey, so every edge answers `410` on its next resolve
+  (within 30 s, the in-process cache TTL, if Valkey is down);
 - an audit trail of who did what to which link, for the statement of reasons the DSA requires.
 
 If you have found a harmful link served by a DLE instance: contact its operator — the domain's

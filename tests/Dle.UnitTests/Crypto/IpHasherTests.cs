@@ -117,9 +117,9 @@ public sealed class IpHasherTests
         Assert.Equal(expected, Hasher().Prefix(IPAddress.Parse(address)));
 
     [Theory]
-    [InlineData("2001:db8:1234:5678:9abc:def0:1234:5678", "2001:0db8:1234::/48")]
-    [InlineData("2001:db8:1234::1", "2001:0db8:1234::/48")]
-    [InlineData("fe80::1", "fe80:0000:0000::/48")]
+    [InlineData("2001:db8:1234:5678:9abc:def0:1234:5678", "2001:db8:1234::/48")]
+    [InlineData("2001:db8:1234::1", "2001:db8:1234::/48")]
+    [InlineData("fe80::1", "fe80::/48")]
     public void Prefix_IPv6_IsTheSlashFortyEightNetwork(string address, string expected) =>
         Assert.Equal(expected, Hasher().Prefix(IPAddress.Parse(address)));
 

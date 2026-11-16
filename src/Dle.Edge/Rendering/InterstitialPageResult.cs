@@ -1,6 +1,7 @@
 using System.Text;
 
 using Dle.Domain.Attribution;
+using Dle.Edge.Resolution;
 
 namespace Dle.Edge.Rendering;
 
@@ -45,6 +46,7 @@ internal sealed class InterstitialPageResult : HtmlPageResult
     private readonly ClientContext _client;
     private readonly DomainRuntimeConfig? _domain;
     private readonly string? _claimCode;
+    private readonly string? _consentToken;
     private readonly bool _isInAppWebView;
 
     /// <summary>Creates the result.</summary>
@@ -58,13 +60,15 @@ internal sealed class InterstitialPageResult : HtmlPageResult
     /// <param name="client">The classified client, supplying the language and the channel.</param>
     /// <param name="domain">The link domain's runtime configuration, when the host is known.</param>
     /// <param name="claimCode">The one-time code issued for this click, or <see langword="null"/> (FR-184).</param>
+    /// <param name="consentToken">Single-use signed form token for deferred attribution opt-in, or <see langword="null"/>.</param>
     internal InterstitialPageResult(
         string? deeplinkUrl,
         string fallbackUrl,
         FallbackTarget fallbackTarget,
         ClientContext client,
         DomainRuntimeConfig? domain,
-        string? claimCode)
+        string? claimCode,
+        string? consentToken = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(fallbackUrl);
         ArgumentNullException.ThrowIfNull(client);
@@ -76,6 +80,7 @@ internal sealed class InterstitialPageResult : HtmlPageResult
         _client = client;
         _domain = domain;
         _claimCode = ClaimCode.IsWellFormed(claimCode) ? claimCode : null;
+        _consentToken = string.IsNullOrWhiteSpace(consentToken) ? null : consentToken;
 
         // ClientChannel numbers in-app browsers 10..19 and documents that grouping as stable. It is
         // the one client property this page changes its behaviour for.
@@ -84,6 +89,9 @@ internal sealed class InterstitialPageResult : HtmlPageResult
 
     /// <inheritdoc />
     protected override int StatusCode => StatusCodes.Status200OK;
+
+    /// <inheritdoc />
+    protected override string FormAction => _consentToken is not null ? "'self'" : "'none'";
 
     /// <summary>
     /// Serves the ordinary 302 instead of a page when the operator switched the interstitial off.
@@ -114,7 +122,9 @@ internal sealed class InterstitialPageResult : HtmlPageResult
         // The automatic redirect is suppressed inside an in-app webview on purpose. There the whole
         // point of the page is the tap on the deep link anchor, and navigating away from under the user
         // after 1.2 seconds would remove the only interaction that can open the application (§A.2.6).
-        int delayMs = _isInAppWebView ? 0 : options.AutoRedirectMs;
+        // It is also suppressed when a deferred-consent opt-in form is shown so the visitor has time
+        // to grant attribution before leaving the interstitial.
+        int delayMs = _isInAppWebView || _consentToken is not null ? 0 : options.AutoRedirectMs;
         bool autoRedirect = delayMs > 0;
 
         HtmlBuilder html = new();
@@ -142,6 +152,11 @@ internal sealed class InterstitialPageResult : HtmlPageResult
         if (options.ShowClaimCode && _claimCode is not null)
         {
             WriteClaimCode(html, strings, _claimCode);
+        }
+
+        if (_consentToken is not null)
+        {
+            WriteConsentPrompt(html, strings, _consentToken);
         }
 
         PageChrome.CloseDocument(
@@ -242,6 +257,32 @@ internal sealed class InterstitialPageResult : HtmlPageResult
             .Raw("<p class=\"dle-claim-note\">")
             .Text(strings.ClaimCodeNote)
             .Raw("</p>\n")
+            .Raw("</section>\n");
+    }
+
+    /// <summary>
+    /// Writes the zero-JavaScript deferred attribution opt-in form for <c>full</c> consent domains
+    /// when no prior consent signal was presented.
+    /// </summary>
+    private static void WriteConsentPrompt(HtmlBuilder html, PageStrings strings, string consentToken)
+    {
+        html.Raw("<section class=\"dle-claim\" aria-labelledby=\"dle-consent-title\">\n")
+            .Raw("<h2 class=\"dle-claim-title\" id=\"dle-consent-title\">")
+            .Text(strings.ConsentPromptHeading)
+            .Raw("</h2>\n")
+            .Raw("<p>")
+            .Text(strings.ConsentPromptBody)
+            .Raw("</p>\n")
+            .Raw("<form method=\"post\"")
+            .Attribute("action", ResolveEndpointExtensions.ConsentRoutePattern)
+            .Raw(">\n")
+            .Raw("<input type=\"hidden\" name=\"token\"")
+            .Attribute("value", consentToken)
+            .Raw(">\n")
+            .Raw("<button type=\"submit\" class=\"dle-btn dle-btn-secondary\">")
+            .Text(strings.ConsentPromptSubmit)
+            .Raw("</button>\n")
+            .Raw("</form>\n")
             .Raw("</section>\n");
     }
 

@@ -1,9 +1,11 @@
 import {
   DleError,
   buildEventBatch,
+  buildLoginHintRequest,
   buildResolveRequest,
   collectSignals,
   createApiClient,
+  isDeterministic,
   parseResolveResponse,
 } from './api.js';
 import { createConsent } from './consent.js';
@@ -12,12 +14,15 @@ import { createLogger } from './log.js';
 import { detect } from './platform.js';
 import { createQueue, isValidEvent } from './queue.js';
 import { createSmartBanner } from './smart-banner.js';
-import { createSessionStore, createStore, readJson, writeJson } from './storage.js';
+import { createStore, createSessionStore, readJson, writeJson } from './storage.js';
+import { isSafeWebUrl } from './url.js';
 import type {
   DevicePlatform,
   DleClient,
   DleConfig,
   DleEvent,
+  LoginHintOptions,
+  LoginHintResult,
   ResolveOptions,
   ResolveResult,
   SmartBannerHandle,
@@ -101,8 +106,11 @@ function validateConfig(config: DleConfig): void {
   if (typeof config.sdkKey !== 'string' || config.sdkKey.trim() === '') {
     throw new DleError('config', 'sdkKey is required');
   }
-  if (typeof config.endpoint !== 'string' || !/^https?:\/\/[^\s/]+/i.test(config.endpoint)) {
-    throw new DleError('config', 'endpoint must be an absolute http(s) URL');
+  if (!isSafeWebUrl(config.endpoint, config.allowInsecureHttp === true)) {
+    throw new DleError(
+      'config',
+      'endpoint must be a valid https:// URL (http:// is allowed only for loopback hosts or with allowInsecureHttp)',
+    );
   }
   if (config.platform !== undefined && !PLATFORMS.includes(config.platform)) {
     throw new DleError('config', `platform must be one of ${PLATFORMS.join(', ')}`);
@@ -150,21 +158,46 @@ export function createDle(config: DleConfig): DleClient {
   let banner: SmartBannerHandle | null = null;
   let destroyed = false;
 
+  // The cached answer carries the install id, so without attribution consent it stays in
+  // memory for the page view, like the id itself, and never reaches sessionStorage.
+  let memoryEntry: ResolveCacheEntry | null = null;
+  let attributionGranted = consent.get().attribution;
+
+  const loadEntry = (): ResolveCacheEntry | null =>
+    consent.canPersistInstallId() ? readJson<ResolveCacheEntry>(session, RESOLVE_CACHE_KEY) : memoryEntry;
+
+  const storeEntry = (entry: ResolveCacheEntry | null): void => {
+    if (entry !== null && consent.canPersistInstallId()) {
+      writeJson(session, RESOLVE_CACHE_KEY, entry);
+      memoryEntry = null;
+    } else {
+      session.remove(RESOLVE_CACHE_KEY);
+      memoryEntry = entry;
+    }
+  };
+
   const unsubscribe = consent.onChange((state) => {
     installId.reconcile();
     if (!state.analytics) queue.clear();
     if (!state.attribution) {
       installId.clear();
-      session.remove(RESOLVE_CACHE_KEY);
+      storeEntry(null);
+    } else if (!attributionGranted) {
+      // An unmatched answer given before attribution consent (`consent_missing`, non-final
+      // `expires_in`) is stale now: drop it so the next resolve asks again, as the iOS and
+      // Android SDKs do. A final or matched answer moves to sessionStorage with the id.
+      const entry = memoryEntry;
+      storeEntry(entry !== null && (entry.result.matched || entry.result.expiresIn === 0) ? entry : null);
     }
+    attributionGranted = state.attribution;
   });
 
   const readCache = (id: string): ResolveResult | null => {
-    const entry = readJson<ResolveCacheEntry>(session, RESOLVE_CACHE_KEY);
+    const entry = loadEntry();
     if (entry?.install_id !== id) return null;
     const { expiresIn } = entry.result;
     if (expiresIn > 0 && entry.stored_at + expiresIn * 1000 <= Date.now()) {
-      session.remove(RESOLVE_CACHE_KEY);
+      storeEntry(null);
       return null;
     }
     return entry.result;
@@ -174,7 +207,11 @@ export function createDle(config: DleConfig): DleClient {
     const id = installId.get();
     if (options.force !== true) {
       const cached = readCache(id);
-      if (cached !== null) return cached;
+      // New evidence (a claim code, a login key, an explicit referrer) is worth a request
+      // unless the cached answer is already deterministic, as in the iOS and Android SDKs.
+      const given = (value: string | undefined): boolean => value !== undefined && value.trim() !== '';
+      const evidence = given(options.claimCode) || given(options.loginKey) || given(options.referrer);
+      if (cached !== null && !(evidence && !isDeterministic(cached))) return cached;
     }
 
     const attribution = consent.canReadLinkParams();
@@ -201,9 +238,36 @@ export function createDle(config: DleConfig): DleClient {
     });
 
     const result = parseResolveResponse(await api.resolve(body));
-    writeJson(session, RESOLVE_CACHE_KEY, { install_id: id, stored_at: Date.now(), result } satisfies ResolveCacheEntry);
+    storeEntry({ install_id: id, stored_at: Date.now(), result });
     logger.debug('resolved', result.matchType, result.confidence);
     return result;
+  }
+
+  function clickIdFromLocation(): string | undefined {
+    const search = (globalThis as { location?: { search?: string } }).location?.search;
+    if (typeof search !== 'string' || search === '' || search === '?') return undefined;
+    try {
+      const cid = new URLSearchParams(search).get('dl_cid');
+      return cid !== null && cid !== '' ? cid : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async function recordLoginHint(options: LoginHintOptions): Promise<LoginHintResult> {
+    if (destroyed || !consent.canReadLinkParams()) return { accepted: false };
+    const clickId = options.clickId ?? (config.readUrlParams !== false ? clickIdFromLocation() : undefined);
+    if (clickId === undefined && options.url === undefined) return { accepted: false };
+    const res = await api.sendLoginHint(
+      buildLoginHintRequest({
+        loginKey: options.loginKey,
+        clickId,
+        url: options.url,
+        deeplinkPath: options.deeplinkPath,
+        consent: consent.toWire(),
+      }),
+    );
+    return { accepted: res.accepted, expiresAt: res.expires_at };
   }
 
   function track(input: DleEvent | readonly DleEvent[]): void {
@@ -242,6 +306,7 @@ export function createDle(config: DleConfig): DleClient {
   const client: DleClient = {
     version: VERSION,
     resolve,
+    recordLoginHint,
     track,
     flush: () => queue.flush(),
     setConsent: (patch) => consent.set(patch),

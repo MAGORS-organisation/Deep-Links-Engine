@@ -8,8 +8,9 @@ import type { RoutingRule, RuleAction, RuleCondition } from '../api/types';
  * offending field. The server remains the authority; its problem document is still rendered when
  * it disagrees.
  *
- * Paths use the wire spelling (`rules[2].then.url`) so a server-reported error can be matched to
- * the same field.
+ * Paths use the validator's spelling (`rules[2].then.url`); the control plane reports the same
+ * paths prefixed with `routing_` (`routing_rules[2].then.url`), and RuleBuilder strips that prefix
+ * to match a server-reported error to the same field.
  */
 export const MAX_RULES = 50;
 

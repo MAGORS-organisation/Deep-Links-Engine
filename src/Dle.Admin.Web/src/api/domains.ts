@@ -15,10 +15,6 @@ export const domains = {
     return api(base, { signal });
   },
 
-  get(id: string): Promise<DomainResponse> {
-    return api(`${base}/${encodeURIComponent(id)}`);
-  },
-
   create(body: CreateDomainRequest): Promise<DomainResponse> {
     return api(base, { method: 'POST', body });
   },
@@ -34,6 +30,11 @@ export const domains = {
   /** FR-143. Runs DNS, TLS, AASA and assetlinks checks now and returns each with its reason. */
   verify(id: string): Promise<DomainVerificationResponse> {
     return api(`${base}/${encodeURIComponent(id)}/verify`, { method: 'POST', idempotent: false });
+  },
+
+  /** A5. Verifies DNS TXT ownership (_dle-verify.<host>) and activates the domain. */
+  verifyOwnership(id: string): Promise<DomainVerificationResponse> {
+    return api(`${base}/${encodeURIComponent(id)}/verify-ownership`, { method: 'POST', idempotent: false });
   },
 
   verifications(id: string): Promise<PagedResponse<DomainVerificationRecord>> {

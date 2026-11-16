@@ -2,6 +2,7 @@ using Dle.Control.Configuration;
 using Dle.Control.Features.Shared;
 using Dle.Control.Identity;
 using Dle.Crypto;
+using Dle.Persistence.Fast.Caching;
 
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -94,9 +95,13 @@ public static class DleIdentityServiceCollectionExtensions
         services.TryAddScoped<DleCredentialStore>();
 
         services.TryAddSingleton<DleCredentialCache>();
+        services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<IHostedService, CredentialCacheInvalidationSubscriber>());
         services.TryAddSingleton<DleAuthAttemptLimiter>();
+        services.TryAddSingleton<ValkeyRateLimitStore>();
         services.TryAddSingleton<DleDecoyCredential>();
         services.TryAddSingleton<DleSdkKeyFactory>();
+        services.TryAddSingleton<DleInstanceOperator>();
 
         services.TryAddEnumerable(
             ServiceDescriptor.Singleton<IAuthorizationHandler, DleRoleAuthorizationHandler>());

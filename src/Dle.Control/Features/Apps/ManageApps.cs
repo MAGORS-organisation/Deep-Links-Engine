@@ -144,6 +144,8 @@ public static class ManageApps
 
         List<string> fingerprints = NormalizeFingerprints(request.CertFingerprints, errors);
 
+        ValidateStoreUrl(request.StoreUrl, errors);
+
         if (errors.Count > 0)
         {
             return DleProblem.Validation(errors, "The application cannot be registered as described.");
@@ -251,6 +253,20 @@ public static class ManageApps
                 NormalizeFingerprints(request.PlaySigningFingerprints, errors);
         }
 
+        if (request.TeamId is not null
+            && string.IsNullOrWhiteSpace(request.TeamId)
+            && string.Equals(app.Platform, IosPlatform, StringComparison.OrdinalIgnoreCase))
+        {
+            // The same rule as on creation. An iOS app without a team identifier is left out of the
+            // association file, so clearing it would silently switch universal links off.
+            errors["team_id"] =
+            [
+                "An iOS application needs its Apple team identifier; it cannot be cleared.",
+            ];
+        }
+
+        ValidateStoreUrl(request.StoreUrl, errors);
+
         if (errors.Count > 0)
         {
             return DleProblem.Validation(errors, "The application cannot be changed as described.");
@@ -269,6 +285,12 @@ public static class ManageApps
 
         await apps.UpdateAsync(app, cancellationToken);
 
+        // Read before the replacement: a host the application is being detached from has to drop its
+        // cached association file too, or it keeps advertising the app until the entry expires.
+        IReadOnlyList<Guid> previouslyAttached = request.DomainIds is null
+            ? []
+            : await pairings.ForAppAsync(app.Id, cancellationToken);
+
         IReadOnlyList<Guid> attached = request.DomainIds is null
             ? await pairings.ForAppAsync(app.Id, cancellationToken)
             : await pairings.ReplaceAsync(app.Id, request.DomainIds, cancellationToken);
@@ -286,7 +308,11 @@ public static class ManageApps
             },
             cancellationToken);
 
-        await InvalidatePairedHostsAsync(pairings, cache, attached, cancellationToken);
+        await InvalidatePairedHostsAsync(
+            pairings,
+            cache,
+            [.. attached.Union(previouslyAttached)],
+            cancellationToken);
 
         return TypedResults.Ok(Project(app, attached, PlaySigningWarnings(app)));
     }
@@ -298,6 +324,7 @@ public static class ManageApps
     /// <param name="pairings">Reads the domains that will stop advertising it.</param>
     /// <param name="audit">The administrative audit trail (FR-246).</param>
     /// <param name="cache">Drops the cached association files of the paired hosts.</param>
+    /// <param name="credentialCache">Drops cached SDK key verifications for the removed application.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>204, or 404.</returns>
     public static async Task<IResult> DeleteAsync(
@@ -307,6 +334,7 @@ public static class ManageApps
         AppDomainPairings pairings,
         AuditLogWriter audit,
         ILinkCacheInvalidator cache,
+        DleCredentialCache credentialCache,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(http);
@@ -314,6 +342,7 @@ public static class ManageApps
         ArgumentNullException.ThrowIfNull(pairings);
         ArgumentNullException.ThrowIfNull(audit);
         ArgumentNullException.ThrowIfNull(cache);
+        ArgumentNullException.ThrowIfNull(credentialCache);
 
         DleCaller caller = http.RequireDleCaller();
 
@@ -323,6 +352,8 @@ public static class ManageApps
         {
             return DleProblem.NotFound("There is no application with that identifier.");
         }
+
+        await credentialCache.InvalidateAppAsync(id, cancellationToken);
 
         await AdministrativeAudit.RecordAsync(
             audit,
@@ -526,4 +557,27 @@ public static class ManageApps
     /// <returns>The trimmed value, or <see langword="null"/>.</returns>
     private static string? Trim(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    /// <summary>
+    /// Holds an application's store URL to the syntax rules of a link target.
+    /// </summary>
+    /// <remarks>
+    /// The edge redirects visitors to this URL whenever a rule sends them to the store and names no
+    /// URL of its own for their platform, so it is a redirect target like any other and gets the
+    /// same refusals: only http and https, no internal host, no control characters.
+    /// </remarks>
+    private static void ValidateStoreUrl(string? storeUrl, Dictionary<string, string[]> errors)
+    {
+        if (Trim(storeUrl) is not { } candidate)
+        {
+            return;
+        }
+
+        Dle.Domain.Abuse.UrlSafetyVerdict verdict = Dle.Domain.Abuse.TargetUrlPolicy.ValidateSyntax(candidate);
+
+        if (verdict.Level is not (Dle.Domain.Abuse.UrlSafetyLevel.Safe or Dle.Domain.Abuse.UrlSafetyLevel.Unknown))
+        {
+            errors["store_url"] = [verdict.Reason ?? "The store URL is not an acceptable redirect target."];
+        }
+    }
 }

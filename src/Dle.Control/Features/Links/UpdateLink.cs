@@ -179,6 +179,17 @@ public static class UpdateLink
             return DleProblem.NotFound("There is no link with that identifier.");
         }
 
+        if (await links.HasUndecidedAbuseReportsAsync(linkId, cancellationToken))
+        {
+            // Deleting the link deletes its reports with it (the foreign key cascades). A reported
+            // link therefore stays until the report has been decided, or the owner of a phishing
+            // link could make the notice against it disappear by deleting the link first.
+            return DleProblem.Conflict(
+                ProblemCodes.WriteConflict,
+                "The link has an abuse report that has not been decided.",
+                "A reported link cannot be deleted until the report is closed. Deactivate the link if it should stop resolving now.");
+        }
+
         LinkDomain? domain = await domains.GetAsync(link.DomainId, cancellationToken);
 
         if (!await links.RemoveAsync(linkId, cancellationToken))

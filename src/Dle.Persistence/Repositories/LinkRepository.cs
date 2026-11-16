@@ -308,6 +308,19 @@ public sealed class LinkRepository
             cancellationToken);
     }
 
+    /// <summary>Whether a link of the tenant in scope has an abuse report nobody has decided yet.</summary>
+    /// <param name="id">The link identifier.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns><see langword="true"/> while a report is new, triaged or confirmed.</returns>
+    /// <remarks>
+    /// <c>abuse_reports</c> references <c>links</c> with a cascading delete, so deleting such a link
+    /// would delete the notice with it, before anybody has looked at it.
+    /// </remarks>
+    public Task<bool> HasUndecidedAbuseReportsAsync(long id, CancellationToken cancellationToken) =>
+        _db.AbuseReports
+            .AsNoTracking()
+            .AnyAsync(r => r.LinkId == id && r.Status != "rejected" && r.Status != "resolved", cancellationToken);
+
     /// <summary>Deletes a link of the tenant in scope, with its revisions.</summary>
     /// <param name="id">The link identifier.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

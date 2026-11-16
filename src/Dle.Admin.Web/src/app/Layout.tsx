@@ -1,8 +1,9 @@
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
-import { tenants } from '../api';
+import { handleOidcCallback, setConnection, tenants } from '../api';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { useToast } from '../components/ToastContext';
 import { useAsync } from '../hooks/useAsync';
 import { useConnection } from '../hooks/useConnection';
 import { useTheme, type Theme } from '../hooks/useTheme';
@@ -24,10 +25,26 @@ export function Layout() {
   const { t, locale, setLocale } = useI18n();
   const [theme, setTheme] = useTheme();
   const connection = useConnection();
+  const toast = useToast();
   const location = useLocation();
   const onSettings = location.pathname.startsWith('/settings');
 
   const me = useAsync((signal) => tenants.me(signal), [connection?.apiKey, connection?.baseUrl], connection !== null);
+
+  // The identity provider returns to /admin/?code=…&state=…, which is the dashboard route, so the
+  // callback is completed here, on whichever page the console opens. No cancellation guard: the
+  // pending entry is consumed synchronously, so a re-run (StrictMode, a locale change) finds nothing
+  // and only the first run may connect.
+  useEffect(() => {
+    handleOidcCallback()
+      .then((res) => {
+        if (res) {
+          setConnection({ baseUrl: res.baseUrl, apiKey: res.token, remember: false });
+          toast.success(t('connection.oidcSuccess'));
+        }
+      })
+      .catch((err: unknown) => toast.error(t('connection.oidcFailed', { error: err instanceof Error ? err.message : String(err) })));
+  }, [t, toast]);
 
   return (
     <div className={styles.shell}>

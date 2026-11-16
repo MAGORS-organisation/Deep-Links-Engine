@@ -28,7 +28,7 @@ attribute app installs to the click that led to them; report aggregate campaign 
 |---|---|---|---|
 | Click counter per link | ✅ | ✅ | ✅ |
 | Country, device class, OS family, browser family | ❌ | ✅ | ✅ |
-| IP address | ❌ | HMAC with a salt rotated daily; never stored raw | hash as before, plus /24 (IPv4) or /48 (IPv6) prefix |
+| IP address | ❌ | HMAC with a salt rotated daily; never stored raw | hash as before; the /24 (IPv4) or /48 (IPv6) prefix only if `Dle:Privacy:IpStorage` is `prefix` or `full` (default `hash_only`) |
 | Click id linking a click to an install | ❌ | ❌ | ✅ with recorded consent |
 | Device signals for probabilistic matching (language, screen, timezone) | ❌ | ❌ | ✅ only if the module is enabled **and** consent recorded |
 | Installation id (SDK-generated UUID, not a device id) | ✅ | ✅ | ✅ — the Android and iOS SDKs send it regardless of consent and the server stores it in every mode ([README — Known gaps](../../README.md#known-gaps)) |
@@ -54,11 +54,11 @@ vendor. No transfer outside the EU unless the operator configures one: `[none | 
 
 | # | Risk | Likelihood | Severity | Mitigation in the system | Residual |
 |---|---|---|---|---|---|
-| R1 | Re-identification from hashed IP | Low for anyone without the master secret — hash is keyed. Not low for the operator: every daily salt is derived from the master secret and can be recomputed | Medium | Daily salt change; no raw IP; prefix only in `full`; raw events dropped after `RawDays` (30 by default) | `[…]` |
-| R2 | Cross-tenant data leak | Low with one tenant or mutually trusted tenants; see the known defect | High | Tenant filter enforced in the persistence layer (no PostgreSQL row-level security); cross-tenant ids answer 404; tested. Known defect: a request carrying an SDK key of one tenant and an API key of another is scoped to the first and authorised as the second — do not host mutually untrusted tenants on one instance ([README — Known gaps](../../README.md#known-gaps)) | `[…]` |
+| R1 | Re-identification from hashed IP | Low for anyone without the edge secret — hash is keyed. Not low for the operator: every daily salt is derived from the edge secret and can be recomputed | Medium | Daily salt change; no raw IP; prefix only in `full`; raw events dropped after `RawDays` (30 by default) | `[…]` |
+| R2 | Cross-tenant data leak | Low with one tenant or mutually trusted tenants; medium for mutually untrusted tenants on one instance (single isolation layer) | High | Tenant filter enforced in the persistence layer, tenant scope opened from the principal authorisation accepted, one credential per request, cross-tenant ids answer 404; tested. No PostgreSQL row-level security behind it — run mutually untrusted tenants on separate instances ([README — Known gaps](../../README.md#known-gaps)) | `[…]` |
 | R3 | Probabilistic match attributes the wrong person | Medium if enabled | Medium | Off by default; consent-gated; 60-minute window; confidence recorded and shown; evidence stored per attribution | `[…]` |
 | R4 | Retention exceeded | Low | Medium | Automated partition drop; job logs its execution | `[…]` |
-| R5 | Link used for phishing exposes subjects to harm | Medium | High | Target URL policy at creation and nightly; reputation checks only once a source is configured (off by default); rate limits; quarantine (effective at the edge after its cache expires, up to 10 min 30 s by default). The public abuse form is not reachable with the shipped routing ([README — Known gaps](../../README.md#known-gaps)) | `[…]` |
+| R5 | Link used for phishing exposes subjects to harm | Medium | High | Target URL policy at creation and nightly; reputation checks only once a source is configured (off by default); rate limits; quarantine (invalidates the edge caches through Valkey; within 30 s if Valkey is down). Notices arrive through `POST /abuse-reports` on the control plane (a JSON endpoint; no web form ships) | `[…]` |
 | R6 | Loss of confidentiality of the database | Low | High | `[operator's encryption at rest, access control, backup encryption]` | `[…]` |
 | R7 | Consent recorded incorrectly by the app | Medium | High | Consent object carries a timestamp and source; server refuses signals without it — but the app's consent UI is the operator's responsibility | `[…]` |
 

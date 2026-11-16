@@ -1,7 +1,11 @@
+using System.Text.Json;
+
 using Dle.Control.Features.Abuse;
 using Dle.Control.Features.Shared;
 using Dle.Domain.Abuse;
 using Dle.Domain.Ports;
+using Dle.Domain.Routing;
+using Dle.Domain.Serialization;
 using Dle.Persistence.Tenancy;
 
 using Microsoft.EntityFrameworkCore;
@@ -142,36 +146,42 @@ public sealed partial class UrlReputationWorker : LeaderElectedBackgroundService
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            UrlSafetyVerdict verdict = await checker.CheckAsync(target.TargetUrl, cancellationToken);
-            checkedLinks++;
-
-            if (verdict.Level is UrlSafetyLevel.Safe or UrlSafetyLevel.Unknown)
+            foreach (string url in EnumerateDistinctUrls(target))
             {
-                continue;
-            }
+                cancellationToken.ThrowIfCancellationRequested();
 
-            flagged++;
-            LogFlagged(_logger, target.LinkId, verdict.Level.ToString(), verdict.Source);
+                UrlSafetyVerdict verdict = await checker.CheckAsync(url, cancellationToken);
+                checkedLinks++;
 
-            if (verdict.Level < UrlSafetyLevel.Malicious || !abuse.AutoQuarantineOnMaliciousRecheck)
-            {
-                // Suspicious is recorded and left for a human. Automatic withdrawal on a soft
-                // verdict would make a false positive from a feed into a customer outage.
-                continue;
-            }
+                if (verdict.Level is UrlSafetyLevel.Safe or UrlSafetyLevel.Unknown)
+                {
+                    continue;
+                }
 
-            using IDisposable tenantScope = tenants.BeginScope(target.TenantId);
+                flagged++;
+                LogFlagged(_logger, target.LinkId, verdict.Level.ToString(), verdict.Source);
 
-            LocatedLink? located = await locator.FindByIdAsync(target.LinkId, cancellationToken);
+                if (!abuse.AutoQuarantineOnMaliciousRecheck || !WarrantsQuarantine(verdict))
+                {
+                    // Recorded and left for a human. Automatic withdrawal on a soft verdict would make
+                    // a false positive from a feed into a customer outage.
+                    continue;
+                }
 
-            if (located is null || located.IsQuarantined)
-            {
-                continue;
-            }
+                using IDisposable tenantScope = tenants.BeginScope(target.TenantId);
 
-            if (await quarantine.QuarantineAsync(located, QuarantineReason, RequestActor.System, cancellationToken))
-            {
-                quarantined++;
+                LocatedLink? located = await locator.FindByIdAsync(target.LinkId, cancellationToken);
+
+                if (located is null || located.IsQuarantined)
+                {
+                    break;
+                }
+
+                if (await quarantine.QuarantineAsync(located, QuarantineReason, RequestActor.System, cancellationToken))
+                {
+                    quarantined++;
+                    break;
+                }
             }
         }
 
@@ -184,14 +194,47 @@ public sealed partial class UrlReputationWorker : LeaderElectedBackgroundService
     }
 
     /// <summary>
-    /// Lists the targets to re-check, least recently updated first.
+    /// Whether a re-check verdict withdraws a live link without a human.
     /// </summary>
     /// <remarks>
-    /// Ordered by <c>updated_at</c> so that an edited link — the exact event this worker exists to
-    /// catch — goes to the back of the queue only after it has been checked, and a bounded pass on a
-    /// large instance still comes round to everything over a few nights.
+    /// Only a verdict about the target's reputation does. A verdict about where the host points
+    /// (<see cref="TargetUrlPolicy.AddressSource"/>) is also what a resolver that failed for a
+    /// moment produces; acting on it would let one DNS outage during a pass quarantine every link
+    /// the pass looked at. It is still counted and logged as flagged.
     /// </remarks>
-    private static async Task<List<LinkTarget>> ListTargetsAsync(
+    /// <param name="verdict">The verdict of the re-check.</param>
+    /// <returns><see langword="true"/> when the link should be quarantined.</returns>
+    public static bool WarrantsQuarantine(UrlSafetyVerdict verdict)
+    {
+        ArgumentNullException.ThrowIfNull(verdict);
+
+        return verdict.Level >= UrlSafetyLevel.Malicious
+            && !string.Equals(verdict.Source, TargetUrlPolicy.AddressSource, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Where a bounded pass starts in the list of active links, so that successive passes walk the
+    /// whole list instead of re-checking the same first rows.
+    /// </summary>
+    /// <param name="total">Number of active links.</param>
+    /// <param name="limit">Links one pass may check.</param>
+    /// <param name="pass">Ordinal of the pass, any monotonically increasing number.</param>
+    /// <returns>The number of rows to skip.</returns>
+    public static int WindowOffset(int total, int limit, long pass) =>
+        total <= limit || limit <= 0 || pass < 0
+            ? 0
+            : (int)(pass * limit % total);
+
+    /// <summary>
+    /// Lists the targets of this pass: one window of the active links, in identifier order.
+    /// </summary>
+    /// <remarks>
+    /// Nothing is written back to a link after it has been checked, so "oldest first" would hand
+    /// every pass the same rows and never reach the rest of a large instance. The window instead
+    /// moves by one pass worth of rows each time, derived from the clock, which needs no state and
+    /// gives every replica the same answer.
+    /// </remarks>
+    private async Task<List<LinkTarget>> ListTargetsAsync(
         DleDbContext db,
         int limit,
         CancellationToken cancellationToken)
@@ -199,21 +242,88 @@ public sealed partial class UrlReputationWorker : LeaderElectedBackgroundService
         using CrossTenantScope scope = db.BeginCrossTenantScope(
             "the nightly reputation re-check covers the active links of every tenant (§E.3 step 5)");
 
-        return await db.Links
+        IQueryable<Link> active = db.Links
             .AsNoTracking()
             .AcrossTenants()
-            .Where(l => l.IsActive && l.QuarantinedAt == null)
-            .OrderBy(l => l.UpdatedAt)
+            .Where(l => l.IsActive && l.QuarantinedAt == null);
+
+        int total = await active.CountAsync(cancellationToken);
+        long pass = Clock.GetUtcNow().ToUnixTimeSeconds() / Math.Max((long)Interval.TotalSeconds, 1L);
+
+        return await active
+            .OrderBy(l => l.Id)
+            .Skip(WindowOffset(total, limit, pass))
             .Take(limit)
-            .Select(l => new LinkTarget(l.Id, l.TenantId, l.TargetUrl))
+            .Select(l => new LinkTarget(l.Id, l.TenantId, l.TargetUrl, l.ExpiredUrl, l.RoutingRules))
             .ToListAsync(cancellationToken);
     }
 
-    /// <summary>One link's target, reduced to what the re-check needs.</summary>
+    private static IEnumerable<string> EnumerateDistinctUrls(LinkTarget target)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        if (!string.IsNullOrWhiteSpace(target.TargetUrl) && seen.Add(target.TargetUrl))
+        {
+            yield return target.TargetUrl;
+        }
+
+        if (!string.IsNullOrWhiteSpace(target.ExpiredUrl) && seen.Add(target.ExpiredUrl))
+        {
+            yield return target.ExpiredUrl;
+        }
+
+        if (string.IsNullOrWhiteSpace(target.RoutingRules))
+        {
+            yield break;
+        }
+
+        RoutingRule[]? rules = null;
+
+        try
+        {
+            rules = JsonSerializer.Deserialize(target.RoutingRules, DleDomainJsonContext.Default.RoutingRuleArray);
+        }
+        catch (JsonException)
+        {
+            yield break;
+        }
+
+        if (rules is null)
+        {
+            yield break;
+        }
+
+        foreach (RoutingRule rule in rules)
+        {
+            if (rule.Then is null)
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(rule.Then.Url) && seen.Add(rule.Then.Url))
+            {
+                yield return rule.Then.Url;
+            }
+
+            if (!string.IsNullOrWhiteSpace(rule.Then.StoreUrl) && seen.Add(rule.Then.StoreUrl))
+            {
+                yield return rule.Then.StoreUrl;
+            }
+        }
+    }
+
+    /// <summary>One link's targets, reduced to what the re-check needs.</summary>
     /// <param name="LinkId">The link.</param>
     /// <param name="TenantId">Owning tenant, entered before anything is written.</param>
-    /// <param name="TargetUrl">The URL to re-check.</param>
-    private sealed record LinkTarget(long LinkId, Guid TenantId, string TargetUrl);
+    /// <param name="TargetUrl">Primary fallback URL to re-check.</param>
+    /// <param name="ExpiredUrl">Optional expiry destination URL to re-check.</param>
+    /// <param name="RoutingRules">Optional serialized routing rules carrying additional web or store URLs.</param>
+    private sealed record LinkTarget(
+        long LinkId,
+        Guid TenantId,
+        string TargetUrl,
+        string? ExpiredUrl,
+        string? RoutingRules);
 
     [LoggerMessage(
         EventId = 5650,
