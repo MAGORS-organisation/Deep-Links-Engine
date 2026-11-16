@@ -24,8 +24,8 @@ namespace Dle.Control.Features.Analytics;
 /// confidence exactly 1.00, from an install referrer, a login reconciliation, a typed claim code
 /// or a reported direct open — how many were matched probabilistically and at what mean confidence,
 /// and how many were not matched at all. The unmatched share is published rather than hidden,
-/// because a product that only shows what it caught cannot be checked. The dashboard
-/// panel says "78 % deterministic, 14 % probabilistic at 0.71, 8 % unmatched", and this is the
+/// because a product that only shows what it caught cannot be checked. The dashboard panel reads,
+/// for example, "78 % deterministic, 14 % probabilistic at 0.71, 8 % unmatched", and this is the
 /// endpoint behind it.
 /// </para>
 /// <para>

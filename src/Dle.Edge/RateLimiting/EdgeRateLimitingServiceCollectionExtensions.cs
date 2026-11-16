@@ -27,8 +27,8 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// here and charged by the resolve pipeline.
 /// </para>
 /// <para>
-/// All three are separate partitions and that separation is the property that matters most in the
-/// table. If the anti-enumeration budget shared a counter with successful resolves, a campaign going
+/// All three are separate partitions and that separation is the property that matters most. If the
+/// anti-enumeration budget shared a counter with successful resolves, a campaign going
 /// viral would exhaust it and switch the defence off at the moment the service is most visible and
 /// most worth scanning.
 /// </para>

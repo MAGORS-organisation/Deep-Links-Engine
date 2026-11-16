@@ -10,10 +10,9 @@ using Microsoft.Extensions.Options;
 
 using Scalar.AspNetCore;
 
-// The control plane's composition root. It calls exactly the eleven module registrations and the
-// eleven endpoint maps and nothing else: every module owns its own
-// wiring, so this file stays a list of what the deployment unit is made of rather than a place where
-// configuration accumulates.
+// The control plane's composition root. Modules come in only through the Add* registrations and the
+// Map* endpoint calls below; every module owns its own wiring, so this file stays a list of what the
+// deployment unit is made of rather than a place where configuration accumulates.
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 

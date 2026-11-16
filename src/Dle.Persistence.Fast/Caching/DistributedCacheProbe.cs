@@ -7,7 +7,7 @@ namespace Dle.Persistence.Fast.Caching;
 
 /// <summary>
 /// Keeps <c>dle.cache.l2.up</c> honest: reads one key from the shared cache on a fixed cadence and
-/// records whether the read came back (the <c>cache_l2_down</c> signal).
+/// records whether the read came back.
 /// </summary>
 /// <remarks>
 /// <para>

@@ -66,8 +66,9 @@ public sealed class CryptoOptions
     /// <summary>
     /// Enables the post-quantum algorithms (<see cref="SignatureAlgorithms.MlDsa65"/>,
     /// <see cref="SignatureAlgorithms.Ed25519MlDsa65"/> and
-    /// <see cref="SignatureAlgorithms.SlhDsa128s"/>). Off by default: for now the engine
-    /// ships only the agility that makes adopting them cheap.
+    /// <see cref="SignatureAlgorithms.SlhDsa128s"/>). Off by default: the post-quantum signers ship but
+    /// stay disabled until an operator opts in, and the algorithm agility of the signing and
+    /// verification path is what makes adopting them cheap.
     /// </summary>
     public bool HybridPqEnabled { get; set; }
 

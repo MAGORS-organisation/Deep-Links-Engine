@@ -22,10 +22,10 @@ public sealed record CapturedLog(string Category, LogLevel Level, string Message
 /// <para>
 /// A log file is a GDPR incident waiting to happen: the address, the user agent and the full URL of every
 /// click. Logging the <c>Authorization</c> header, the referrer and the query string at
-/// <c>Information</c> is forbidden, and "no PII at Information or below" is an acceptance criterion.
+/// <c>Information</c> is forbidden, and nothing at Information or below may carry personal data.
 /// </para>
 /// <para>
-/// An acceptance criterion phrased that way is only checkable against a real capture: it is about what
+/// A rule phrased that way is only checkable against a real capture: it is about what
 /// the process emits, including from framework components nobody in this repository wrote. So the
 /// provider is installed into the running host and the assertions read what came out, rather than
 /// inspecting the call sites of a scrubber that a future middleware may bypass.

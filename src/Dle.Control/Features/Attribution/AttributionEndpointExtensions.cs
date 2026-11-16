@@ -112,8 +112,8 @@ public static class AttributionEndpointExtensions
                 "Batched, at most 100 events per request. The link_open event is what makes a "
                 + "direct open through a verified Universal or App Link measurable at all: the "
                 + "operating system opens the application without any request reaching the engine, "
-                + "so without this report the most successful campaigns are the most under-counted "
-                + ". A link_open whose URL resolves to one of the caller's links "
+                + "so without this report the most successful campaigns are the most under-counted. "
+                + "A link_open whose URL resolves to one of the caller's links "
                 + "creates a direct_open attribution with confidence 1.00.")
             .Accepts<EventBatchDto>("application/json")
             .Produces<EventBatchAcceptedDto>(StatusCodes.Status202Accepted, "application/json")

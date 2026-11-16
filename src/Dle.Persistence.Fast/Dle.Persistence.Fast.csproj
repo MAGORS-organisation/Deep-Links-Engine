@@ -4,8 +4,7 @@
     Hot-path persistence: hand-written Dapper queries for the resolve path and
     NpgsqlBinaryImporter (COPY) for batched click/SDK event writes.
 
-    Blocking I/O other than one cache hit and one DB query is forbidden here
-.
+    Blocking I/O other than one cache hit and one DB query is forbidden here.
 
     This assembly is kept ahead-of-time friendly on purpose: the edge
     resolver is the component where AOT pays off, and one reflective dependency in

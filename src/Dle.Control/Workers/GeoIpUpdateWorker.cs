@@ -12,7 +12,7 @@ namespace Dle.Control.Workers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The hot path makes no outgoing call to a third party, which is why the edge
+/// The hot path must never make an outgoing call to a third party, which is why the edge
 /// resolves geography against a local database file and never against a service. A local file has
 /// to be refreshed by something, and that something must not be the edge: a resolver that downloads
 /// a two hundred megabyte archive while serving redirects is a latency incident waiting for a

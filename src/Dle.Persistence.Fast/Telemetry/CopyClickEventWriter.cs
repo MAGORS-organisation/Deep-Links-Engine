@@ -20,15 +20,15 @@ namespace Dle.Persistence.Fast.Telemetry;
 /// network prefix is parsed into <see cref="NpgsqlInet"/> instead of being handed over as a string.
 /// </para>
 /// <para>
-/// <c>ClickEvent.SpoofedBot</c> has no column of its own and is carried in <c>extra</c> under
-/// the key <c>spoofed_bot</c>. Adding a column would be a schema change owned by the control plane's
-/// migrations, and the flag is rare enough that a JSON key costs nothing.
+/// <c>ClickEvent.SpoofedBot</c> is carried in <c>extra</c> under the key <c>spoofed_bot</c>. The table's own
+/// <c>spoofed_bot</c> column is not in the copy list below and keeps its default of <c>false</c>.
 /// </para>
 /// </remarks>
 public sealed class CopyClickEventWriter : IClickEventWriter
 {
     /// <summary>
-    /// The copy statement. Column order mirrors the <c>click_events</c> DDL top to bottom.
+    /// The copy statement. Column order mirrors the <c>click_events</c> DDL top to bottom, except
+    /// <c>spoofed_bot</c>, which is left at its default.
     /// </summary>
     private const string CopyCommand =
         "COPY click_events (id, occurred_at, tenant_id, link_id, click_id, ip_hash, ip_prefix, " +

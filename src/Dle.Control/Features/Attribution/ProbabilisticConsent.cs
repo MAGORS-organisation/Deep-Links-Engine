@@ -21,7 +21,7 @@ namespace Dle.Control.Features.Attribution;
 /// <para>
 /// This is the difference that matters: without documented consent the signals are not
 /// processed and not written — not "written and deleted later". A boolean checked before an insert
-/// would satisfy the letter of the test and none of its intent, because the next person to add a
+/// would satisfy the letter of the rule and none of its intent, because the next person to add a
 /// code path would simply forget the check. A capability cannot be forgotten; the code that would
 /// process the signals does not compile without it.
 /// </para>

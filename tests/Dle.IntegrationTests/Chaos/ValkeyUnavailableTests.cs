@@ -82,9 +82,9 @@ public sealed class ValkeyUnavailableTests(DleInfrastructureFixture infrastructu
     [RequiresDockerFact]
     public async Task ValkeyUnreachable_AMetricReportsThatTheSharedCacheLevelIsDown()
     {
-        // Resolve keeps working from L1 and PostgreSQL with higher latency, and the cache_l2_down
-        // metric says so. Without it an operator sees a latency change and has nothing that says
-        // why, which is the difference between a five minute diagnosis and an afternoon.
+        // Resolve keeps working from L1 and PostgreSQL with higher latency, and the dle.cache.l2.up gauge
+        // reads 0 to say the shared level is down. Without it an operator sees a latency change and has
+        // nothing that says why, which is the difference between a five minute diagnosis and an afternoon.
         HashSet<string> published = new(StringComparer.Ordinal);
 
         using MeterListener listener = new();
@@ -130,7 +130,7 @@ public sealed class ValkeyUnavailableTests(DleInfrastructureFixture infrastructu
                     || name.Contains("available", StringComparison.OrdinalIgnoreCase)
                     || name.Contains("up", StringComparison.OrdinalIgnoreCase))),
             "A metric must report the shared cache level as down while Valkey is "
-            + "unavailable (cache_l2_down). The edge published none. Instruments seen: "
+            + "unavailable (for example dle.cache.l2.up = 0). The edge published none. Instruments seen: "
             + string.Join(", ", names.Order(StringComparer.Ordinal)));
     }
 

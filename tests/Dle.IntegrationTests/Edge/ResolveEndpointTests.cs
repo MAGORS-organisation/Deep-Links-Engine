@@ -58,8 +58,8 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
         // that lets the operating system hand a Universal Link to an installed application.
         const string StoreUrl = "https://apps.apple.com/app/id123456789?pt=1234&ct=autumn26&mt=8";
 
-        string host = TestSeed.UniqueHost("tc101");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc101", "full", Ct);
+        string host = TestSeed.UniqueHost("ios-auto");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "ios-auto", "full", Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         _ = await TestSeed.AppAsync(Database, tenantId, domainId, "ios", "sk.example.app", "TEAM123456", StoreUrl, "example", cancellationToken: Ct);
@@ -93,8 +93,8 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
         // link answers 302 straight to the App Store, and the campaign parameters survive intact.
         const string StoreUrl = "https://apps.apple.com/app/id123456789?pt=1234&ct=autumn26&mt=8";
 
-        string host = TestSeed.UniqueHost("tc101b");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc101b", "full", Ct);
+        string host = TestSeed.UniqueHost("ios-never");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "ios-never", "full", Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         _ = await TestSeed.LinkAsync(
@@ -125,11 +125,11 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
         // A slug that exists somewhere else must be indistinguishable from
         // a slug that exists nowhere. Anything that differs — a status, a byte of the body, a header
         // — is an oracle for enumerating other tenants' links.
-        string hostA = TestSeed.UniqueHost("tc102-a");
-        string hostB = TestSeed.UniqueHost("tc102-b");
+        string hostA = TestSeed.UniqueHost("enum-a");
+        string hostB = TestSeed.UniqueHost("enum-b");
 
-        Guid tenantA = await TestSeed.TenantAsync(Database, "tc102-a", cancellationToken: Ct);
-        Guid tenantB = await TestSeed.TenantAsync(Database, "tc102-b", cancellationToken: Ct);
+        Guid tenantA = await TestSeed.TenantAsync(Database, "enum-a", cancellationToken: Ct);
+        Guid tenantB = await TestSeed.TenantAsync(Database, "enum-b", cancellationToken: Ct);
 
         Guid domainA = await TestSeed.DomainAsync(Database, tenantA, hostA, cancellationToken: Ct);
         Guid domainB = await TestSeed.DomainAsync(Database, tenantB, hostB, cancellationToken: Ct);
@@ -156,8 +156,8 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     [RequiresDockerFact]
     public async Task Resolve_QuarantinedLink_Returns410WithAPageAndNoRedirect()
     {
-        string host = TestSeed.UniqueHost("tc103");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc103", cancellationToken: Ct);
+        string host = TestSeed.UniqueHost("quarantine-410");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "quarantine-410", cancellationToken: Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         _ = await TestSeed.LinkAsync(
@@ -186,8 +186,8 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     [RequiresDockerFact]
     public async Task Resolve_ExpiredLinkWithAnExpiredUrl_Redirects302ToIt()
     {
-        string host = TestSeed.UniqueHost("tc104");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc104", cancellationToken: Ct);
+        string host = TestSeed.UniqueHost("expired-302");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "expired-302", cancellationToken: Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         _ = await TestSeed.LinkAsync(
@@ -209,8 +209,8 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     [RequiresDockerFact]
     public async Task Resolve_ExpiredLinkWithoutAnExpiredUrl_IsIndistinguishableFromOneThatNeverExisted()
     {
-        string host = TestSeed.UniqueHost("tc104b");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc104b", cancellationToken: Ct);
+        string host = TestSeed.UniqueHost("expired-404");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "expired-404", cancellationToken: Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         _ = await TestSeed.LinkAsync(
@@ -235,8 +235,8 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     [RequiresDockerFact]
     public async Task Resolve_FacebookExternalHit_Serves200HtmlWithOpenGraphTagsAndNoCampaignClick()
     {
-        string host = TestSeed.UniqueHost("tc106");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc106", "full", Ct);
+        string host = TestSeed.UniqueHost("og-preview");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "og-preview", "full", Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         long linkId = await TestSeed.LinkAsync(
@@ -331,8 +331,8 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     [RequiresDockerFact]
     public async Task Resolve_QueryParameters_AreForwardedByTheAllowlistWithTheClickIdAdded()
     {
-        string host = TestSeed.UniqueHost("tc110");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc110", "full", Ct);
+        string host = TestSeed.UniqueHost("query-forward");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "query-forward", "full", Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         _ = await TestSeed.LinkAsync(
@@ -381,8 +381,8 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
         // The same request without the consent signal. The tenant is on full, so the operator has
         // enabled attribution — and the visitor still has not consented to it, and Full with no
         // consent signal behaves like AggregateOnly.
-        string host = TestSeed.UniqueHost("tc110b");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc110b", "full", Ct);
+        string host = TestSeed.UniqueHost("query-noconsent");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "query-noconsent", "full", Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         _ = await TestSeed.LinkAsync(Database, tenantId, domainId, "noconsent", "https://example.test/landing", cancellationToken: Ct);
@@ -406,8 +406,8 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
         // The open redirect. The target comes from the stored rule set and from nowhere
         // else, which is a structural property of RoutingUrlBuilder — it only ever edits the query
         // component of the stored URL — rather than a filter that could be got past.
-        string host = TestSeed.UniqueHost("tc164");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc164", "full", Ct);
+        string host = TestSeed.UniqueHost("target-param");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "target-param", "full", Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         _ = await TestSeed.LinkAsync(Database, tenantId, domainId, "safe", "https://example.test/landing", cancellationToken: Ct);

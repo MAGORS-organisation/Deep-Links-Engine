@@ -16,7 +16,7 @@ namespace Dle.UnitTests.Edge;
 /// Classification is the input to every routing rule and to every row of the click stream, so a
 /// misread user agent is a wrong redirect and a wrong report at the same time. The
 /// table below is real traffic: the in-app browsers of the nine networks the interstitial exists
-/// for, ordinary browsers on every form factor, and the link preview crawlers.
+/// for, ordinary browsers on every form factor, and the link preview and search engine crawlers.
 /// </summary>
 public sealed class ClientClassifierTests
 {
@@ -208,7 +208,10 @@ public sealed class ClientClassifierTests
         },
     };
 
-    /// <summary>The link preview crawlers: every one of these must be answered with an OG document.</summary>
+    /// <summary>
+    /// The crawlers of <c>CrawlerCatalog</c>, link preview fetchers and search engines alike: every one
+    /// of these must be answered with an OG document.
+    /// </summary>
     public static TheoryData<string, string> Crawlers() => new()
     {
         { "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)", CrawlerCatalog.Facebook },

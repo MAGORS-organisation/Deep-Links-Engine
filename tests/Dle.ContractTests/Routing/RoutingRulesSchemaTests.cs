@@ -30,7 +30,7 @@ public sealed class RoutingRulesSchemaTests
     /// The reference rule set.
     /// </summary>
     /// <remarks>
-    /// Kept verbatim on purpose, nothing renamed. If this fails to validate, either the schema is
+    /// Do not adjust it to make a test pass. If this fails to validate, either the schema is
     /// wrong or the example is, and both are bugs worth stopping for.
     /// </remarks>
     public const string ReferenceExample =

@@ -8,7 +8,7 @@ namespace Dle.Edge.RateLimiting;
 /// <remarks>
 /// <para>
 /// The two resolve limits are separate on purpose and that separation is the single most important
-/// property in the table. A campaign that goes viral produces a burst of <em>successful</em> resolves;
+/// property of the edge rate limits. A campaign that goes viral produces a burst of <em>successful</em> resolves;
 /// if the anti-enumeration budget shared a counter with it, the burst would exhaust the budget and
 /// the enumeration defence would switch itself off exactly when the service is most visible.
 /// </para>

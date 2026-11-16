@@ -84,8 +84,10 @@ public sealed class CoveringIndexTests(DleInfrastructureFixture infrastructure)
         """;
 
     /// <summary>
-    /// The columns in the index, projected on their own. This is the shape the index was
-    /// designed to cover.
+    /// The nine included columns of a minimal <c>ix_links_resolve</c>, projected on their own, without
+    /// the five (<c>id</c>, <c>utm</c>, <c>title</c>, <c>campaign_id</c>, <c>expired_url</c>) that the
+    /// resolve statement also reads and the index carries as well. <see cref="ResolveQuery"/> reads all
+    /// fourteen.
     /// </summary>
     private const string CoveredProjection = """
         SELECT l.target_url,

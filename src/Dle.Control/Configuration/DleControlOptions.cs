@@ -47,7 +47,7 @@ public sealed class DleControlOptions
     /// Largest number of rows accepted by one NDJSON bulk create request.
     /// </summary>
     /// <remarks>
-    /// At least ten thousand rows must be accepted, and the value is a cap rather than a target: the
+    /// Ten thousand rows by default, and the value is a cap rather than a target: the
     /// request is streamed, so the number bounds the work a single caller may queue, not the memory
     /// the server needs to hold.
     /// </remarks>

@@ -426,7 +426,7 @@ public sealed class SigningKeyFactoryTests
     [Fact]
     public void CreateVerificationKey_SymmetricKey_IsNotPublishableAsAJwk()
     {
-        // The same again, from the other side: an HS256 "public" key is the signing secret.
+        // Signing material must never be published: an HS256 "public" key is the signing secret itself.
         SigningKeyMaterial material = SigningKeyFactory.Generate(
             SignatureAlgorithms.Hs256, SigningKeyPurposes.Token, Now, null);
 

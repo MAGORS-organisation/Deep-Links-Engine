@@ -63,8 +63,8 @@ public sealed class WebhookSignatureGrammarTests
     [Fact]
     public void SignatureHeader_TimestampIsUnixSecondsNotMilliseconds()
     {
-        // The published example is t=1756900000, which is seconds. A receiver comparing a millisecond value
-        // against its own clock would reject every delivery as stale by fifty thousand years.
+        // t is Unix seconds, as in t=1756900000. A receiver comparing a millisecond value against its own
+        // clock would reject every delivery as stale by fifty thousand years.
         string header = WebhookSignature.Create(Body, Secret, signer: null, Moment);
 
         long stamp = long.Parse(Grammar.Match(header).Groups["t"].Value, CultureInfo.InvariantCulture);
@@ -131,8 +131,8 @@ public sealed class WebhookSignatureGrammarTests
     [Fact]
     public void Parser_IsIndifferentToWhitespaceAndMemberOrder()
     {
-        // The header may arrive wrapped over four lines, so a receiver will see the members in any
-        // order and with arbitrary spacing after each comma.
+        // A receiver splits on commas and looks members up by name, so neither the order of the members
+        // nor the spacing around each comma carries any meaning, and the parser has to accept both.
         Assert.True(WebhookSignature.TryParse("kid=k_2026_09,v1=Zm9v,t=1756900000", out WebhookSignatureHeader compact));
         Assert.True(WebhookSignature.TryParse("t=1756900000,   v1=Zm9v ,  kid=k_2026_09", out WebhookSignatureHeader spaced));
 

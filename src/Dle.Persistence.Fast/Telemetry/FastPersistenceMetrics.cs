@@ -69,7 +69,8 @@ public sealed class FastPersistenceMetrics : IDisposable
             "dle.cache.l2.up",
             ObserveDistributedCacheUp,
             unit: "1",
-            description: "1 while the shared (L2) cache answers, 0 while it is unreachable and resolves fall through to L1 and PostgreSQL (cache_l2_down). Not reported when no L2 is configured.");
+            description: "1 while the shared (L2) cache answers, 0 while it is unreachable and resolves fall " +
+                "through to L1 and PostgreSQL. Not reported when no L2 is configured.");
     }
 
     /// <summary>Counts one click event dropped by the bounded channel.</summary>

@@ -49,8 +49,8 @@ public sealed class FastPersistenceOptions
     public string ApplicationName { get; init; } = "dle-edge";
 
     /// <summary>
-    /// Upper bound of the primary connection pool. The default matches a four vCPU edge instance
-    /// serving the throughput target at a cache hit rate above 95 %, where only misses reach
+    /// Upper bound of the primary connection pool. The default is sized for a four vCPU edge instance
+    /// meant to serve 5 000 requests a second at a cache hit rate above 95 %, where only misses reach
     /// Postgres at all.
     /// </summary>
     public int MaxPoolSize { get; init; } = 64;

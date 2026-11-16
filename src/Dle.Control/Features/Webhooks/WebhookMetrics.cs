@@ -7,11 +7,11 @@ namespace Dle.Control.Features.Webhooks;
 /// </summary>
 /// <remarks>
 /// <para>
-/// There are two: <c>dle_webhook_delivery_duration_seconds</c> as a histogram and
-/// <c>dle_webhook_dlq_size</c> as a gauge. The gauge is the one that matters operationally. A
-/// delivery that exhausts its retries is a promise the product failed to keep, and unless the
-/// number of them is on a dashboard the failure is invisible: the customer's data is simply
-/// missing, and nobody finds out until a reconciliation months later.
+/// Of the four instruments, the two to watch are <c>dle_webhook_delivery_duration_seconds</c> as a
+/// histogram and <c>dle_webhook_dlq_size</c> as a gauge. The gauge is the one that matters
+/// operationally. A delivery that exhausts its retries is a promise the product failed to keep, and
+/// unless the number of them is on a dashboard the failure is invisible: the customer's data is
+/// simply missing, and nobody finds out until a reconciliation months later.
 /// </para>
 /// <para>
 /// Instrument names use the OpenTelemetry dotted spelling; a Prometheus exporter renders

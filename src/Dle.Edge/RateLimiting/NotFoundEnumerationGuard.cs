@@ -15,7 +15,7 @@ namespace Dle.Edge.RateLimiting;
 /// </summary>
 /// <remarks>
 /// <para>
-/// This is the single most important limit in the table, and the reason it lives here rather than in
+/// This is the single most important of the edge rate limits, and the reason it lives here rather than in
 /// the rate limiting middleware is that it is a limit on a <em>response</em>. Middleware decides
 /// before the handler runs and therefore cannot know whether a request will find a link; only the
 /// resolve pipeline can, which is why it calls <see cref="Register"/> at the point it has decided to

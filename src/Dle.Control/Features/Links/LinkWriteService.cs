@@ -106,8 +106,9 @@ public sealed record LinkWriteOutcome(
 /// <para>
 /// Nothing here ever takes a redirect target from anywhere but the request body of an authenticated
 /// operator, and every such target is put through <see cref="TargetUrlPolicy"/> and
-/// <see cref="IUrlSafetyChecker"/> before it is stored. That is the whole of prohibition 4: by the
-/// time the edge reads a target, an operator has stored it and the safety pipeline has passed it.
+/// <see cref="IUrlSafetyChecker"/> before it is stored. That is the write side of the rule that a
+/// redirect target never comes from the request being served: by the time the edge reads a target,
+/// an operator has stored it and the safety pipeline has passed it.
 /// </para>
 /// </remarks>
 public sealed class LinkWriteService

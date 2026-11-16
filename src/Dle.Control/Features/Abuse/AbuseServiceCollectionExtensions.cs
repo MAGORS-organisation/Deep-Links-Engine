@@ -94,7 +94,8 @@ public static class AbuseServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <remarks>
     /// <para>
-    /// A fixed window keyed by the caller's address, five per hour. Fixed rather than
+    /// A fixed window of one hour keyed by the caller's address, allowing
+    /// <see cref="AbuseOptions.ReportsPerHourPerIp"/> reports (five by default). Fixed rather than
     /// sliding because the limit exists to stop a flood, not to smooth a legitimate burst: nobody
     /// files five genuine abuse reports a minute apart.
     /// </para>

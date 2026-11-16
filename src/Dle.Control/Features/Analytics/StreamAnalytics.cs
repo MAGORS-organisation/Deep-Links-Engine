@@ -17,7 +17,7 @@ namespace Dle.Control.Features.Analytics;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A "could have" requirement implemented honestly rather than impressively. The click stream is
+/// A nice-to-have, implemented honestly rather than impressively. The click stream is
 /// written by the <em>edge</em> process, not by the control plane, so there is no in-process event
 /// the control plane could forward; a genuinely push-based stream would need the edge to publish to
 /// a bus and would put a second piece of infrastructure into a design whose whole premise is that a

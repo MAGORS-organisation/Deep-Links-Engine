@@ -12,12 +12,12 @@ namespace Dle.Edge.RateLimiting;
 /// <remarks>
 /// <para>
 /// The kind is part of the partition key rather than a separate limiter registration. That is the
-/// mechanical guarantee behind the single most important property of the table: the successful-resolve
+/// mechanical guarantee behind the single most important property of the edge rate limits: the successful-resolve
 /// budget and the QR budget count against different partitions even for the same client, so exhausting
 /// one can never switch the other off.
 /// </para>
 /// <para>
-/// Requests that are not in the table at all — health probes, association files, static assets —
+/// Requests that no edge rate limit covers — health probes, association files, static assets —
 /// resolve to <see cref="EdgeRateLimitKind.Unlimited"/>. A probe that a rate limiter can answer with
 /// 429 is a probe that takes an instance out of rotation during exactly the traffic spike it was
 /// installed to survive.

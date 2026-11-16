@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 // request without ever using them.
 WebApplicationBuilder builder = WebApplication.CreateSlimBuilder(args);
 
-// Five module registrations, four endpoint maps, nothing wired by hand. Each
+// Five module registrations, five endpoint maps, nothing wired by hand. Each
 // module owns its own options, its own validation and its own seams, so this file stays a statement
 // of what the process is rather than of how any of it works.
 builder.Services

@@ -15,8 +15,8 @@ namespace Dle.Edge.Configuration;
 /// <para>
 /// A raw address is never stored regardless of the setting: <see cref="ClickEvent"/> has no column
 /// for one, so <see cref="IpStorageModes.Full"/> means the same as
-/// <see cref="IpStorageModes.Prefix"/> here and exists only so the key is spelled the same way it is
-/// elsewhere in the configuration.
+/// <see cref="IpStorageModes.Prefix"/> here. It is accepted only so that a configuration written against
+/// the full value set (<c>none</c>, <c>hash_only</c>, <c>prefix</c>, <c>full</c>) still passes validation.
 /// </para>
 /// </remarks>
 public sealed class EdgePrivacyOptions

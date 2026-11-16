@@ -124,7 +124,8 @@ ALGORITHMS: list[dict] = [
         "classicalSecurityLevel": 128,
         "nistQuantumSecurityLevel": 3,
         "patterns": [r"CompositeSigner", r"Ed25519MlDsa65", r"Ed25519\+MLDSA65"],
-        "note": "Hybrid signature per draft-ietf-lamps-pq-composite-sigs; the default in phase 2 of the "
+        "note": "Hybrid signature per draft-ietf-lamps-pq-composite-sigs; opt-in through "
+                "Dle:Crypto:HybridPqEnabled today, and the intended default at a later stage of the "
                 "post-quantum migration.",
     },
     {
@@ -183,8 +184,9 @@ ALGORITHMS: list[dict] = [
         "classicalSecurityLevel": 128,
         "nistQuantumSecurityLevel": 3,
         "patterns": [r"X25519MLKEM768", r"MLKem", r"HybridPqEnabled"],
-        "note": "TLS 1.3 hybrid group (K1). Negotiated by the OS or the reverse proxy (phase 0 "
-                "of the post-quantum migration); Dle:Crypto:HybridPqEnabled records the deployment's intent.",
+        "note": "TLS 1.3 hybrid group (K1). Negotiated by the OS or the reverse proxy, so adopting it is a "
+                "deployment change with no DLE code involved; Dle:Crypto:HybridPqEnabled records the "
+                "deployment's intent.",
     },
     {
         "ref": "alg:ecdsa-p256-sha256",

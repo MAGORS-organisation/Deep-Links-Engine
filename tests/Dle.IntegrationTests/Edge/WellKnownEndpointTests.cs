@@ -30,8 +30,8 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     [RequiresDockerFact]
     public async Task Aasa_OnAVerifiedDomainWithAnIosApp_Is200ApplicationJsonWithNoRedirect()
     {
-        string host = TestSeed.UniqueHost("tc121");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc121", cancellationToken: Ct);
+        string host = TestSeed.UniqueHost("aasa-ios");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "aasa-ios", cancellationToken: Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         _ = await TestSeed.AppAsync(
@@ -89,8 +89,8 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
         // This is the whole reason the handler answers 404: Apple accepts an empty but well formed
         // document as a valid negative answer and caches it for about a week, during which the
         // domain's universal links are simply dead. A 404 is retried.
-        string host = TestSeed.UniqueHost("tc122");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc122", cancellationToken: Ct);
+        string host = TestSeed.UniqueHost("aasa-none");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "aasa-none", cancellationToken: Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         // An Android application on the same host, so the domain is real and only the iOS side is

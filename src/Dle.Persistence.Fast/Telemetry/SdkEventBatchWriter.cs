@@ -20,8 +20,7 @@ namespace Dle.Persistence.Fast.Telemetry;
 /// because nothing downstream will notice it.
 /// </para>
 /// <para>
-/// The table this writes into has no reference DDL of its own, unlike <c>click_events</c>.
-/// The column list below is therefore the contract the control plane's migration has to match:
+/// The column list below is the contract the control plane's migration (<c>DlePostgresScripts</c>) has to match:
 /// <c>sdk_events (id uuid, occurred_at timestamptz, tenant_id uuid, app_id uuid, install_id text,
 /// event_type text, event_name text, url text, event_value numeric, currency char(3), link_id bigint,
 /// click_id text, properties jsonb)</c>, range partitioned by <c>occurred_at</c> like the click stream.

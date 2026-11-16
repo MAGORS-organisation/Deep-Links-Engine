@@ -111,8 +111,9 @@ public sealed class ClickEventPipelineTests(DleInfrastructureFixture infrastruct
         Assert.Single(row);
         Assert.Equal("203.0.113.0/24|SK|phone|in_app_fb|interstitial|42|7|01020304|true", row[0]);
 
-        // SpoofedBot has no column of its own and is carried in extra. The row that was
-        // not spoofed carries an empty object rather than a null, because the column is NOT NULL.
+        // SpoofedBot is carried in extra rather than in the spoofed_bot column, which the writer leaves at
+        // its default. The row that was not spoofed carries an empty object rather than a null, because
+        // the column is NOT NULL.
         Assert.Equal(
             "{}",
             await Sql.ScalarAsync<string>(

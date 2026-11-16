@@ -7,7 +7,7 @@
     Program.cs must call exactly:
       AddDleEdgeCore, AddDleTelemetry, AddDleFastPersistence, AddDleCrypto,
       AddDleEdgeRateLimiting
-      -> MapResolve, MapWellKnown, MapQr, MapHealth
+      -> MapResolve, MapWellKnown, MapQr, MapHealth, MapMetrics
   -->
 
   <PropertyGroup>
