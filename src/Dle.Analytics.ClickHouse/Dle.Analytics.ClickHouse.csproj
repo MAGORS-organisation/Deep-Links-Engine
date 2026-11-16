@@ -13,7 +13,7 @@
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageId>Dle.Analytics.ClickHouse</PackageId>
-    <Description>[Experimental v0.2 target] Query-only Deep Link Engine analytics store backed by ClickHouse over an external PostgreSQL-to-ClickHouse CDC mirror.</Description>
+    <Description>[Experimental] Query-only Deep Link Engine analytics store backed by ClickHouse over an external PostgreSQL-to-ClickHouse CDC mirror.</Description>
   </PropertyGroup>
 
   <ItemGroup>

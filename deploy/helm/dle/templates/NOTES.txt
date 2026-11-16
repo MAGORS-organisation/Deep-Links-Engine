@@ -63,8 +63,8 @@ Ingress is disabled: expose the Services yourself and keep /.well-known/* free o
 {{- if and (not .Values.control.config.instanceTenantId) (not .Values.control.config.allowTenantSelfService) }}
 
    NOTE: neither control.config.instanceTenantId nor control.config.allowTenantSelfService is
-   set, so only owners of the bootstrap tenant may manage tenants (nobody, if the bootstrap was
-   skipped).
+   set, so only owners of the bootstrap tenant may manage tenants (nobody, if Dle:Bootstrap:Enabled
+   is off or the bootstrap never provisioned that tenant).
 {{- end }}
 {{- $postgresPeers := include "dle.networkPolicy.postgresPeers" . | trim }}
 {{- $valkeyPeers := include "dle.networkPolicy.valkeyPeers" . | trim }}
@@ -109,11 +109,12 @@ service, handed to this chart as externalPostgres.* / externalValkey.*.
 {{- if .Values.postgresql.enabled }}
 The Bitnami image has no pg_partman: click_events and sdk_events partition maintenance runs
 through the plain-SQL fallbacks dle_click_events_maintain() and dle_sdk_events_maintain(), which
-must run daily. A running control plane does that (the rollup worker hourly, the retention job on
-every run, dry run included) unless its workers are off (Dle:Workers:Enabled, or both
-Dle:Workers:Rollup:Enabled and Dle:Workers:Retention:Enabled) or control.config.analytics.provider
-is clickhouse. Otherwise schedule "SELECT dle_click_events_maintain(), dle_sdk_events_maintain();"
-(pg_cron, cron or a CronJob); with their defaults they also drop partitions older than 180 days.
+must run daily. A running control plane creates partitions ahead of time (the rollup worker hourly,
+the retention job on every run) and drops expired ones itself at Dle:Privacy:Retention:RawDays,
+but only while both the rollup and the retention worker run and dry run is off. In any other
+case, and with control.config.analytics.provider=clickhouse, schedule
+"SELECT dle_click_events_maintain(), dle_sdk_events_maintain();" (pg_cron, cron or a CronJob);
+with their defaults they keep 7 days ahead and drop partitions older than 180 days.
 {{- end }}
 {{- end }}
 {{- if not .Values.edge.config.geoIp.path }}

@@ -5,7 +5,7 @@
 #            ├─ sbom (reusable: SBOM ×3 + CBOM, schema-validated)
 #            ├─ images  [edge, control]  buildx linux/amd64+arm64 → ghcr.io as :VERSION only,
 #            │                           provenance + SBOM attestations, cosign keyless signature
-#            ├─ helm    lint → package → push oci://ghcr.io/<owner>/charts → cosign sign
+#            ├─ helm    after gates: lint → package → push oci://ghcr.io/<owner>/charts → cosign sign
 #            ├─ gates   compose stack from the pushed images: Trivy (hard) → smoke (/healthz,
 #            │          /readyz, edge stays up with postgres stopped) → ZAP baseline (hard) → k6
 #            ├─ promote non-prerelease tags with a k6 run only: :MAJOR.MINOR and :latest → the gated digest
@@ -192,7 +192,9 @@ jobs:
   # ---------------------------------------------------------------------------------------------
   helm:
     name: Helm chart
-    needs: [version, ci]
+    # After the k6 gate: like the GitHub release, the chart is stable only for a plain tag whose
+    # load test ran, and a failed gate publishes no chart.
+    needs: [version, ci, gates]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -203,7 +205,7 @@ jobs:
       CHART_DIR: deploy/helm/dle
       CHART_OCI: oci://ghcr.io/${{ needs.version.outputs.owner }}/charts
       VERSION: ${{ needs.version.outputs.version }}
-      PRERELEASE: ${{ needs.version.outputs.prerelease }}
+      PRERELEASE: ${{ needs.version.outputs.prerelease == 'true' || needs.gates.outputs.loadtest != 'ran' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -228,7 +230,8 @@ jobs:
       - name: Package
         run: |
           mkdir -p chart
-          # Artifact Hub reads the prerelease flag from Chart.yaml; derive it from the tag.
+          # Artifact Hub reads the prerelease flag from Chart.yaml; derive it from the tag and the
+          # k6 gate, exactly as the GitHub release does.
           sed -i "s|^  artifacthub.io/prerelease: .*|  artifacthub.io/prerelease: \"$PRERELEASE\"|" "$CHART_DIR/Chart.yaml"
           grep -q "^  artifacthub.io/prerelease: \"$PRERELEASE\"$" "$CHART_DIR/Chart.yaml"
           helm package "$CHART_DIR" --version "$VERSION" --app-version "$VERSION" --destination chart
