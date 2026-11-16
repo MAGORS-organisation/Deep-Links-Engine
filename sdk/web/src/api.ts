@@ -138,6 +138,14 @@ export const MAX_REFERRER_LENGTH = 1024;
 
 const MATCH_TYPES: readonly string[] = ['none', 'install_referrer', 'login', 'claim_code', 'probabilistic', 'direct_open'];
 
+/** The match types that identify the click exactly. An allowlist, so nothing unknown slips in. */
+const DETERMINISTIC_MATCH_TYPES: readonly string[] = ['install_referrer', 'login', 'claim_code', 'direct_open'];
+
+/** `true` for a `match_type` this SDK version knows. */
+export function isKnownMatchType(value: string): value is MatchType {
+  return MATCH_TYPES.includes(value);
+}
+
 // ---------------------------------------------------------------------------------------
 // Builders (pure)
 // ---------------------------------------------------------------------------------------
@@ -324,8 +332,8 @@ export function parseResolveResponse(
     throw new DleError('malformed', 'resolve response has no valid match_type');
   }
   let matchType: MatchType = 'none';
-  if (MATCH_TYPES.includes(rawMatchType)) {
-    matchType = rawMatchType as MatchType;
+  if (isKnownMatchType(rawMatchType)) {
+    matchType = rawMatchType;
   } else {
     onUnknownMatchType?.(rawMatchType);
   }
@@ -360,7 +368,7 @@ export function parseResolveResponse(
  * Use it before treating a resolve result as fact; a `probabilistic` match is a hint.
  */
 export function isDeterministic(result: Pick<ResolveResult, 'matched' | 'matchType' | 'confidence'>): boolean {
-  return result.matched && result.matchType !== 'none' && result.matchType !== 'probabilistic' && result.confidence >= 1;
+  return result.matched && DETERMINISTIC_MATCH_TYPES.includes(result.matchType) && result.confidence >= 1;
 }
 
 // ---------------------------------------------------------------------------------------

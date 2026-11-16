@@ -11,7 +11,7 @@ import {
   parseResolveResponse,
 } from '../src/api';
 import { VERSION, referrerFromSearch } from '../src/index';
-import type { DleEvent } from '../src/types';
+import type { DleEvent, MatchType } from '../src/types';
 import { WIRE } from './helpers';
 
 describe('wire contract (literals from SdkWireContractTests.cs)', () => {
@@ -144,6 +144,13 @@ describe('malformed resolve responses are refused, never guessed', () => {
     expect(result.link?.id).toBe('7');
     expect(result.params).toEqual({ a: 'b' });
     expect(seen).toEqual(['magic']);
+  });
+
+  it('never calls an unknown match type deterministic, wherever it came from', () => {
+    // A cache written by a newer SDK on the same origin can still hold one.
+    const future = { matched: true, matchType: 'future' as MatchType, confidence: 1 };
+    expect(isDeterministic(future)).toBe(false);
+    expect(isDeterministic({ matched: true, matchType: 'login', confidence: 1 })).toBe(true);
   });
 
   it('still rejects a match_type that is not a string', () => {

@@ -6,6 +6,7 @@ import {
   collectSignals,
   createApiClient,
   isDeterministic,
+  isKnownMatchType,
   parseResolveResponse,
 } from './api.js';
 import { createConsent } from './consent.js';
@@ -200,7 +201,8 @@ export function createDle(config: DleConfig): DleClient {
       storeEntry(null);
       return null;
     }
-    return entry.result;
+    // A newer SDK on the same origin may have stored a match type this version does not know.
+    return isKnownMatchType(entry.result.matchType) ? entry.result : { ...entry.result, matchType: 'none' };
   };
 
   async function resolve(options: ResolveOptions = {}): Promise<ResolveResult> {
