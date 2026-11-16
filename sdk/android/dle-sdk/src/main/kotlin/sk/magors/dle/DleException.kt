@@ -45,20 +45,20 @@ public sealed class DleException(message: String, cause: Throwable? = null) : Ru
         override val isRetriable: Boolean
             get() = status == 429 || status == 408 || status >= 500
 
-        /** `true` when the problem type is `rate-limited`. */
+        /** `true` when the problem code is `rate-limited`. */
         public val isRateLimited: Boolean
-            get() = status == 429 || problem?.type == ProblemDocument.TYPE_RATE_LIMITED
+            get() = status == 429 || problem?.code == ProblemDocument.CODE_RATE_LIMITED
 
         /** `true` when the SDK key was refused. */
         public val isUnauthorized: Boolean
-            get() = status == 401 || problem?.type == ProblemDocument.TYPE_UNAUTHORIZED
+            get() = status == 401 || problem?.code == ProblemDocument.CODE_UNAUTHORIZED
 
         /**
          * `true` when a claim code could not be redeemed. Read [ProblemDocument.canReissue]
          * to decide whether showing the interstitial again makes sense.
          */
         public val isClaimCodeInvalid: Boolean
-            get() = problem?.type == ProblemDocument.TYPE_CLAIM_CODE_INVALID
+            get() = problem?.code == ProblemDocument.CODE_CLAIM_CODE_INVALID
     }
 
     /** The server answered 2xx with a body the SDK cannot use. Refused rather than guessed at. */
@@ -73,8 +73,9 @@ public sealed class DleException(message: String, cause: Throwable? = null) : Ru
 }
 
 /**
- * An RFC 9457 problem document as the engine sends it. The stable `type` URIs an integrator may
- * branch on are exposed as constants (`Dle.Domain.Contracts.ProblemCodes`).
+ * An RFC 9457 problem document as the engine sends it. Branch on [code] — the last path segment
+ * of [type], such as `rate-limited` — and the `CODE_` constants, never on the whole [type] URI:
+ * the host it is published under may change, the codes never do.
  *
  * @property type the problem type URI.
  * @property title short human readable summary.
@@ -94,26 +95,40 @@ public data class ProblemDocument(
     public val reason: String? = null,
     public val canReissue: Boolean? = null,
 ) {
-    public companion object {
-        /** Base URI every problem type is derived from. */
-        public const val TYPE_BASE: String = "https://docs.dle.dev/problems/"
+    /** The problem code: the last path segment of [type], such as `rate-limited`, or `null`. */
+    public val code: String?
+        get() = codeOf(type)
 
+    public companion object {
         /** The request body failed validation. */
-        public const val TYPE_VALIDATION_FAILED: String = TYPE_BASE + "validation-failed"
+        public const val CODE_VALIDATION_FAILED: String = "validation-failed"
 
         /** A rate limit was exceeded; `Retry-After` says how long to wait. */
-        public const val TYPE_RATE_LIMITED: String = TYPE_BASE + "rate-limited"
+        public const val CODE_RATE_LIMITED: String = "rate-limited"
 
         /** The SDK key is missing, malformed, unknown or inactive. */
-        public const val TYPE_UNAUTHORIZED: String = TYPE_BASE + "unauthorized"
+        public const val CODE_UNAUTHORIZED: String = "unauthorized"
 
         /** The credential lacks the scope the operation needs. */
-        public const val TYPE_FORBIDDEN: String = TYPE_BASE + "forbidden"
+        public const val CODE_FORBIDDEN: String = "forbidden"
 
         /** The claim code is unknown, consumed or past its time to live. */
-        public const val TYPE_CLAIM_CODE_INVALID: String = TYPE_BASE + "claim-code-invalid"
+        public const val CODE_CLAIM_CODE_INVALID: String = "claim-code-invalid"
 
         /** A dependency the request needs is unavailable; the caller may retry. */
-        public const val TYPE_DEPENDENCY_UNAVAILABLE: String = TYPE_BASE + "dependency-unavailable"
+        public const val CODE_DEPENDENCY_UNAVAILABLE: String = "dependency-unavailable"
+
+        /**
+         * The code of a problem type URI: its last path segment, ignoring a query, a fragment and
+         * a trailing slash.
+         *
+         * @param type the problem type URI as received.
+         * @return the code, or `null` when there is none.
+         */
+        @JvmStatic
+        public fun codeOf(type: String?): String? {
+            val path = type?.substringBefore('?')?.substringBefore('#')?.trimEnd('/') ?: return null
+            return path.substringAfterLast('/').ifEmpty { null }
+        }
     }
 }
