@@ -308,12 +308,26 @@ function currentView(): SignalsView {
  * The two members that carry the meaning of an attribution — `match_type` and `confidence`
  * — are mandatory. A body without them is refused rather than guessed at, because a guess
  * is exactly how a probabilistic hint ends up displayed as a certainty.
+ *
+ * A `match_type` this SDK version does not know — a strategy a newer engine added — is read as
+ * `none`: "not attributed", never "attributed somehow". The rest of the answer is kept, so an
+ * application built against this version keeps working, and `onUnknownMatchType` receives the
+ * raw value so it can be logged.
  */
-export function parseResolveResponse(value: unknown): ResolveResult {
+export function parseResolveResponse(
+  value: unknown,
+  onUnknownMatchType?: (raw: string) => void,
+): ResolveResult {
   if (!isRecord(value)) throw new DleError('malformed', 'resolve response is not a JSON object');
-  const matchType = value.match_type;
-  if (typeof matchType !== 'string' || !MATCH_TYPES.includes(matchType)) {
+  const rawMatchType = value.match_type;
+  if (typeof rawMatchType !== 'string') {
     throw new DleError('malformed', 'resolve response has no valid match_type');
+  }
+  let matchType: MatchType = 'none';
+  if (MATCH_TYPES.includes(rawMatchType)) {
+    matchType = rawMatchType as MatchType;
+  } else {
+    onUnknownMatchType?.(rawMatchType);
   }
   const confidence = value.confidence;
   if (typeof confidence !== 'number' || !Number.isFinite(confidence)) {
@@ -324,7 +338,7 @@ export function parseResolveResponse(value: unknown): ResolveResult {
   const str = (v: unknown): string | undefined => (typeof v === 'string' ? v : undefined);
   return compact({
     matched: value.matched === true,
-    matchType: matchType as MatchType,
+    matchType,
     confidence: Math.min(1, Math.max(0, confidence)),
     clickId: str(value.click_id),
     link:

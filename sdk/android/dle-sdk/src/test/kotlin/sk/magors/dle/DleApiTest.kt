@@ -242,10 +242,22 @@ class DleApiTest {
 
     @Test
     fun malformedSuccessBody_isRefusedNotGuessed() {
-        server.enqueue(json(200, """{"matched":true,"match_type":"telepathy","confidence":1.0}"""))
+        // match_type is mandatory: without it there is nothing to read, not even "none".
+        server.enqueue(json(200, """{"matched":true,"confidence":1.0}"""))
         val api = api()
 
         assertThrows<DleException.Malformed> { runBlocking { api.resolve(contractRequest(api)) } }
+    }
+
+    @Test
+    fun unknownMatchType_isReadAsNone_notRefused() {
+        server.enqueue(json(200, """{"matched":true,"match_type":"telepathy","confidence":1.0}"""))
+        val api = api()
+
+        val link = runBlocking { api.resolve(contractRequest(api)) }
+
+        assertEquals(MatchType.NONE, link.matchType)
+        assertFalse(link.isDeterministic)
     }
 
     @Test

@@ -161,13 +161,15 @@ internal data class ProblemWire(
 /**
  * Converts the server's answer into the public type.
  *
- * @throws DleException.Malformed when `match_type` is not one the SDK knows or `confidence` is
- * not a finite number. An unknown strategy presented as an attribution is exactly the failure
- * mode this product forbids, so the body is refused rather than guessed at.
+ * A `match_type` this SDK version does not know — a strategy a newer engine added — is read as
+ * [MatchType.NONE]: "not attributed", never "attributed somehow", so it can never pass
+ * [DeferredLink.isDeterministic]. The rest of the answer is kept, so an application built against
+ * this version keeps working, and [onUnknownMatchType] receives the raw value for the log.
+ *
+ * @throws DleException.Malformed when `confidence` is not a finite number.
  */
-internal fun ResolveResponse.toDeferredLink(): DeferredLink {
-    val type = MatchType.fromWireName(matchType)
-        ?: throw DleException.Malformed("resolve response carries unknown match_type '$matchType'")
+internal fun ResolveResponse.toDeferredLink(onUnknownMatchType: (String) -> Unit = {}): DeferredLink {
+    val type = MatchType.fromWireName(matchType) ?: MatchType.NONE.also { onUnknownMatchType(matchType) }
     if (confidence.isNaN() || confidence.isInfinite()) {
         throw DleException.Malformed("resolve response has no valid confidence")
     }

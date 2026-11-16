@@ -237,7 +237,9 @@ export function createDle(config: DleConfig): DleClient {
       consent: consent.toWire(),
     });
 
-    const result = parseResolveResponse(await api.resolve(body));
+    const result = parseResolveResponse(await api.resolve(body), (raw) =>
+      logger.warn(`unknown match_type '${raw}' from the engine, treated as none; update the SDK`),
+    );
     storeEntry({ install_id: id, stored_at: Date.now(), result });
     logger.debug('resolved', result.matchType, result.confidence);
     return result;

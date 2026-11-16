@@ -132,8 +132,23 @@ describe('malformed resolve responses are refused, never guessed', () => {
     expect(() => parseResolveResponse({ matched: true, match_type: 'login' })).toThrow(DleError);
   });
 
-  it('rejects an unknown match_type', () => {
-    expect(() => parseResolveResponse({ matched: true, match_type: 'magic', confidence: 1 })).toThrow(/match_type/);
+  it('reads an unknown match_type as none, never as an attribution', () => {
+    // A strategy a newer engine added must not break an application built against this SDK.
+    const seen: string[] = [];
+    const result = parseResolveResponse(
+      { matched: true, match_type: 'magic', confidence: 1, link: { id: '7' }, params: { a: 'b' } },
+      (raw) => seen.push(raw),
+    );
+    expect(result.matchType).toBe('none');
+    expect(isDeterministic(result)).toBe(false);
+    expect(result.link?.id).toBe('7');
+    expect(result.params).toEqual({ a: 'b' });
+    expect(seen).toEqual(['magic']);
+  });
+
+  it('still rejects a match_type that is not a string', () => {
+    expect(() => parseResolveResponse({ matched: true, match_type: 7, confidence: 1 })).toThrow(/match_type/);
+    expect(() => parseResolveResponse({ matched: true, match_type: null, confidence: 1 })).toThrow(/match_type/);
   });
 
   it('rejects non-objects', () => {

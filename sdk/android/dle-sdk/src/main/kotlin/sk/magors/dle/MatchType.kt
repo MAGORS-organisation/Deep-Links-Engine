@@ -54,9 +54,10 @@ public enum class MatchType(
          * Looks a wire value up.
          *
          * @param value the `match_type` string as received.
-         * @return the matching type, or `null` for anything the SDK does not know. Unknown is
-         * refused by the response parser rather than mapped to a guess: an unknown strategy
-         * presented as an attribution is exactly the failure mode this product forbids.
+         * @return the matching type, or `null` for anything the SDK does not know. The response
+         * parser reads an unknown value as [NONE] — "not attributed", never "attributed somehow" —
+         * because an unknown strategy presented as an attribution is exactly the failure mode this
+         * product forbids, and refusing the whole answer would break every app on a newer engine.
          */
         @JvmStatic
         public fun fromWireName(value: String): MatchType? = entries.firstOrNull { it.wireName == value }

@@ -116,12 +116,18 @@ class WireModelsTest {
     }
 
     @Test
-    fun resolveResponse_unknownMatchTypeIsRefusedNotGuessed() {
-        val body = """{"matched":true,"match_type":"telepathy","confidence":1.0}"""
+    fun resolveResponse_unknownMatchTypeReadsAsNone_neverAsAnAttribution() {
+        // A strategy a newer engine added must not break an application built against this SDK.
+        val body = """{"matched":true,"match_type":"telepathy","confidence":1.0,"link":{"id":"7"},"params":{"a":"b"}}"""
+        val seen = mutableListOf<String>()
 
-        assertThrows<DleException.Malformed> {
-            DleJson.decodeFromString(ResolveResponse.serializer(), body).toDeferredLink()
-        }
+        val link = DleJson.decodeFromString(ResolveResponse.serializer(), body).toDeferredLink { seen += it }
+
+        assertEquals(MatchType.NONE, link.matchType)
+        assertFalse(link.isDeterministic)
+        assertEquals("7", link.link?.id)
+        assertEquals(mapOf("a" to "b"), link.params)
+        assertEquals(listOf("telepathy"), seen)
     }
 
     @Test

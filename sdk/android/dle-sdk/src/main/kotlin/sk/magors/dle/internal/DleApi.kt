@@ -111,7 +111,7 @@ internal class DleApi(
         } catch (e: IllegalArgumentException) {
             throw DleException.Malformed("resolve response is not a ResolveResponseDto", e)
         }
-        return response.toDeferredLink()
+        return response.toDeferredLink(::warnUnknownMatchType)
     }
 
     /**
@@ -134,7 +134,11 @@ internal class DleApi(
         } catch (e: IllegalArgumentException) {
             throw DleException.Malformed("resolve-link response is not a ResolveResponseDto", e)
         }
-        return response.toDeferredLink()
+        return response.toDeferredLink(::warnUnknownMatchType)
+    }
+
+    private fun warnUnknownMatchType(raw: String) {
+        log.warn("unknown match_type '$raw' from the engine, treated as none; update the SDK")
     }
 
     suspend fun sendEvents(batch: EventBatch): EventBatchAccepted {
