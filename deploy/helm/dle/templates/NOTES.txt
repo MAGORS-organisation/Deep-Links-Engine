@@ -39,27 +39,23 @@ Ingress is disabled: expose the Services yourself and keep /.well-known/* free o
      kubectl -n {{ .Release.Namespace }} logs job/{{ include "dle.migrate.fullname" . }}    # EF Core migration ({{ include "dle.migrate.hooks" . }} hook)
 {{- end }}
 
-3. First credential: there is no seeded API key. On an empty database the control plane creates
-   tenant "default" with an owner key "root-bootstrap", but only when that key has a way out.
-   Either hand it a key you generated from a Secret — "dle_", 8 base62 characters (A-Z a-z 0-9),
-   "_", 43 base62 characters, for example:
+3. First credential: on an empty database the control plane creates the tenant "default" with the
+   owner API key "root-bootstrap" you supplied in secrets.bootstrapOwnerKey (or, with
+   secrets.existingSecret, under the "{{ .Values.secrets.keys.bootstrapOwnerKey }}" key of that Secret). The key is
+   never printed or logged. Sign in to the admin console with it, create a named owner key and
+   revoke "root-bootstrap"; the value is unused from then on.
+{{- if and (not .Values.secrets.existingSecret) (not .Values.secrets.bootstrapOwnerKey) }}
 
-     printf 'dle_%s_%s\n' "$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8)" "$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 43)"
+   WARNING: secrets.bootstrapOwnerKey is empty, so a fresh database gets no tenant and nobody can
+   sign in. Generate a key and upgrade; the control plane provisions on its next start:
 
-     control:
-       extraEnv:
-         - name: Dle__Bootstrap__InitialApiKey
-           valueFrom: { secretKeyRef: { name: <secret>, key: <key> } }
+     key="$(printf 'dle_%s_%s' "$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8)" "$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 43)")"
+     helm upgrade {{ .Release.Name }} <chart> -n {{ .Release.Namespace }} --reuse-values --set secrets.bootstrapOwnerKey="$key"
+{{- end }}
 
-   or, for the first install only, set control.config.extra.Dle__Bootstrap__AllowConsoleSecretOutput
-   to "true" and read the key once from the pod output:
-
-     kubectl -n {{ .Release.Namespace }} logs -l app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=control --tail=-1 | grep -A 4 "DLE BOOTSTRAP OWNER KEY"
-
-   Sign in to the admin console with it, create a named owner key and revoke "root-bootstrap".
-   OIDC (control.config.oidc) does not create a tenant, so one of the routes above is still needed
-   on the first start. Afterwards owners may use SSO: the identity provider sends
-   dle_tenant=default (or set Dle__Identity__Oidc__DefaultTenant) and dle_role=owner.
+   OIDC (control.config.oidc) does not create a tenant, so the key above is still needed on the
+   first start. Afterwards owners may use SSO: the identity provider sends dle_tenant=default (or
+   set Dle__Identity__Oidc__DefaultTenant) and dle_role=owner.
 {{- if and (not .Values.control.config.instanceTenantId) (not .Values.control.config.allowTenantSelfService) }}
 
    NOTE: neither control.config.instanceTenantId nor control.config.allowTenantSelfService is

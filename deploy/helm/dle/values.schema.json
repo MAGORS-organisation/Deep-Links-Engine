@@ -170,9 +170,10 @@
             "postgresReadConnectionString": { "$ref": "#/definitions/nonEmptyString" },
             "valkeyConnectionString": { "$ref": "#/definitions/nonEmptyString" },
             "clickHouseConnectionString": { "$ref": "#/definitions/nonEmptyString" },
-            "metricsScrapeToken": { "$ref": "#/definitions/nonEmptyString" }
+            "metricsScrapeToken": { "$ref": "#/definitions/nonEmptyString" },
+            "bootstrapOwnerKey": { "$ref": "#/definitions/nonEmptyString" }
           },
-          "required": ["masterSecret", "edgeSecret", "postgresConnectionString", "postgresReadConnectionString", "valkeyConnectionString", "clickHouseConnectionString", "metricsScrapeToken"],
+          "required": ["masterSecret", "edgeSecret", "postgresConnectionString", "postgresReadConnectionString", "valkeyConnectionString", "clickHouseConnectionString", "metricsScrapeToken", "bootstrapOwnerKey"],
           "additionalProperties": false
         },
         "masterSecret": {
@@ -189,6 +190,11 @@
           "description": "Bearer token GET /metrics requires on both services; required when serviceMonitor.enabled unless existingSecret holds it. At least 16 characters, or empty.",
           "type": "string",
           "anyOf": [ { "const": "" }, { "minLength": 16 } ]
+        },
+        "bootstrapOwnerKey": {
+          "description": "The first owner API key (Dle:Bootstrap:InitialApiKey), used once on an empty database: the key name ('dle' unless Dle:Crypto:ApiKeyPrefix says otherwise), '_', 8 characters from A-Z a-z 0-9, '_', 43 more. Empty when existingSecret holds it or provisioning is not wanted.",
+          "type": "string",
+          "pattern": "^$|^[A-Za-z0-9]+_[A-Za-z0-9]{8}_[A-Za-z0-9]{43}$"
         }
       },
       "additionalProperties": false

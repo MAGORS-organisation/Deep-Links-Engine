@@ -89,6 +89,7 @@ secrets:
     valkeyConnectionString: valkey-connection-string     # optional (no L2 cache without it)
     clickHouseConnectionString: clickhouse-connection-string  # optional, control only
     metricsScrapeToken: metrics-scrape-token             # required when serviceMonitor.enabled
+    bootstrapOwnerKey: bootstrap-owner-key               # first start only, control only
   # Dle:Crypto:MasterSecret of the CONTROL PLANE — at least 32 characters. The slug permutation
   # and the token/webhook signing keys derive from it. It is never mounted into the edge.
   # Generate with:  openssl rand -base64 48
@@ -105,6 +106,14 @@ secrets:
   # Ignored when existingSecret is set: put a non-empty token in that Secret under
   # keys.metricsScrapeToken (the pods refuse to start without the key; an empty value is anonymous).
   metricsScrapeToken: ""
+  # The first owner API key (Dle:Bootstrap:InitialApiKey). On an empty database the control plane
+  # creates the tenant "default" with this key, so you can sign in to the admin console. It is never
+  # printed or logged: you generated it, so you already hold it. Format: "dle_", 8 and 43 characters
+  # from A-Z a-z 0-9. Generate with:
+  #   printf 'dle_%s_%s\n' "$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8)" "$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 43)"
+  # Once a named owner key exists and "root-bootstrap" is revoked, it is unused. With existingSecret,
+  # put it in that Secret under keys.bootstrapOwnerKey instead. Empty: nothing is provisioned.
+  bootstrapOwnerKey: ""
 
 
 # -----------------------------------------------------------------------------

@@ -36,11 +36,16 @@ IResourceBuilder<RedisResource> valkey = builder
 // configuration keys.
 //
 // The control plane owns the schema, the workers and the administrative API. It waits for the
-// database because its first action on a cold start is to check the migration state.
+// database because its first action on a cold start is to check the migration state. On an empty
+// database it creates the first tenant with the owner key from DLE_BOOTSTRAP_INITIAL_API_KEY, which
+// setup-dev.ps1 / setup-dev.sh read from deploy/.env.
 builder
     .AddProject<Projects.Dle_Control>("dle-control")
     .WithReference(database, connectionName: "Postgres")
     .WithReference(valkey, connectionName: "Valkey")
+    .WithEnvironment(
+        "Dle__Bootstrap__InitialApiKey",
+        builder.Configuration["DLE_BOOTSTRAP_INITIAL_API_KEY"] ?? string.Empty)
     .WaitFor(database)
     .WaitFor(valkey)
     .WithHttpHealthCheck("/healthz")

@@ -12,8 +12,9 @@
 #            └─ release cosign sign-blob SBOM/CBOM → GitHub release with SBOM, CBOM, chart, digests
 #
 # k6 gate: tests/load/resolve.js needs a seeded corpus (tests/load/seed.js), and seeding needs a
-# control-plane API key on a verified domain. The control plane has no bootstrap credential (see
-# deploy/.env.example), so an ephemeral compose stack cannot seed itself. The profile therefore
+# control-plane API key on a verified domain. An ephemeral compose stack can be handed the key
+# (DLE_BOOTSTRAP_INITIAL_API_KEY) but not a domain that verifies, which needs a public host name and
+# its DNS, so it cannot seed itself. The profile therefore
 # runs against a persistent staging instance described by four repository secrets:
 #   DLE_LOADTEST_CONTROL_URL, DLE_LOADTEST_API_KEY, DLE_LOADTEST_DOMAIN_ID, DLE_LOADTEST_LINK_HOST
 # When they are set the run is a hard gate (the thresholds inside resolve.js decide). When they

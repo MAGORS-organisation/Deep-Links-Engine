@@ -44,8 +44,6 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       Dle__Control__PublicScheme: http
       Dle__Control__AllowTenantSelfService: "true"
-      Dle__Bootstrap__Enabled: ${DLE_BOOTSTRAP_ENABLED:-true}
-      Dle__Bootstrap__AllowConsoleSecretOutput: ${DLE_BOOTSTRAP_ALLOW_CONSOLE_SECRET:-true}
       Dle__Identity__Oidc__RequireHttpsMetadata: "false"
 
   postgres:

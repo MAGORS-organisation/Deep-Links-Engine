@@ -50,15 +50,15 @@ Requirements: Docker with Compose, and a domain you can point at the box.
 ```bash
 git clone https://github.com/MAGORS-organisation/Deep-Links-Engine.git
 cd Deep-Links-Engine/deploy
-./setup-dev.sh            # Windows: .\setup-dev.ps1 — writes .env with generated database, cache, master and edge secrets
+./setup-dev.sh            # Windows: .\setup-dev.ps1 — writes .env with generated secrets and the first owner key
 # for a public domain, set DLE_DOMAIN and DLE_TLS (your ACME e-mail) in .env now
 docker compose -f docker-compose.yml up -d --build
-docker compose logs dle-control | grep -A 4 "DLE BOOTSTRAP OWNER KEY"
+grep '^DLE_BOOTSTRAP_INITIAL_API_KEY=' .env    # the first owner key
 ```
 
-On an empty database the control plane provisions a tenant and an owner API key and prints the key
-**once** to its standard output (never to the structured log). Sign in to the admin console at
-`https://<your domain>/admin/` with it, create a named owner key, and revoke the bootstrap one.
+On an empty database the control plane provisions a tenant with the owner API key from
+`DLE_BOOTSTRAP_INITIAL_API_KEY` in `.env`; the key is never printed or logged. Sign in to the admin
+console at `https://<your domain>/admin/` with it, create a named owner key, and revoke the bootstrap one.
 
 Name the compose file explicitly: a plain `docker compose up` also loads `docker-compose.override.yml`,
 the development profile (Caddy's internal CA, published ports, plain HTTP). No images are published yet,

@@ -92,6 +92,13 @@ spec:
                 secretKeyRef:
                   name: {{ include "dle.secretName" . }}
                   key: {{ .Values.secrets.keys.masterSecret }}
+            # Read only on an empty database, to create the first tenant's owner key.
+            - name: Dle__Bootstrap__InitialApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "dle.secretName" . }}
+                  key: {{ .Values.secrets.keys.bootstrapOwnerKey }}
+                  optional: true
             # The three keys the edge also holds derive from the edge's secret, so both sides agree.
             {{- range (list "ClickIdSecret" "IpHashSecret" "ClaimCodeSecret") }}
             - name: Dle__Crypto__{{ . }}

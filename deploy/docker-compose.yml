@@ -179,11 +179,10 @@ services:
       Dle__Control__Network__ForwardLimit: "1"
       Dle__Control__Network__KnownNetworks__0: ${DLE_NETWORK_SUBNET:-172.28.0.0/24}
       Dle__Control__InstanceTenantId: ${DLE_INSTANCE_TENANT_ID:-}
-      # First credential (see .env.example): disabled by default in production. Enable explicitly
-      # for initial empty-DB setup, ideally with ExportKeyPath and without console secret output.
-      Dle__Bootstrap__Enabled: ${DLE_BOOTSTRAP_ENABLED:-false}
-      Dle__Bootstrap__ExportKeyPath: ${DLE_BOOTSTRAP_EXPORT_PATH:-}
-      Dle__Bootstrap__AllowConsoleSecretOutput: ${DLE_BOOTSTRAP_ALLOW_CONSOLE_SECRET:-false}
+      # First owner key, used once on an empty database (see .env.example). The key never appears
+      # in a log: you generated it, so you already hold it.
+      Dle__Bootstrap__Enabled: ${DLE_BOOTSTRAP_ENABLED:-true}
+      Dle__Bootstrap__InitialApiKey: ${DLE_BOOTSTRAP_INITIAL_API_KEY:-}
       Dle__Control__AllowTenantSelfService: ${DLE_ALLOW_TENANT_SELF_SERVICE:-false}
       # The image ships the built admin SPA under wwwroot/admin/ (Dockerfile.control); this makes
       # the SPA fallback serve its index for client-side routes under /admin/.

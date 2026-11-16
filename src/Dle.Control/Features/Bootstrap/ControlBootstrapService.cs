@@ -20,10 +20,13 @@ namespace Dle.Control.Features.Bootstrap;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>The secret.</b> The owner key is the one credential nobody can obtain any other way, so it has to
-/// leave the process once. It leaves by exactly one route: the file named in
+/// <b>The secret.</b> The owner key is the one credential nobody can obtain any other way. The intended
+/// route is that the operator generates it and hands it in through
+/// <see cref="BootstrapOptions.InitialApiKey"/>, so it never has to leave the process at all. A key
+/// the engine mints itself leaves by exactly one route: the file named in
 /// <see cref="BootstrapOptions.ExportKeyPath"/> when that is set (written owner-only on Unix), or
-/// otherwise a block on standard output marked <c>DLE BOOTSTRAP OWNER KEY</c>. It never goes through
+/// otherwise, only when explicitly allowed, a block on standard output marked
+/// <c>DLE BOOTSTRAP OWNER KEY</c>. With none of the three configured nothing is provisioned. It never goes through
 /// <see cref="ILogger"/>: the logging pipeline exports to OTLP collectors and log stores that keep it
 /// forever and show it to everybody with dashboard access. The log records only the key's non-secret
 /// prefix, so the operator can find and revoke it later.
@@ -225,30 +228,72 @@ public sealed class ControlBootstrapService : IHostedService
 
         if (!anyTenants)
         {
-            bool hasPresetKey = !string.IsNullOrWhiteSpace(options.InitialApiKey)
-                && ApiKeyHasher.TryReadPrefix(options.InitialApiKey.Trim(), out _);
+            string keyName = scope.ServiceProvider.GetRequiredService<IOptions<CryptoOptions>>().Value.ApiKeyPrefix;
+            FirstKeySource source = ResolveFirstKeySource(options, keyName);
 
-            if (!hasPresetKey
-                && string.IsNullOrWhiteSpace(options.ExportKeyPath)
-                && !options.AllowConsoleSecretOutput)
+            switch (source)
             {
-                _logger.LogError(
-                    "Bootstrap provisioning skipped: configure Dle:Bootstrap:ExportKeyPath, provide a valid "
-                    + "Dle:Bootstrap:InitialApiKey, or set AllowConsoleSecretOutput=true in development.");
-            }
-            else
-            {
-                await ProvisionAsync(scope.ServiceProvider, db, options, slug, cancellationToken);
+                case FirstKeySource.None:
+                    _logger.LogError(
+                        "No tenant exists and no first owner key was supplied, so nothing was provisioned and "
+                        + "nobody can sign in. Set Dle:Bootstrap:InitialApiKey to a key you generated "
+                        + "(DLE_BOOTSTRAP_INITIAL_API_KEY with Docker Compose, secrets.bootstrapOwnerKey in the "
+                        + "Helm chart), then restart dle-control.");
+                    break;
+
+                case FirstKeySource.Malformed:
+                    _logger.LogError(
+                        "Dle:Bootstrap:InitialApiKey is not an API key this instance accepts: it must be "
+                        + "'{KeyName}_', 8 characters from A-Z a-z 0-9, '_' and 43 more. Nothing was "
+                        + "provisioned; fix the value and restart dle-control.",
+                        keyName);
+                    break;
+
+                default:
+                    await ProvisionAsync(scope.ServiceProvider, db, options, source, slug, cancellationToken);
+                    break;
             }
         }
 
         await DiscoverOperatorAsync(db, slug, cancellationToken);
     }
 
+    /// <summary>Where the first owner key comes from, decided from configuration alone.</summary>
+    /// <param name="options">Bootstrap configuration.</param>
+    /// <param name="keyName">
+    /// The name field an API key must carry to authenticate, <c>Dle:Crypto:ApiKeyPrefix</c>. A key with
+    /// another name would be stored and then refused at sign-in, locking the operator out for good.
+    /// </param>
+    /// <returns>
+    /// <see cref="FirstKeySource.Operator"/> for a key this instance would accept at sign-in,
+    /// <see cref="FirstKeySource.Malformed"/> for any other non-blank value — a key the operator meant to
+    /// supply is never silently replaced by a generated one — <see cref="FirstKeySource.Generated"/> when
+    /// a generated key has a way out (an export file or the opted-in console), and
+    /// <see cref="FirstKeySource.None"/> otherwise.
+    /// </returns>
+    internal static FirstKeySource ResolveFirstKeySource(BootstrapOptions options, string keyName)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        string? preset = options.InitialApiKey?.Trim();
+
+        if (!string.IsNullOrEmpty(preset))
+        {
+            return DleKeyCredentialReader.TryReadPrefix(preset, keyName, out _)
+                ? FirstKeySource.Operator
+                : FirstKeySource.Malformed;
+        }
+
+        return !string.IsNullOrWhiteSpace(options.ExportKeyPath) || options.AllowConsoleSecretOutput
+            ? FirstKeySource.Generated
+            : FirstKeySource.None;
+    }
+
     private async Task ProvisionAsync(
         IServiceProvider services,
         DleDbContext db,
         BootstrapOptions options,
+        FirstKeySource source,
         string slug,
         CancellationToken cancellationToken)
     {
@@ -270,7 +315,7 @@ public sealed class ControlBootstrapService : IHostedService
 
         string? presetToken = options.InitialApiKey?.Trim();
         string presetPrefix = string.Empty;
-        bool hasPresetToken = !string.IsNullOrEmpty(presetToken)
+        bool hasPresetToken = source == FirstKeySource.Operator
             && ApiKeyHasher.TryReadPrefix(presetToken, out presetPrefix);
 
         ApiKeyCredential credential =
@@ -306,11 +351,11 @@ public sealed class ControlBootstrapService : IHostedService
             return;
         }
 
-        string destination = !string.IsNullOrWhiteSpace(options.ExportKeyPath)
-            ? "written to " + options.ExportKeyPath
-            : options.AllowConsoleSecretOutput && !hasPresetToken
-                ? "printed once to standard output under '" + ConsoleMarker + "'"
-                : "omitted from stdout (AllowConsoleSecretOutput is false)";
+        string destination = hasPresetToken
+            ? "supplied by the operator in Dle:Bootstrap:InitialApiKey"
+            : !string.IsNullOrWhiteSpace(options.ExportKeyPath)
+                ? "written to " + options.ExportKeyPath
+                : "printed once to standard output under '" + ConsoleMarker + "'";
 
         _logger.LogWarning(
             "Bootstrap provisioned tenant {TenantSlug} ({TenantId}) and owner key {KeyPrefix}. The secret was "
@@ -319,6 +364,12 @@ public sealed class ControlBootstrapService : IHostedService
             tenant.Id,
             credential.Prefix,
             destination);
+
+        if (hasPresetToken)
+        {
+            // The operator already holds the key; repeating it anywhere would only add a copy.
+            return;
+        }
 
         if (!string.IsNullOrWhiteSpace(options.ExportKeyPath))
         {
@@ -344,11 +395,6 @@ public sealed class ControlBootstrapService : IHostedService
                     "Could not write the bootstrap key to {ExportPath}; printing it to standard output instead.",
                     options.ExportKeyPath);
             }
-        }
-
-        if (hasPresetToken && !options.AllowConsoleSecretOutput)
-        {
-            return;
         }
 
         if (options.AllowConsoleSecretOutput)
