@@ -98,7 +98,7 @@ RUN case "$TARGETARCH" in \
 
 # ---- runtime-chiseled (opt-in: --target runtime-chiseled) ----------------------------------------
 FROM ${CHISELED_IMAGE} AS runtime-chiseled
-ARG VERSION=0.1.0
+ARG VERSION=1.0.0
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 LABEL org.opencontainers.image.title="dle-control" \
@@ -125,7 +125,7 @@ ENTRYPOINT ["dotnet", "Dle.Control.dll"]
 
 # ---- runtime (default) ---------------------------------------------------------------------------
 FROM ${RUNTIME_IMAGE} AS runtime
-ARG VERSION=0.1.0
+ARG VERSION=1.0.0
 ARG VCS_REF=unknown
 ARG BUILD_DATE=unknown
 LABEL org.opencontainers.image.title="dle-control" \

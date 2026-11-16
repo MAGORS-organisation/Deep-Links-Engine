@@ -126,8 +126,8 @@ public sealed class CoveringIndexTests(DleInfrastructureFixture infrastructure)
     [Trait("Spec", "B.5.2")]
     public async Task ResolveQuery_AsTheEdgeIssuesIt_IsAnsweredByAnIndexOnlyScanOnIxLinksResolve()
     {
-        // §B.5.2: "over cez EXPLAIN (ANALYZE, BUFFERS), že sa index-only scan skutočne používa —
-        // inak latenčný rozpočet z §B.6.1 neplatí." This asserts the specified behaviour against the
+        // §B.5.2: "verify with EXPLAIN (ANALYZE, BUFFERS) that the index-only scan is really used —
+        // otherwise the latency budget of §B.6.1 does not hold." This asserts the specified behaviour against the
         // statement the resolve path actually runs, not against a reduced one.
         Seeded seeded = await SeedAsync();
 

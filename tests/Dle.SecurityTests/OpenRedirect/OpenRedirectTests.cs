@@ -10,8 +10,8 @@ namespace Dle.SecurityTests.OpenRedirect;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A link engine is a redirector, and §E.1 is blunt about what that means: "každý redirektor je v
-/// podstate stroj na obchádzanie reputačných filtrov". The whole value of the domain is that a
+/// A link engine is a redirector, and §E.1 is blunt about what that means: "every redirector is, in
+/// essence, a machine for bypassing reputation filters". The whole value of the domain is that a
 /// recipient trusts it, and one query parameter that reaches the <c>Location</c> header spends that
 /// trust on whoever found it.
 /// </para>

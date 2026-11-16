@@ -40,7 +40,7 @@ import UIKit
 /// locks, exactly as in ``EventQueue``.
 public final class Dle: Sendable {
     /// SDK version, reported in the `User-Agent` header.
-    public static let version = "0.1.0"
+    public static let version = "1.0.0"
 
     private static let registry = Locked<Dle?>(nil)
 

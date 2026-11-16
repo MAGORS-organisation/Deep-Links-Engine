@@ -436,7 +436,9 @@ control:
     publicScheme: https
     # Dle:Control:InstanceTenantId — the tenant whose owners operate this instance (multi-tenant
     # deployments). Leave empty and set allowTenantSelfService=true for a single-organisation
-    # deployment. With neither set the tenant routes deny every caller (deliberate).
+    # deployment. With neither set, only owners of the bootstrap tenant (Dle:Bootstrap:DefaultTenantSlug,
+    # "default") may manage tenants; nobody may if Dle:Bootstrap:Enabled is off or the bootstrap
+    # never provisioned that tenant.
     instanceTenantId: ""
     allowTenantSelfService: false
     # OIDC for the admin console and human users (Dle:Identity:Oidc). Empty = API keys only.

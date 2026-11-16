@@ -120,7 +120,7 @@
         "type": "Project",
         "dependencies": {
           "ClickHouse.Client": "[7.14.0, )",
-          "Dle.Domain": "[0.1.0, )",
+          "Dle.Domain": "[1.0.0, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[11.0.0, )"
         }
       },

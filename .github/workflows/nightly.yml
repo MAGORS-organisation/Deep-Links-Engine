@@ -8,8 +8,8 @@
 #                    they are not configured; there is no instance to check yet.
 #   cve-recheck      security.yml with sca-only=true: NuGet / npm / Trivy fs against today's feeds,
 #                    on an unchanged tree. Catches CVEs published after the last push.
-#   fuzz-harness     SharpFuzz is NOT run here. The console driver exists (tests/Dle.FuzzDriver,
-#                    docs/dev/fuzzing.md), but coverage-guided fuzzing also needs a `sharpfuzz`
+#   fuzz-harness     SharpFuzz is NOT run here. The console driver exists
+#                    (tests/Dle.FuzzDriver), but coverage-guided fuzzing also needs a `sharpfuzz`
 #                    instrumentation pass and libFuzzer, which no workflow sets up. Instead the
 #                    nightly runs the deterministic property-based driver of the same targets
 #                    (FuzzHarnessTests, CsCheck) with a much larger budget than a PR run.

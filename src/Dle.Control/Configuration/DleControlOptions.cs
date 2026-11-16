@@ -72,9 +72,10 @@ public sealed class DleControlOptions
     /// <remarks>
     /// Tenant management crosses tenants, so holding the owner role inside some tenant cannot be
     /// enough on its own. Naming the operator tenant here is the multi-tenant answer;
-    /// <see cref="AllowTenantSelfService"/> is the single-organisation one. With neither set the
-    /// tenant routes deny every caller, which is the right posture for a deployment that has not
-    /// decided (SHARED-KERNEL §17.9).
+    /// <see cref="AllowTenantSelfService"/> is the single-organisation one. With neither set, the
+    /// tenant found under <c>Dle:Bootstrap:DefaultTenantSlug</c> is the operator while
+    /// <c>Dle:Bootstrap:Enabled</c> is on; otherwise the tenant routes deny every caller
+    /// (SHARED-KERNEL §17.9).
     /// </remarks>
     public Guid? InstanceTenantId { get; set; }
 

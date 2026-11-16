@@ -85,7 +85,7 @@ public sealed class ValkeyUnavailableTests(DleInfrastructureFixture infrastructu
     [Trait("Spec", "D.6")]
     public async Task ValkeyUnreachable_AMetricReportsThatTheSharedCacheLevelIsDown()
     {
-        // §D.6 names the metric: "resolve funguje z L1 + Postgresu s vyššou latenciou; metrika
+        // §D.6 names the metric: "resolve works from L1 + Postgres with higher latency; metric
         // cache_l2_down". Without it an operator sees a latency change and has nothing that says
         // why, which is the difference between a five minute diagnosis and an afternoon.
         HashSet<string> published = new(StringComparer.Ordinal);

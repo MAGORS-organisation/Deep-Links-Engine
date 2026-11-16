@@ -316,7 +316,7 @@ dotnet_diagnostic.CA1310.severity = warning   # Specify StringComparison for cor
 dotnet_diagnostic.CA1311.severity = warning   # Specify a culture or use invariant casing
 dotnet_diagnostic.CA1846.severity = warning   # Prefer AsSpan over Substring
 
-# === Security (ČASŤ E — threat model) ======================================
+# === Security (part E — threat model) ======================================
 dotnet_diagnostic.CA2100.severity = error     # SQL injection
 dotnet_diagnostic.CA2153.severity = error     # Corrupted state exceptions
 dotnet_diagnostic.CA2300.severity = error     # Insecure BinaryFormatter

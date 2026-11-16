@@ -147,7 +147,7 @@
         "type": "Project",
         "dependencies": {
           "BouncyCastle.Cryptography": "[2.7.0, )",
-          "Dle.Domain": "[0.1.0, )",
+          "Dle.Domain": "[1.0.0, )",
           "Konscious.Security.Cryptography.Argon2": "[1.3.1, )"
         }
       },
@@ -157,7 +157,7 @@
       "dle.persistence.fast": {
         "type": "Project",
         "dependencies": {
-          "Dle.Domain": "[0.1.0, )",
+          "Dle.Domain": "[1.0.0, )",
           "Microsoft.Extensions.Caching.Hybrid": "[11.0.0, )",
           "Microsoft.Extensions.Caching.StackExchangeRedis": "[11.0.0, )",
           "Npgsql": "[10.0.3, )"

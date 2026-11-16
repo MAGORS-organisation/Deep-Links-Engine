@@ -20,7 +20,7 @@ android {
         minSdk = 23
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
 
         // Override on the command line: -Pdle.sample.endpoint=https://links.example.sk -Pdle.sample.sdkKey=dle_pk_…
         val endpoint = providers.gradleProperty("dle.sample.endpoint").getOrElse("http://10.0.2.2:8081")

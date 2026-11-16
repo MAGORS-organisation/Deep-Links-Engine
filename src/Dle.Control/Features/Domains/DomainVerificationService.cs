@@ -182,7 +182,7 @@ public sealed class DomainVerificationService
     /// <summary>
     /// The seven-day propagation notice shown after every verification (TC-125, §A.2.1, §A.2.2).
     /// </summary>
-    /// <returns>The notice, in English and Slovak.</returns>
+    /// <returns>The notice.</returns>
     /// <remarks>
     /// It is returned on success as well as on failure, and that is deliberate. The failure mode this
     /// prevents is an operator who fixes an association file, sees a green tick, tests on a device
@@ -198,8 +198,7 @@ public sealed class DomainVerificationService
             CultureInfo.InvariantCulture,
             $"Association file changes reach devices only as their cached copy expires, which takes "
             + $"up to {days} days on both platforms. A device that already visited this host may keep "
-            + $"the old file until then. — Zmeny asociačných súborov sa na zariadenia dostanú až s "
-            + $"vypršaním ich kópie v cache, čo trvá až {days} dní na oboch platformách.");
+            + $"the old file until then.");
     }
 
     /// <summary>Resolves the host.</summary>

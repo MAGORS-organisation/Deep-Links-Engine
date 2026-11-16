@@ -8,7 +8,7 @@ namespace Dle.SecurityTests.Enumeration;
 /// </summary>
 /// <remarks>
 /// <para>
-/// TC-102 asks for "rovnaká odpoveď a rovnaký čas" — the same response and the same time — and T-07
+/// TC-102 asks for the same response and the same time, and T-07
 /// explains what leaks otherwise: whether a campaign exists. A scanner that can tell "no such link"
 /// from "not yours" has an oracle for the entire slug space of every other customer on the instance,
 /// and it does not need the link to resolve for that to be worth money.

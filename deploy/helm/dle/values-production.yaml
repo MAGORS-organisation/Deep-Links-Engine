@@ -14,9 +14,9 @@
 # Pin the images to a release — never `latest` in production.
 image:
   edge:
-    tag: "0.1.0"          # CHANGE ME: the release you validated (a runtime-chiseled build if you publish one)
+    tag: "1.0.0"          # CHANGE ME: the release you validated (a runtime-chiseled build if you publish one)
   control:
-    tag: "0.1.0"          # CHANGE ME
+    tag: "1.0.0"          # CHANGE ME
 
 # A Secret you manage (External Secrets Operator, sealed-secrets, SOPS, kubectl) carrying:
 #   master-secret                    Dle:Crypto:MasterSecret, control plane only (openssl rand -base64 48)

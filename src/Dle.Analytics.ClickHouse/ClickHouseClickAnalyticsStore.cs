@@ -9,15 +9,15 @@ namespace Dle.Analytics.ClickHouse;
 
 /// <summary>
 /// <see cref="IClickAnalyticsStore"/> over ClickHouse — the experimental opt-in analytics provider
-/// of ADR-006 (target <c>v0.2</c>), intended for installations past roughly fifty million events a
+/// of ADR-006, intended for installations past roughly fifty million events a
 /// month.
 /// </summary>
 /// <remarks>
 /// <para>
-/// In <c>v0.1</c>, <c>AddDleAnalytics</c> is wired on <c>Dle.Control</c> while <c>Dle.Edge</c>
+/// <c>AddDleAnalytics</c> is wired on <c>Dle.Control</c> while <c>Dle.Edge</c>
 /// writes the click stream to PostgreSQL, making this provider an <b>experimental query-only store
-/// over external PostgreSQL-to-ClickHouse CDC</b> until <c>v0.2</c> adds direct Edge ingestion.
-/// Keep <c>Dle:Analytics:Provider</c> set to <c>postgres</c> in <c>v0.1</c> unless you operate that
+/// over external PostgreSQL-to-ClickHouse CDC</b> until a later release adds direct Edge ingestion.
+/// Keep <c>Dle:Analytics:Provider</c> set to <c>postgres</c> unless you operate that
 /// CDC pipeline.
 /// </para>
 /// <para>
