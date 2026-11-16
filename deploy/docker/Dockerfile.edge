@@ -99,8 +99,12 @@ LABEL org.opencontainers.image.title="dle-edge" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.base.name="mcr.microsoft.com/dotnet/aspnet:11.0-resolute"
 
-# curl only, for HEALTHCHECK. ca-certificates is already in the base image.
+# curl for HEALTHCHECK; ca-certificates is already in the base image. The upgrade applies the
+# Ubuntu security updates published since the base image was built (glibc, perl-base, …), so the
+# image never ships fixable CVEs while it waits for the next base image refresh. The chiseled
+# target has no package manager and follows that refresh.
 RUN apt-get update \
+ && apt-get upgrade -y --no-install-recommends \
  && apt-get install -y --no-install-recommends curl \
  && rm -rf /var/lib/apt/lists/*
 
