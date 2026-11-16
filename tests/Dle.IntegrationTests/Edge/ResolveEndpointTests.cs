@@ -55,7 +55,7 @@ public sealed partial class ResolveEndpointTests(DleInfrastructureFixture infras
     [Trait("TestCase", "TC-101")]
     public async Task Resolve_ActiveLinkOnIosWithoutTheApp_ServesTheInterstitialThatOffersTheStore()
     {
-        // TC-101: "interstitial alebo 302 na App Store s pt/ct". With the shipped Auto policy an
+        // TC-101: "interstitial or 302 to the App Store with pt/ct". With the shipped Auto policy an
         // iOS browser gets the interstitial, because a bare 302 to the store would skip the one tap
         // that lets the operating system hand a Universal Link to an installed application (§A.2.6).
         const string StoreUrl = "https://apps.apple.com/app/id123456789?pt=1234&ct=autumn26&mt=8";

@@ -12,9 +12,9 @@ namespace Dle.SecurityTests.Attribution;
 /// <remarks>
 /// <para>
 /// The Play install referrer is a string an application on the device hands us, and §E.2.2 T-05 is
-/// specific about the consequence of trusting it: "skreslenie výplat partnerom". A partner who can
+/// specific about the consequence of trusting it: "distorted payouts to partners". A partner who can
 /// edit <c>dl_cid</c> can attribute an organic install to their own campaign and get paid for it. The
-/// mitigation named there is that the identifier is "podpísaný krátky token (HMAC), nie surové ID",
+/// mitigation named there is that the identifier is "a signed short token (HMAC), not a raw ID",
 /// which is what makes an edit detectable rather than merely unlikely.
 /// </para>
 /// <para>

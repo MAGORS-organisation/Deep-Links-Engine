@@ -6,8 +6,8 @@ namespace Dle.SecurityTests.Enumeration;
 /// <remarks>
 /// <para>
 /// §E.9 calls the limit on 404 responses the most important one in the table, and says why: it is the
-/// primary defence against slug enumeration and "musí byť oddelený od limitu na úspešné požiadavky,
-/// inak by legitímna špička kampane vypla ochranu". Two counters, two budgets, exhaustible
+/// primary defence against slug enumeration and "must be separate from the limit on successful
+/// requests, or a legitimate campaign peak would switch the protection off". Two counters, two budgets, exhaustible
 /// independently — that is the property, and it is the one a single shared counter would quietly
 /// break while every other test still passed.
 /// </para>

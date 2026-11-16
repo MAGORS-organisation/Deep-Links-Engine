@@ -3,7 +3,7 @@ using System.Reflection;
 namespace Dle.ContractTests.OpenApi;
 
 /// <summary>
-/// The error half of the contract (§B.7.3: "Chyby: RFC 9457 Problem Details").
+/// The error half of the contract (§B.7.3: "Errors: RFC 9457 Problem Details").
 /// </summary>
 /// <remarks>
 /// <para>

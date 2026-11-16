@@ -5,8 +5,8 @@ namespace Dle.Control.Infrastructure;
 
 /// <summary>
 /// Turns a PostgreSQL that cannot be reached into a <c>503</c> problem document rather than the
-/// <c>500</c> the default exception handler would produce (§D.6: "control plane vracia 503;
-/// žiadny 500").
+/// <c>500</c> the default exception handler would produce (§D.6: "the control plane returns 503;
+/// never a 500").
 /// </summary>
 /// <remarks>
 /// <para>

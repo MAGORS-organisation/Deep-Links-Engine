@@ -39,7 +39,22 @@ Ingress is disabled: expose the Services yourself and keep /.well-known/* free o
      kubectl -n {{ .Release.Namespace }} logs job/{{ include "dle.migrate.fullname" . }}    # EF Core migration ({{ include "dle.migrate.hooks" . }} hook)
 {{- end }}
 
-3. First credential: there is no seeded API key. See "First credential" in deploy/README.md.
+3. First credential: there is no seeded API key. On an empty database the control plane creates
+   tenant "default" with an owner key "root-bootstrap", but only when that key has a way out.
+   Either hand it a key you generated (dle_<8 chars>_<43 chars>) from a Secret:
+
+     control:
+       extraEnv:
+         - name: Dle__Bootstrap__InitialApiKey
+           valueFrom: { secretKeyRef: { name: <secret>, key: <key> } }
+
+   or, for the first install only, set control.config.extra.Dle__Bootstrap__AllowConsoleSecretOutput
+   to "true" and read the key once from the pod output:
+
+     kubectl -n {{ .Release.Namespace }} logs -l app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=control --tail=-1 | grep -A 4 "DLE BOOTSTRAP OWNER KEY"
+
+   Sign in to the admin console with it, create a named owner key and revoke "root-bootstrap".
+   With OIDC configured (Dle:Identity:Oidc), owners can sign in through SSO instead.
 {{- if and (not .Values.control.config.instanceTenantId) (not .Values.control.config.allowTenantSelfService) }}
 
    NOTE: neither control.config.instanceTenantId nor control.config.allowTenantSelfService is
@@ -88,7 +103,9 @@ service, handed to this chart as externalPostgres.* / externalValkey.*.
 {{- if .Values.postgresql.enabled }}
 The Bitnami image has no pg_partman: click_events and sdk_events partition maintenance runs
 through the plain-SQL fallbacks dle_click_events_maintain() and dle_sdk_events_maintain(), which
-must be called daily (see deploy/README.md).
+must run daily. The control plane's retention job calls both on every run, so a running control
+plane is enough unless Dle:Privacy:Retention:DryRun is on; otherwise schedule
+"SELECT dle_click_events_maintain(), dle_sdk_events_maintain();" (pg_cron, cron or a CronJob).
 {{- end }}
 {{- end }}
 {{- if not .Values.edge.config.geoIp.path }}

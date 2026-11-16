@@ -13,7 +13,7 @@ namespace Dle.SecurityTests.Ssrf;
 /// <para>
 /// <see cref="TargetUrlPolicyTests"/> covers what can be decided from the string.
 /// <see cref="DefaultUrlSafetyChecker"/> is the piece that adds the step §E.3 actually calls the SSRF
-/// defence — "rezolvovať a kontrolovať výslednú IP, nie len hostname" — and
+/// defence — "resolve and check the resulting IP, not just the hostname" — and
 /// <see cref="WebhookDestinationPolicy"/> is the same judgement applied to the other customer-supplied
 /// URL the deployment fetches on a schedule.
 /// </para>
