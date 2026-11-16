@@ -27,6 +27,12 @@ export default tseslint.config(
     },
   },
   {
+    // The route table declares the lazy pages locally and exports only its factory. Fast refresh
+    // reloads the page for a change here instead of hot-swapping, which is fine for a route table.
+    files: ['src/router.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  {
     files: ['vite.config.ts', 'eslint.config.js'],
     languageOptions: { globals: globals.node },
   },
