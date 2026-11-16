@@ -9,8 +9,7 @@ using Dle.Edge.WellKnown;
 namespace Dle.IntegrationTests.Edge;
 
 /// <summary>
-/// The two association files, served per host from the applications registered on the link domain
-/// (FR-141, FR-142, §C.3.3, TC-121, TC-122).
+/// The two association files, served per host from the applications registered on the link domain.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -21,7 +20,7 @@ namespace Dle.IntegrationTests.Edge;
 /// </para>
 /// <para>
 /// The documents are checked with the product's own <see cref="WellKnownValidator"/>, which is the
-/// same code the nightly domain verification of FR-143 runs against a customer's live domain. If the
+/// same code the nightly domain verification runs against a customer's live domain. If the
 /// validator and the builder ever disagree, the customer finds out; here, the test does.
 /// </para>
 /// </remarks>
@@ -29,11 +28,10 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-121")]
     public async Task Aasa_OnAVerifiedDomainWithAnIosApp_Is200ApplicationJsonWithNoRedirect()
     {
-        string host = TestSeed.UniqueHost("tc121");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc121", cancellationToken: Ct);
+        string host = TestSeed.UniqueHost("aasa-ios");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "aasa-ios", cancellationToken: Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         _ = await TestSeed.AppAsync(
@@ -86,14 +84,13 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-122")]
     public async Task Aasa_OnADomainWithNoIosApp_Is404AndNotAnEmptyDocument()
     {
-        // TC-122 is the whole reason the handler answers 404: Apple accepts an empty but well formed
+        // This is the whole reason the handler answers 404: Apple accepts an empty but well formed
         // document as a valid negative answer and caches it for about a week, during which the
         // domain's universal links are simply dead. A 404 is retried.
-        string host = TestSeed.UniqueHost("tc122");
-        Guid tenantId = await TestSeed.TenantAsync(Database, "tc122", cancellationToken: Ct);
+        string host = TestSeed.UniqueHost("aasa-none");
+        Guid tenantId = await TestSeed.TenantAsync(Database, "aasa-none", cancellationToken: Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
 
         // An Android application on the same host, so the domain is real and only the iOS side is
@@ -122,12 +119,11 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-142")]
     public async Task AssetLinks_OnADomainWithAnAndroidApp_Is200WithThePlaySigningFingerprintFirst()
     {
-        // FR-144: with Play App Signing the certificate that matters on a device is the one Google
+        // With Play App Signing the certificate that matters on a device is the one Google
         // re-signs with. Publishing only the local upload certificate is the single most common
-        // reason App Links work in a debug build and fail in production (TC-123).
+        // reason App Links work in a debug build and fail in production.
         string host = TestSeed.UniqueHost("assetlinks");
         Guid tenantId = await TestSeed.TenantAsync(Database, "assetlinks", cancellationToken: Ct);
         Guid domainId = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);
@@ -176,7 +172,6 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-142")]
     public async Task AssetLinks_OnADomainWithNoAndroidApp_Is404()
     {
         string host = TestSeed.UniqueHost("assetlinks-404");
@@ -194,11 +189,10 @@ public sealed class WellKnownEndpointTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "C.3.3")]
     public async Task WellKnownPaths_AreNeverAnsweredByTheSlugResolver()
     {
         // The prefix is reserved. A slug route that swallowed it would answer Apple with an HTML
-        // 404 page, and the association would fail with no error anywhere (TC-121, TC-124).
+        // 404 page, and the association would fail with no error anywhere.
         string host = TestSeed.UniqueHost("reserved");
         Guid tenantId = await TestSeed.TenantAsync(Database, "reserved", cancellationToken: Ct);
         _ = await TestSeed.DomainAsync(Database, tenantId, host, cancellationToken: Ct);

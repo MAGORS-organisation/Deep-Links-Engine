@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="SdkKey"/> to the <c>sdk_keys</c> table (§E.7, K6).</summary>
+/// <summary>Maps <see cref="SdkKey"/> to the <c>sdk_keys</c> table.</summary>
 public sealed class SdkKeyConfiguration : IEntityTypeConfiguration<SdkKey>
 {
     /// <inheritdoc />

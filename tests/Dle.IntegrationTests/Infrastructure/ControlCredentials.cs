@@ -21,7 +21,7 @@ namespace Dle.IntegrationTests.Infrastructure;
 /// </para>
 /// <para>
 /// Control-plane keys and SDK keys are deliberately separate types of credential and separate
-/// authentication schemes (§E.2.1 TB2). Both are issued here because the attribution endpoints only
+/// authentication schemes. Both are issued here because the attribution endpoints only
 /// accept the second and the management endpoints only accept the first.
 /// </para>
 /// </remarks>

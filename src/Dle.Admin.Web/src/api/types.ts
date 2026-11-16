@@ -118,7 +118,7 @@ export interface RuleAction {
   interstitial?: InterstitialMode;
 }
 
-/** A rule whose `when` is null or absent is the default rule (TC-105). */
+/** A rule whose `when` is null or absent is the default rule. */
 export interface RoutingRule {
   id: string;
   when?: RuleCondition | null;
@@ -489,7 +489,7 @@ export interface MatchTypeSummary {
   average_confidence: number;
 }
 
-/** ADR-008: the honest split. Never collapse these three numbers into one. */
+/** The honest split. Never collapse these three numbers into one. */
 export interface AttributionQualityResponse {
   deterministic: number;
   probabilistic: number;

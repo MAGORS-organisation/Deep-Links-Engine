@@ -6,7 +6,7 @@ namespace Dle.Control.Features.Tenants;
 /// </summary>
 /// <remarks>
 /// The slug is immutable. It appears in operator-facing URLs and in the audit trail, and an audit
-/// trail whose subject can be renamed underneath it stops being evidence (FR-246).
+/// trail whose subject can be renamed underneath it stops being evidence.
 /// </remarks>
 public sealed record UpdateTenantRequest
 {
@@ -14,7 +14,7 @@ public sealed record UpdateTenantRequest
     public string? Name { get; init; }
 
     /// <summary>
-    /// New consent mode: <c>off</c>, <c>aggregate_only</c> or <c>full</c> (FR-248, §E.6.2).
+    /// New consent mode: <c>off</c>, <c>aggregate_only</c> or <c>full</c>.
     /// </summary>
     /// <remarks>
     /// Tightening takes effect on the next resolve; widening does not retroactively make already

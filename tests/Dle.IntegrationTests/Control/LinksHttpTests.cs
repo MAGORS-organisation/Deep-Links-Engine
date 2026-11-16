@@ -9,9 +9,9 @@ using Dle.Domain.Contracts;
 namespace Dle.IntegrationTests.Control;
 
 /// <summary>
-/// The link routes of the control plane through HTTP against a real PostgreSQL (§B.7.1, FR-101 to
-/// FR-108): create with a custom or generated slug, read, list with filters and keyset paging,
-/// update with its revision history, archive, delete, and the idempotent write of §B.7.3.
+/// The link routes of the control plane through HTTP against a real PostgreSQL: create with a
+/// custom or generated slug, read, list with filters and keyset paging,
+/// update with its revision history, archive, delete, and the idempotent write.
 /// </summary>
 /// <remarks>
 /// Every failure branch the write service can take is walked once, because each is a distinct
@@ -32,7 +32,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     private const string SafeTarget = "https://example.com/landing";
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-101")]
     public async Task Create_WithACustomSlug_Is201WithTheLocationAndTheLink()
     {
         Fixture fixture = await SeedAsync("links-create");
@@ -77,7 +76,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-102")]
     public async Task Create_WithoutASlug_GeneratesAnEightCharacterOne()
     {
         Fixture fixture = await SeedAsync("links-generated");
@@ -98,7 +96,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerTheory]
-    [Trait("Spec", "FR-102")]
     [InlineData("api", "reserved by the engine")]
     [InlineData("abcdefgh", "confused with a generated one")]
     [InlineData("bad slug!", "characters that are not allowed")]
@@ -118,7 +115,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-102")]
     public async Task Create_WithATakenSlug_Is409SlugTaken()
     {
         Fixture fixture = await SeedAsync("links-taken");
@@ -135,7 +131,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerTheory]
-    [Trait("Threat", "T-01")]
     [InlineData("javascript:alert(1)")]
     [InlineData("http://127.0.0.1/admin")]
     [InlineData("https://localhost/")]
@@ -165,7 +160,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-105")]
     public async Task Create_WithRulesButNoDefaultRule_Is400MissingDefaultRule()
     {
         Fixture fixture = await SeedAsync("links-nodefault");
@@ -185,7 +179,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-127")]
     public async Task Create_WithAWebRuleThatHasNoUrl_Is400InvalidRoutingRules()
     {
         Fixture fixture = await SeedAsync("links-badrule");
@@ -205,7 +198,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-101")]
     public async Task Create_WithAnAbsoluteDeeplinkPath_IsValidationFailedOnThatField()
     {
         Fixture fixture = await SeedAsync("links-deeplink");
@@ -223,7 +215,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-104")]
     public async Task Create_WithExpiryBeforeActivation_IsValidationFailedOnExpiresAt()
     {
         Fixture fixture = await SeedAsync("links-window");
@@ -243,7 +234,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task Create_OnAnotherTenantsDomain_Is404AndNever403()
     {
         Fixture fixture = await SeedAsync("links-foreign");
@@ -260,7 +250,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-242")]
     public async Task Create_WithAViewerKey_Is403AndWithoutAKey_Is401()
     {
         Fixture fixture = await SeedAsync("links-roles");
@@ -286,7 +275,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-101")]
     public async Task Get_ReturnsTheLinkWithItsHost_AndAnUnknownOrMalformedIdIs404()
     {
         Fixture fixture = await SeedAsync("links-get");
@@ -308,7 +296,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-109")]
     public async Task List_FiltersBySearchTagsAndActivity_AndPagesWithACursor()
     {
         Fixture fixture = await SeedAsync("links-list");
@@ -344,7 +331,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-107")]
     public async Task Patch_ChangesTheFields_BumpsTheVersion_AndTheHistoryRemembersWhy()
     {
         Fixture fixture = await SeedAsync("links-patch");
@@ -398,7 +384,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-101")]
     public async Task Patch_OfTheTargetAlone_MovesTheRuleThatWasFollowingIt()
     {
         // The edge routes from the rule set alone; target_url is not read at resolve time. A link
@@ -438,7 +423,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-101")]
     public async Task Patch_OfTheTargetAlone_LeavesAnAuthoredRuleSetAsWritten()
     {
         // The other half of the contract: where the caller wrote a rule set of their own, the two
@@ -478,7 +462,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Threat", "T-01")]
     public async Task Patch_WithAnUnsafeTarget_Is422AndLeavesTheLinkAlone()
     {
         Fixture fixture = await SeedAsync("links-patch-unsafe");
@@ -501,7 +484,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-107")]
     public async Task Patch_UnknownLink_Is404_AndAnotherTenantsLink_IsTheSame404()
     {
         Fixture fixture = await SeedAsync("links-patch-404");
@@ -519,7 +501,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-107")]
     public async Task Archive_DeactivatesTheLinkAndRecordsARevision()
     {
         Fixture fixture = await SeedAsync("links-archive");
@@ -544,7 +525,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-107")]
     public async Task Delete_Is204_AndTheLinkAndItsHistoryAreGone()
     {
         Fixture fixture = await SeedAsync("links-delete");
@@ -586,7 +566,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.7.3")]
     public async Task Create_WithTheSameIdempotencyKeyAndBody_ReplaysTheFirstAnswer()
     {
         Fixture fixture = await SeedAsync("links-idem");
@@ -608,7 +587,6 @@ public sealed partial class LinksHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.7.3")]
     public async Task Create_WithTheSameIdempotencyKeyAndADifferentBody_Is409IdempotencyConflict()
     {
         Fixture fixture = await SeedAsync("links-idem-conflict");

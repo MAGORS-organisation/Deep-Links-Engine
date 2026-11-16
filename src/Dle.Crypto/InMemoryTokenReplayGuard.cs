@@ -17,7 +17,7 @@ namespace Dle.Crypto;
 /// The map is bounded, so it cannot be turned into a memory exhaustion attack by minting
 /// identifiers. When the bound is reached, expired entries are dropped first; if that frees
 /// nothing, the guard refuses rather than forgetting something it promised to remember, which is
-/// the default deny that SHARED-KERNEL §17.9 asks for. The refusal is logged at warning level,
+/// deny by default. The refusal is logged at warning level,
 /// because reaching it means either an attack or an undersized bound, and both need looking at.
 /// </para>
 /// </remarks>

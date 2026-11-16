@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// One immutable record of an administrative operation (FR-246). Maps to <c>audit_log</c>.
+/// One immutable record of an administrative operation. Maps to <c>audit_log</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -10,7 +10,7 @@ namespace Dle.Domain.Entities;
 /// the data must be deleted. The resolution is structural rather than procedural, and it is
 /// visible in the shape of this class — there is deliberately nowhere to put an end user
 /// identifier. The entry records only who acted, what they did, which object they did it to and
-/// when: operator, action, subject, time (§E.6.3).
+/// when: operator, action, subject, time.
 /// </para>
 /// <para>
 /// <see cref="ActorId"/> and <see cref="SubjectId"/> therefore always refer to operators and to

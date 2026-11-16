@@ -29,7 +29,7 @@ import sk.magors.dle.dleConfig
  * - A deep link is untrusted input even though the operating system delivered it. Any web page
  *   can craft `https://link.example.sk/anything?x=y`, and it will reach `onCreate` or
  *   `onNewIntent` here. The activity never routes on the raw `intent.data`; it routes on the
- *   [SafeDeepLink] the allowlist returns, or not at all (spec §E.7, MASTG-TEST-0028).
+ *   [SafeDeepLink] the allowlist returns, or not at all (MASTG-TEST-0028).
  * - The same discipline applies to the `deeplink_path` the engine returns: it was typed by an
  *   operator in the console, so it goes through [DeepLinkAllowlist.parsePath] first.
  * - "Dirty Stream" (Microsoft, 2024): an exported activity that receives a `content://` URI in an

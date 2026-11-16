@@ -7,7 +7,7 @@ namespace Dle.Crypto;
 /// <remarks>
 /// The shared kernel only encodes <see cref="ulong"/>, which is enough for the 47 bit slug space
 /// but not for a click identifier: that one carries a timestamp, a sequence and a MAC, and the MAC
-/// is what makes tampering detectable rather than merely improbable (T-05). Widening the kernel
+/// is what makes tampering detectable rather than merely improbable. Widening the kernel
 /// helper for a single caller would put a 128 bit code path on the slug hot path, so the wide
 /// variant lives here instead.
 /// </remarks>

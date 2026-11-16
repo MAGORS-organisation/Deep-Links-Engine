@@ -17,7 +17,7 @@ using Testcontainers.Redis;
 namespace Dle.IntegrationTests.Infrastructure;
 
 /// <summary>
-/// The one PostgreSQL 18 instance and the one Valkey 8 instance this assembly runs against (§D.4).
+/// The one PostgreSQL 18 instance and the one Valkey 8 instance this assembly runs against.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -44,10 +44,10 @@ namespace Dle.IntegrationTests.Infrastructure;
 /// </remarks>
 public sealed class DleInfrastructureFixture : IAsyncLifetime
 {
-    /// <summary>PostgreSQL image. §D.4 names version 18; ADR-003 puts the floor at 16.</summary>
+    /// <summary>PostgreSQL image. The target is version 18; the floor is 16.</summary>
     public const string PostgresImage = "postgres:18-alpine";
 
-    /// <summary>Valkey image. §D.4 names version 8.</summary>
+    /// <summary>Valkey image, version 8.</summary>
     public const string ValkeyImage = "valkey/valkey:8-alpine";
 
     /// <summary>Port Valkey listens on inside the container.</summary>
@@ -82,7 +82,7 @@ public sealed class DleInfrastructureFixture : IAsyncLifetime
         _valkey?.GetConnectionString() ?? throw NotStarted();
 
     /// <summary>
-    /// An endpoint on the Valkey host where nothing is listening, for the chaos case of §D.6.
+    /// An endpoint on the Valkey host where nothing is listening, for the Valkey outage case.
     /// </summary>
     /// <remarks>
     /// The address resolves and the port refuses, which is what "Valkey is down" looks like to a

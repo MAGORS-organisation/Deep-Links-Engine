@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="ApiKey"/> to the <c>api_keys</c> table (FR-242).</summary>
+/// <summary>Maps <see cref="ApiKey"/> to the <c>api_keys</c> table.</summary>
 public sealed class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
 {
     /// <inheritdoc />
@@ -30,7 +30,7 @@ public sealed class ApiKeyConfiguration : IEntityTypeConfiguration<ApiKey>
             .IsRequired();
 
         // Argon2id output. Compared with CryptographicOperations.FixedTimeEquals, never with
-        // equality (shared kernel §17.6).
+        // equality.
         builder.Property(k => k.Hash)
             .HasColumnName("hash")
             .IsRequired();

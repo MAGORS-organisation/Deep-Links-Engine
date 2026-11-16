@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Shared kernel. docs/dev/SHARED-KERNEL.md §0:
+    Shared kernel.
 
-      "Dle.Domain MUST NOT reference ASP.NET Core, EF Core, Npgsql, Dapper or any
-       NuGet package other than System.Text.Json (part of the BCL) and
-       Microsoft.Extensions.Logging.Abstractions."
+      Dle.Domain MUST NOT reference ASP.NET Core, EF Core, Npgsql, Dapper or any
+      NuGet package other than System.Text.Json (part of the BCL) and
+      Microsoft.Extensions.Logging.Abstractions.
 
     Do not add a ProjectReference or a PackageReference to this file.
   -->

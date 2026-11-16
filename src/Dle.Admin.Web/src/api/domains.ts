@@ -27,7 +27,7 @@ export const domains = {
     return api(`${base}/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
 
-  /** FR-143. Runs DNS, TLS, AASA and assetlinks checks now and returns each with its reason. */
+  /** Runs DNS, TLS, AASA and assetlinks checks now and returns each with its reason. */
   verify(id: string): Promise<DomainVerificationResponse> {
     return api(`${base}/${encodeURIComponent(id)}/verify`, { method: 'POST', idempotent: false });
   },

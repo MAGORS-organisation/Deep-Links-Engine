@@ -13,7 +13,7 @@ namespace Dle.Edge.RateLimiting;
 /// nested one, so binding the whole of <c>Dle:RateLimits:Edge</c> as a single tree would validate the
 /// one boolean on the parent and nothing else. A window of zero seconds or a bucket of zero tokens
 /// would then bind cleanly and take the rate limiter out on the first request — which for the 404
-/// budget means the enumeration defence of T-07 is silently absent.
+/// budget means the slug enumeration defence is silently absent.
 /// </para>
 /// <para>
 /// The alternative, binding each subsection as its own options type, would give the same coverage and

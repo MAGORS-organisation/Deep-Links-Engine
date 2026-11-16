@@ -1,7 +1,7 @@
 namespace Dle.Domain.Routing;
 
 /// <summary>
-/// Time constraint on a routing rule (FR-126). Every component is evaluated in UTC so that a
+/// Time constraint on a routing rule. Every component is evaluated in UTC so that a
 /// rule behaves identically on every node, regardless of server locale.
 /// </summary>
 public sealed record TimeWindowPredicate

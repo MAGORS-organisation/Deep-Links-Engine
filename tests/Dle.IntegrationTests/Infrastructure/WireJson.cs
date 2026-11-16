@@ -4,12 +4,11 @@ using System.Text.Json.Serialization;
 namespace Dle.IntegrationTests.Infrastructure;
 
 /// <summary>
-/// The wire format the public API speaks: snake_case, string enums, nulls omitted
-/// (SHARED-KERNEL §14).
+/// The wire format the public API speaks: snake_case, string enums, nulls omitted.
 /// </summary>
 /// <remarks>
 /// Reflection based rather than source generated, and only ever used by the tests. The product's own
-/// serializers are source generated because SHARED-KERNEL §17.3 forbids reflection on the hot path;
+/// serializers are source generated because reflection is forbidden on the hot path;
 /// a test that reads one response is not on it, and mirroring the source generated contexts here
 /// would mean maintaining a second copy of every contract.
 /// </remarks>

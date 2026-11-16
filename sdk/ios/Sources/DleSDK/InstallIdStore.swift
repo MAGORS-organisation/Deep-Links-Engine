@@ -86,7 +86,7 @@ protocol InstallMarker: Sendable {
     func write()
 }
 
-/// The installation identifier: a random UUID v4 in the Keychain (FR-188, TC-143).
+/// The installation identifier: a random UUID v4 in the Keychain.
 ///
 /// **Random, never derived.** It is the only identifier this SDK creates. It is not the
 /// advertising identifier, not `identifierForVendor`, not a hash of anything about the device.

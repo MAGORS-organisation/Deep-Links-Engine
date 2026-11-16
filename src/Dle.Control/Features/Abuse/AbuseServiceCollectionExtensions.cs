@@ -14,7 +14,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Registration of the abuse module (SHARED-KERNEL §15).
+/// Registration of the abuse module.
 /// </summary>
 /// <remarks>
 /// One call from <c>Dle.Control/Program.cs</c> brings up the target URL safety pipeline, the public
@@ -24,7 +24,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 public static class AbuseServiceCollectionExtensions
 {
     /// <summary>
-    /// Name of the rate limiter policy applied to the public abuse form (§E.9: five per hour per
+    /// Name of the rate limiter policy applied to the public abuse form (five per hour per
     /// IP address).
     /// </summary>
     public const string ReportRateLimitPolicy = "dle-abuse-report";
@@ -94,7 +94,8 @@ public static class AbuseServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <remarks>
     /// <para>
-    /// A fixed window keyed by the caller's address, with the value from §E.9. Fixed rather than
+    /// A fixed window of one hour keyed by the caller's address, allowing
+    /// <see cref="AbuseOptions.ReportsPerHourPerIp"/> reports (five by default). Fixed rather than
     /// sliding because the limit exists to stop a flood, not to smooth a legitimate burst: nobody
     /// files five genuine abuse reports a minute apart.
     /// </para>
@@ -109,7 +110,7 @@ public static class AbuseServiceCollectionExtensions
     {
         services.AddRateLimiter(options =>
         {
-            // §E.9 answers a rejected request with 429 and a Retry-After, never with 503, which is
+            // A rejected request is answered with 429 and a Retry-After, never with 503, which is
             // the framework default and would tell a caller to try again immediately.
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
@@ -143,7 +144,7 @@ public static class AbuseServiceCollectionExtensions
     /// residential connection is routinely handed a whole /64, so keying on the full address would
     /// hand one household an unlimited quota. A request with no address at all — a unix socket, a
     /// misconfigured proxy — shares one bucket, which fails towards the limit rather than around
-    /// it. The key never reaches a log (SHARED-KERNEL §17.5).
+    /// it. The key never reaches a log.
     /// </remarks>
     private static string PartitionKey(IPAddress? address) =>
         IpAddressNormalization.PartitionKey64(address, "unknown");

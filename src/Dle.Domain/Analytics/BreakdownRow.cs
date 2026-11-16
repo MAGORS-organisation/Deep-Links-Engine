@@ -1,7 +1,7 @@
 namespace Dle.Domain.Analytics;
 
 /// <summary>
-/// One row of a dimensional breakdown report (FR-202), for example clicks per country or per
+/// One row of a dimensional breakdown report, for example clicks per country or per
 /// campaign. Rows are ordered by <see cref="Clicks"/> descending and truncated to
 /// <see cref="AnalyticsQuery.Limit"/>.
 /// </summary>

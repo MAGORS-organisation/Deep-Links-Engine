@@ -8,7 +8,7 @@ using Xunit;
 namespace Dle.UnitTests.Crypto;
 
 /// <summary>
-/// The signer commits to one algorithm; the verifier accepts a set (§E.4.2). That asymmetry is what
+/// The signer commits to one algorithm; the verifier accepts a set. That asymmetry is what
 /// makes an algorithm migration possible without an outage, and the closed accepted set is what
 /// stops the classic downgrade: rewrite the algorithm of a token and hope the verifier follows the
 /// token rather than its own policy.

@@ -10,10 +10,10 @@ namespace Dle.Control.Identity;
 /// </remarks>
 public static class DleClaimTypes
 {
-    /// <summary>The tenant every query and write in this request is scoped to (FR-241).</summary>
+    /// <summary>The tenant every query and write in this request is scoped to.</summary>
     public const string TenantId = "dle:tenant";
 
-    /// <summary>Instant the tenant was provisioned, for the new-tenant rate limit (§E.9).</summary>
+    /// <summary>Instant the tenant was provisioned, for the new-tenant rate limit.</summary>
     public const string TenantCreatedAt = "dle:tenant_created_at";
 
     /// <summary>Identifier of the credential itself: an API key row, an SDK key row, or a user.</summary>
@@ -31,6 +31,6 @@ public static class DleClaimTypes
     /// <summary>Application an SDK key is bound to.</summary>
     public const string AppId = "dle:app";
 
-    /// <summary>Non-secret prefix of the presented key, safe to log (§E.2.1).</summary>
+    /// <summary>Non-secret prefix of the presented key, safe to log.</summary>
     public const string KeyPrefix = "dle:key_prefix";
 }

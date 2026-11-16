@@ -6,7 +6,7 @@ import Foundation
 /// (`NSPrivacyAccessedAPICategoryUserDefaults`), and touching it here would oblige every
 /// integrator to carry the declaration. Plain file reads and writes are not on Apple's list,
 /// and the SDK never reads file timestamps (`NSPrivacyAccessedAPICategoryFileTimestamp`), so the
-/// package's privacy manifest declares no accessed API at all (spec §E.7 item 4, §C.5).
+/// package's privacy manifest declares no accessed API at all.
 ///
 /// The directory is excluded from backups: its contents describe one installation on one device,
 /// and restoring them onto another device would only produce an installation the engine has

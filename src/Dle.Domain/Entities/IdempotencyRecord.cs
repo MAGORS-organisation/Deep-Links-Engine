@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// A stored response for a replayed <c>Idempotency-Key</c>. Maps to <c>idempotency_records</c> (§B.7.3).
+/// A stored response for a replayed <c>Idempotency-Key</c>. Maps to <c>idempotency_records</c>.
 /// </summary>
 /// <remarks>
 /// A client that retries after a timeout must not create a second link. The key alone is not

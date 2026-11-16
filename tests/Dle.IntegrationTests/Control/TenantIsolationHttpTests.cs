@@ -8,11 +8,11 @@ using Dle.Control.Configuration;
 namespace Dle.IntegrationTests.Control;
 
 /// <summary>
-/// TC-166 over HTTP: a key of one tenant asking about another tenant's link gets 404, never 403.
+/// Over HTTP: a key of one tenant asking about another tenant's link gets 404, never 403.
 /// </summary>
 /// <remarks>
 /// <para>
-/// SHARED-KERNEL §17.7 makes this a code review gate, and the reason is that 403 and 404 answer
+/// This is a code review gate, and the reason is that 403 and 404 answer
 /// different questions. A 403 says "this exists and you may not have it", which is an oracle: with
 /// a key of my own I can walk the identifier space of every other customer and learn which links
 /// exist, how many they have and, from a Snowflake identifier, roughly when they were created.
@@ -33,7 +33,6 @@ public sealed class TenantIsolationHttpTests(DleInfrastructureFixture infrastruc
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task GetLink_WithAnotherTenantsApiKey_Is404AndNever403()
     {
         Seeded seeded = await SeedTwoTenantsAsync();
@@ -60,7 +59,6 @@ public sealed class TenantIsolationHttpTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task PatchLink_WithAnotherTenantsApiKey_Is404AndChangesNothing()
     {
         Seeded seeded = await SeedTwoTenantsAsync();
@@ -90,7 +88,6 @@ public sealed class TenantIsolationHttpTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task ListLinks_WithATenantsApiKey_ReturnsOnlyThatTenantsLinks()
     {
         Seeded seeded = await SeedTwoTenantsAsync();
@@ -119,7 +116,6 @@ public sealed class TenantIsolationHttpTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-242")]
     public async Task AnyRequest_WithNoCredential_Is401AndNeverServesData()
     {
         Seeded seeded = await SeedTwoTenantsAsync();

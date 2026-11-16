@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace Dle.Persistence.Fast.Attribution;
 
 /// <summary>
-/// Reads clicks back out of the partitioned click stream for attribution (§B.6.2, §B.6.3).
+/// Reads clicks back out of the partitioned click stream for attribution.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -29,11 +29,11 @@ public sealed partial class DapperClickLookup : IClickLookup
     // The BETWEEN on occurred_at is the whole point of this query, not an optimisation.
     //
     // click_events is RANGE partitioned by occurred_at with one partition per day and a retention of
-    // 180 days (§B.5.3). A lookup by click_id alone has no pruning predicate, so the planner has to
+    // 180 days. A lookup by click_id alone has no pruning predicate, so the planner has to
     // touch every partition's index — 180 of them at full retention. The cost therefore grows linearly
     // with how long the system has been running and with how old the install is, which means it is
     // invisible in every test written before the first partitions age out and only appears in
-    // production about six months after launch. This is the silent performance debt §B.6.3 warns about.
+    // production about six months after launch. This is a silent performance debt.
     //
     // The bounds are not guessed by the caller: the click identifier carries its own timestamp, encrypted
     // with the same Feistel construction as the slug, and the attribution service decodes it into

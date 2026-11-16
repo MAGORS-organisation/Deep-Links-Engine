@@ -7,7 +7,7 @@ namespace Dle.Persistence.Fast.Caching;
 
 /// <summary>
 /// Keeps <c>dle.cache.l2.up</c> honest: reads one key from the shared cache on a fixed cadence and
-/// records whether the read came back (§D.6, the <c>cache_l2_down</c> signal).
+/// records whether the read came back.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -135,7 +135,7 @@ public sealed partial class DistributedCacheProbe : BackgroundService
     [LoggerMessage(
         EventId = 4301,
         Level = LogLevel.Warning,
-        Message = "The shared (L2) cache stopped answering; resolves fall through to L1 and PostgreSQL with higher latency (§D.6).")]
+        Message = "The shared (L2) cache stopped answering; resolves fall through to L1 and PostgreSQL with higher latency.")]
     private static partial void LogDistributedCacheDown(ILogger logger);
 
     [LoggerMessage(

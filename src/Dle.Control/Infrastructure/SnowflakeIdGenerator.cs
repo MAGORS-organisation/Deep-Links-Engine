@@ -17,8 +17,8 @@ namespace Dle.Control.Infrastructure;
 /// every language a client might read it from, including the ones with no unsigned 64-bit type.
 /// </para>
 /// <para>
-/// Time comes from <see cref="TimeProvider"/>, never from <c>DateTime.UtcNow</c>
-/// (SHARED-KERNEL §17.2). A clock that steps backwards does not produce duplicates: the generator
+/// Time comes from <see cref="TimeProvider"/>, never from <c>DateTime.UtcNow</c>.
+/// A clock that steps backwards does not produce duplicates: the generator
 /// keeps issuing from the last millisecond it saw rather than rewinding, which costs ordering
 /// accuracy during the step and never costs uniqueness.
 /// </para>

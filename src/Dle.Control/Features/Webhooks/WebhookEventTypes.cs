@@ -6,7 +6,7 @@ using Dle.Domain.Contracts;
 namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
-/// The event types a subscription may ask for, and the envelope they are delivered in (§B.7.4).
+/// The event types a subscription may ask for, and the envelope they are delivered in.
 /// </summary>
 /// <remarks>
 /// The set is closed and validated at subscription time. A subscription to an event type that does
@@ -15,7 +15,7 @@ namespace Dle.Control.Features.Webhooks;
 /// </remarks>
 public static class WebhookEventTypes
 {
-    /// <summary>An install was attributed to a click (FR-204).</summary>
+    /// <summary>An install was attributed to a click.</summary>
     public const string AttributionCreated = "attribution.created";
 
     /// <summary>A link was created.</summary>
@@ -24,13 +24,13 @@ public static class WebhookEventTypes
     /// <summary>A link's configuration changed.</summary>
     public const string LinkUpdated = "link.updated";
 
-    /// <summary>A link was withdrawn from service following an abuse decision (TC-103).</summary>
+    /// <summary>A link was withdrawn from service following an abuse decision.</summary>
     public const string LinkQuarantined = "link.quarantined";
 
     /// <summary>A quarantined link was returned to service after a successful appeal.</summary>
     public const string LinkReleased = "link.released";
 
-    /// <summary>A domain's association files stopped verifying (FR-143, §C.8).</summary>
+    /// <summary>A domain's association files stopped verifying.</summary>
     public const string DomainVerificationFailed = "domain.verification_failed";
 
     /// <summary>A delivery produced by the test endpoint, never by a real event.</summary>
@@ -81,7 +81,7 @@ public static class WebhookEventTypes
     /// Rendered once, at the moment the event is recorded, and stored as text. Re-rendering it at
     /// delivery time would risk producing different bytes — a reordered member, a different
     /// timestamp precision — and the signature covers exactly the bytes sent, so different bytes
-    /// mean a signature the receiver cannot verify (TC-165).
+    /// mean a signature the receiver cannot verify.
     /// </remarks>
     public static string Render(
         string eventType,

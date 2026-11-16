@@ -1,7 +1,7 @@
 namespace Dle.Edge.Clients;
 
 /// <summary>
-/// Maps a user agent to the in-app browser it came from (§A.2.6, FR-162).
+/// Maps a user agent to the in-app browser it came from.
 /// </summary>
 /// <remarks>
 /// <para>

@@ -6,14 +6,13 @@ using Xunit;
 namespace Dle.UnitTests.Attribution;
 
 /// <summary>
-/// TC-141, TC-142, TC-167. The Play Install Referrer is the only deterministic attribution channel
+/// The Play Install Referrer is the only deterministic attribution channel
 /// Android has and it arrives from a source the engine does not control. The parser therefore has
 /// exactly one hard contract: it never throws, whatever it is handed.
 /// </summary>
 public sealed class InstallReferrerParserTests
 {
     [Fact]
-    [Trait("TestCase", "TC-141")]
     public void TryGetClickId_ReferrerCarryingTheClickId_ReturnsIt()
     {
         Assert.True(InstallReferrerParser.TryGetClickId("utm_source=poster&dl_cid=01JQ8Z0K7M8T9RV", out string clickId));
@@ -21,7 +20,6 @@ public sealed class InstallReferrerParserTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-141")]
     public void Parse_TypicalPlayReferrer_YieldsEveryPair()
     {
         IReadOnlyDictionary<string, string> pairs =
@@ -35,7 +33,6 @@ public sealed class InstallReferrerParserTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-142")]
     public void TryGetClickId_OrganicInstallWithoutTheClickId_ReturnsFalse()
     {
         Assert.False(InstallReferrerParser.TryGetClickId("utm_source=google-play&utm_medium=organic", out string clickId));
@@ -43,7 +40,6 @@ public sealed class InstallReferrerParserTests
     }
 
     [Theory]
-    [Trait("TestCase", "TC-142")]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
@@ -183,7 +179,6 @@ public sealed class InstallReferrerParserTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
     public void Parse_ReferrerLongerThanTheLimit_IgnoresEverythingPastIt()
     {
         // A referrer padded past the cap must not be able to smuggle a pair in, and the pair that the

@@ -28,7 +28,7 @@ struct QueuedEvent: Codable, Sendable, Hashable {
     let event: DleEvent
 }
 
-/// Offline event queue with persistence and retry (FR-226, spec §C.5).
+/// Offline event queue with persistence and retry.
 ///
 /// * `enqueue` is synchronous and safe from any thread, so a universal-link callback that has
 ///   to return a `Bool` to UIKit can report a `link_open` without leaving the call stack.

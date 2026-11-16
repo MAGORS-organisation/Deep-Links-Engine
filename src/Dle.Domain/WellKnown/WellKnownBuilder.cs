@@ -5,13 +5,13 @@ using System.Text;
 namespace Dle.Domain.WellKnown;
 
 /// <summary>
-/// Pure generators for <c>apple-app-site-association</c> and <c>assetlinks.json</c>
-/// (§C.3.3, FR-141, FR-142). No HTTP, no I/O, no clock — everything here is testable in isolation.
+/// Pure generators for <c>apple-app-site-association</c> and <c>assetlinks.json</c>.
+/// No HTTP, no I/O, no clock — everything here is testable in isolation.
 /// </summary>
 /// <remarks>
 /// Both builders return <see langword="null"/> when a host has no application of that platform, and the
 /// endpoint must turn that into <c>404</c>. Returning an empty but syntactically valid JSON document
-/// instead is the trap TC-122 exists for: Apple accepts such a file, caches it, and the domain is dead
+/// instead is a trap: Apple accepts such a file, caches it, and the domain is dead
 /// for roughly a week.
 /// </remarks>
 public static class WellKnownBuilder
@@ -41,12 +41,12 @@ public static class WellKnownBuilder
     ];
 
     /// <summary>
-    /// Builds the <c>apple-app-site-association</c> document for one host (FR-141).
+    /// Builds the <c>apple-app-site-association</c> document for one host.
     /// </summary>
     /// <param name="apps">The iOS applications registered on the host.</param>
     /// <returns>
     /// The document, or <see langword="null"/> when no usable application is registered — in which case
-    /// the endpoint must answer <c>404</c> rather than an empty document (TC-122).
+    /// the endpoint must answer <c>404</c> rather than an empty document.
     /// </returns>
     public static WellKnownDocument? BuildAasa(IReadOnlyList<AasaAppEntry> apps)
     {
@@ -95,7 +95,7 @@ public static class WellKnownBuilder
     }
 
     /// <summary>
-    /// Builds the <c>assetlinks.json</c> document for one host (FR-142).
+    /// Builds the <c>assetlinks.json</c> document for one host.
     /// </summary>
     /// <param name="apps">The Android applications registered on the host.</param>
     /// <returns>
@@ -105,7 +105,7 @@ public static class WellKnownBuilder
     /// <remarks>
     /// Dynamic components are written under <c>relation_extensions</c> using Apple's <c>"/"</c> and
     /// <c>"#"</c> keys, which is what Android 15+ expects. The older <c>pathPattern</c> notation is never
-    /// emitted: it parses, it validates, and it silently does nothing (§C.3.3).
+    /// emitted: it parses, it validates, and it silently does nothing.
     /// </remarks>
     public static WellKnownDocument? BuildAssetLinks(IReadOnlyList<AndroidAppEntry> apps)
     {

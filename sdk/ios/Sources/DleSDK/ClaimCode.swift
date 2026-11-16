@@ -1,8 +1,8 @@
 import Foundation
 
-/// The six-character claim code of strategy S3 (FR-184): the user reads it off the interstitial
+/// The six-character claim code of strategy S3: the user reads it off the interstitial
 /// page and types it into the app. This is the only deterministic deferred strategy on iOS that
-/// does not require the user to be signed in (spec §A.2.4, §B.6.3).
+/// does not require the user to be signed in.
 ///
 /// This type mirrors `Dle.Domain.Attribution.ClaimCode` **exactly** — same alphabet, same
 /// characters stripped, same case folding, same length — so that a code the SDK accepts locally
@@ -36,7 +36,7 @@ import Foundation
 /// ```
 ///
 /// A code is a single-use claim ticket with a one-hour time to live and a rate limit behind it
-/// (spec §E.4.1, K3) — never a credential. Never put one on a custom-scheme URL.
+/// — never a credential. Never put one on a custom-scheme URL.
 public enum DleClaimCode {
     /// Number of characters in a claim code (`ClaimCode.Length`).
     public static let length = 6

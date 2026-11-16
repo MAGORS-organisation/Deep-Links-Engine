@@ -18,7 +18,7 @@ namespace Dle.IntegrationTests.Infrastructure;
 public static class TestRules
 {
     /// <summary>Renders a rule set as the <c>links.routing_rules</c> document.</summary>
-    /// <param name="rules">The rules, default last (FR-127).</param>
+    /// <param name="rules">The rules, default last.</param>
     /// <returns>The JSON document.</returns>
     public static string ToJson(params RoutingRule[] rules) =>
         JsonSerializer.Serialize(rules, DleDomainJsonContext.Default.RoutingRuleArray);
@@ -28,7 +28,7 @@ public static class TestRules
     public static string WebDefault() => ToJson(DefaultWeb());
 
     /// <summary>
-    /// The set TC-101 needs: iOS goes to the App Store, everything else falls through to the web.
+    /// iOS goes to the App Store, everything else falls through to the web.
     /// </summary>
     /// <param name="storeUrl">The App Store URL, carrying its <c>pt</c> and <c>ct</c> parameters.</param>
     /// <param name="deeplinkPath">Path handed to the application when it is installed.</param>
@@ -53,7 +53,7 @@ public static class TestRules
             },
             DefaultWeb());
 
-    /// <summary>The default rule every stored set has to end with (FR-127, TC-105).</summary>
+    /// <summary>The default rule every stored set has to end with.</summary>
     /// <param name="url">
     /// The web target. Left null the engine falls back to <c>LinkSnapshot.TargetUrl</c>, which is
     /// what a rule set written without an explicit URL relies on; the control plane's validator

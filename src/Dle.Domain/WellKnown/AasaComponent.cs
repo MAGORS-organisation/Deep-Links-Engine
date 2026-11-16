@@ -1,8 +1,8 @@
 namespace Dle.Domain.WellKnown;
 
 /// <summary>
-/// One entry of Apple's modern <c>components</c> array (§A.2.1) — and, verbatim, one entry of Android's
-/// <c>dynamic_app_link_components</c> array (§A.2.2, FR-142).
+/// One entry of Apple's modern <c>components</c> array — and, verbatim, one entry of Android's
+/// <c>dynamic_app_link_components</c> array.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -13,7 +13,7 @@ namespace Dle.Domain.WellKnown;
 /// <para>
 /// Android 15+ reuses exactly this shape. Writing Android's older <c>pathPattern</c> notation into
 /// <c>dynamic_app_link_components</c> instead is a common mistake that fails silently — the file
-/// validates, the links simply never open the application (§C.3.3).
+/// validates, the links simply never open the application.
 /// </para>
 /// </remarks>
 public sealed record AasaComponent

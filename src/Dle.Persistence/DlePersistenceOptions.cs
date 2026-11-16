@@ -7,7 +7,7 @@ namespace Dle.Persistence;
 /// </summary>
 /// <remarks>
 /// The connection string itself is not here: it lives in <c>ConnectionStrings:Postgres</c> like
-/// every other connection string in the product (§C.4), so that a deployment can supply it the way
+/// every other connection string in the product, so that a deployment can supply it the way
 /// its platform supplies secrets without knowing anything about this section.
 /// </remarks>
 public sealed class DlePersistenceOptions
@@ -37,7 +37,7 @@ public sealed class DlePersistenceOptions
     public int MaxRetryDelaySeconds { get; set; } = 5;
 
     /// <summary>
-    /// How many slug counter values a process claims in one go (ADR-007).
+    /// How many slug counter values a process claims in one go.
     /// </summary>
     /// <remarks>
     /// A larger block means fewer round trips and more values skipped when a process restarts.
@@ -52,7 +52,7 @@ public sealed class DlePersistenceOptions
     [StringLength(64, MinimumLength = 1)]
     public string SlugSequenceName { get; set; } = "default";
 
-    /// <summary>How long a stored idempotent response stays replayable, in hours (§B.7.3).</summary>
+    /// <summary>How long a stored idempotent response stays replayable, in hours.</summary>
     [Range(1, 720)]
     public int IdempotencyRetentionHours { get; set; } = 24;
 

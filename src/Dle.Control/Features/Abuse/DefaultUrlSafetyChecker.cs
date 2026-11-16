@@ -11,8 +11,7 @@ using Microsoft.Extensions.Logging;
 namespace Dle.Control.Features.Abuse;
 
 /// <summary>
-/// The default <see cref="IUrlSafetyChecker"/>: syntax, then the resolved address, then reputation
-/// (§E.3 steps 1 to 3, T-01, T-02).
+/// The default <see cref="IUrlSafetyChecker"/>: syntax, then the resolved address, then reputation.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -24,7 +23,7 @@ namespace Dle.Control.Features.Abuse;
 /// </para>
 /// <para>
 /// Every branch ends in an explicit verdict and the method has no path that falls through to
-/// approval (SHARED-KERNEL §17.9). A target is approved only when the syntax passed, every
+/// approval. A target is approved only when the syntax passed, every
 /// resolved address was public, and no consulted source objected.
 /// </para>
 /// </remarks>
@@ -128,7 +127,7 @@ public sealed class DefaultUrlSafetyChecker : IUrlSafetyChecker
         Justification =
             "Name resolution is the step most likely to throw something unforeseen, and the only "
             + "safe answer to 'we could not establish where this points' is refusal. The exception "
-            + "is logged and turned into an explicit deny, never into an approval (§17.9).")]
+            + "is logged and turned into an explicit deny, never into an approval.")]
     private async Task<UrlSafetyVerdict?> CheckAddressAsync(Uri target, CancellationToken ct)
     {
         if (TargetUrlPolicy.IsForbiddenHost(target.Host))

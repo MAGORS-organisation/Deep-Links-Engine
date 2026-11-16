@@ -1,11 +1,11 @@
 namespace Dle.Domain.Analytics;
 
 /// <summary>
-/// Kind of event reported by a mobile or web SDK through <c>POST /v1/events</c> (§B.7.2).
+/// Kind of event reported by a mobile or web SDK through <c>POST /v1/events</c>.
 /// </summary>
 public enum SdkEventType
 {
-    /// <summary>An app or universal link opened the application (§B.6.4).</summary>
+    /// <summary>An app or universal link opened the application.</summary>
     LinkOpen = 0,
 
     /// <summary>The first launch after installation.</summary>

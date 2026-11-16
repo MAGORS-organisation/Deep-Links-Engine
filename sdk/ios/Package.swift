@@ -4,7 +4,7 @@
 // Self-hosted, EU-first deep linking and attribution. MIT licensed.
 //
 // Deliberately dependency-free: every transitive dependency of an SDK becomes a
-// dependency of every customer application (spec §C.5). Networking is URLSession only.
+// dependency of every customer application. Networking is URLSession only.
 
 import PackageDescription
 
@@ -27,7 +27,7 @@ let package = Package(
             dependencies: [],
             path: "Sources/DleSDK",
             resources: [
-                // Apple privacy manifest (spec §E.7 rule 4). SwiftPM ships it inside
+                // Apple privacy manifest. SwiftPM ships it inside
                 // the target's resource bundle, where Xcode aggregates it at build time.
                 .copy("PrivacyInfo.xcprivacy")
             ],

@@ -6,7 +6,7 @@ namespace Dle.Control.Features.Apps;
 /// <remarks>
 /// Neither the platform nor the bundle identifier can be edited. Both are part of the identity an
 /// association file publishes, and changing one in place would leave every device that has already
-/// cached the file pointing at an application that no longer claims the host (§A.2.1, §A.2.2).
+/// cached the file pointing at an application that no longer claims the host.
 /// </remarks>
 public sealed record UpdateAppRequest
 {
@@ -15,7 +15,7 @@ public sealed record UpdateAppRequest
 
     /// <summary>
     /// Replacement SHA-256 signing certificate fingerprints. On Android these must be the Play
-    /// Console App signing fingerprints, not the local upload keystore (FR-144, TC-123).
+    /// Console App signing fingerprints, not the local upload keystore.
     /// </summary>
     public IReadOnlyList<string>? CertFingerprints { get; init; }
 
@@ -32,13 +32,13 @@ public sealed record UpdateAppRequest
     /// <summary>Full store URL used as the redirect target.</summary>
     public string? StoreUrl { get; init; }
 
-    /// <summary>Custom URI scheme, used only as a last-resort fallback (§A.2.3).</summary>
+    /// <summary>Custom URI scheme, used only as a last-resort fallback.</summary>
     public string? CustomScheme { get; init; }
 
     /// <summary>Minimum application version that understands the deep link format.</summary>
     public string? MinAppVersion { get; init; }
 
-    /// <summary>App Clip bundle identifier published in the association file (FR-146).</summary>
+    /// <summary>App Clip bundle identifier published in the association file.</summary>
     public string? AppClipBundleId { get; init; }
 
     /// <summary>Replacement set of domains this application is associated with.</summary>
@@ -52,7 +52,7 @@ public sealed record UpdateAppRequest
 /// The secret appears here and nowhere else, exactly as for a control-plane key. Unlike one, this
 /// key ships inside an APK or IPA and must be assumed extractable, which is why the scheme it
 /// authenticates carries a policy that reaches only the two SDK ingestion routes and can never write
-/// configuration (§E.2.1, TB2).
+/// configuration.
 /// </remarks>
 public sealed record SdkKeyCreatedResponse
 {

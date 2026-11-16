@@ -6,8 +6,7 @@ using Xunit;
 namespace Dle.UnitTests.Primitives;
 
 /// <summary>
-/// Property-based coverage for the primitives (section D.4: "property based, mainly for the routing
-/// engine and URL normalisation"). Example based tests pin the cases somebody thought of; these pin
+/// Property-based coverage for the primitives. Example based tests pin the cases somebody thought of; these pin
 /// the laws, which is where the parsers actually break.
 /// </summary>
 public sealed class PrimitivesPropertyTests

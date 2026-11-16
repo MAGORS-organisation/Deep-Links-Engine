@@ -86,7 +86,7 @@ final class DeepLinkRouter: ObservableObject {
         if link.isDeterministic {
             route(path: path)
         } else if link.isProbabilisticHint, let slug = Self.promoSlug(in: path) {
-            // A statistical match is a suggestion, never a certainty (spec §A.2.5).
+            // A statistical match is a suggestion, never a certainty.
             suggestedPromo = slug
         }
     }

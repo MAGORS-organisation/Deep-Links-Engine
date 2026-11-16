@@ -2,7 +2,7 @@ namespace Dle.Domain.WellKnown;
 
 /// <summary>
 /// One iOS application registered on a link domain, as it will appear in
-/// <c>apple-app-site-association</c> (FR-141).
+/// <c>apple-app-site-association</c>.
 /// </summary>
 public sealed record AasaAppEntry
 {

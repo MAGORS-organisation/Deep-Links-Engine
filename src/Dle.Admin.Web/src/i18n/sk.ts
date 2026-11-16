@@ -1,6 +1,6 @@
 import type { MessageKey } from './en';
 
-/** Slovak catalogue (NFR-15). Typed against the English keys so nothing can be forgotten. */
+/** Slovak catalogue. Typed against the English keys so nothing can be forgotten. */
 export const sk: Record<MessageKey, string> = {
   'app.name': 'Deep Link Engine',
   'app.console': 'Konzola',
@@ -292,13 +292,13 @@ export const sk: Record<MessageKey, string> = {
   'rules.add': 'Pridať pravidlo',
   'rules.addDefault': 'Pridať predvolené pravidlo',
   'rules.default': 'Predvolené pravidlo',
-  'rules.defaultHint': 'Zodpovedá každému klientovi. Vyžaduje sa práve jedno a musí byť posledné (TC-105).',
+  'rules.defaultHint': 'Zodpovedá každému klientovi. Vyžaduje sa práve jedno a musí byť posledné.',
   'rules.rule': 'Pravidlo {n}',
   'rules.id': 'ID pravidla',
   'rules.idHint': 'Zapisuje sa do click streamu; premenovanie rozbije historické reporty.',
   'rules.missingDefault.title': 'Chýba predvolené pravidlo',
   'rules.missingDefault.detail':
-    'Link bez predvoleného pravidla odpovedá 404 každému klientovi, ktorý nič nesplní. Control plane ho odmietne uložiť (TC-105). Pridajte predvolené pravidlo.',
+    'Link bez predvoleného pravidla odpovedá 404 každému klientovi, ktorý nič nesplní. Control plane ho odmietne uložiť. Pridajte predvolené pravidlo.',
   'rules.when': 'Keď',
   'rules.then': 'Potom',
   'rules.cond.platform': 'Platforma',
@@ -513,7 +513,7 @@ export const sk: Record<MessageKey, string> = {
   'apps.field.domains': 'Priradené domény',
   'apps.fingerprint.warning.title': 'Použite certifikát Play App Signing, nie svoj keystore',
   'apps.fingerprint.warning.detail':
-    'Pri Play App Signing (predvolené od 2021) zariadenia overujú certifikát, ktorým release podpisuje Google. SHA-256 vezmite z Play Console → Release → Setup → App signing → „App signing key certificate“. Odtlačok z lokálneho upload keystoru prejde v debug builde a v produkcii potichu zlyhá (FR-144).',
+    'Pri Play App Signing (predvolené od 2021) zariadenia overujú certifikát, ktorým release podpisuje Google. SHA-256 vezmite z Play Console → Release → Setup → App signing → „App signing key certificate“. Odtlačok z lokálneho upload keystoru prejde v debug builde a v produkcii potichu zlyhá.',
   'apps.warnings': 'Varovania z control plane',
   'apps.col.app': 'Aplikácia',
   'apps.col.identity': 'Identita',
@@ -610,7 +610,7 @@ export const sk: Record<MessageKey, string> = {
   'abuse.decide.noteHint': 'Uveďte, čo sa rozhodlo a prečo. Z tohto záznamu sa odpovedá na nahlásenie.',
   'abuse.decided': 'Rozhodnutie zaznamenané',
   'abuse.quarantine.title': 'Dať link do karantény',
-  'abuse.quarantine.hint': 'Link od ďalšieho resolve odpovedá 410 Gone (TC-103). Vratné uvoľnením.',
+  'abuse.quarantine.hint': 'Link od ďalšieho resolve odpovedá 410 Gone. Vratné uvoľnením.',
   'abuse.quarantine.linkId': 'ID linku',
   'abuse.quarantine.reason': 'Dôvod',
   'abuse.quarantine.confirmTitle': 'Dať link {id} do karantény?',

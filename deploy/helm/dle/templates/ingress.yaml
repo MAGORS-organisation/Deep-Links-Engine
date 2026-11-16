@@ -1,12 +1,12 @@
 {{- /*
 =============================================================================
 Ingress — mirrors deploy/Caddyfile on ingress.host:
-  /.well-known/jwks.json                       → control (public signing keys, §B.7)
+  /.well-known/jwks.json                       → control (public signing keys)
   /.well-known/*                               → edge    (apple-app-site-association, assetlinks.json)
   ingress.controlPaths (/api /v1 /admin /scalar /openapi) → control
   everything else, i.e. /{slug}, /{slug}/qr    → edge
 
-!!! /.well-known MUST NEVER BE REDIRECTED (docs/zadanie.md §A.2.1, TC-124) !!!
+!!! /.well-known MUST NEVER BE REDIRECTED !!!
 Apple's CDN and Google's verifier refuse an apple-app-site-association / assetlinks.json that
 answers with ANY 3xx: HTTP→HTTPS, trailing slash, www canonicalisation — all of them. Hence:
 
@@ -72,7 +72,7 @@ metadata:
   labels:
     {{- include "dle.labels" . | nindent 4 }}
   annotations:
-    # DO NOT add rewrite, trailing-slash or redirect annotations here (§A.2.1).
+    # DO NOT add rewrite, trailing-slash or redirect annotations here.
     {{- toYaml $wellKnown | nindent 4 }}
 spec:
   {{- with .Values.ingress.className }}
@@ -112,7 +112,7 @@ metadata:
   labels:
     {{- include "dle.labels" . | nindent 4 }}
   annotations:
-    # DO NOT add rewrite, trailing-slash or redirect annotations here (§A.2.1).
+    # DO NOT add rewrite, trailing-slash or redirect annotations here.
     {{- toYaml $wellKnownHttp | nindent 4 }}
 spec:
   {{- with .Values.ingress.className }}

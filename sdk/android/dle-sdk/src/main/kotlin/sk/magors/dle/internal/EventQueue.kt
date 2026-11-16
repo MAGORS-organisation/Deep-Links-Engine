@@ -17,7 +17,7 @@ import java.io.IOException
 import kotlin.random.Random
 
 /**
- * The offline event buffer behind `POST /v1/events` (FR-226).
+ * The offline event buffer behind `POST /v1/events`.
  *
  * - Bounded to [maxSize] entries; when full, the oldest event is dropped so the buffer can never
  *   grow without limit on a device that is offline for weeks.

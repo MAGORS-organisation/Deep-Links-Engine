@@ -4,7 +4,7 @@ using System.Diagnostics.Metrics;
 namespace Dle.Control.Telemetry;
 
 /// <summary>
-/// The activity source every control-plane span hangs off (§C.6, NFR-12).
+/// The activity source every control-plane span hangs off.
 /// </summary>
 /// <remarks>
 /// One source per deployment unit, named after it. Trace context arrives and leaves through the W3C
@@ -26,10 +26,10 @@ public static class ControlActivitySource
 }
 
 /// <summary>
-/// The control-plane instrument set (§C.6).
+/// The control-plane instrument set.
 /// </summary>
 /// <remarks>
-/// The metric names follow the <c>dle_</c> prefix of §C.6. They are deliberately few: the control
+/// The metric names carry the <c>dle_</c> prefix. They are deliberately few: the control
 /// plane is not the latency-critical half of the product, and an instrument that nobody alerts on is
 /// cardinality somebody pays for.
 /// </remarks>

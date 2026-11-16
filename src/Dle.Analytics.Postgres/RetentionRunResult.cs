@@ -4,7 +4,7 @@ namespace Dle.Analytics.Postgres;
 /// What one pass of <see cref="IRetentionService"/> removed, and when.
 /// </summary>
 /// <remarks>
-/// §E.6.3 requires retention to be automatic <i>and its runs to be auditable</i>. The same values
+/// Retention has to be automatic <i>and its runs have to be auditable</i>. The same values
 /// are written to <c>analytics_retention_runs</c> and returned here, so a run leaves evidence in
 /// the database, in the log, and in whatever metric the worker publishes — three places that have
 /// to agree.

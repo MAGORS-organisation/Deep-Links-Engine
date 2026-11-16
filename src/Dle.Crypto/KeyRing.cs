@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Crypto;
 
 /// <summary>
-/// Holds the signing material of a deployment and owns its rotation (§E.4.2, ADR-013).
+/// Holds the signing material of a deployment and owns its rotation.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,7 +18,7 @@ namespace Dle.Crypto;
 /// <see cref="RefreshAsync"/> then folds in whatever the <see cref="ISigningKeyStore"/> holds.
 /// </para>
 /// <para>
-/// Rotation never shortens a window that is still open (S-12). The outgoing key is retired with
+/// Rotation never shortens a window that is still open. The outgoing key is retired with
 /// <c>NotAfter = now + KeyOverlapDays</c>, which has to exceed the lifetime of the longest lived
 /// artefact it signed; until then it stays in the verifier and in the published JWKS, because a
 /// webhook receiver that fetched the key set an hour ago must still be able to check what it
@@ -47,7 +47,7 @@ public sealed class KeyRing : IKeyRing, IDisposable
     /// </summary>
     /// <param name="options">The crypto options.</param>
     /// <param name="store">Durable key store, consulted by <see cref="RefreshAsync"/>.</param>
-    /// <param name="timeProvider">Clock. SHARED-KERNEL §17.2 rules out reading the machine clock.</param>
+    /// <param name="timeProvider">Clock. The machine clock is never read directly.</param>
     /// <param name="logger">Logger.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">No key is available for the configured
@@ -167,7 +167,7 @@ public sealed class KeyRing : IKeyRing, IDisposable
             if (!string.Equals(outgoingKid, replacement.Kid, StringComparison.Ordinal))
             {
                 // The outgoing key keeps verifying for the whole overlap. Closing its window now
-                // would invalidate signatures made seconds ago, which is exactly what S-12 forbids.
+                // would invalidate signatures made seconds ago, which a key rotation must never do.
                 await _store.RetireAsync(outgoingKid, outgoingNotAfter, ct);
 
                 // The outgoing key may never have reached the store: the derived bootstrap key and
@@ -175,7 +175,7 @@ public sealed class KeyRing : IKeyRing, IDisposable
                 // matched no row. Those copies also have to be retired here, otherwise RefreshAsync
                 // merges the original — unbounded — window straight back in and the key stays
                 // acceptable for ever, which would make rotating away from a leaked bootstrap key
-                // impossible (S-12).
+                // impossible.
                 RetireConfiguredKey(outgoingKid, outgoingNotAfter);
             }
 

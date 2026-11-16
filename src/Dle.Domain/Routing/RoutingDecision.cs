@@ -2,7 +2,7 @@ namespace Dle.Domain.Routing;
 
 /// <summary>
 /// The outcome of evaluating a rule set for one client. It is a pure value: the edge turns it into an
-/// HTTP response, and <see cref="RoutingUrlBuilder"/> turns it into concrete URLs (ADR-009).
+/// HTTP response, and <see cref="RoutingUrlBuilder"/> turns it into concrete URLs.
 /// </summary>
 public sealed record RoutingDecision
 {
@@ -28,7 +28,7 @@ public sealed record RoutingDecision
     public string? StoreUrl { get; init; }
 
     /// <summary>
-    /// Play Install Referrer template from the matched rule (§A.2.4). Pairs that carry the
+    /// Play Install Referrer template from the matched rule. Pairs that carry the
     /// <c>{click_id}</c> placeholder are already removed here when consent does not permit click-id
     /// linking, so no consumer of this decision can leak the click id.
     /// </summary>
@@ -48,7 +48,7 @@ public sealed record RoutingDecision
 
     /// <summary>
     /// No rule matched, or the link is not servable. The edge answers <c>404</c> — the same response and the
-    /// same timing as for a link belonging to another tenant, so that no enumeration oracle exists (TC-102, TC-166).
+    /// same timing as for a link belonging to another tenant, so that no enumeration oracle exists.
     /// </summary>
     public static RoutingDecision NotFound { get; } = new()
     {
@@ -57,7 +57,7 @@ public sealed record RoutingDecision
         Action = RoutingActionKind.Block,
     };
 
-    /// <summary>The link existed but has been withdrawn. The edge answers <c>410</c> with an explanatory page (TC-103).</summary>
+    /// <summary>The link existed but has been withdrawn. The edge answers <c>410</c> with an explanatory page.</summary>
     public static RoutingDecision Gone { get; } = new()
     {
         Kind = DecisionKind.Gone,

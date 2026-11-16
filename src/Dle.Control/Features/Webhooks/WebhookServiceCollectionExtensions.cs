@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Registration of the webhook module (SHARED-KERNEL §15). Component C-10 of §B.3.
+/// Registration of the webhook module.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -21,8 +21,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// inside the connect callback — the only place where the address that is checked is provably the
 /// address the socket connects to. Redirects are off, cookies are off, proxies are off. A webhook
 /// destination is a URL a customer supplies and this process then fetches from inside its own
-/// network, so it is a server side request forgery primitive unless something makes it not one
-/// (T-02).
+/// network, so it is a server side request forgery primitive unless something makes it not one.
 /// </para>
 /// <para>
 /// No resilience handler is attached. Retries are the dispatcher's business, with a schedule, a

@@ -1,7 +1,7 @@
 namespace Dle.Domain.Routing;
 
 /// <summary>
-/// Write-time validation of a rule set (FR-127, TC-105).
+/// Write-time validation of a rule set.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -13,7 +13,7 @@ namespace Dle.Domain.Routing;
 /// <para>
 /// The rejection of a rule set without a default rule is the important one. Without it, a client that
 /// matches nothing would silently receive <c>404</c> for a link the marketer believes is live — the
-/// single most common way a hand-written rule set fails in production (TC-105).
+/// single most common way a hand-written rule set fails in production.
 /// </para>
 /// </remarks>
 public static class RoutingRuleValidator
@@ -191,11 +191,11 @@ public static class RoutingRuleValidator
 
     /// <summary>
     /// A deep link path is a path, never a URL. Accepting an absolute or protocol-relative value here
-    /// would turn <c>deeplink_path</c> into an open redirect that bypasses the target URL policy (T-01).
+    /// would turn <c>deeplink_path</c> into an open redirect that bypasses the target URL policy.
     /// </summary>
     /// <summary>
     /// Validates a deep-link relative path against open-redirect, scheme smuggling, whitespace, and
-    /// path-traversal payloads (T-01).
+    /// path-traversal payloads.
     /// </summary>
     /// <param name="deeplinkPath">Candidate deep-link path.</param>
     /// <returns>

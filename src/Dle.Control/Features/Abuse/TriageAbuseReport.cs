@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace Dle.Control.Features.Abuse;
 
 /// <summary>
-/// <c>PATCH /api/v1/abuse-reports/{id}</c> — the operator's decision on a notice (§E.3 step 9).
+/// <c>PATCH /api/v1/abuse-reports/{id}</c> — the operator's decision on a notice.
 /// </summary>
 /// <remarks>
 /// <para>

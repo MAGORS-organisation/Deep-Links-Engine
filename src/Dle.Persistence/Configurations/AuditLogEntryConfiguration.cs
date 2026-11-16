@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="AuditLogEntry"/> to the <c>audit_log</c> table (FR-246, §E.6.3).</summary>
+/// <summary>Maps <see cref="AuditLogEntry"/> to the <c>audit_log</c> table.</summary>
 /// <remarks>
 /// There is deliberately no column here that could hold an end user identifier. An immutable audit
 /// log and the right to erasure only conflict once the log contains data about a data subject; the

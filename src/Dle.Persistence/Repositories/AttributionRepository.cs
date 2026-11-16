@@ -5,7 +5,7 @@ using Npgsql;
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Reads and writes installations and the attributions that tie them to clicks (§B.5.3).
+/// Reads and writes installations and the attributions that tie them to clicks.
 /// </summary>
 public sealed class AttributionRepository
 {
@@ -15,7 +15,7 @@ public sealed class AttributionRepository
     /// <summary>Name of the index that enforces one attribution per installation.</summary>
     private const string InstallUniqueIndex = "uq_attributions_install";
 
-    /// <summary>Name of the partial index that enforces one installation per click (TC-144).</summary>
+    /// <summary>Name of the partial index that enforces one installation per click.</summary>
     private const string ClickUniqueIndex = "uq_attributions_click";
 
     private readonly DleDbContext _db;
@@ -42,7 +42,7 @@ public sealed class AttributionRepository
     /// <remarks>
     /// The unique index on <c>(app_id, install_id)</c> is what makes a repeated resolve idempotent,
     /// and the race between two concurrent first opens is resolved by catching its violation rather
-    /// than by locking: the loser simply reads the row the winner wrote (TC-143, FR-188).
+    /// than by locking: the loser simply reads the row the winner wrote.
     /// </remarks>
     public async Task<Install> GetOrCreateInstallAsync(
         Install candidate,
@@ -112,7 +112,7 @@ public sealed class AttributionRepository
     }
 
     /// <summary>
-    /// Writes an attribution, honouring both uniqueness rules of §B.5.3.
+    /// Writes an attribution, honouring both of its uniqueness rules.
     /// </summary>
     /// <param name="record">The attribution to write.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -120,7 +120,7 @@ public sealed class AttributionRepository
     /// <remarks>
     /// <para>
     /// Two invariants hold here and neither is left to application discipline. One installation has
-    /// at most one attribution, and one click is credited to at most one installation (TC-144).
+    /// at most one attribution, and one click is credited to at most one installation.
     /// Both are unique indexes; this method checks first so the ordinary case gets a clear answer
     /// rather than an exception, and catches the violation so the racing case gets the same answer
     /// instead of a 500.

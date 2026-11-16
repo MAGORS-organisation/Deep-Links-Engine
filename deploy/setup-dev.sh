@@ -57,30 +57,46 @@ else
 fi
 
 # 3. Check / create .env
+# Hex, not base64: base64 contains '/' and '+', which would break the sed expressions below.
+random_hex() { openssl rand -hex "$1" 2>/dev/null || od -An -tx1 -N"$1" /dev/urandom | tr -d ' \n'; }
+# A-Z a-z 0-9 only. pipefail is off inside the substitution because head closing the pipe ends tr.
+random_base62() { (set +o pipefail; LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$1"); }
+new_owner_key() { printf 'dle_%s_%s' "$(random_base62 8)" "$(random_base62 43)"; }
+
 printf "[3/4] Checking deploy/.env configuration... "
 if [ ! -f "$ENV_FILE" ]; then
   echo "Generating fresh .env..."
   if [ -f "$ENV_EXAMPLE" ]; then
-    # Hex, not base64: base64 contains '/' and '+', which would break the sed expressions below.
-    random_hex() { openssl rand -hex "$1" 2>/dev/null || od -An -tx1 -N"$1" /dev/urandom | tr -d ' \n'; }
     MASTER_SECRET="$(random_hex 32)"
     EDGE_SECRET="$(random_hex 32)"
     PG_PASSWORD="$(random_hex 18)"
     VK_PASSWORD="$(random_hex 18)"
+    OWNER_KEY="$(new_owner_key)"
 
     sed -e "s/^POSTGRES_PASSWORD=.*$/POSTGRES_PASSWORD=$PG_PASSWORD/" \
         -e "s/^VALKEY_PASSWORD=.*$/VALKEY_PASSWORD=$VK_PASSWORD/" \
         -e "s/^DLE_MASTER_SECRET=.*$/DLE_MASTER_SECRET=$MASTER_SECRET/" \
         -e "s/^DLE_EDGE_SECRET=.*$/DLE_EDGE_SECRET=$EDGE_SECRET/" \
+        -e "s/^DLE_BOOTSTRAP_INITIAL_API_KEY=.*$/DLE_BOOTSTRAP_INITIAL_API_KEY=$OWNER_KEY/" \
         -e "s/^DLE_DOMAIN=.*$/DLE_DOMAIN=localhost/" \
         -e "s/^DLE_TLS=.*$/DLE_TLS=internal/" \
         "$ENV_EXAMPLE" > "$ENV_FILE"
     chmod 600 "$ENV_FILE"
-    echo "      Created $ENV_FILE with generated POSTGRES_PASSWORD, VALKEY_PASSWORD, DLE_MASTER_SECRET and DLE_EDGE_SECRET."
+    echo "      Created $ENV_FILE with generated POSTGRES_PASSWORD, VALKEY_PASSWORD, DLE_MASTER_SECRET,"
+    echo "      DLE_EDGE_SECRET and DLE_BOOTSTRAP_INITIAL_API_KEY."
   else
     echo "FAILED ($ENV_EXAMPLE template not found)"
     exit 1
   fi
+elif ! grep -Eq '^DLE_BOOTSTRAP_INITIAL_API_KEY=.+' "$ENV_FILE"; then
+  # A .env from before the first owner key was configurable: add one, or a fresh database has no way in.
+  OWNER_KEY="$(new_owner_key)"
+  if grep -q '^DLE_BOOTSTRAP_INITIAL_API_KEY=' "$ENV_FILE"; then
+    sed -i.bak "s/^DLE_BOOTSTRAP_INITIAL_API_KEY=.*$/DLE_BOOTSTRAP_INITIAL_API_KEY=$OWNER_KEY/" "$ENV_FILE" && rm -f "$ENV_FILE.bak"
+  else
+    printf '\nDLE_BOOTSTRAP_INITIAL_API_KEY=%s\n' "$OWNER_KEY" >> "$ENV_FILE"
+  fi
+  echo "OK ($ENV_FILE exists; added DLE_BOOTSTRAP_INITIAL_API_KEY)"
 else
   echo "OK ($ENV_FILE exists)"
 fi
@@ -95,10 +111,10 @@ echo "  * Administration SPA:               http://localhost:8081/admin/"
 echo "  * Edge Health Check:                http://localhost:8080/healthz"
 echo "  * Control Health Check:             http://localhost:8081/healthz"
 echo ""
-echo "Automatic Bootstrap:"
-echo "  When the database is empty on first start, Dle.Control automatically provisions"
-echo "  an initial tenant ('default') and an owner API key, printed once. Find it with:"
-echo "    docker compose logs dle-control | grep -A 4 'DLE BOOTSTRAP OWNER KEY'"
+echo "First sign-in:"
+echo "  On an empty database dle-control creates the tenant 'default' with the owner key stored in"
+echo "  deploy/.env as DLE_BOOTSTRAP_INITIAL_API_KEY. Sign in at http://localhost:8081/admin/ with it,"
+echo "  create a named owner key on the API keys page and revoke 'root-bootstrap'."
 echo ""
 
 if [ "$CHECK_ONLY" = true ]; then

@@ -10,7 +10,7 @@ namespace Dle.SecurityTests.Infrastructure;
 /// rather than only on the response.
 /// </summary>
 /// <remarks>
-/// TC-167 and T-05 are about what is <em>recorded</em>, not about what is returned: a tampered click
+/// Click-id tampering is about what is <em>recorded</em>, not about what is returned: a tampered click
 /// identifier has to be visible in the event as tampered, because the whole point of the flag is that
 /// a partner payout can be recomputed without it.
 /// </remarks>
@@ -109,7 +109,7 @@ public sealed class FakeDomainConfigStore : IDomainConfigStore
 /// <remarks>
 /// The real one does a reverse and forward DNS lookup, which is a network call and therefore not
 /// something a security test should depend on. Refusing every claim is also the conservative default:
-/// a user agent claiming to be Googlebot is treated as the ordinary browser it probably is (TC-107),
+/// a user agent claiming to be Googlebot is treated as the ordinary browser it probably is,
 /// which is exactly the path the open-redirect corpus needs to travel.
 /// </remarks>
 public sealed class DenyingBotVerifier : IBotVerifier

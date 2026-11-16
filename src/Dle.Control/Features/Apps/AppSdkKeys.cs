@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Dle.Control.Features.Apps;
 
 /// <summary>
-/// <c>POST</c>, <c>GET</c> and <c>DELETE /api/v1/apps/{id}/sdk-keys</c> (§E.2.1, TB2).
+/// <c>POST</c>, <c>GET</c> and <c>DELETE /api/v1/apps/{id}/sdk-keys</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -79,7 +79,7 @@ public static class AppSdkKeys
     /// <param name="apps">Application storage, which scopes the lookup to the tenant.</param>
     /// <param name="db">The control-plane context.</param>
     /// <param name="factory">Mints the key.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>201 with the secret, shown exactly once.</returns>
     public static async Task<IResult> CreateAsync(
@@ -120,7 +120,7 @@ public static class AppSdkKeys
 
         // The audit entry records the non-secret prefix, never the key. A trail that carried the
         // credential would turn every operator with read access to it into a holder of every key ever
-        // issued (SHARED-KERNEL §17.5).
+        // issued.
         await AdministrativeAudit.RecordAsync(
             audit,
             caller,
@@ -152,7 +152,7 @@ public static class AppSdkKeys
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="apps">Application storage, which scopes the lookup to the tenant.</param>
     /// <param name="db">The control-plane context.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="credentialCache">Drops any cached verification entry for the revoked key.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>204, or 404.</returns>

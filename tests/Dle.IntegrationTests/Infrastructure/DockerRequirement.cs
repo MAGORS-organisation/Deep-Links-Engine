@@ -6,7 +6,7 @@ namespace Dle.IntegrationTests.Infrastructure;
 
 /// <summary>
 /// Decides, once per process, whether a container runtime is reachable — and therefore whether the
-/// integration suite can run at all (§D.4).
+/// integration suite can run at all.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -85,7 +85,7 @@ public static class DockerRequirement
     public static string SkipReason => string.Create(
         CultureInfo.InvariantCulture,
         $"No container runtime answered at {Cached.Value.Endpoint}. This suite needs PostgreSQL 18 "
-        + $"and Valkey 8 started by Testcontainers (docs/zadanie.md D.4) and refuses to substitute "
+        + $"and Valkey 8 started by Testcontainers and refuses to substitute "
         + $"an in-memory provider, because partitioning, jsonb, citext and the unique indexes are "
         + $"the things under test. Start Docker or Podman and run again; set "
         + $"{RequireEnvironmentVariable}=1 to make this absence a failure instead of a skip.");

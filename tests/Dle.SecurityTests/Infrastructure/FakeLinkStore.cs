@@ -17,7 +17,7 @@ namespace Dle.SecurityTests.Infrastructure;
 /// </para>
 /// <para>
 /// The store counts its lookups, which is how the shadow-ban tests prove that a banned prefix is
-/// answered without a store read at all (§E.9).
+/// answered without a store read at all.
 /// </para>
 /// </remarks>
 public sealed class FakeLinkStore : ILinkStore

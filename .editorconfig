@@ -10,7 +10,7 @@
 #
 # Deliberate policy: aesthetic preferences are expressed as `suggestion` so a
 # formatting nit can never break another team's build, while rules that encode
-# the binding contract in docs/dev/SHARED-KERNEL.md (invariant culture,
+# the project's binding conventions (invariant culture,
 # cancellation tokens, cryptography, injection) are promoted to warning/error.
 # ---------------------------------------------------------------------------
 
@@ -307,7 +307,7 @@ dotnet_diagnostic.CA2247.severity = warning   # TaskCompletionSource argument
 dotnet_diagnostic.CA2248.severity = warning   # Correct enum argument to HasFlag
 dotnet_diagnostic.CA2249.severity = warning   # Use string.Contains over IndexOf
 
-# === Culture invariance (SHARED-KERNEL §0: everything InvariantCulture) =====
+# === Culture invariance (everything InvariantCulture) ======================
 dotnet_diagnostic.CA1304.severity = warning   # Specify CultureInfo
 dotnet_diagnostic.CA1305.severity = warning   # Specify IFormatProvider
 dotnet_diagnostic.CA1307.severity = warning   # Specify StringComparison for clarity
@@ -316,7 +316,7 @@ dotnet_diagnostic.CA1310.severity = warning   # Specify StringComparison for cor
 dotnet_diagnostic.CA1311.severity = warning   # Specify a culture or use invariant casing
 dotnet_diagnostic.CA1846.severity = warning   # Prefer AsSpan over Substring
 
-# === Security (part E — threat model) ======================================
+# === Security (threat model) ===============================================
 dotnet_diagnostic.CA2100.severity = error     # SQL injection
 dotnet_diagnostic.CA2153.severity = error     # Corrupted state exceptions
 dotnet_diagnostic.CA2300.severity = error     # Insecure BinaryFormatter
@@ -338,8 +338,8 @@ dotnet_diagnostic.CA5386.severity = error     # Hardcoded SecurityProtocolType
 dotnet_diagnostic.CA5394.severity = warning   # Insecure randomness
 dotnet_diagnostic.CA5397.severity = error     # Deprecated SslProtocols
 
-# === Rules that conflict with the binding contract in SHARED-KERNEL.md =====
-# The kernel fixes these shapes; the analyzer's opinion loses.
+# === Rules that conflict with the binding shared contracts =================
+# The shared contracts fix these shapes; the analyzer's opinion loses.
 dotnet_diagnostic.CA1024.severity = none      # "Use properties" — IKeyRing.GetJwks()
 dotnet_diagnostic.CA1054.severity = none      # URI parameters are string by contract
 dotnet_diagnostic.CA1055.severity = none      # URI return values are string by contract
@@ -356,8 +356,8 @@ dotnet_diagnostic.CA1848.severity = none      # LoggerMessage, see NoWarn
 dotnet_diagnostic.CA1515.severity = none      # Public types in app assemblies
 
 # === Explicitly NOT relaxed ================================================
-# CA1031 (catch general exception) stays at its analyzer default: SHARED-KERNEL
-# §17.9 forbids a blanket suppression. Suppress it locally with a justification.
+# CA1031 (catch general exception) stays at its analyzer default: a blanket
+# suppression is forbidden. Suppress it locally with a justification.
 # CS1591 (missing XML doc) stays an error everywhere except tests: doc comments
 # on public API are mandatory.
 

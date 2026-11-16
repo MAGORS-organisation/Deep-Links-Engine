@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Control.Workers;
 
 /// <summary>
-/// Configuration of the background workers, bound from <c>Dle:Workers</c> (§B.3, §C.8).
+/// Configuration of the background workers, bound from <c>Dle:Workers</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -16,7 +16,7 @@ namespace Dle.Control.Workers;
 /// </para>
 /// <para>
 /// The intervals are deliberately coarse. None of these jobs is latency sensitive: the nightly
-/// checks are nightly because §C.8 says nightly, the rollup follows the click stream by minutes
+/// checks run once a day, the rollup follows the click stream by minutes
 /// because the watermark already refuses to aggregate a bucket that is still filling, and the
 /// dispatcher polls in seconds because a webhook that arrives a minute late is a webhook a customer
 /// notices.
@@ -55,22 +55,22 @@ public sealed class WorkerOptions
     [Range(0, 600)]
     public int StartupJitterSeconds { get; set; } = 30;
 
-    /// <summary>Nightly verification of the customers' association files (§C.8, FR-143, T-04).</summary>
+    /// <summary>Nightly verification of the customers' association files.</summary>
     public DomainVerificationWorkerOptions DomainVerification { get; set; } = new();
 
-    /// <summary>Periodic aggregation into the reporting tables (§B.3 component C-09).</summary>
+    /// <summary>Periodic aggregation into the reporting tables.</summary>
     public ScheduledWorkerOptions Rollup { get; set; } = new() { IntervalMinutes = 5 };
 
-    /// <summary>Retention and anonymisation of the click stream (FR-247, §E.6.3).</summary>
+    /// <summary>Retention and anonymisation of the click stream.</summary>
     public ScheduledWorkerOptions Retention { get; set; } = new() { IntervalMinutes = 6 * 60 };
 
-    /// <summary>Draining, signing and delivering the webhook outbox (§B.3 component C-10).</summary>
+    /// <summary>Draining, signing and delivering the webhook outbox.</summary>
     public ScheduledWorkerOptions WebhookDispatch { get; set; } = new() { IntervalMinutes = 0 };
 
-    /// <summary>Nightly re-check of the targets of active links (§E.3 step 5).</summary>
+    /// <summary>Nightly re-check of the targets of active links.</summary>
     public UrlReputationWorkerOptions UrlReputation { get; set; } = new();
 
-    /// <summary>Out of band refresh of the GeoIP database (§C.4 <c>Dle:Edge:GeoIp</c>).</summary>
+    /// <summary>Out of band refresh of the GeoIP database (<c>Dle:Edge:GeoIp</c>).</summary>
     public GeoIpUpdateWorkerOptions GeoIpUpdate { get; set; } = new();
 }
 
@@ -95,7 +95,7 @@ public class ScheduledWorkerOptions
 /// <summary>Settings of the nightly domain verification worker.</summary>
 public sealed class DomainVerificationWorkerOptions : ScheduledWorkerOptions
 {
-    /// <summary>Creates the options with the nightly default of §C.8.</summary>
+    /// <summary>Creates the options with a nightly default.</summary>
     public DomainVerificationWorkerOptions()
     {
         IntervalMinutes = 24 * 60;
@@ -113,7 +113,7 @@ public sealed class DomainVerificationWorkerOptions : ScheduledWorkerOptions
     /// Both Apple and Google refuse a redirected association file, so any value above zero is a
     /// failure. The fetch follows a couple anyway in order to say <em>what</em> is at the end of
     /// them, because "your file redirects to your marketing site" is a far more useful diagnosis
-    /// than "your file is missing" (§A.2.1, §A.2.2, TC-124).
+    /// than "your file is missing".
     /// </remarks>
     [Range(0, 10)]
     public int MaxRedirects { get; set; } = 3;
@@ -127,7 +127,7 @@ public sealed class DomainVerificationWorkerOptions : ScheduledWorkerOptions
     public int MaxDomainsPerRun { get; set; } = 1_000;
 
     /// <summary>
-    /// Whether an unresolvable host is treated as a possible subdomain takeover (T-04).
+    /// Whether an unresolvable host is treated as a possible subdomain takeover.
     /// </summary>
     /// <remarks>
     /// On. A host that stops resolving is the visible signature of a dangling CNAME: the record
@@ -142,7 +142,7 @@ public sealed class DomainVerificationWorkerOptions : ScheduledWorkerOptions
 /// <summary>Settings of the nightly URL reputation re-check.</summary>
 public sealed class UrlReputationWorkerOptions : ScheduledWorkerOptions
 {
-    /// <summary>Creates the options with the nightly default of §E.3 step 5.</summary>
+    /// <summary>Creates the options with a nightly default.</summary>
     public UrlReputationWorkerOptions()
     {
         IntervalMinutes = 24 * 60;

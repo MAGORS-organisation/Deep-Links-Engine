@@ -20,7 +20,7 @@ public readonly record struct ValkeyRateLimitDecision(
 /// <summary>
 /// Shared distributed rate-limit and shadow-ban store backed by Valkey atomic Lua scripts
 /// (<see cref="IConnectionMultiplexer"/>), with automatic circuit-breaker fallback to in-process
-/// limiters when Valkey is unconfigured, disconnected, or failing (ADR-005, §E.9).
+/// limiters when Valkey is unconfigured, disconnected, or failing.
 /// </summary>
 public sealed partial class ValkeyRateLimitStore
 {

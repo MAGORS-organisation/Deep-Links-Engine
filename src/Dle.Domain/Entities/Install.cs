@@ -6,7 +6,7 @@ namespace Dle.Domain.Entities;
 /// <remarks>
 /// The pair of application and install identifier is unique, which is what makes a repeated
 /// resolve idempotent: the second call finds the existing row and returns the existing
-/// attribution instead of creating a second one (TC-143, FR-188).
+/// attribution instead of creating a second one.
 /// </remarks>
 public class Install
 {

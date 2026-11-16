@@ -1,5 +1,5 @@
 # =============================================================================
-# CI — build, analyzers, format, the four test suites, coverage gate (docs/zadanie.md §C.8 "PR").
+# CI — build, analyzers, format, the four test suites, coverage gate.
 #
 #   restore (locked)  →  build -warnaserror  →  dotnet format --verify-no-changes
 #   →  Dle.UnitTests  →  Dle.ContractTests  →  Dle.SecurityTests  →  Dle.IntegrationTests
@@ -77,7 +77,7 @@ jobs:
         run: dotnet build Dle.sln --configuration Release --no-restore -warnaserror
 
       - name: Format check
-        # §C.7 DoD 2: `dotnet format` + analyzers. Analyzers already ran in the build above.
+        # `dotnet format` + analyzers. Analyzers already ran in the build above.
         run: dotnet format Dle.sln --verify-no-changes --no-restore
 
       - name: Install dotnet-coverage
@@ -140,7 +140,7 @@ jobs:
       - name: Coverage gate
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         # Domain tier (Dle.Domain, Dle.Crypto) >= 90 % is a HARD gate, and so is the overall
-        # 70 % of §D.1: the product reached 83.8 % once the control plane's HTTP integration
+        # 70 %: the product reached 83.8 % once the control plane's HTTP integration
         # suite landed, which is the condition this step waited for. It ran in `warn` mode while
         # the number was below the threshold, because a gate that fails every pull request from
         # day one gets bypassed rather than honoured.

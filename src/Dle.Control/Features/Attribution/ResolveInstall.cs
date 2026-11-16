@@ -23,16 +23,16 @@ namespace Dle.Control.Features.Attribution;
 /// <param name="Response">The answer to return, or <see langword="null"/> when the request failed
 /// with a claim code problem instead.</param>
 /// <param name="ClaimCodeError">Why a presented claim code could not be redeemed, which the endpoint
-/// turns into an RFC 9457 document rather than a silent <c>none</c> (TC-148).</param>
+/// turns into an RFC 9457 document rather than a silent <c>none</c>.</param>
 public sealed record ResolveOutcome(ResolveResponseDto? Response, ClaimCodeStatus? ClaimCodeError);
 
 /// <summary>
 /// <c>POST /v1/resolve</c> — hands a freshly installed application the context of the click that
-/// led to it (§B.6.2, §B.6.3, §B.7.2, FR-182 to FR-188).
+/// led to it.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The strategies run in the configured order and the first one that matches wins (ADR-008). The
+/// The strategies run in the configured order and the first one that matches wins. The
 /// order is configuration because it is a product decision: the default is the three deterministic
 /// strategies, strongest first, and probabilistic matching is not in it.
 /// </para>
@@ -43,20 +43,20 @@ public sealed record ResolveOutcome(ResolveResponseDto? Response, ClaimCodeStatu
 ///   <item>
 ///     <description>
 ///     <b>Consent is an input, not a filter.</b> Cross-session linking of a click to an install is
-///     what §E.6.2 calls <c>full</c> mode and what ePrivacy art. 5(3) puts behind documented
+///     what the <c>full</c> consent mode covers and what ePrivacy art. 5(3) puts behind documented
 ///     consent, so without it no click is looked up at all and the answer is <c>none</c> with the
 ///     reason recorded. Device signals go further still: the only code that can read them is an
 ///     instance method of <see cref="ProbabilisticConsent"/>, and without the grant no such
-///     instance exists (TC-145, TC-146).
+///     instance exists.
 ///     </description>
 ///   </item>
 ///   <item>
 ///     <description>
 ///     <b>One install, one attribution.</b> A repeated call finds the stored decision and returns
-///     it unchanged; it never writes a second row (TC-143). The single exception is narrow and
+///     it unchanged; it never writes a second row. The single exception is narrow and
 ///     deliberate: a stored <c>none</c> may be replaced in place when the caller comes back with
 ///     deterministic evidence it did not have before, which is what makes "ask for a new claim
-///     code" a real remedy (TC-148).
+///     code" a real remedy.
 ///     </description>
 ///   </item>
 ///   <item>
@@ -64,20 +64,19 @@ public sealed record ResolveOutcome(ResolveResponseDto? Response, ClaimCodeStatu
 ///     <b>One click, one install.</b> The second installation to present the same click identifier
 ///     is told <c>none</c>. That is enforced by the partial unique index on
 ///     <c>attributions(click_id)</c> plus the transaction in
-///     <see cref="AttributionRepository"/> — not by a check in this class, which could lose a race
-///     (TC-144).
+///     <see cref="AttributionRepository"/> — not by a check in this class, which could lose a race.
 ///     </description>
 ///   </item>
 /// </list>
 /// <para>
 /// Every decision, including every refusal, is written with an evidence document naming what
-/// decided it. §B.5.3 is blunt about why: when a customer disputes an attribution, that document is
+/// decided it. The reason is blunt: when a customer disputes an attribution, that document is
 /// the only defence.
 /// </para>
 /// </remarks>
 public sealed partial class ResolveInstall
 {
-    /// <summary>Confidence of a deterministic strategy. Never approximated (FR-186).</summary>
+    /// <summary>Confidence of a deterministic strategy. Never approximated.</summary>
     private const decimal DeterministicConfidence = 1.00m;
 
     private readonly IAttributionStore _store;
@@ -97,14 +96,14 @@ public sealed partial class ResolveInstall
     /// Creates the use case.
     /// </summary>
     /// <param name="store">Storage seam for installations, attributions, claim codes and links.</param>
-    /// <param name="clicks">Click stream lookup, always with a bounded time window (§B.6.3).</param>
+    /// <param name="clicks">Click stream lookup, always with a bounded time window.</param>
     /// <param name="clickIds">Click identifier codec; recovers the embedded timestamp and detects tampering.</param>
     /// <param name="claimCodes">Claim code issuance and redemption.</param>
     /// <param name="loginKeys">Account hash used by login reconciliation.</param>
     /// <param name="ipHasher">Address truncation, used only under full consent.</param>
     /// <param name="outbox">Webhook outbox; every successful match is announced.</param>
-    /// <param name="metrics">Instruments (§C.6).</param>
-    /// <param name="timeProvider">Clock (SHARED-KERNEL §17.2).</param>
+    /// <param name="metrics">Instruments.</param>
+    /// <param name="timeProvider">Clock.</param>
     /// <param name="options">Attribution options.</param>
     /// <param name="logger">Logger.</param>
     /// <param name="loginHints">Optional indexed <c>O(1)</c> login-hint store consulted before scanning raw click candidates.</param>
@@ -186,7 +185,7 @@ public sealed partial class ResolveInstall
 
         // The capability that gates every use of the device signals. Null here means the request's
         // signals object is dropped with the request: nothing below can read it, so nothing below
-        // can store it (TC-145, TC-146).
+        // can store it.
         ProbabilisticConsent? grant = ProbabilisticConsent.TryGrant(_options, order, decision);
 
         byte[]? loginKeyHash = decision.AllowClickIdLinking && !string.IsNullOrWhiteSpace(request.LoginKey)
@@ -221,7 +220,7 @@ public sealed partial class ResolveInstall
 
         AttributionRecord? stored = await _store.FindAttributionByInstallAsync(install.Id, cancellationToken);
 
-        // TC-143. A decision already exists, so this call re-reads it instead of making a new one.
+        // A decision already exists, so this call re-reads it instead of making a new one.
         if (stored is not null && !string.Equals(stored.MatchType, MatchTypeNames.None, StringComparison.Ordinal))
         {
             return new ResolveOutcome(await RespondAsync(stored, cancellationToken), ClaimCodeError: null);
@@ -304,13 +303,13 @@ public sealed partial class ResolveInstall
     }
 
     /// <summary>
-    /// S1 — the Android Play Install Referrer (§A.2.4, §B.6.2, FR-181, FR-182).
+    /// S1 — the Android Play Install Referrer.
     /// </summary>
     /// <remarks>
     /// The click identifier carries its own encrypted timestamp, so the lookup can bound
     /// <c>occurred_at</c> and the planner can prune the partitions of <c>click_events</c>. Without
     /// that bound the query touches every partition and its cost grows linearly with retention —
-    /// the silent debt §B.6.3 warns about, which only becomes visible half a year after launch.
+    /// a silent debt, which only becomes visible half a year after launch.
     /// </remarks>
     private async Task<StrategyOutcome> TryInstallReferrerAsync(
         ResolveRequestDto request,
@@ -323,14 +322,14 @@ public sealed partial class ResolveInstall
         if (!InstallReferrerParser.TryGetClickId(request.Referrer, out string clickId))
         {
             // Not an error. An organic install has no dl_cid and the application simply continues
-            // its normal onboarding (TC-142).
+            // its normal onboarding.
             return Refused(strategy, AttributionReasons.NoClickId);
         }
 
         if (!_clickIds.TryDecode(clickId, out DateTimeOffset occurredAt, out _))
         {
             // The identifier is authenticated, so a failed decode is a mutated identifier rather
-            // than an unlucky one. It is recorded as tampered and never matched (TC-167, T-05).
+            // than an unlucky one. It is recorded as tampered and never matched.
             _metrics.Tampered(AttributionStrategyNames.InstallReferrer);
             LogTamperedClickId(_logger, caller.TenantId, clickId.Length);
 
@@ -373,7 +372,7 @@ public sealed partial class ResolveInstall
         if (click.TenantId != caller.TenantId)
         {
             // A click that belongs to somebody else is answered as "no match", never as a refusal:
-            // a 403 would confirm the identifier exists (SHARED-KERNEL §17.7, TC-166).
+            // a 403 would confirm the identifier exists.
             return Refused(strategy, AttributionReasons.ForeignTenant);
         }
 
@@ -390,7 +389,7 @@ public sealed partial class ResolveInstall
     }
 
     /// <summary>
-    /// S2 — reconciliation of an anonymous web session with a signed-in account (FR-185).
+    /// S2 — reconciliation of an anonymous web session with a signed-in account.
     /// </summary>
     /// <remarks>
     /// The anonymous web identifier is the click. When the visitor was signed in on the web, the
@@ -507,7 +506,7 @@ public sealed partial class ResolveInstall
     }
 
     /// <summary>
-    /// S3 — the six characters the user read off the interstitial page (FR-184, TC-148).
+    /// S3 — the six characters the user read off the interstitial page.
     /// </summary>
     /// <remarks>
     /// A failure here does not fall through to the next strategy. The user deliberately typed a
@@ -581,13 +580,13 @@ public sealed partial class ResolveInstall
     }
 
     /// <summary>
-    /// S4 — probabilistic matching (§A.2.5, ADR-008). Off by default, consent gated, time bounded.
+    /// S4 — probabilistic matching. Off by default, consent gated, time bounded.
     /// </summary>
     /// <remarks>
     /// Past the window the answer is <c>none</c>, never a weak match. That is enforced twice: the
     /// candidate query only asks for clicks inside the window, and
-    /// <see cref="ProbabilisticScorer"/> returns exactly zero once the elapsed time reaches it
-    /// (TC-147). The default window is sixty minutes rather than the seven days commercial vendors
+    /// <see cref="ProbabilisticScorer"/> returns exactly zero once the elapsed time reaches it.
+    /// The default window is sixty minutes rather than the seven days commercial vendors
     /// use, because beyond twenty-four hours a fingerprint match is more likely wrong than right.
     /// </remarks>
     private async Task<StrategyOutcome> TryProbabilisticAsync(
@@ -701,7 +700,7 @@ public sealed partial class ResolveInstall
         if (stored is not null)
         {
             // The installation already carries a "none". Only strictly new deterministic evidence
-            // may replace it, and it replaces the same row rather than adding one (TC-143, TC-148).
+            // may replace it, and it replaces the same row rather than adding one.
             if (!result.Matched || result.MatchType == MatchType.Probabilistic)
             {
                 return await RespondAsync(stored, cancellationToken);
@@ -744,7 +743,7 @@ public sealed partial class ResolveInstall
                 return await RespondAsync(write.Record, cancellationToken);
 
             case AttributionOutcome.ClickAlreadyClaimed:
-                // TC-144: one click is worth one install, and the first one wins. The loser is told
+                // One click is worth one install, and the first one wins. The loser is told
                 // "none" and the refusal is recorded with the click identifier it wanted, in the
                 // evidence document rather than in the indexed column.
                 return await RecordLostClaimAsync(record, install, caller, now, cancellationToken);
@@ -753,13 +752,13 @@ public sealed partial class ResolveInstall
             case AttributionOutcome.AlreadyAttributed:
             default:
                 // No row came back with an outcome that promises one. Fail closed: report the
-                // install as organic rather than inventing a match (SHARED-KERNEL §17.9).
+                // install as organic rather than inventing a match.
                 LogWriteWithoutRecord(_logger, write.Outcome.ToString());
                 return NoMatchResponse();
         }
     }
 
-    /// <summary>Records the "none" that a losing double claim earns (TC-144).</summary>
+    /// <summary>Records the "none" that a losing double claim earns.</summary>
     private async Task<ResolveResponseDto> RecordLostClaimAsync(
         AttributionRecord attempted,
         Install install,
@@ -803,7 +802,7 @@ public sealed partial class ResolveInstall
         return NoMatchResponse();
     }
 
-    /// <summary>Puts <c>attribution.created</c> on the webhook outbox (§B.7.4).</summary>
+    /// <summary>Puts <c>attribution.created</c> on the webhook outbox.</summary>
     private async Task AnnounceAsync(
         AttributionRecord record,
         Install install,
@@ -875,13 +874,13 @@ public sealed partial class ResolveInstall
 
             // Parameters come from the link, never from the referrer the client presented. A value
             // the caller supplied must not come back as engine output, and using only stored data
-            // is also what makes a repeated call return byte-identical parameters (TC-143).
+            // is also what makes a repeated call return byte-identical parameters.
             Params = link?.Parameters ?? ReadOnlyDictionary<string, string>.Empty,
             ExpiresIn = 0,
         };
     }
 
-    /// <summary>The answer for an install nothing matched: organic, and not an error (TC-142).</summary>
+    /// <summary>The answer for an install nothing matched: organic, and not an error.</summary>
     private static ResolveResponseDto NoMatchResponse(int expiresIn = 0) => new()
     {
         Matched = false,
@@ -1219,7 +1218,7 @@ public sealed partial class ResolveInstall
     private static partial void LogWriteWithoutRecord(ILogger logger, string outcome);
 }
 
-/// <summary>Webhook event types this module produces (§B.7.4).</summary>
+/// <summary>Webhook event types this module produces.</summary>
 public static class WebhookEvents
 {
     /// <summary>An installation was attributed to a click.</summary>

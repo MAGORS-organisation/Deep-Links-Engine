@@ -10,7 +10,7 @@ namespace Dle.Analytics.Postgres;
 /// Registered when <c>Dle:Analytics:Provider</c> selects ClickHouse, where the raw event tables
 /// carry a <c>TTL</c> clause generated from the same <c>Dle:Privacy:Retention:RawDays</c> value
 /// this service reports. Expiry is therefore the storage engine's own background merge, not a job
-/// the engine schedules — but FR-247 still wants the policy to be visible and the run to be
+/// the engine schedules — but the policy still has to be visible and the run has to be
 /// recorded, so a pass reports what the policy is and where it is enforced instead of pretending
 /// nothing happens.
 /// </remarks>

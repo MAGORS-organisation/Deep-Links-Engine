@@ -1,9 +1,9 @@
 namespace Dle.Domain.Abuse;
 
 /// <summary>
-/// Lifecycle of an abuse report submitted through the public form (FR-245). The states exist
+/// Lifecycle of an abuse report submitted through the public form. The states exist
 /// because the Digital Services Act, article 16, requires a traceable notice and action
-/// mechanism, not merely a mailbox (§E.3).
+/// mechanism, not merely a mailbox.
 /// </summary>
 public enum AbuseReportStatus
 {
@@ -14,7 +14,7 @@ public enum AbuseReportStatus
     /// <summary>Read and classified by an operator.</summary>
     Triaged = 1,
 
-    /// <summary>The abuse was confirmed; the link is quarantined and serves HTTP 410 (TC-103).</summary>
+    /// <summary>The abuse was confirmed; the link is quarantined and serves HTTP 410.</summary>
     Confirmed = 2,
 
     /// <summary>The report was examined and found to be unfounded. The link stays as it was.</summary>

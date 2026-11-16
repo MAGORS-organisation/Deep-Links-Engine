@@ -116,7 +116,7 @@ public sealed class BlocklistReputationProvider : IUrlReputationProvider
         Justification =
             "A blocklist file that cannot be read must not take the control plane down, and must "
             + "not silently become an empty list either: the previous contents stay in force and "
-            + "the failure is logged as an error (SHARED-KERNEL §17.9).")]
+            + "the failure is logged as an error.")]
     private HashSet<string> GetHosts(AbuseOptions options)
     {
         DateTimeOffset now = _timeProvider.GetUtcNow();

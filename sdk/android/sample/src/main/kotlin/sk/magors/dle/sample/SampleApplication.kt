@@ -9,7 +9,7 @@ import sk.magors.dle.dleConfig
 /**
  * Initialises the SDK once, before any activity exists. Doing it here rather than in an activity
  * lets the SDK observe the activity lifecycle from the very first `onCreate`, so an App Link that
- * cold starts the application is reported as `link_open` (FR-223). [MainActivity] calls
+ * cold starts the application is reported as `link_open`. [MainActivity] calls
  * [Dle.initialize] as well; the second call is a no-op that returns the same client.
  */
 class SampleApplication : Application() {

@@ -4,7 +4,7 @@ using Dle.Control.Identity;
 namespace Dle.Control.Features.Links;
 
 /// <summary>
-/// <c>POST /api/v1/links</c> — creates one link (FR-101, FR-102, FR-104, FR-105).
+/// <c>POST /api/v1/links</c> — creates one link.
 /// </summary>
 public static class CreateLink
 {
@@ -13,14 +13,14 @@ public static class CreateLink
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="writer">Validation, slug allocation and the write itself.</param>
     /// <param name="presenter">Builds the short URL and the QR URL.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops any negative cache entry the edge holds for this slug.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>201 with the created link, or a problem document.</returns>
     /// <remarks>
     /// The cache invalidation matters even on a create, because the edge caches the absence of a
     /// slug as well as its presence: without it, a link created a second after somebody mistyped its
-    /// URL would keep answering 404 for the length of the negative cache window (ADR-005).
+    /// URL would keep answering 404 for the length of the negative cache window.
     /// </remarks>
     public static async Task<IResult> HandleAsync(
         CreateLinkRequest request,

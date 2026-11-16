@@ -9,10 +9,16 @@ using Xunit;
 namespace Dle.UnitTests.Control;
 
 /// <summary>
-/// Verifies bootstrap configuration and hosted service behavior (FR-241, FR-242).
+/// Verifies bootstrap configuration and hosted service behavior.
 /// </summary>
 public sealed class BootstrapServiceTests
 {
+    /// <summary>The default <c>Dle:Crypto:ApiKeyPrefix</c>, the name field a key must carry.</summary>
+    private const string KeyName = "dle";
+
+    /// <summary>"dle_", 8 base62 characters, "_", 43 characters.</summary>
+    private const string WellFormedKey = "dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEFG";
+
     [Fact]
     public void BootstrapOptions_DefaultValues_AreSensible()
     {
@@ -25,6 +31,62 @@ public sealed class BootstrapServiceTests
         Assert.Null(options.InitialApiKey);
         Assert.Null(options.ExportKeyPath);
         Assert.False(options.AllowConsoleSecretOutput);
+    }
+
+    [Fact]
+    public void FirstKeySource_WithNothingConfigured_IsNone()
+    {
+        Assert.Equal(FirstKeySource.None, ControlBootstrapService.ResolveFirstKeySource(new BootstrapOptions(), KeyName));
+        Assert.Equal(
+            FirstKeySource.None,
+            ControlBootstrapService.ResolveFirstKeySource(new BootstrapOptions { InitialApiKey = "   " }, KeyName));
+    }
+
+    [Fact]
+    public void FirstKeySource_WithAWellFormedKey_IsTheOperatorsKey_WhateverElseIsConfigured()
+    {
+        BootstrapOptions plain = new() { InitialApiKey = " " + WellFormedKey + "\n" };
+        BootstrapOptions withOtherRoutes = new()
+        {
+            InitialApiKey = WellFormedKey,
+            ExportKeyPath = "/tmp/dle-owner.key",
+            AllowConsoleSecretOutput = true,
+        };
+
+        Assert.Equal(FirstKeySource.Operator, ControlBootstrapService.ResolveFirstKeySource(plain, KeyName));
+        Assert.Equal(FirstKeySource.Operator, ControlBootstrapService.ResolveFirstKeySource(withOtherRoutes, KeyName));
+    }
+
+    [Theory]
+    [InlineData("not-a-key")]
+    [InlineData("dle_Ab3dEf7h_tooShort")]
+    [InlineData("dle_Ab3d+f7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEFG")]
+    [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEFG_extra")]
+    [InlineData("abc_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEFG")]
+    [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDE+/")]
+    [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDEF\u00E9")]
+    [InlineData("dle_Ab3dEf7h_0123456789abcdefghijklmnopqrstuvwxyzABCDE F")]
+    public void FirstKeySource_WithAMalformedKey_IsMalformed_EvenWhenAGeneratedKeyCouldBeHandedOut(string key)
+    {
+        // A key the operator meant to supply must never be replaced silently by one they do not hold.
+        BootstrapOptions options = new()
+        {
+            InitialApiKey = key,
+            ExportKeyPath = "/tmp/dle-owner.key",
+            AllowConsoleSecretOutput = true,
+        };
+
+        Assert.Equal(FirstKeySource.Malformed, ControlBootstrapService.ResolveFirstKeySource(options, KeyName));
+    }
+
+    [Fact]
+    public void FirstKeySource_WithoutAKey_IsGenerated_OnlyWhenTheKeyHasAWayOut()
+    {
+        BootstrapOptions exported = new() { ExportKeyPath = "/tmp/dle-owner.key" };
+        BootstrapOptions printed = new() { AllowConsoleSecretOutput = true };
+
+        Assert.Equal(FirstKeySource.Generated, ControlBootstrapService.ResolveFirstKeySource(exported, KeyName));
+        Assert.Equal(FirstKeySource.Generated, ControlBootstrapService.ResolveFirstKeySource(printed, KeyName));
     }
 
     [Fact]

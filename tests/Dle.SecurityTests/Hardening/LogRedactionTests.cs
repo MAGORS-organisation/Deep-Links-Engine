@@ -3,13 +3,13 @@ using Microsoft.Extensions.Logging;
 namespace Dle.SecurityTests.Hardening;
 
 /// <summary>
-/// S-08 / T-08: nothing at <c>Information</c> or below may carry personal data.
+/// Nothing at <c>Information</c> or below may carry personal data.
 /// </summary>
 /// <remarks>
 /// <para>
-/// §E.2.2 T-08 names the three values precisely — the <c>Authorization</c> header, the referrer and
-/// the query string — and calls the outcome of logging them a GDPR incident rather than a bug. §E.6.3
-/// adds the address: what may be stored of it is a hash and a prefix, never the value.
+/// Three values must never be logged — the <c>Authorization</c> header, the referrer and
+/// the query string — and logging them is a GDPR incident rather than a bug. The same goes for
+/// the address: what may be stored of it is a hash and a prefix, never the value.
 /// </para>
 /// <para>
 /// This asserts against a capture from the running host rather than against the call sites, because
@@ -21,7 +21,7 @@ namespace Dle.SecurityTests.Hardening;
 /// settings actually emit.
 /// </para>
 /// <para>
-/// Scope is <c>Information</c> and below, which is what S-08 says — and "below" is the half that
+/// Scope is <c>Information</c> and below — and "below" is the half that
 /// matters. The resolve path logs at <c>Debug</c>, so a host left at the default level emits nothing
 /// from it at all and would pass this class vacuously. The host here therefore runs its own
 /// categories at <c>Trace</c>, which is the state an operator puts a machine into while diagnosing a
@@ -76,8 +76,6 @@ public sealed class LogRedactionTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("Criterion", "S-08")]
-    [Trait("Threat", "T-08")]
     public async Task Resolve_WithACredentialAQueryStringAReferrerAndAnAddress_LogsNoneOfThem()
     {
         _edge.Logs.Clear();
@@ -109,8 +107,6 @@ public sealed class LogRedactionTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("Criterion", "S-08")]
-    [Trait("Threat", "T-08")]
     public async Task Resolve_OfAMissingSlug_LogsNeitherTheAddressNorTheQueryString()
     {
         // The 404 path logs a reason, which is the one place an operator gets to see *why* a request
@@ -131,12 +127,11 @@ public sealed class LogRedactionTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("Criterion", "S-08")]
     public async Task TheResolvePath_LogsItsOutcome_SoTheAssertionsAboveAreNotVacuous()
     {
         // Without this, an engine that logged nothing at all would pass every test in this class. The
         // resolve path is required to say what it served — "the redirect went somewhere unexpected" is
-        // otherwise undiagnosable — and it says it at Debug, which is inside S-08's scope and is why
+        // otherwise undiagnosable — and it says it at Debug, which is inside the redaction scope and is why
         // this host runs its own categories at Trace.
         _edge.Logs.Clear();
 
@@ -156,7 +151,6 @@ public sealed class LogRedactionTests : IAsyncLifetime
     }
 
     [Fact]
-    [Trait("Criterion", "S-08")]
     public void EveryCapturedEntry_IsAttributedToACategory()
     {
         // A log line nobody can filter by category is a log line an operator cannot turn off, which is
@@ -177,8 +171,8 @@ public sealed class LogRedactionTests : IAsyncLifetime
             string.Create(
                 CultureInfo.InvariantCulture,
                 $"""
-                 {what} reached the log at Information or below, which S-08 forbids and §E.2.2 T-08
-                 calls a GDPR incident.
+                 {what} reached the log at Information or below, which is forbidden and is
+                 a GDPR incident.
 
                  {string.Join(Environment.NewLine, offenders.Select(Describe))}
                  """));

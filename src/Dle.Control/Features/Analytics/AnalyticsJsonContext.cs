@@ -10,7 +10,7 @@ namespace Dle.Control.Features.Analytics;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Reporting is not the resolve path, so SHARED-KERNEL §17.3 does not strictly reach it. It is used
+/// Reporting is not the resolve path, so the hot path's ban on reflection does not strictly reach it. It is used
 /// anyway, for two reasons that do apply: a report can be tens of thousands of rows, where
 /// reflection based writing is measurably slower and allocates far more; and going through this
 /// context pins the wire format of the module to snake_case regardless of what the host configured

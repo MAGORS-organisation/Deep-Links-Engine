@@ -2,7 +2,7 @@
 // when the gzip size exceeds the budget. The budget is a product requirement, not a nicety: the
 // bundle is loaded on every page view of every customer site, ahead of their own content.
 //
-// The specification's bound is < 100 kB per SDK (docs/zadanie.md §C.5). This budget is deliberately
+// The hard bound is < 100 kB per SDK. This budget is deliberately
 // an order of magnitude tighter, because the global build carries the smart banner in two languages
 // with full keyboard and screen-reader support, and the point of the check is to notice the day a
 // dependency or a feature quietly doubles it — not to squeeze the last kilobyte. Raise it only with

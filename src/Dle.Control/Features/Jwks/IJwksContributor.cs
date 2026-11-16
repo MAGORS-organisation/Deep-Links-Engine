@@ -8,9 +8,9 @@ namespace Dle.Control.Features.Jwks;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <see cref="IKeyRing"/> owns the token signing keys of §E.4.2, and it is deliberately not the
+/// <see cref="IKeyRing"/> owns the token signing keys, and it is deliberately not the
 /// owner of every key in the product: a webhook is signed with a key bound to the webhook purpose,
-/// so that compromising it cannot be turned into the ability to mint click tokens (§B.5.2). Those
+/// so that compromising it cannot be turned into the ability to mint click tokens. Those
 /// keys still have to be published, because the whole point of the asymmetric half of the webhook
 /// signature is that a third party can verify it against the key set without holding the shared
 /// secret.
@@ -30,7 +30,7 @@ public interface IJwksContributor
     /// <returns>
     /// Every key that is still inside its validity window, retired ones included. A key that has
     /// stopped signing must stay published until it stops being accepted, or rotation would break
-    /// verification of a payload sent a second before the rotation (S-12).
+    /// verification of a payload sent a second before the rotation.
     /// </returns>
     IReadOnlyList<JsonWebKey> GetKeys(DateTimeOffset asOf);
 }

@@ -8,8 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Domains;
 
 /// <summary>
-/// <c>POST /api/v1/domains/{id}/verify</c> and <c>GET /api/v1/domains/{id}/verifications</c>
-/// (FR-143, FR-144, TC-125).
+/// <c>POST /api/v1/domains/{id}/verify</c> and <c>GET /api/v1/domains/{id}/verifications</c>.
 /// </summary>
 public static class VerifyDomain
 {
@@ -104,7 +103,7 @@ public static class VerifyDomain
     /// <param name="verifier">The verification service.</param>
     /// <param name="ownership">DNS TXT ownership verifier.</param>
     /// <param name="controlOptions">Control-plane options.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops the cached association files the edge serves for the host.</param>
     /// <param name="clock">Time provider.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -113,7 +112,7 @@ public static class VerifyDomain
     /// The response carries the seven-day propagation notice whether the run passed or failed. An
     /// operator who fixes an association file, sees a green tick, tests on a device that still holds
     /// the cached copy and concludes the fix did not work is the failure this notice exists to
-    /// prevent (TC-125).
+    /// prevent.
     /// </remarks>
     public static async Task<IResult> HandleAsync(
         Guid id,
@@ -176,7 +175,7 @@ public static class VerifyDomain
 
         // The edge caches the generated association files per host. A verification run is the moment
         // the operator expects the engine's own files to be regenerated, so the cached copies go
-        // (TC-125: invalidated within fifteen minutes, and immediately is within fifteen minutes).
+        // (they must be invalidated within fifteen minutes, and immediately is within fifteen minutes).
         await cache.InvalidateHostAsync(domain.Host, cancellationToken);
 
         return TypedResults.Ok(run.Response);
@@ -189,7 +188,7 @@ public static class VerifyDomain
     /// <returns>The runs, newest first, or 404.</returns>
     /// <remarks>
     /// History rather than a single status column, because association file problems are usually
-    /// intermittent and the useful question is "since when", not "right now" (§C.6, §C.8).
+    /// intermittent and the useful question is "since when", not "right now".
     /// </remarks>
     public static async Task<IResult> HistoryAsync(
         Guid id,
@@ -230,7 +229,7 @@ public static class VerifyDomain
     }
 }
 
-/// <summary>One recorded verification run (FR-143).</summary>
+/// <summary>One recorded verification run.</summary>
 public sealed record DomainVerificationRecord
 {
     /// <summary>What was checked: <c>dns</c>, <c>tls</c>, <c>aasa</c> or <c>assetlinks</c>.</summary>
@@ -242,7 +241,7 @@ public sealed record DomainVerificationRecord
     /// <summary>HTTP status the association file answered with, when a request was made.</summary>
     public int? HttpStatus { get; init; }
 
-    /// <summary>How many redirects were seen. Any value above zero fails the check (TC-124).</summary>
+    /// <summary>How many redirects were seen. Any value above zero fails the check.</summary>
     public required int RedirectCount { get; init; }
 
     /// <summary>When the run happened.</summary>

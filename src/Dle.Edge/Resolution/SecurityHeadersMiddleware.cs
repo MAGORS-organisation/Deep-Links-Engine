@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Edge.Resolution;
 
 /// <summary>
-/// Writes the response hardening headers on everything the edge serves (S-04, T-11, §E.7).
+/// Writes the response hardening headers on everything the edge serves.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -27,8 +27,8 @@ namespace Dle.Edge.Resolution;
 /// path has nowhere to load a script from.
 /// </para>
 /// <para>
-/// HSTS is written only for a request that arrived over TLS. A browser ignores it on plain HTTP by
-/// specification, but a development host reached over <c>http://localhost</c> that also serves an
+/// HSTS is written only for a request that arrived over TLS. A browser ignores it on plain HTTP as
+/// RFC 6797 requires, but a development host reached over <c>http://localhost</c> that also serves an
 /// origin over TLS would otherwise pin itself, and un-pinning is a two-year wait.
 /// </para>
 /// </remarks>
@@ -45,7 +45,7 @@ public sealed class SecurityHeadersMiddleware
     /// <remarks>
     /// A resolve URL identifies the campaign. Sending it onward as a referrer would hand every target a
     /// log of which campaign delivered each visitor — a privacy leak and a competitive one — and
-    /// SHARED-KERNEL §17.5 already forbids the edge from retaining the value itself.
+    /// the edge itself is not allowed to retain the value either.
     /// </remarks>
     public const string ReferrerPolicy = "no-referrer";
 

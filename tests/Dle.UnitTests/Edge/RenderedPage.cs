@@ -25,7 +25,7 @@ internal sealed record RenderedPage(int Status, IHeaderDictionary Headers, byte[
     /// The nonce is fresh on every response and must be — a reused nonce is the same as no nonce.
     /// It is therefore the one thing that legitimately differs between two responses, and it is
     /// always the same length, so it can be masked before comparing two documents for the
-    /// indistinguishability TC-102 and TC-166 are about.
+    /// indistinguishability of a missing slug and another tenant's slug.
     /// </remarks>
     internal string HtmlWithoutNonces =>
         System.Text.RegularExpressions.Regex.Replace(

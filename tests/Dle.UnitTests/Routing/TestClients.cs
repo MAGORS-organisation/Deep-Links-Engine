@@ -7,7 +7,7 @@ using Dle.Domain.Routing;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// A clock that never moves. SHARED-KERNEL section 17.2 forbids DateTime.UtcNow; a test that reads
+/// A clock that never moves. Engine code may not read DateTime.UtcNow; a test that reads
 /// the wall clock is the same defect wearing a different hat, so every routing test either supplies
 /// ClientContext.ReceivedAt explicitly or injects this.
 /// </summary>

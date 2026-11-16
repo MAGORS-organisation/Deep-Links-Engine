@@ -3,7 +3,7 @@ using Dle.Domain.Analytics;
 namespace Dle.Domain.Ports;
 
 /// <summary>
-/// Non blocking entry point to the click stream, backed by a bounded channel (NFR-06, FR-165).
+/// Non blocking entry point to the click stream, backed by a bounded channel.
 /// </summary>
 /// <remarks>
 /// The response to a click must be delivered even when the analytics layer is down, so this sink

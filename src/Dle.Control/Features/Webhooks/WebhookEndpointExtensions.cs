@@ -17,7 +17,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// The webhook management endpoints (SHARED-KERNEL §15, §B.7.3, FR-204).
+/// The webhook management endpoints.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -74,7 +74,7 @@ public static class WebhookEndpointExtensions
             .WithDescription(
                 "The destination is resolved and checked against the same target policy a link is "
                 + "checked against, so a webhook cannot be aimed at a private, loopback or cloud "
-                + "metadata address (T-02). The response carries the shared secret exactly once.")
+                + "metadata address. The response carries the shared secret exactly once.")
             .Accepts<CreateWebhookRequest>("application/json")
             .Produces<WebhookCreatedResponse>(StatusCodes.Status201Created, "application/json")
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -266,8 +266,7 @@ public static class WebhookEndpointExtensions
         }
         catch (JsonException)
         {
-            // The parser's message quotes the offending input; it is not echoed back
-            // (SHARED-KERNEL §17.5).
+            // The parser's message quotes the offending input; it is not echoed back.
             return (default, DleProblemResults.ValidationFailed("The request body is not valid JSON."));
         }
         catch (BadHttpRequestException)

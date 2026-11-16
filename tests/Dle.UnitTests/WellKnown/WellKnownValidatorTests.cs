@@ -4,7 +4,7 @@ using Xunit;
 namespace Dle.UnitTests.WellKnown;
 
 /// <summary>
-/// FR-143, FR-144, TC-123, TC-124. Neither Apple nor Google follows a redirect to a well-known
+/// Neither Apple nor Google follows a redirect to a well-known
 /// file, so a single hop is fatal, not cosmetic. The upload-certificate case is the opposite: it is
 /// a warning, because the file may still be correct and the operator has to be told, not blocked.
 /// </summary>
@@ -23,10 +23,9 @@ public sealed class WellKnownValidatorTests
         """[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"sk.zakaznik.app","sha256_cert_fingerprints":["""
         + "\"" + Fingerprint + "\"" + "]}}]";
 
-    // ================================================================ TC-124: redirects are fatal
+    // ================================================================ redirects are fatal
 
     [Theory]
-    [Trait("TestCase", "TC-124")]
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(5)]
@@ -41,7 +40,6 @@ public sealed class WellKnownValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-124")]
     public void ValidateAssetLinks_AnyRedirect_IsAFatalError()
     {
         IReadOnlyList<WellKnownValidationIssue> issues =
@@ -51,7 +49,6 @@ public sealed class WellKnownValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-124")]
     public void ValidateAasa_HttpToHttpsRedirect_StopsBeforeParsingTheBody()
     {
         // The redirect target may well contain a perfect file; it is still not the file Apple reads.
@@ -209,10 +206,9 @@ public sealed class WellKnownValidatorTests
             ValidAssetLinks, "application/json", 200, 0, [lowercaseNoSeparators]));
     }
 
-    // ================================================================ TC-123: upload certificate
+    // ================================================================ upload certificate
 
     [Fact]
-    [Trait("TestCase", "TC-123")]
     public void ValidateAssetLinks_FingerprintOutsideANonEmptyPlaySigningList_IsAWarningNotAnError()
     {
         IReadOnlyList<WellKnownValidationIssue> issues = WellKnownValidator.ValidateAssetLinks(
@@ -230,7 +226,6 @@ public sealed class WellKnownValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-123")]
     public void ValidateAssetLinks_FingerprintInsideThePlaySigningList_IsSilent()
     {
         Assert.Empty(WellKnownValidator.ValidateAssetLinks(
@@ -243,7 +238,6 @@ public sealed class WellKnownValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-123")]
     public void ValidateAssetLinks_WithoutAPlaySigningList_CannotJudgeAndStaysSilent()
     {
         // The five argument overload is the "we do not know the Play certificates" case. Warning
@@ -252,7 +246,6 @@ public sealed class WellKnownValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-123")]
     public void LooksLikeUploadCertificate_EmptyOrNullKnownList_IsFalse()
     {
         Assert.False(WellKnownValidator.LooksLikeUploadCertificate(Fingerprint, []));
@@ -260,7 +253,6 @@ public sealed class WellKnownValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-123")]
     public void LooksLikeUploadCertificate_ComparesRegardlessOfSpelling()
     {
         string lowercaseNoSeparators = Fingerprint.Replace(":", string.Empty, StringComparison.Ordinal).ToLowerInvariant();

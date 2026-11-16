@@ -5,7 +5,7 @@ namespace Dle.Domain.Routing;
 
 /// <summary>
 /// Turns a <see cref="RoutingDecision"/> into the concrete URLs the edge redirects to or renders on
-/// the interstitial page (FR-128, §A.2.4).
+/// the interstitial page.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -13,21 +13,21 @@ namespace Dle.Domain.Routing;
 /// an authenticated operator stored — the matched rule or the link snapshot. Parameters taken from the
 /// incoming query string are restricted to <see cref="ForwardableQueryKeys"/>, are percent-encoded
 /// before they are appended, and are only ever added to the query component; the scheme, host and path
-/// of the target are copied verbatim and are structurally unreachable from request data (TC-164, §17.4).
+/// of the target are copied verbatim and are structurally unreachable from request data.
 /// </para>
 /// <para>
 /// <b>Consent is an input, not a post-filter.</b> The overloads that take a <see cref="ConsentDecision"/>
-/// are the ones the edge uses. The four-argument overloads required by the shared kernel contract
+/// are the ones the edge uses. The four-argument overloads of the public contract
 /// default to a denied consent decision, so a caller that has not run the consent gate can never emit a
-/// click-id parameter by accident (ePrivacy art. 5(3), §E.6.2, TC-145/TC-146).
+/// click-id parameter by accident (ePrivacy art. 5(3)).
 /// </para>
 /// </remarks>
 public static class RoutingUrlBuilder
 {
     /// <summary>
     /// Query parameters that may be carried from the incoming request into the target URL
-    /// (allowlist, §E.6.3). Anything not listed here is dropped, which is what makes an open redirect
-    /// through a query parameter impossible (TC-164).
+    /// (allowlist). Anything not listed here is dropped, which is what makes an open redirect
+    /// through a query parameter impossible.
     /// </summary>
     public static readonly string[] ForwardableQueryKeys =
     [
@@ -50,12 +50,12 @@ public static class RoutingUrlBuilder
     /// <summary>The query parameter carrying our own click identifier into the target and into the Play referrer.</summary>
     public const string ClickIdParameter = "dl_cid";
 
-    /// <summary>The Play Store query parameter that carries the Install Referrer string (§A.2.4).</summary>
+    /// <summary>The Play Store query parameter that carries the Install Referrer string.</summary>
     public const string ReferrerParameter = "referrer";
 
     /// <summary>
     /// Working cap on the percent-encoded Play referrer. Google does not publish a maximum length;
-    /// staying under 500 characters is the widely used safe bound (§A.2.4).
+    /// staying under 500 characters is the widely used safe bound.
     /// </summary>
     public const int MaxEncodedReferrerLength = 500;
 
@@ -77,7 +77,7 @@ public static class RoutingUrlBuilder
     private static readonly FrozenSet<string> Forwardable =
         ForwardableQueryKeys.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Schemes that must never be used for a custom-scheme deep link (T-01, §A.2.3).</summary>
+    /// <summary>Schemes that must never be used for a custom-scheme deep link.</summary>
     private static readonly FrozenSet<string> DeniedSchemes =
         new[] { "javascript", "data", "vbscript", "file", "blob", "about", "intent", "http", "https" }
             .ToFrozenSet(StringComparer.OrdinalIgnoreCase);
@@ -152,7 +152,7 @@ public static class RoutingUrlBuilder
                 break;
 
             case Platform.Ios:
-                // iOS has no click-id channel through the App Store at all (§A.2.4); only the campaign
+                // iOS has no click-id channel through the App Store at all; only the campaign
                 // token travels, and only when the operator has not already set one.
                 ApplyAppleCampaign(parts, link);
                 break;
@@ -180,7 +180,7 @@ public static class RoutingUrlBuilder
         BuildWebUrl(decision, link, client, clickId, NoConsent);
 
     /// <summary>
-    /// Builds the web fallback URL for the decision (FR-128).
+    /// Builds the web fallback URL for the decision.
     /// </summary>
     /// <param name="decision">The routing decision.</param>
     /// <param name="link">The link snapshot, supplying the target URL and the UTM defaults.</param>
@@ -208,7 +208,7 @@ public static class RoutingUrlBuilder
         string target = AbsoluteWebUrl(decision.WebUrl) ?? AbsoluteWebUrl(link.TargetUrl) ?? link.TargetUrl;
 
         // Only the query component of `target` is ever touched below; its scheme, host and path are
-        // copied verbatim into the result, which is what makes TC-164 structurally impossible.
+        // copied verbatim into the result, which is what makes an open redirect structurally impossible.
         UrlParts parts = Split(target);
 
         var locked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -245,7 +245,7 @@ public static class RoutingUrlBuilder
             Set(parts.Query, Uri.EscapeDataString(query.Key), Uri.EscapeDataString(query.Value ?? string.Empty));
         }
 
-        // 3. Our own click id, only with consent (FR-128, §E.6.2). It is written last and overwrites any
+        // 3. Our own click id, only with consent. It is written last and overwrites any
         //    value already present, because a stale dl_cid must never be mistaken for this click.
         if (consent.AllowClickIdLinking && !string.IsNullOrEmpty(clickId))
         {
@@ -283,7 +283,7 @@ public static class RoutingUrlBuilder
     /// <returns>The deep link URL, or <see langword="null"/> when the link has no deep link target.</returns>
     /// <remarks>
     /// Any application may register the same custom scheme and no operating system verifies the claim
-    /// (§A.2.3, CVE-2026-26123), so nothing but the click id is ever placed on a custom-scheme URL, and
+    /// (CVE-2026-26123), so nothing but the click id is ever placed on a custom-scheme URL, and
     /// web schemes are refused as a "custom" scheme so that this cannot be turned into an open redirect.
     /// </remarks>
     public static string? BuildDeeplinkUrl(
@@ -327,7 +327,7 @@ public static class RoutingUrlBuilder
 
     /// <summary>
     /// Expands the referrer template, encodes the whole result exactly once and installs it as the Play
-    /// Store <c>referrer</c> parameter (§A.2.4). Encoding once — not per pair — is deliberate: Play hands
+    /// Store <c>referrer</c> parameter. Encoding once — not per pair — is deliberate: Play hands
     /// the string back to the application verbatim after a single decode.
     /// </summary>
     private static void ApplyPlayReferrer(
@@ -448,7 +448,7 @@ public static class RoutingUrlBuilder
     /// <summary>
     /// App Store campaign links carry <c>pt</c> (provider), <c>ct</c> (campaign) and <c>mt</c> (media type).
     /// Whatever the operator already put on the store URL is authoritative; only a missing campaign token
-    /// is filled in from the link's own UTM campaign (TC-101).
+    /// is filled in from the link's own UTM campaign.
     /// </summary>
     private static void ApplyAppleCampaign(UrlParts parts, LinkSnapshot link)
     {
@@ -582,7 +582,7 @@ public static class RoutingUrlBuilder
 
     /// <summary>
     /// Accepts a custom scheme only if it is a syntactically valid URI scheme that is neither a web
-    /// scheme nor one of the schemes that can execute code in a browser (T-01).
+    /// scheme nor one of the schemes that can execute code in a browser.
     /// </summary>
     private static string? NormalizeCustomScheme(string? customScheme)
     {

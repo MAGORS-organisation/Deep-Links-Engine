@@ -4,7 +4,7 @@ import { problemKeyOf, type ProblemKey } from './problems';
 /**
  * Where the console talks to and with what. Kept in session storage by default so a credential
  * does not outlive the tab; "remember on this device" moves it to local storage, which is the
- * operator's explicit choice (§E.4.1 K5: keys are replaceable, never recoverable).
+ * operator's explicit choice (keys are replaceable, never recoverable).
  *
  * This is a recorded decision, not an oversight. CodeQL reports the write below as clear-text
  * storage of sensitive data (js/clear-text-storage-of-sensitive-data), and it is: the browser has
@@ -13,7 +13,7 @@ import { problemKeyOf, type ProblemKey } from './problems';
  * which is what makes the console usable as a console rather than a form to be refilled. The
  * mitigations are elsewhere: the control host serves the console under a Content-Security-Policy
  * that allows scripts and styles only from the console's own files, no framing and network access
- * only to the control plane and the configured identity provider (T-11,
+ * only to the control plane and the configured identity provider (see
  * src/Dle.Control/Infrastructure/AdminConsoleSecurityHeaders.cs); the key is a tenant-scoped
  * credential the operator can revoke; and the default scope is the tab. The alert is dismissed on
  * the repository with this reasoning.

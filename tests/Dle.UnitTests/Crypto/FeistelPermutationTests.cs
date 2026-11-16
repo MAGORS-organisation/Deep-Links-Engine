@@ -6,7 +6,7 @@ using Xunit;
 namespace Dle.UnitTests.Crypto;
 
 /// <summary>
-/// ADR-007 makes the slug space collision free <em>by construction</em>: the sequence to slug
+/// The slug space is collision free <em>by construction</em>: the sequence to slug
 /// mapping is a keyed permutation, so link creation needs no retry against a unique index. That
 /// guarantee is worth exactly as much as the bijection is real. A defect here is silent — two
 /// campaigns would quietly receive the same slug months after launch — so the property is proved

@@ -105,7 +105,7 @@ public static class Sql
     /// <param name="dataSource">The data source.</param>
     /// <param name="sql">The statement to explain, without the <c>EXPLAIN</c> prefix.</param>
     /// <param name="options">
-    /// The <c>EXPLAIN</c> option list, for example <c>ANALYZE, BUFFERS</c>. §B.5.2 asks for exactly
+    /// The <c>EXPLAIN</c> option list, for example <c>ANALYZE, BUFFERS</c>. The index checks use exactly
     /// those two, because only <c>ANALYZE</c> proves the plan was executed and only <c>BUFFERS</c>
     /// shows whether the heap was touched.
     /// </param>

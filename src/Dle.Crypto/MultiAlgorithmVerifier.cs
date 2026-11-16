@@ -1,7 +1,7 @@
 namespace Dle.Crypto;
 
 /// <summary>
-/// Verifies signatures made with any algorithm and key the deployment currently accepts (§E.4.2).
+/// Verifies signatures made with any algorithm and key the deployment currently accepts.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -32,8 +32,8 @@ public sealed class MultiAlgorithmVerifier : IVerifier
     /// <param name="acceptedAlgorithms">Algorithms to accept. Anything else is refused.</param>
     /// <param name="keys">Keys the verifier may use. A duplicate identifier keeps the first key,
     /// so a stale row cannot displace the one already in use.</param>
-    /// <param name="timeProvider">Clock used to test validity windows. SHARED-KERNEL §17.2 rules
-    /// out reading the machine clock directly.</param>
+    /// <param name="timeProvider">Clock used to test validity windows. The machine clock is never
+    /// read directly.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public MultiAlgorithmVerifier(
         IEnumerable<string> acceptedAlgorithms,

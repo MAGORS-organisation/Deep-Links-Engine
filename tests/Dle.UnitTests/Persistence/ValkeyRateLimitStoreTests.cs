@@ -22,7 +22,7 @@ namespace Dle.UnitTests.Persistence;
 
 /// <summary>
 /// Distributed Valkey rate limiting &amp; 404 shadow bans (<see cref="ValkeyRateLimitStore"/>), plus
-/// automatic in-memory fallback when Valkey is null or throws transient errors (A4, §E.9).
+/// automatic in-memory fallback when Valkey is null or throws transient errors.
 /// </summary>
 public sealed class ValkeyRateLimitStoreTests
 {

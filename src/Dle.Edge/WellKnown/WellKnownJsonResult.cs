@@ -17,7 +17,7 @@ namespace Dle.Edge.WellKnown;
 /// The response is assembled by hand rather than through <see cref="Results.Content(string, string?, Encoding?)"/>
 /// because the content type has to be the bare string <c>application/json</c>. Passing an encoding to
 /// the helper appends <c>; charset=utf-8</c>, and a charset parameter is exactly the kind of detail that
-/// makes an association fail with no diagnostic anywhere (§A.2.1, TC-121). Writing
+/// makes an association fail with no diagnostic anywhere. Writing
 /// <see cref="HttpResponse.ContentType"/> directly is the only way to be certain of the header's bytes.
 /// </para>
 /// <para>
@@ -90,7 +90,7 @@ internal sealed class WellKnownJsonResult : IResult
         if (!EntityTagHeaderValue.TryParseList(ifNoneMatch, out IList<EntityTagHeaderValue>? candidates))
         {
             // Unparseable validator: serve the full document. Guessing would risk a stale association
-            // file living on a device for a week (§A.2.1).
+            // file living on a device for a week.
             return false;
         }
 

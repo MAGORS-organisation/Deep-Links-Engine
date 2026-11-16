@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Registers the control-plane persistence module (SHARED-KERNEL §15).
+/// Registers the control-plane persistence module.
 /// </summary>
 public static class DlePersistenceServiceCollectionExtensions
 {
@@ -35,7 +35,7 @@ public static class DlePersistenceServiceCollectionExtensions
     /// The context is registered with <c>AddDbContext</c> and not with the pooling variant on
     /// purpose: a pooled context may only take <c>DbContextOptions</c> in its constructor, and this
     /// one also takes the tenant context and the clock. Pooling buys throughput on the resolve
-    /// path, which does not use EF Core at all (ADR-004), so there is nothing to trade away here.
+    /// path, which does not use EF Core at all, so there is nothing to trade away here.
     /// </para>
     /// </remarks>
     public static IServiceCollection AddDlePersistence(
@@ -52,7 +52,7 @@ public static class DlePersistenceServiceCollectionExtensions
         {
             throw new InvalidOperationException(
                 "The control plane needs a PostgreSQL connection string in " +
-                "ConnectionStrings:Postgres (§C.4). Set it before calling AddDlePersistence.");
+                "ConnectionStrings:Postgres. Set it before calling AddDlePersistence.");
         }
 
         services.AddOptions<DlePersistenceOptions>()
@@ -115,7 +115,7 @@ public static class DlePersistenceServiceCollectionExtensions
             provider => provider.GetRequiredService<WebhookRepository>());
 
         // Singleton: it holds a claimed block of counter values in memory and hands them out
-        // without a round trip (ADR-007). It opens its own scopes for the rare refill.
+        // without a round trip. It opens its own scopes for the rare refill.
         services.TryAddSingleton<SlugSequenceAllocator>();
 
         return services;

@@ -37,7 +37,7 @@ public sealed class EdgeApiFactory : WebApplicationFactory<EdgeOptions>
     /// <remarks>
     /// The rate limit partition, the hashed identifier in the click stream and the geographic lookup
     /// all derive from <c>RemoteIpAddress</c>, which a test server leaves null. Without a way to set it
-    /// every request in a run shares one bucket, and the one property TC-108 is about — that a
+    /// every request in a run shares one bucket, and the one property the 404 budget is about — that a
     /// scanner's prefix is banned and everybody else's is not — could not be expressed at all.
     /// </remarks>
     public const string ClientAddressHeader = "X-Dle-Test-Client-Ip";
@@ -56,7 +56,7 @@ public sealed class EdgeApiFactory : WebApplicationFactory<EdgeOptions>
 
     /// <summary>Whether a user agent claiming to be a crawler is confirmed.</summary>
     /// <remarks>
-    /// Off by default, which is the TC-107 posture: an unconfirmed claim is served as an ordinary
+    /// Off by default, which is the spoofed-crawler posture: an unconfirmed claim is served as an ordinary
     /// browser. The Open Graph paths turn it on.
     /// </remarks>
     public bool ConfirmCrawlers { get; init; }
@@ -71,13 +71,13 @@ public sealed class EdgeApiFactory : WebApplicationFactory<EdgeOptions>
 
             ["Dle:Crypto:MasterSecret"] = "dle-security-tests-master-secret-000000000000000",
 
-            // No database file on this machine, and NFR-14 already requires the edge to treat a missing
+            // No database file on this machine, and the edge already has to treat a missing
             // one as "no geography" rather than as an error.
             ["Dle:Edge:GeoIp:Provider"] = "None",
             ["Dle:Edge:GeoIp:AutoUpdate"] = "false",
 
             // Logging is deliberately NOT overridden here. src/Dle.Edge/appsettings.json is loaded
-            // from the content root like it is in a deployment, and S-08 is a claim about what a
+            // from the content root like it is in a deployment, and log redaction is a claim about what a
             // deployment emits — a harness that quietened the framework's own request logging would
             // turn the log redaction tests into a check of the harness.
         };
@@ -89,7 +89,7 @@ public sealed class EdgeApiFactory : WebApplicationFactory<EdgeOptions>
     /// Rate limiter and enumeration-guard state is process-wide and outlives a request, so a suite that
     /// shared one host between the tests that exhaust a budget and the tests that merely make a few
     /// thousand requests would have the first silently change the meaning of the second. The tests that
-    /// are about a limit build their own host with the §E.9 defaults; everybody else raises the limits
+    /// are about a limit build their own host with the shipped defaults; everybody else raises the limits
     /// out of the way here.
     /// </remarks>
     public Dictionary<string, string?> Overrides { get; } = new(StringComparer.Ordinal);

@@ -9,7 +9,7 @@ using Xunit;
 namespace Dle.UnitTests.Crypto;
 
 /// <summary>
-/// An API key is stored as an Argon2id hash and compared in fixed time (§E.4, S-03). The timing
+/// An API key is stored as an Argon2id hash and compared in fixed time. The timing
 /// property is asserted structurally rather than by measurement: a timing assertion on a shared CI
 /// runner is flaky, and a green flaky test proves nothing.
 /// </summary>
@@ -199,7 +199,7 @@ public sealed class ApiKeyHashingTests
     }
 
     /// <summary>
-    /// S-03. The comparison of a derived hash with the stored one must not exit early: an early
+    /// The comparison of a derived hash with the stored one must not exit early: an early
     /// exit turns key verification into a byte-at-a-time search.
     /// </summary>
     [Fact]

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// Maps the abuse handling routes (SHARED-KERNEL §15, FR-245, §E.3).
+/// Maps the abuse handling routes.
 /// </summary>
 /// <remarks>
 /// <para>

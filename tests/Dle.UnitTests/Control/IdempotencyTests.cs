@@ -15,7 +15,7 @@ namespace Dle.UnitTests.Control;
 /// <summary>
 /// <c>Idempotency-Key</c> has to make a retried write safe and an accidentally reused key loud: the
 /// same key with the same body replays the stored response, the same key with a different body is a
-/// conflict rather than a second write (§B.7.3).
+/// conflict rather than a second write.
 /// </summary>
 /// <remarks>
 /// <para>

@@ -7,7 +7,7 @@ namespace Dle.UnitTests.Crypto;
 
 /// <summary>
 /// A generated slug is exactly eight base62 characters, is recoverable with the key, and reveals
-/// neither the order nor the volume of link creation (ADR-007).
+/// neither the order nor the volume of link creation.
 /// </summary>
 public sealed class SlugGeneratorTests
 {

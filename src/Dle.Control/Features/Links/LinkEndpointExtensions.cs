@@ -9,14 +9,14 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// Maps the link management routes (SHARED-KERNEL §15, §B.7.3).
+/// Maps the link management routes.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Every route carries an authorization policy and a rate limit policy by name. That is not
 /// ceremony: the authorization fallback denies anything without one, and the rate limiter's global
 /// limiter treats an unclassified API route as suspect, so forgetting either is a failure that shows
-/// up immediately rather than a hole that shows up later (SHARED-KERNEL §17.9).
+/// up immediately rather than a hole that shows up later.
 /// </para>
 /// <para>
 /// The literal <c>templates</c> segment is registered alongside <c>{id}</c>. ASP.NET Core's route
@@ -253,7 +253,7 @@ public static class LinkEndpointExtensions
             .ProducesProblem(StatusCodes.Status404NotFound);
     }
 
-    /// <summary>Maps the link template routes (FR-108).</summary>
+    /// <summary>Maps the link template routes.</summary>
     /// <param name="links">The link route group.</param>
     private static void MapTemplateRoutes(RouteGroupBuilder links)
     {

@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="Campaign"/> to the <c>campaigns</c> table (§B.5.2).</summary>
+/// <summary>Maps <see cref="Campaign"/> to the <c>campaigns</c> table.</summary>
 public sealed class CampaignConfiguration : IEntityTypeConfiguration<Campaign>
 {
     /// <inheritdoc />

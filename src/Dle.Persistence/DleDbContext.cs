@@ -6,15 +6,15 @@ using Microsoft.EntityFrameworkCore.Metadata;
 namespace Dle.Persistence;
 
 /// <summary>
-/// The control-plane database context (ADR-004). Owns the schema for every table in §B.5.2 and,
-/// through its migrations, for the partitioned click stream of §B.5.3 as well.
+/// The control-plane database context. Owns the schema for every control-plane table and,
+/// through its migrations, for the partitioned click stream as well.
 /// </summary>
 /// <remarks>
 /// <para>
 /// EF Core is deliberately confined to the control plane. The resolve path never sees this class:
 /// it runs one hand written statement through Dapper, because change tracking and entity
 /// materialization cost hundreds of microseconds out of an eight millisecond budget and close the
-/// door on ahead of time compilation (ADR-004). What EF Core owns here is the part where
+/// door on ahead of time compilation. What EF Core owns here is the part where
 /// productivity beats microseconds — CRUD, relationships, and above all the migrations, which are
 /// the single source of truth about the schema that the Dapper queries then depend on.
 /// </para>
@@ -24,7 +24,7 @@ namespace Dle.Persistence;
 /// rows. They are applied centrally in <see cref="OnModelCreating"/> rather than in the individual
 /// entity configurations, and the model build fails if any mapped entity type is neither covered
 /// nor listed as deliberately exempt — so adding an entity forces the decision instead of allowing
-/// it to be forgotten (FR-241, T-09).
+/// it to be forgotten.
 /// </para>
 /// </remarks>
 public sealed class DleDbContext : DbContext
@@ -48,7 +48,7 @@ public sealed class DleDbContext : DbContext
     private static readonly Dictionary<Type, string> TenantExemptEntityTypes = new()
     {
         [typeof(AppDomainEntity)] =
-            "Join table of apps and domains (§B.5.2 has no tenant_id on it). Both sides are " +
+            "Join table of apps and domains (the table has no tenant_id). Both sides are " +
             "tenant filtered, and AppRepository only ever reaches it through them.",
         [typeof(LinkVersion)] =
             "History rows hang off links.id and carry no tenant column. LinkRepository always " +
@@ -57,7 +57,7 @@ public sealed class DleDbContext : DbContext
             "Check results hang off domains.id and carry no tenant column. DomainRepository " +
             "always joins through the tenant filtered domain.",
         [typeof(SlugSequence)] =
-            "The slug counter is one instance wide space (ADR-007); tenants must not be able to " +
+            "The slug counter is one instance wide space; tenants must not be able to " +
             "influence, observe or exhaust each other's slugs by having their own.",
     };
 
@@ -202,8 +202,8 @@ public sealed class DleDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         // citext gives case insensitive slugs and hosts without a lower() functional index on every
-        // lookup, which matters because the resolve index has to stay usable for an index only scan
-        // (§B.5.2). pg_partman is deliberately not declared here: it is optional, and a missing
+        // lookup, which matters because the resolve index has to stay usable for an index only scan.
+        // pg_partman is deliberately not declared here: it is optional, and a missing
         // extension must degrade to a warning rather than fail the migration.
         modelBuilder.HasPostgresExtension("citext");
 
@@ -255,8 +255,8 @@ public sealed class DleDbContext : DbContext
         Scope<AuditLogEntry>(e => e.TenantId == TenantFilterValue);
         Scope<IdempotencyRecord>(r => r.TenantId == TenantFilterValue);
 
-        // A signing key with no tenant is the instance wide key every tenant verifies against
-        // (§E.4.2), so the filter admits it alongside the tenant's own keys.
+        // A signing key with no tenant is the instance wide key every tenant verifies against,
+        // so the filter admits it alongside the tenant's own keys.
         Scope<SigningKeyRecord>(k => k.TenantId == null || k.TenantId == TenantFilterValue);
 
         VerifyEveryEntityTypeIsClassified(modelBuilder, filtered);
@@ -268,7 +268,7 @@ public sealed class DleDbContext : DbContext
     /// <param name="modelBuilder">The model under construction.</param>
     /// <remarks>
     /// A quarantined link is not deleted — the edge still has to find it to answer 410 rather than
-    /// 404 (TC-103) — but it has no business appearing in the tenant's ordinary link list. That is
+    /// 404 — but it has no business appearing in the tenant's ordinary link list. That is
     /// exactly the distinction a second, separately nameable filter buys: the control plane hides it
     /// by default and asks for it back with
     /// <see cref="DleQueryableExtensions.IncludeSoftDeleted{TEntity}"/> when the operator wants to
@@ -331,8 +331,7 @@ public sealed class DleDbContext : DbContext
                     $"Entity type {clrType.Name} is neither tenant filtered nor listed in " +
                     $"DleDbContext.TenantExemptEntityTypes. Either give it a " +
                     $"'{DleQueryFilters.Tenant}' query filter in " +
-                    $"DleDbContext.ApplyTenantFilters, or record there why it is instance wide " +
-                    $"(FR-241, T-09)."));
+                    $"DleDbContext.ApplyTenantFilters, or record there why it is instance wide."));
             }
         }
     }

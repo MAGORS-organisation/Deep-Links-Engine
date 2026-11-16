@@ -6,7 +6,7 @@ using Xunit;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// FR-125. The A/B split is a condition like any other: a rule whose cumulative percentage does not
+/// The A/B split is a condition like any other: a rule whose cumulative percentage does not
 /// reach the click's bucket simply does not match, and evaluation continues. That is the part that
 /// is easy to get wrong — an implementation that "falls back to the first variant" silently turns a
 /// 10 % experiment into a 100 % rollout.

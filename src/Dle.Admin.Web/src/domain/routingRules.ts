@@ -279,7 +279,7 @@ export function normalizeRules(rules: readonly RoutingRule[]): RoutingRule[] {
   });
 }
 
-/** Builds the two platform fallback rules FR-102 asks for, in front of the existing default rule. */
+/** Builds the two platform fallback rules, in front of the existing default rule. */
 export function platformFallbackRules(iosStoreUrl: string, androidStoreUrl: string, deeplinkPath?: string): RoutingRule[] {
   const rules: RoutingRule[] = [];
   if (iosStoreUrl.trim()) {

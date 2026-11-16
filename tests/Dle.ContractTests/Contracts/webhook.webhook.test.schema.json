@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DLE webhook payload: webhook.test",
-  "description": "A delivery produced by the test endpoint, never by a real event. Envelope per docs/zadanie.md B.7.4.",
+  "description": "A delivery produced by the test endpoint, never by a real event.",
   "type": "object",
   "additionalProperties": false,
   "required": [

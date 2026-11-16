@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Control.Configuration;
 
 /// <summary>
-/// Authentication configuration bound from the <c>Dle:Identity</c> section (FR-242).
+/// Authentication configuration bound from the <c>Dle:Identity</c> section.
 /// </summary>
 public sealed class DleIdentityOptions
 {
@@ -29,7 +29,7 @@ public sealed class DleIdentityOptions
     /// <remarks>
     /// A deployment with no mobile SDK in the field can switch the whole scheme off. It is a
     /// separate switch from the control-plane key scheme on purpose: the two credentials share
-    /// nothing but the transport (§E.2.1, TB2).
+    /// nothing but the transport.
     /// </remarks>
     public bool EnableSdkKeys { get; set; } = true;
 
@@ -39,7 +39,7 @@ public sealed class DleIdentityOptions
     /// <remarks>
     /// It must differ from <c>Dle:Crypto:ApiKeyPrefix</c>. If the two matched, a control-plane key
     /// and an application key would be indistinguishable before verification, and the scheme
-    /// separation that §E.2.1 TB2 rests on would collapse into a lookup order. The composition root
+    /// separation, which is a trust boundary, would collapse into a lookup order. The composition root
     /// refuses to start when they are equal.
     /// </remarks>
     [Required]
@@ -52,7 +52,7 @@ public sealed class DleIdentityOptions
 }
 
 /// <summary>
-/// OpenID Connect settings for the administration UI (FR-242).
+/// OpenID Connect settings for the administration UI.
 /// </summary>
 /// <remarks>
 /// The whole block is optional. An API-only, self-hosted deployment authenticates with API keys and
@@ -81,7 +81,7 @@ public sealed class DleOidcOptions
     /// </summary>
     /// <remarks>
     /// Without it a token from the identity provider cannot establish a tenant, and the request is
-    /// refused rather than served against an arbitrary one (SHARED-KERNEL §17.9).
+    /// refused rather than served against an arbitrary one.
     /// </remarks>
     [Required]
     [StringLength(128, MinimumLength = 1)]

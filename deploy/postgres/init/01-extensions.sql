@@ -9,7 +9,7 @@
 CREATE EXTENSION IF NOT EXISTS citext;
 
 -- ----------------------------------------------------------------------------
--- pg_partman — daily click_events partitions and 180-day retention (docs/zadanie.md §B.5.2).
+-- pg_partman — daily click_events partitions and 180-day retention.
 --
 -- The OFFICIAL postgres image does NOT contain pg_partman, so this block is guarded: it installs
 -- the extension when the server has it available and only warns when it has not. Options:

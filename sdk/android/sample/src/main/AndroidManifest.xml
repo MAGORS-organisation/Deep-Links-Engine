@@ -30,7 +30,7 @@
             </intent-filter>
 
             <!--
-              Android App Links (spec §A.2.2, FR-144). autoVerify makes the system fetch
+              Android App Links. autoVerify makes the system fetch
               https://link.example.sk/.well-known/assetlinks.json at install time and, when the
               SHA-256 of the signing certificate matches, open https://link.example.sk/... in this
               app directly, with no chooser. Only https and only the exact host: a custom scheme

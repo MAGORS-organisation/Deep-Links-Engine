@@ -8,13 +8,13 @@ using Microsoft.Extensions.Logging;
 namespace Dle.Persistence.Fast.Telemetry;
 
 /// <summary>
-/// Drains the bounded click event channel and writes it out in batches (§C.3.2).
+/// Drains the bounded click event channel and writes it out in batches.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The batching rule is "up to <c>ClickEventBatchSize</c> rows or <c>ClickEventFlushMilliseconds</c>,
-/// whichever comes first". Both halves matter: the row cap is what makes the throughput target of
-/// §C.3.2 reachable, and the time cap is what keeps a quiet tenant's single click from sitting in
+/// whichever comes first". Both halves matter: the row cap is what makes the throughput target
+/// reachable, and the time cap is what keeps a quiet tenant's single click from sitting in
 /// memory until the next busy period — and from being lost if the process is replaced first.
 /// </para>
 /// <para>
@@ -26,7 +26,7 @@ namespace Dle.Persistence.Fast.Telemetry;
 /// </para>
 /// <para>
 /// No wall clock is read anywhere: the flush deadline comes from the injected
-/// <see cref="TimeProvider"/>, which is also what makes the timing testable (SHARED-KERNEL §17.2).
+/// <see cref="TimeProvider"/>, which is also what makes the timing testable.
 /// </para>
 /// </remarks>
 public sealed partial class ClickEventBatchWriter : BackgroundService
@@ -212,7 +212,7 @@ public sealed partial class ClickEventBatchWriter : BackgroundService
         // The drain loop is the last line of defence for the response path: whatever a driver, a
         // network stack or a serializer throws here, the loop has to survive it and keep draining.
         // The failure is never swallowed — it is logged with its exception and counted on
-        // dle_event_batch_failures, which is what makes it visible (SHARED-KERNEL §17.9).
+        // dle_event_batch_failures, which is what makes it visible.
         catch (Exception ex)
 #pragma warning restore CA1031
         {

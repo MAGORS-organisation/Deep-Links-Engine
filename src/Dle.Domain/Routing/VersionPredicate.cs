@@ -3,7 +3,7 @@ using Dle.Domain.Primitives;
 namespace Dle.Domain.Routing;
 
 /// <summary>
-/// Version constraint on an OS or application version (FR-124).
+/// Version constraint on an OS or application version.
 /// All bounds that are present must hold at the same time.
 /// </summary>
 public sealed record VersionPredicate

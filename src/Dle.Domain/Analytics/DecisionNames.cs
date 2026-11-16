@@ -4,7 +4,7 @@ using Dle.Domain.Routing;
 namespace Dle.Domain.Analytics;
 
 /// <summary>
-/// Canonical values of the <c>click_events.decision</c> column (specification §B.5.3).
+/// Canonical values of the <c>click_events.decision</c> column.
 /// The wire and storage representation of <see cref="DecisionKind"/> is a stable lowercase
 /// string so that the column stays readable in the database and survives enum renumbering.
 /// </summary>

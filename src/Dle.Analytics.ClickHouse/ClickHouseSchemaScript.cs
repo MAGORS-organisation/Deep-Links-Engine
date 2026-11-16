@@ -8,7 +8,7 @@ namespace Dle.Analytics.ClickHouse;
 /// <c>MergeTree</c> click stream partitioned by month, ordered by
 /// <c>(tenant_id, link_id, occurred_at)</c> and expired by a <c>TTL</c> that matches the
 /// configured retention window, plus the mirror tables the funnel and attribution-quality
-/// reports read (ADR-006, FR-247).
+/// reports read.
 /// </summary>
 /// <remarks>
 /// Applying the script is an operator action, not a startup action: a deployment that has not

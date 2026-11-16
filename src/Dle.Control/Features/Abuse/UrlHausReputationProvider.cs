@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Abuse;
 
 /// <summary>
-/// Consults URLhaus (abuse.ch) about a target URL (§E.3 step 3).
+/// Consults URLhaus (abuse.ch) about a target URL.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -25,7 +25,7 @@ namespace Dle.Control.Features.Abuse;
 /// The response is read with <see cref="JsonDocument"/> rather than deserialised into a type. The
 /// document is a third party's contract that changes without notice, and reading the three members
 /// that matter is more robust than binding a shape; it also keeps reflective serialization out of
-/// the assembly entirely (SHARED-KERNEL §0).
+/// the assembly entirely.
 /// </para>
 /// </remarks>
 public sealed class UrlHausReputationProvider : IUrlReputationProvider
@@ -82,7 +82,7 @@ public sealed class UrlHausReputationProvider : IUrlReputationProvider
             "A reputation source is an optional opinion from a third party. Whatever its client "
             + "throws — transport, timeout, malformed JSON — the answer is 'no opinion', which the "
             + "caller already treats as not-approved. The failure is logged and counted on "
-            + "dle_abuse_lookup_failures rather than swallowed (SHARED-KERNEL §17.9).")]
+            + "dle_abuse_lookup_failures rather than swallowed.")]
     public async ValueTask<UrlSafetyVerdict?> CheckAsync(Uri url, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(url);

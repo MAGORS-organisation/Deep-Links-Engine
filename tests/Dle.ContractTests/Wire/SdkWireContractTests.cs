@@ -1,7 +1,7 @@
 namespace Dle.ContractTests.Wire;
 
 /// <summary>
-/// The SDK wire contract of §B.7.2, asserted against literal JSON.
+/// The SDK wire contract, asserted against literal JSON.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -9,11 +9,11 @@ namespace Dle.ContractTests.Wire;
 /// against this assembly. A rename here is not caught by the compiler, is not caught by a round-trip
 /// test — a serializer that renames a property still reads back what it wrote — and is not caught by
 /// an integration test that uses the same DTO on both ends. It is caught by comparing the produced
-/// bytes to the bytes in the specification, which is what these tests do.
+/// bytes to the published bytes, which is what these tests do.
 /// </para>
 /// <para>
-/// The literals below are transcribed from §B.7.2. Where the specification abbreviates a value with
-/// an ellipsis the value is filled in, but no property is added, removed or renamed. If one of these
+/// The literals below are the published wire shapes, with every value filled in and no property
+/// added, removed or renamed. If one of these
 /// assertions fails, the correct response is almost never to update the literal: it is to restore the
 /// property, or to accept that the wire format has a new major version and every SDK needs a release.
 /// </para>
@@ -25,8 +25,7 @@ public sealed class SdkWireContractTests
         new(2026, 9, 3, 10, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
-    public void ResolveRequestDto_SerializesToTheSnakeCaseShapeOfB72()
+    public void ResolveRequestDto_SerializesToThePublishedSnakeCaseShape()
     {
         ResolveRequestDto request = new()
         {
@@ -49,8 +48,7 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
-    public void ResolveResponseDto_SerializesToTheSnakeCaseShapeOfB72()
+    public void ResolveResponseDto_SerializesToThePublishedSnakeCaseShape()
     {
         ResolveResponseDto response = new()
         {
@@ -82,8 +80,7 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
-    public void EventBatchDto_SerializesToTheSnakeCaseShapeOfB72()
+    public void EventBatchDto_SerializesToThePublishedSnakeCaseShape()
     {
         EventBatchDto batch = new()
         {
@@ -111,7 +108,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void EventBatchAcceptedDto_SerializesToItsTwoCounters()
     {
         const string expected = """{"accepted":2,"rejected":0}""";
@@ -122,8 +118,7 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
-    public void ResolveRequestDto_DeserializesTheExampleBodyFromTheSpecification()
+    public void ResolveRequestDto_DeserializesThePublishedExampleBody()
     {
         const string body =
             """
@@ -156,7 +151,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void ResolveRequestDto_CamelCaseNames_AreNotAccepted()
     {
         // Property matching is case sensitive on purpose (DleJson.Default). An SDK that sends
@@ -170,7 +164,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void ResolveLinkRequestDto_DeserializesTheBodyTheMobileSdksSend()
     {
         // The exact literal asserted by the iOS (WireContractTests.swift) and Android
@@ -194,7 +187,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void ResolveResponseDto_OmitsAbsentOptionalMembers()
     {
         // An unmatched install is a 200 with matched=false, and the SDKs treat the absence of
@@ -212,7 +204,6 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void Params_KeysKeepTheirOriginalSpelling()
     {
         // The naming policy renames properties, never dictionary keys. UTM parameters and custom data
@@ -237,14 +228,12 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
-    public void EventBatch_MaximumSize_IsTheHundredEventsOfB72()
+    public void EventBatch_MaximumSize_IsAHundredEvents()
     {
         Assert.Equal(100, EventBatchDto.MaxEventsPerBatch);
     }
 
     [Theory]
-    [Trait("Contract", "B.7.2")]
     [InlineData("""{"install_id":"a","platform":"ios",}""")]
     [InlineData("""{"install_id":"a","platform":"ios" /* comment */}""")]
     public void WireFormat_RejectsLenientJson(string body)
@@ -256,10 +245,9 @@ public sealed class SdkWireContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.2")]
     public void WireFormat_RejectsDeeplyNestedPayloads()
     {
-        // A depth cap is the cheap half of the T-12 defence: a hostile payload cannot exhaust the
+        // A depth cap is the cheap half of the deserialization defence: a hostile payload cannot exhaust the
         // stack before any of the product's own validation has run.
         string nested = string.Concat(Enumerable.Repeat("""{"properties":""", 64))
             + "{}"

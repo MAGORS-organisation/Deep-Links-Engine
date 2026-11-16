@@ -3,7 +3,6 @@
   <!--
     .NET Aspire app host for local development: brings up PostgreSQL, Valkey,
     the Aspire dashboard, Dle.Edge and Dle.Control with one command.
-    docs/zadanie.md §C.1 (deploy/aspire) and §C.2 (Aspire 13.5).
 
     The Aspire.AppHost.Sdk version is pinned in global.json under msbuild-sdks,
     so no Version attribute belongs here either.

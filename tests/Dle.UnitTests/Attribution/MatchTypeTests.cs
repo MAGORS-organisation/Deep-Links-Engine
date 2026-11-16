@@ -5,7 +5,7 @@ using MatchType = Dle.Domain.Attribution.MatchType;
 namespace Dle.UnitTests.Attribution;
 
 /// <summary>
-/// FR-186: every attribution carries a match type and a confidence, and the names are a wire
+/// Every attribution carries a match type and a confidence, and the names are a wire
 /// contract shared with the SDK response and the attribution_records table.
 /// </summary>
 public sealed class MatchTypeTests
@@ -58,7 +58,6 @@ public sealed class MatchTypeTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-142")]
     public void NoMatch_CarriesTheReasonAndNothingElse()
     {
         AttributionResult result = AttributionResult.NoMatch("no_dl_cid_in_referrer");
@@ -80,7 +79,6 @@ public sealed class MatchTypeTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-141")]
     public void DeterministicMatch_IsExpressedAsConfidenceOne()
     {
         AttributionResult result = new()

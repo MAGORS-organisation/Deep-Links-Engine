@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Workers;
 
 /// <summary>
-/// Drains the webhook outbox: signs, delivers, retries, dead letters (§B.3 component C-10, FR-204).
+/// Drains the webhook outbox: signs, delivers, retries, dead letters.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -31,7 +31,7 @@ namespace Dle.Control.Workers;
 /// What cannot be delivered is dead lettered, counted, and left in the table. It is not deleted and
 /// it is not retried forever. <c>dle_webhook_dlq_size</c> is published every pass so that the
 /// failure is loud: every row in that queue is data the customer was promised and never received,
-/// and a silent one is worse than none at all (§C.6).
+/// and a silent one is worse than none at all.
 /// </para>
 /// </remarks>
 public sealed partial class WebhookDispatchWorker : LeaderElectedBackgroundService

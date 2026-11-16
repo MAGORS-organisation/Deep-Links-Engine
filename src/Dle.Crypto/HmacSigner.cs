@@ -2,11 +2,11 @@ namespace Dle.Crypto;
 
 /// <summary>
 /// HMAC-SHA-256 signer (<see cref="SignatureAlgorithms.Hs256"/>), the default for click tokens and
-/// the <c>v1</c> webhook slot (K2, K4).
+/// the <c>v1</c> webhook slot.
 /// </summary>
 /// <remarks>
 /// Symmetric and therefore free of post-quantum exposure: 256 bits of key leave 128 after Grover,
-/// which is why §E.5.4 places the migration pressure on the asymmetric signatures instead. The
+/// which is why the migration pressure falls on the asymmetric signatures instead. The
 /// trade-off is that a verifier needs the same secret, so a third party integrator who must verify
 /// without holding it gets Ed25519.
 /// </remarks>

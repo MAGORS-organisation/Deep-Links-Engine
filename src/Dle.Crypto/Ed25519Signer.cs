@@ -6,13 +6,13 @@ namespace Dle.Crypto;
 
 /// <summary>
 /// Ed25519 signer (<see cref="SignatureAlgorithms.Ed25519"/>), the asymmetric slot that lets a
-/// webhook receiver verify without holding a shared secret (K4).
+/// webhook receiver verify without holding a shared secret.
 /// </summary>
 /// <remarks>
 /// .NET 10 has no Ed25519 API: <c>System.Security.Cryptography</c> gained ML-KEM, ML-DSA, SLH-DSA
 /// and Composite ML-DSA, but EdDSA is still absent, and the only occurrence of the name in the
 /// framework is the <c>MLDsa44WithEd25519</c> composite parameter set. BouncyCastle is therefore
-/// not a fallback here but the implementation, which also matches §E.5.2: BouncyCastle carries its
+/// not a fallback here but the implementation, which has a second benefit: BouncyCastle carries its
 /// own primitives and does not require OpenSSL 3.5+ on the host, so the engine runs on the LTS
 /// distributions a self-hoster actually has.
 /// </remarks>

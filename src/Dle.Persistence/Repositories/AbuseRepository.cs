@@ -3,7 +3,7 @@ using Dle.Persistence.Internal;
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Reads and writes abuse reports and the quarantine state of links (FR-245, §E.3).
+/// Reads and writes abuse reports and the quarantine state of links.
 /// </summary>
 /// <remarks>
 /// The abuse form is public, and triage is the instance operator's job rather than the reported
@@ -180,7 +180,7 @@ public sealed class AbuseRepository
     }
 
     /// <summary>
-    /// Withdraws a link from service without deleting it (TC-103).
+    /// Withdraws a link from service without deleting it.
     /// </summary>
     /// <param name="linkId">The link.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

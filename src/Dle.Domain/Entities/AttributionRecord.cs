@@ -6,15 +6,14 @@ namespace Dle.Domain.Entities;
 /// <remarks>
 /// <para>
 /// One installation has at most one attribution, and one click may be claimed by at most one
-/// installation (TC-144). Both are enforced by unique indexes rather than by application
+/// installation. Both are enforced by unique indexes rather than by application
 /// discipline, because a double claim is the cheapest attribution fraud there is.
 /// </para>
 /// <para>
 /// <see cref="MatchType"/> and <see cref="Confidence"/> are always stored together. A
 /// probabilistic match is never rounded up into a certainty, and <see cref="Evidence"/> records
 /// what actually decided it — for a probabilistic match, which signals agreed and what each one
-/// contributed. When a customer disputes an attribution, this column is the only defence
-/// (§B.5.3).
+/// contributed. When a customer disputes an attribution, this column is the only defence.
 /// </para>
 /// </remarks>
 public class AttributionRecord

@@ -5,7 +5,7 @@ using Dle.Domain.Contracts;
 namespace Dle.Control.Features.Analytics;
 
 /// <summary>
-/// Turns the per match type counts into the honest attribution split (ADR-008, §0.2, FR-202).
+/// Turns the per match type counts into the honest attribution split.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -14,7 +14,7 @@ namespace Dle.Control.Features.Analytics;
 /// <para>
 /// Commercial measurement partners do not publish this number. They report an attributed install
 /// count, and a substantial and unstated share of it is produced by fingerprint matching whose
-/// accuracy §A.2.5 puts at roughly a coin flip beyond twenty-four hours. The customer sees one
+/// accuracy is roughly a coin flip beyond twenty-four hours. The customer sees one
 /// figure, cannot tell which part of it is a fact and which part is a guess, and makes budget
 /// decisions on the mixture. That is not a technical shortcoming; it is a commercial incentive,
 /// because a larger attributed number sells better than an accurate one.
@@ -24,8 +24,8 @@ namespace Dle.Control.Features.Analytics;
 /// confidence exactly 1.00, from an install referrer, a login reconciliation, a typed claim code
 /// or a reported direct open — how many were matched probabilistically and at what mean confidence,
 /// and how many were not matched at all. The unmatched share is published rather than hidden,
-/// because a product that only shows what it caught cannot be checked. ADR-008 asks for a dashboard
-/// panel that says "78 % deterministic, 14 % probabilistic at 0.71, 8 % unmatched", and this is the
+/// because a product that only shows what it caught cannot be checked. The dashboard panel reads,
+/// for example, "78 % deterministic, 14 % probabilistic at 0.71, 8 % unmatched", and this is the
 /// endpoint behind it.
 /// </para>
 /// <para>
@@ -78,7 +78,7 @@ public static class AttributionQuality
                 default:
                     // Anything this build does not recognise counts as unmatched rather than as a
                     // match. A future match type must not silently inflate the deterministic share
-                    // of an older reader (SHARED-KERNEL §17.9).
+                    // of an older reader.
                     unmatched += row.Count;
                     break;
             }

@@ -3,8 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Crypto;
 
 /// <summary>
-/// Configuration of the cryptography module, bound from the <c>Dle:Crypto</c> section (§C.4,
-/// SHARED-KERNEL §16).
+/// Configuration of the cryptography module, bound from the <c>Dle:Crypto</c> section.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -44,16 +43,16 @@ public sealed class CryptoOptions
     [MinLength(32)]
     public string? ClickIdSecret { get; set; }
 
-    /// <summary>Overrides the derived IP hash secret (K9). Minimum 32 characters.</summary>
+    /// <summary>Overrides the derived IP hash secret. Minimum 32 characters.</summary>
     [MinLength(32)]
     public string? IpHashSecret { get; set; }
 
-    /// <summary>Overrides the derived claim code pepper (K3). Minimum 32 characters.</summary>
+    /// <summary>Overrides the derived claim code pepper. Minimum 32 characters.</summary>
     [MinLength(32)]
     public string? ClaimCodeSecret { get; set; }
 
     /// <summary>Algorithm the signer uses. Exactly one, unlike
-    /// <see cref="AcceptedAlgorithms"/> (§E.4.2).</summary>
+    /// <see cref="AcceptedAlgorithms"/>.</summary>
     [Required(AllowEmptyStrings = false)]
     public string SigningAlgorithm { get; set; } = SignatureAlgorithms.Hs256;
 
@@ -67,8 +66,9 @@ public sealed class CryptoOptions
     /// <summary>
     /// Enables the post-quantum algorithms (<see cref="SignatureAlgorithms.MlDsa65"/>,
     /// <see cref="SignatureAlgorithms.Ed25519MlDsa65"/> and
-    /// <see cref="SignatureAlgorithms.SlhDsa128s"/>). Off by default: §E.5.3 puts them in phase 1,
-    /// and phase 0 ships only the agility that makes adopting them cheap.
+    /// <see cref="SignatureAlgorithms.SlhDsa128s"/>). Off by default: the post-quantum signers ship but
+    /// stay disabled until an operator opts in, and the algorithm agility of the signing and
+    /// verification path is what makes adopting them cheap.
     /// </summary>
     public bool HybridPqEnabled { get; set; }
 
@@ -78,18 +78,18 @@ public sealed class CryptoOptions
 
     /// <summary>
     /// How long a retired key stays acceptable for verification after it stops signing. Rotation
-    /// must never invalidate a signature made with a key still inside its window (S-12), so this
+    /// must never invalidate a signature made with a key still inside its window, so this
     /// has to exceed the lifetime of the longest lived artefact the key signed.
     /// </summary>
     [Range(1, 365)]
     public int KeyOverlapDays { get; set; } = 7;
 
     /// <summary>Number of Feistel rounds behind the slug and click identifier permutations
-    /// (ADR-007 specifies four).</summary>
+    /// (four by default).</summary>
     [Range(2, 32)]
     public int SlugFeistelRounds { get; set; } = FeistelPermutation.DefaultRounds;
 
-    /// <summary>How often the IP hash salt rotates, in hours. Daily by default (K9, FR-247):
+    /// <summary>How often the IP hash salt rotates, in hours. Daily by default:
     /// the rotation is what bounds how long two events stay correlatable.</summary>
     [Range(1, 8760)]
     public int IpSaltRotationHours { get; set; } = 24;

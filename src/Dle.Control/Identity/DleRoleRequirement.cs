@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace Dle.Control.Identity;
 
 /// <summary>
-/// Requires a minimum role and, where the endpoint names one, a scope (FR-242).
+/// Requires a minimum role and, where the endpoint names one, a scope.
 /// </summary>
 /// <param name="MinimumRole">Weakest role that satisfies the policy.</param>
 /// <remarks>

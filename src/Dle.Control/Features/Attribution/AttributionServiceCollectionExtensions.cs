@@ -9,12 +9,12 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Registration of the attribution module (SHARED-KERNEL §15). One call from
+/// Registration of the attribution module. One call from
 /// <c>Dle.Control/Program.cs</c> brings up the SDK facing half of the product.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Component C-06 of §B.3 runs inside the control plane process but is a different service from
+/// The SDK attribution service runs inside the control plane process but is a different service from
 /// the control plane API: different credentials, different rate limits, different failure
 /// behaviour. That separation is expressed here, not documented and hoped for — the SDK endpoints
 /// authenticate with their own scheme, carry their own limiters keyed on <c>install_id</c>, and
@@ -25,7 +25,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// incidental: attribution reads clicks back out of the partitioned click stream through
 /// <see cref="Dle.Domain.Ports.IClickLookup"/> and writes SDK events through
 /// <see cref="Dle.Domain.Ports.ISdkEventWriter"/>, and both live there because both are Dapper
-/// against the same pool the edge uses (ADR-004). The registration is idempotent, so a host that
+/// against the same pool the edge uses. The registration is idempotent, so a host that
 /// already added it keeps what it had.
 /// </para>
 /// </remarks>

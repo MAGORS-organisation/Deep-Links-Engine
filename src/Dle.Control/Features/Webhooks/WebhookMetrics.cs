@@ -3,15 +3,15 @@ using System.Diagnostics.Metrics;
 namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
-/// The instruments the webhook module publishes (§C.6).
+/// The instruments the webhook module publishes.
 /// </summary>
 /// <remarks>
 /// <para>
-/// §C.6 names two: <c>dle_webhook_delivery_duration_seconds</c> as a histogram and
-/// <c>dle_webhook_dlq_size</c> as a gauge. The gauge is the one that matters operationally. A
-/// delivery that exhausts its retries is a promise the product failed to keep, and unless the
-/// number of them is on a dashboard the failure is invisible: the customer's data is simply
-/// missing, and nobody finds out until a reconciliation months later.
+/// Of the four instruments, the two to watch are <c>dle_webhook_delivery_duration_seconds</c> as a
+/// histogram and <c>dle_webhook_dlq_size</c> as a gauge. The gauge is the one that matters
+/// operationally. A delivery that exhausts its retries is a promise the product failed to keep, and
+/// unless the number of them is on a dashboard the failure is invisible: the customer's data is
+/// simply missing, and nobody finds out until a reconciliation months later.
 /// </para>
 /// <para>
 /// Instrument names use the OpenTelemetry dotted spelling; a Prometheus exporter renders
@@ -42,7 +42,7 @@ public sealed class WebhookMetrics : IDisposable
         _duration = _meter.CreateHistogram<double>(
             "dle.webhook.delivery.duration",
             unit: "s",
-            description: "Wall clock time of one webhook delivery attempt, tagged by outcome (§C.6).");
+            description: "Wall clock time of one webhook delivery attempt, tagged by outcome.");
 
         _deliveries = _meter.CreateCounter<long>(
             "dle.webhook.delivery",
@@ -53,13 +53,13 @@ public sealed class WebhookMetrics : IDisposable
             "dle.webhook.dead_lettered",
             unit: "{delivery}",
             description: "Deliveries that exhausted their retries. Every one of these is data the "
-                + "customer never received (FR-204).");
+                + "customer never received.");
 
         _ = _meter.CreateObservableGauge(
             "dle.webhook.dlq.size",
             () => Volatile.Read(ref _dlqSize),
             unit: "{delivery}",
-            description: "Deliveries currently sitting in the dead letter queue (§C.6). Alert above zero.");
+            description: "Deliveries currently sitting in the dead letter queue. Alert above zero.");
     }
 
     /// <summary>Records one delivery attempt.</summary>

@@ -11,7 +11,7 @@ namespace Dle.Control.Identity;
 
 /// <summary>
 /// Authenticates a control-plane API key: public prefix for the lookup, Argon2id for the
-/// verification (FR-242, K5).
+/// verification.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -19,17 +19,16 @@ namespace Dle.Control.Identity;
 /// row without hashing anything; only then is the presented value verified against the stored
 /// Argon2id hash, and that comparison ends in
 /// <see cref="System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(ReadOnlySpan{byte}, ReadOnlySpan{byte})"/>
-/// inside <see cref="Argon2PasswordHasher"/> — never in an <c>==</c> (SHARED-KERNEL §17.6).
+/// inside <see cref="Argon2PasswordHasher"/> — never in an <c>==</c>.
 /// </para>
 /// <para>
 /// Every refusal is the same refusal. An unknown prefix, a wrong secret, an expired key, a suspended
 /// tenant and an exhausted attempt budget all produce one message and one status, because telling
-/// them apart would turn the endpoint into an oracle for which keys exist (T-07).
+/// them apart would turn the endpoint into an oracle for which keys exist.
 /// </para>
 /// <para>
 /// Nothing here logs the presented value, the <c>Authorization</c> header or the caller's address.
-/// The non-secret prefix is the identifier that appears in logs and in the audit trail
-/// (SHARED-KERNEL §17.5).
+/// The non-secret prefix is the identifier that appears in logs and in the audit trail.
 /// </para>
 /// </remarks>
 public sealed class DleApiKeyAuthenticationHandler
@@ -49,7 +48,7 @@ public sealed class DleApiKeyAuthenticationHandler
     /// <param name="encoder">URL encoder.</param>
     /// <param name="store">Cross-tenant credential lookup.</param>
     /// <param name="cache">Short-lived verification cache.</param>
-    /// <param name="limiter">The §E.9 authentication attempt limiter.</param>
+    /// <param name="limiter">The authentication attempt limiter.</param>
     /// <param name="decoy">Hash verified against when no candidate row exists.</param>
     /// <param name="timeProvider">Clock used for expiry and for the last-used stamp.</param>
     public DleApiKeyAuthenticationHandler(
@@ -125,7 +124,7 @@ public sealed class DleApiKeyAuthenticationHandler
         ApiKeyCandidate? candidate = await _store.FindApiKeyAsync(prefix, Context.RequestAborted);
 
         // The verification runs even when the prefix is unknown, against a hash that cannot match,
-        // so that a present key and an absent one take the same time to refuse (T-07).
+        // so that a present key and an absent one take the same time to refuse.
         bool verified = ApiKeyHasher.Verify(presented, candidate?.Hash ?? _decoy.Hash);
 
         if (candidate is null || !verified)
@@ -159,7 +158,7 @@ public sealed class DleApiKeyAuthenticationHandler
         if (!DleRoles.IsKnown(candidate.Role))
         {
             // A role this build does not understand grants nothing, so the credential is refused
-            // rather than admitted with an empty set of capabilities (SHARED-KERNEL §17.9).
+            // rather than admitted with an empty set of capabilities.
             Logger.LogWarning(
                 "API key {KeyPrefix} carries the unknown role {Role}.", prefix, candidate.Role);
 

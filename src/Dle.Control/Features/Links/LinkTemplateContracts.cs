@@ -1,19 +1,19 @@
 namespace Dle.Control.Features.Links;
 
 /// <summary>
-/// Body of <c>POST</c> and <c>PATCH /api/v1/links/templates/{id}</c> (FR-108).
+/// Body of <c>POST</c> and <c>PATCH /api/v1/links/templates/{id}</c>.
 /// </summary>
 /// <remarks>
 /// <para>
-/// A template is a campaign. §B.5.2 gives <c>campaigns</c> one JSON column, so the template document
+/// A template is a campaign. The <c>campaigns</c> table has one JSON column, so the template document
 /// lives in it: the UTM map the column is named for, plus the routing rules and the target defaults
-/// that FR-108 asks a campaign to prefill. A row written by an older version that holds a flat string
+/// that a campaign prefills. A row written by an older version that holds a flat string
 /// map is still read correctly, as a template with UTM defaults and nothing else.
 /// </para>
 /// <para>
 /// Nothing here is validated as strictly as a link, because a template is not served: the rules are
 /// checked when a link is created from it, against the same validator every other link passes
-/// through (TC-105). A half-finished template is a legitimate intermediate state; a half-finished
+/// through. A half-finished template is a legitimate intermediate state; a half-finished
 /// link is not.
 /// </para>
 /// </remarks>
@@ -35,14 +35,14 @@ public sealed record LinkTemplateRequest
     /// <summary>Default deep link path.</summary>
     public string? DeeplinkPath { get; init; }
 
-    /// <summary>Default Open Graph metadata (FR-105).</summary>
+    /// <summary>Default Open Graph metadata.</summary>
     public OgMeta? Og { get; init; }
 
-    /// <summary>Tags added to every link created from this template (FR-109).</summary>
+    /// <summary>Tags added to every link created from this template.</summary>
     public IReadOnlyList<string> Tags { get; init; } = [];
 }
 
-/// <summary>Representation of a link template (FR-108).</summary>
+/// <summary>Representation of a link template.</summary>
 public sealed record LinkTemplateResponse
 {
     /// <summary>Template identifier. It is also the campaign identifier a link refers to.</summary>

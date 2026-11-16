@@ -30,7 +30,7 @@ function silentLogger(): { logger: Logger; errors: unknown[][] } {
   return { logger, errors };
 }
 
-describe('smart banner (FR-224, WCAG 2.2 AA)', () => {
+describe('smart banner (WCAG 2.2 AA)', () => {
   let store: KeyValueStore;
   const handles: SmartBannerHandle[] = [];
 

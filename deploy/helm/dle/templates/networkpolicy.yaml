@@ -1,5 +1,5 @@
 {{- /*
-Network policies (NFR-14: no outbound call to any third party from the resolve path).
+Network policies (no outbound call to any third party from the resolve path).
 
   <release>-edge     ingress ONLY from the ingress controller (and the monitoring namespace when
                      serviceMonitor.enabled); egress ONLY to cluster DNS, PostgreSQL and Valkey,
@@ -62,7 +62,7 @@ spec:
     {{- toYaml . | nindent 4 }}
     {{- end }}
   egress:
-    # Cluster DNS (service discovery and FR-161 reverse-DNS bot verification).
+    # Cluster DNS (service discovery and reverse-DNS bot verification).
     -
       {{- if $dns }}
       to:

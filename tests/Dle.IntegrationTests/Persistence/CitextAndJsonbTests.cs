@@ -9,7 +9,7 @@ namespace Dle.IntegrationTests.Persistence;
 
 /// <summary>
 /// The two PostgreSQL types the model leans on that no in-memory provider has: <c>citext</c> and
-/// <c>jsonb</c> (§B.5.2).
+/// <c>jsonb</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -30,7 +30,6 @@ public sealed class CitextAndJsonbTests(DleInfrastructureFixture infrastructure)
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Citext_SlugLookup_IgnoresCase()
     {
         Guid tenantId = await TestSeed.TenantAsync(Database, "citext-slug", cancellationToken: Ct);
@@ -48,7 +47,6 @@ public sealed class CitextAndJsonbTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Citext_HostLookup_IgnoresCase()
     {
         string host = TestSeed.UniqueHost("citext-host");
@@ -66,7 +64,6 @@ public sealed class CitextAndJsonbTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Citext_UniqueIndex_TreatsSlugsDifferingOnlyInCaseAsTheSame()
     {
         // The reason this matters is not convenience: if the index were case sensitive, one tenant
@@ -84,7 +81,6 @@ public sealed class CitextAndJsonbTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Jsonb_RoutingRulesAndOgAndUtm_RoundTripThroughTheHotPathStore()
     {
         string host = TestSeed.UniqueHost("jsonb");
@@ -145,7 +141,6 @@ public sealed class CitextAndJsonbTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task Jsonb_ColumnsAreQueryableAsJsonRatherThanAsText()
     {
         // If these columns had been created as text the product would still work and this suite
@@ -188,7 +183,6 @@ public sealed class CitextAndJsonbTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task DomainConfig_ReadsBrandingAndDefaultOgOutOfJsonb()
     {
         string host = TestSeed.UniqueHost("branding");

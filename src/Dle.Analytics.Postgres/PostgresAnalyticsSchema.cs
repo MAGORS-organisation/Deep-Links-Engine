@@ -13,7 +13,7 @@ namespace Dle.Analytics.Postgres;
 /// <remarks>
 /// <para>
 /// The schema lives in <c>Sql/001_analytics_rollups.sql</c>, outside the EF Core migration set on
-/// purpose (ADR-006): the PostgreSQL analytics provider is one of two, and an operator who runs the
+/// purpose: the PostgreSQL analytics provider is one of two, and an operator who runs the
 /// ClickHouse provider has no use for these tables. Every statement in the script is idempotent
 /// (<c>IF NOT EXISTS</c>, <c>OR REPLACE</c>), so running it on every start costs one round trip and
 /// changes nothing on a database that already has the schema.

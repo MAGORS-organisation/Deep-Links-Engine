@@ -10,8 +10,8 @@ using Microsoft.AspNetCore.Http;
 namespace Dle.IntegrationTests.Control;
 
 /// <summary>
-/// The webhook routes of the control plane through HTTP against a real PostgreSQL (§B.7.5,
-/// FR-230 to FR-234): a subscription is registered with a public https destination and a set of
+/// The webhook routes of the control plane through HTTP against a real PostgreSQL: a subscription
+/// is registered with a public https destination and a set of
 /// known event types, its signing secret is shown once, a test delivery is attempted synchronously
 /// and reported honestly, an event a link produces lands in the outbox once per subscription that
 /// asked for it, and the deliveries are listed with their attempt state.
@@ -19,8 +19,8 @@ namespace Dle.IntegrationTests.Control;
 /// <remarks>
 /// Destinations are checked the way targets are: https only, a public address, a name that
 /// resolves. <c>example.com</c> qualifies and answers every POST with an error, which is exactly
-/// what the test delivery has to report; loopback, link-local and unresolvable hosts are the
-/// refusals of T-02.
+/// what the test delivery has to report; loopback, link-local and unresolvable hosts are refused,
+/// because a delivery to them would be server-side request forgery.
 /// </remarks>
 [SuppressMessage(
     "Reliability",
@@ -33,7 +33,6 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     private const string Destination = "https://example.com/hooks/dle";
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-204")]
     public async Task Create_ASubscription_ShowsTheSecretOnce_AndListsWithoutIt()
     {
         Fixture fixture = await SeedAsync("webhooks-create");
@@ -78,7 +77,6 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerTheory]
-    [Trait("Threat", "T-02")]
     [InlineData("http://example.com/hooks", "url")]
     [InlineData("https://localhost/hooks", "url")]
     [InlineData("https://127.0.0.1/hooks", "url")]
@@ -106,7 +104,6 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerTheory]
-    [Trait("Spec", "FR-204")]
     [InlineData("""{"url": "https://example.com/hooks", "event_types": []}""")]
     [InlineData("""{"url": "https://example.com/hooks", "event_types": ["link.exploded"]}""")]
     public async Task Create_WithUnknownOrMissingEventTypes_IsValidationFailedOnEventTypes(string body)
@@ -122,7 +119,6 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-204")]
     public async Task Create_BeyondTheTenantsSubscriptionLimit_Is409()
     {
         Fixture fixture = await SeedAsync("webhooks-limit", settings => settings["Dle:Webhooks:MaxSubscriptionsPerTenant"] = "2");
@@ -139,7 +135,6 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "E.4.1")]
     public async Task Create_RequiresAnOwner_AndListingAnAdmin()
     {
         Fixture fixture = await SeedAsync("webhooks-roles");
@@ -158,7 +153,6 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-204")]
     public async Task Test_DeliversASignedTestEventSynchronously_AndReportsTheEndpointsAnswer()
     {
         Fixture fixture = await SeedAsync("webhooks-test");
@@ -194,8 +188,6 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-204")]
-    [Trait("Threat", "T-07")]
     public async Task Test_AgainstAnEndpointTheSuiteOwns_ArrivesSignedAndVerifiable()
     {
         // The signature is the whole security story of a webhook: a subscriber who cannot verify
@@ -273,7 +265,6 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-204")]
     public async Task AQuarantine_LandsInTheOutboxOncePerSubscriptionThatAskedForIt()
     {
         Fixture fixture = await SeedAsync("webhooks-outbox");
@@ -314,7 +305,6 @@ public sealed class WebhooksHttpTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-204")]
     public async Task Delete_DeactivatesTheSubscription_AndAnotherTenantsIs404()
     {
         Fixture fixture = await SeedAsync("webhooks-delete");

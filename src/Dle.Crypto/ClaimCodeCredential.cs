@@ -4,7 +4,7 @@ namespace Dle.Crypto;
 
 /// <summary>
 /// A freshly issued claim code: the six characters shown on the interstitial page, and the hash
-/// that goes into <c>claim_codes.code_hash</c> (FR-184, K3).
+/// that goes into <c>claim_codes.code_hash</c>.
 /// </summary>
 /// <remarks>
 /// A class rather than a record, because <see cref="Hash"/> is an array and record equality over

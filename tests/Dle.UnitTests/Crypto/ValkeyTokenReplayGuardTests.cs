@@ -17,7 +17,7 @@ namespace Dle.UnitTests.Crypto;
 
 /// <summary>
 /// Shared replay protection over Valkey (<see cref="ValkeyTokenReplayGuard"/>): atomic consume,
-/// expiry guard, and fail-closed refusal when Valkey is disconnected or raises an error (L-6).
+/// expiry guard, and fail-closed refusal when Valkey is disconnected or raises an error.
 /// </summary>
 public sealed class ValkeyTokenReplayGuardTests
 {

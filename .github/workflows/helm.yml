@@ -6,7 +6,7 @@
 # `helm dependency update`, `helm lint` and `helm template`, for the three ways the chart is meant
 # to be deployed:
 #
-#   external  — managed PostgreSQL and Valkey handed in as connection strings (§B.8 profile B)
+#   external  — managed PostgreSQL and Valkey handed in as connection strings
 #   bundled   — the bitnami sub-charts, for a single-node evaluation install
 #   production — values-production.yaml with an existing Secret
 #
@@ -320,12 +320,17 @@ jobs:
           set -euo pipefail
           master_secret="$(openssl rand -base64 48 | tr -d '\n')"
           edge_secret="$(openssl rand -base64 48 | tr -d '\n')"
+          # The first owner key, generated the way NOTES.txt tells an operator to.
+          base62() { (set +o pipefail; LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c "$1"); }
+          owner_key="dle_$(base62 8)_$(base62 43)"
           echo "::add-mask::$master_secret"
           echo "::add-mask::$edge_secret"
+          echo "::add-mask::$owner_key"
           helm install "$RELEASE" "$CHART_DIR" \
             --values "$VALUES_FILE" \
             --set "secrets.masterSecret=$master_secret" \
             --set "secrets.edgeSecret=$edge_secret" \
+            --set "secrets.bootstrapOwnerKey=$owner_key" \
             --wait \
             --timeout 12m
           helm status "$RELEASE"
@@ -409,6 +414,28 @@ jobs:
           echo "$control_ready" | jq -e '.status == "Healthy" and .checks.postgres == "Healthy"' >/dev/null \
             || { echo "control is not ready: $control_ready"; exit 1; }
 
+      - name: The first owner key signs in
+        # The operator's way in on a fresh install: the key handed to the chart must have created
+        # the tenant and must authenticate, and nothing else may.
+        run: |
+          set -euo pipefail
+          owner_key="$(kubectl get secret "$RELEASE" -o jsonpath='{.data.bootstrap-owner-key}' | base64 -d)"
+          echo "::add-mask::$owner_key"
+          kubectl port-forward "svc/${RELEASE}-control" 18082:80 >/dev/null 2>&1 &
+          for _ in $(seq 1 30); do
+            curl -fsS -o /dev/null http://127.0.0.1:18082/healthz && break
+            sleep 2
+          done
+          keys="$(curl -fsS -H "Authorization: Bearer $owner_key" http://127.0.0.1:18082/api/v1/api-keys)"
+          case "$keys" in
+            *'"root-bootstrap"'*) echo "the first owner key authenticates and lists itself" ;;
+            *) echo "the first owner key was not provisioned: $keys"; exit 1 ;;
+          esac
+          if [ "${owner_key: -1}" = x ]; then altered="${owner_key%?}y"; else altered="${owner_key%?}x"; fi
+          status="$(curl -sS -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $altered" \
+            http://127.0.0.1:18082/api/v1/api-keys)"
+          test "$status" = "401" || { echo "an altered key answered $status, not 401"; exit 1; }
+
       - name: Upgrade in place
         # The other half of what an operator does with a chart. The migration hook runs again on
         # pre-upgrade, against a database that is already migrated, so this also says that a second
@@ -417,12 +444,15 @@ jobs:
           set -euo pipefail
           master_secret="$(kubectl get secret "$RELEASE" -o jsonpath='{.data.master-secret}' | base64 -d)"
           edge_secret="$(kubectl get secret "$RELEASE" -o jsonpath='{.data.edge-secret}' | base64 -d)"
+          owner_key="$(kubectl get secret "$RELEASE" -o jsonpath='{.data.bootstrap-owner-key}' | base64 -d)"
           echo "::add-mask::$master_secret"
           echo "::add-mask::$edge_secret"
+          echo "::add-mask::$owner_key"
           helm upgrade "$RELEASE" "$CHART_DIR" \
             --values "$VALUES_FILE" \
             --set "secrets.masterSecret=$master_secret" \
             --set "secrets.edgeSecret=$edge_secret" \
+            --set "secrets.bootstrapOwnerKey=$owner_key" \
             --set "control.config.allowTenantSelfService=true" \
             --wait \
             --timeout 8m

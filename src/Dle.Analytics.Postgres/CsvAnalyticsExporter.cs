@@ -3,7 +3,7 @@ using System.Text;
 namespace Dle.Analytics.Postgres;
 
 /// <summary>
-/// RFC 4180 CSV export of analytics reports (FR-203).
+/// RFC 4180 CSV export of analytics reports.
 /// </summary>
 /// <remarks>
 /// UTF-8 without a byte order mark, CRLF line endings as RFC 4180 requires, and every timestamp

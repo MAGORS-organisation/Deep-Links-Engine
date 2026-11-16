@@ -1,12 +1,12 @@
 namespace Dle.Domain.Analytics;
 
 /// <summary>
-/// Aggregated click to conversion funnel for one <see cref="AnalyticsQuery"/> (FR-202).
+/// Aggregated click to conversion funnel for one <see cref="AnalyticsQuery"/>.
 /// </summary>
 /// <remarks>
 /// <see cref="Attributed"/> is reported separately from <see cref="Installs"/> on purpose: the
 /// difference between the two is the share of installs the engine could not tie back to a click,
-/// and hiding it would be exactly the kind of laundering the product refuses to do (ADR-008).
+/// and hiding it would be exactly the kind of laundering the product refuses to do.
 /// </remarks>
 /// <param name="Clicks">Human clicks in the reported interval.</param>
 /// <param name="Installs">First application opens in the reported interval.</param>

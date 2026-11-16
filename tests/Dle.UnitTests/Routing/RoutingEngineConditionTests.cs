@@ -5,7 +5,7 @@ using Xunit;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// FR-121 to FR-126. Within one field the values are an OR; across fields they are an AND; an
+/// Within one field the values are an OR; across fields they are an AND; an
 /// absent field means "do not care". Getting that backwards silently reroutes whole markets, so
 /// each axis is pinned individually and then in combination.
 /// </summary>
@@ -67,7 +67,7 @@ public sealed class RoutingEngineConditionTests
     [Fact]
     public void Evaluate_CountryCondition_ClientWithoutAGeoLookup_DoesNotMatch()
     {
-        // GeoIP missing or the file is corrupt (chaos matrix section D.6): the rule must fall through
+        // GeoIP missing or the file is corrupt: the rule must fall through
         // to the default rather than match on a null country.
         AssertMatch(new RuleCondition { Country = ["SK"] }, TestClients.Client(country: null), expectMatch: false);
     }

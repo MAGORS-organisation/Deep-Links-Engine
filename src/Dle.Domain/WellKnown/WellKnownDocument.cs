@@ -11,7 +11,7 @@ namespace Dle.Domain.WellKnown;
 /// </param>
 /// <param name="ContentType">
 /// Always <see cref="JsonContentType"/>. Apple and Google both require it, and neither tolerates a
-/// redirect on the way to the file (§A.2.1, §A.2.2, TC-121).
+/// redirect on the way to the file.
 /// </param>
 public sealed record WellKnownDocument(string Json, string ETag, string ContentType)
 {

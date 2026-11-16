@@ -11,7 +11,7 @@ namespace Dle.IntegrationTests.Control;
 
 /// <summary>
 /// The bulk import, the simulator and the templates of the link API through HTTP against a real
-/// PostgreSQL (§B.7.3, FR-104, FR-108, FR-109): a batch streamed in as NDJSON is answered row by
+/// PostgreSQL: a batch streamed in as NDJSON is answered row by
 /// row and can be replayed by its idempotency key, a link's routing can be asked what it would do
 /// for a given client without a click being recorded, and a template gives new links their target,
 /// tags and UTM parameters.
@@ -29,7 +29,6 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     private const string IdempotencyHeader = "Idempotency-Key";
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-103")]
     public async Task Bulk_CreatesEveryUsableRow_AndAnswersOneLinePerRowInOrder()
     {
         Fixture fixture = await SeedAsync("bulk-rows");
@@ -74,7 +73,6 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.7.3")]
     public async Task Bulk_WithAnIdempotencyKey_ReplaysTheSummaryInsteadOfImportingTwice()
     {
         Fixture fixture = await SeedAsync("bulk-idempotent");
@@ -111,7 +109,6 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "E.9")]
     public async Task Bulk_BeyondTheRowLimit_ImportsUpToTheLimit_AndSaysSoOnTheNextRow()
     {
         Fixture fixture = await SeedAsync("bulk-limit", settings => settings["Dle:Control:BulkMaxRows"] = "2");
@@ -145,7 +142,6 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-103")]
     public async Task Bulk_WithARowThatIsNotJson_ReportsThatRow_AndImportsTheRest()
     {
         Fixture fixture = await SeedAsync("bulk-garbage");
@@ -175,7 +171,6 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "E.4.1")]
     public async Task Bulk_IsAWrite_SoAViewerIs403()
     {
         Fixture fixture = await SeedAsync("bulk-viewer");
@@ -188,7 +183,6 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-129")]
     public async Task Simulate_ExplainsTheDecisionForAClient_WithoutRecordingAClick()
     {
         Fixture fixture = await SeedAsync("simulate");
@@ -228,7 +222,6 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task Simulate_AnUnknownOrForeignLink_Is404_AndAViewerMaySimulate()
     {
         Fixture fixture = await SeedAsync("simulate-scope");
@@ -253,7 +246,6 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-108")]
     public async Task Templates_AreCreated_Read_Listed_Updated_AndDeleted()
     {
         Fixture fixture = await SeedAsync("templates-crud");
@@ -309,7 +301,6 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-108")]
     public async Task Templates_WithoutAName_AreValidationFailedOnTheName_AndAViewerMayOnlyRead()
     {
         Fixture fixture = await SeedAsync("templates-validation");
@@ -339,13 +330,12 @@ public sealed class LinksAdvancedHttpTests(DleInfrastructureFixture infrastructu
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "FR-108")]
     public async Task ALinkCreatedFromATemplate_InheritsItsRules_DeeplinkPath_Tags_AndUtm()
     {
         Fixture fixture = await SeedAsync("templates-apply");
         using HttpClient client = fixture.Host.CreateDirectClient();
 
-        // FR-108: a template is a campaign's prefilled UTM parameters and routing rules. The
+        // A template is a campaign's prefilled UTM parameters and routing rules. The
         // target stays the caller's: every link still names where it goes.
         using HttpResponseMessage template = await fixture.Key.PostRawAsync(
             client,

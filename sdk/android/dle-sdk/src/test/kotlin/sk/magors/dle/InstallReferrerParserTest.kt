@@ -9,7 +9,7 @@ import org.junit.jupiter.params.provider.ValueSource
 import sk.magors.dle.internal.InstallReferrerParser
 import sk.magors.dle.internal.percentDecode
 
-/** Mirrors `Dle.Domain.Attribution.InstallReferrerParser` (spec §A.2.4, FR-181, TC-141, TC-142). */
+/** Mirrors `Dle.Domain.Attribution.InstallReferrerParser`. */
 class InstallReferrerParserTest {
     @Test
     fun doubleEncodedReferrer_isDecodedOnceThenSplitThenDecodedAgain() {

@@ -3,19 +3,19 @@ using System.Diagnostics.Metrics;
 namespace Dle.Edge.Telemetry;
 
 /// <summary>
-/// The instrument set of §C.6 that the edge owns.
+/// The instrument set that the edge owns.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Instrument names use the OpenTelemetry dotted spelling; a Prometheus exporter renders
 /// <c>dle.resolve.duration</c> as <c>dle_resolve_duration_seconds</c> and the counter
-/// <c>dle.resolve</c> as <c>dle_resolve_total</c>, which are the names §C.6 puts dashboards and
-/// alerts on. <c>dle_click_events_dropped_total</c> is not here — it belongs to the bounded channel
+/// <c>dle.resolve</c> as <c>dle_resolve_total</c>, which are the names dashboards and
+/// alerts use. <c>dle_click_events_dropped_total</c> is not here — it belongs to the bounded channel
 /// in <c>Dle.Persistence.Fast</c>, and the telemetry module adds that meter to the same pipeline
 /// rather than counting the same event twice.
 /// </para>
 /// <para>
-/// The cache ratio is split into L1 and L2 as §C.6 requires, and the split is measured rather than
+/// The cache ratio is split into L1 and L2, and the split is measured rather than
 /// guessed: <c>HybridCache</c> only invokes a serializer when a value crosses the distributed level,
 /// so a deserialization is exactly an L2 read and everything else that skipped the factory was an L1
 /// hit. <see cref="RecordDistributedRead"/> is called from the cache serializer for that reason.
@@ -68,25 +68,25 @@ public sealed class EdgeMetrics : IDisposable
         _shadowBanned = _meter.CreateCounter<long>(
             "dle.resolve.shadow_banned",
             unit: "{request}",
-            description: "Resolve requests answered from the enumeration shadow ban without a database lookup (T-07).");
+            description: "Resolve requests answered from the enumeration shadow ban without a database lookup.");
 
         _ = _meter.CreateObservableGauge(
             "dle.cache.hit_ratio",
             ObserveCacheHitRatio,
             unit: "1",
-            description: "Share of link lookups served by each cache level, L1 and L2 reported separately (§C.6).");
+            description: "Share of link lookups served by each cache level, L1 and L2 reported separately.");
 
         _ = _meter.CreateObservableGauge(
             "dle.domain_verification.failures",
             () => new Measurement<long>(_domainVerification.Count),
             unit: "{domain}",
-            description: "Hosts whose Apple or Android association file currently fails validation. Alert on any non-zero value (§C.6).");
+            description: "Hosts whose Apple or Android association file currently fails validation. Alert on any non-zero value.");
 
         _ = _meter.CreateObservableGauge(
             "dle.geoip.available",
             () => new Measurement<long>(Interlocked.Read(ref _geoIpAvailable)),
             unit: "1",
-            description: "1 when the geographic database is loaded, 0 when it is missing or corrupt and country is null (§D.6).");
+            description: "1 when the geographic database is loaded, 0 when it is missing or corrupt and country is null.");
     }
 
     /// <summary>Records one completed resolve.</summary>

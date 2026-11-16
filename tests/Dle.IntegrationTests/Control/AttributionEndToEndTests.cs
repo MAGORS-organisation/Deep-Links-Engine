@@ -13,14 +13,13 @@ namespace Dle.IntegrationTests.Control;
 
 /// <summary>
 /// The deferred attribution path end to end: a click in the partitioned stream, an install referrer
-/// carrying its identifier, and the attribution that follows (TC-141, TC-142, TC-143, TC-144,
-/// TC-149).
+/// carrying its identifier, and the attribution that follows.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The click identifier is minted by the host's own <see cref="IClickIdCodec"/> and then decoded
 /// again, so the click event is written at exactly the instant the identifier claims — which is what
-/// makes the bounded lookup of §B.6.3 find it, and what makes the test independent of how much time
+/// makes the time-bounded click lookup find it, and what makes the test independent of how much time
 /// passes while it runs.
 /// </para>
 /// <para>
@@ -38,15 +37,14 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
 {
     /// <summary>
     /// The consent object an SDK sends once the host application has recorded attribution consent.
-    /// The tenants below run in <c>full</c> mode, and under §E.6.2 that mode only unlocks click-id
+    /// The tenants below run in <c>full</c> mode, and that mode only unlocks click-id
     /// linking — the deterministic strategies included — when the request carries this; without it
-    /// the gate answers <c>match_type=none</c> with reason <c>consent_missing</c> (TC-146).
+    /// the gate answers <c>match_type=none</c> with reason <c>consent_missing</c>.
     /// </summary>
     private const string ConsentGranted =
         "\"consent\": { \"analytics\": true, \"attribution\": true, \"ts\": \"2026-09-01T10:00:00Z\" }";
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-141")]
     public async Task Resolve_WithAnInstallReferrerCarryingTheClickId_MatchesDeterministically()
     {
         Fixture fixture = await SeedAsync();
@@ -81,7 +79,7 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
         Assert.Equal(clickId, document.RootElement.GetProperty("click_id").GetString());
 
         // The decision is stored with the evidence that produced it, because "why was this install
-        // credited to this campaign" is a question that gets asked in a dispute (§B.5.3).
+        // credited to this campaign" is a question that gets asked in a dispute.
         IReadOnlyList<string> stored = await Sql.StringsAsync(
             Database.DataSource,
             """
@@ -101,7 +99,6 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-142")]
     public async Task Resolve_WithAReferrerThatCarriesNoClickId_ReportsNoMatchAndIsNotAnError()
     {
         Fixture fixture = await SeedAsync();
@@ -131,7 +128,6 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-143")]
     public async Task Resolve_CalledTwiceForOneInstall_IsIdempotentAndCreditsTheClickOnce()
     {
         Fixture fixture = await SeedAsync();
@@ -168,7 +164,6 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-144")]
     public async Task Resolve_ForASecondInstallClaimingTheSameClick_ReportsNoMatch()
     {
         // One click is worth at most one install. The partial unique index on attributions(click_id)
@@ -211,7 +206,6 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-167")]
     public async Task Resolve_WithATamperedClickIdInTheReferrer_IsNotMatchedAndIsRecordedAsTampered()
     {
         Fixture fixture = await SeedAsync();
@@ -219,7 +213,7 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
         (string clickId, _) = await MintClickAsync(fixture);
 
         // One character changed. The identifier is authenticated, so a failed decode is a mutated
-        // identifier rather than an unlucky one (T-05).
+        // identifier rather than an unlucky one.
         string tampered = clickId[..^1] + (clickId[^1] == 'A' ? 'B' : 'A');
 
         using HttpClient client = fixture.TestHost.CreateDirectClient();
@@ -246,13 +240,12 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-149")]
     public async Task Events_WithALinkOpenForOneOfOurLinks_ProducesADirectOpenAttribution()
     {
-        // TC-149. When the association files verify and the application is installed, the operating
+        // When the association files verify and the application is installed, the operating
         // system opens it and no HTTP request reaches the engine at all — so without this event the
-        // click is never counted and re-engagement is understated exactly where it worked best
-        // (§B.6.4). The application reports the URL it was handed, which is deterministic evidence,
+        // click is never counted and re-engagement is understated exactly where it worked best.
+        // The application reports the URL it was handed, which is deterministic evidence,
         // hence confidence 1.00.
         Fixture fixture = await SeedAsync();
 
@@ -306,7 +299,6 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-166")]
     public async Task Events_WithALinkOpenForAnotherTenantsLink_IsTreatedAsAForeignUrl()
     {
         // A link of another tenant is treated exactly like a URL that is not ours at all. Anything
@@ -356,11 +348,10 @@ public sealed class AttributionEndToEndTests(DleInfrastructureFixture infrastruc
     /// </summary>
     /// <remarks>
     /// The identifier is decoded straight back, so the row is written at exactly the instant the
-    /// identifier claims. The attribution service bounds its lookup by that instant (§B.6.3), so a
+    /// identifier claims. The attribution service bounds its lookup by that instant, so a
     /// row written at "roughly now" instead would make the test depend on how long the seed took.
     /// </remarks>
     [RequiresDockerFact]
-    [Trait("TestCase", "TC-141")]
     public async Task Resolve_BeforeConsentThenAfterIt_IsNotFinalAndMatchesOnceConsentArrives()
     {
         // The order a real application often produces: the SDK resolves at first launch, the

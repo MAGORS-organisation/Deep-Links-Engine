@@ -4,18 +4,18 @@ namespace Dle.Edge.Telemetry;
 
 /// <summary>
 /// The tracing vocabulary of the resolve path: one <c>resolve</c> span with <c>lookup</c>,
-/// <c>classify</c>, <c>route</c> and <c>render</c> children (§C.6).
+/// <c>classify</c>, <c>route</c> and <c>render</c> children.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The span names are constants rather than literals at the call sites because they are the join
 /// between the edge and the dashboards, and because the SDK correlates its own spans with these
-/// through the <c>traceparent</c> header (NFR-12). Renaming one in a single place is then a rename,
+/// through the <c>traceparent</c> header. Renaming one in a single place is then a rename,
 /// not a silent dashboard outage.
 /// </para>
 /// <para>
 /// Every <c>Start…</c> method returns a nullable <see cref="Activity"/>. With no listener attached —
-/// the common case, since §C.6 samples a fraction of traces — <c>StartActivity</c> returns
+/// the common case, since only a fraction of traces is sampled — <c>StartActivity</c> returns
 /// <see langword="null"/> and costs nothing, which is the property that lets the hot path be
 /// instrumented at all.
 /// </para>

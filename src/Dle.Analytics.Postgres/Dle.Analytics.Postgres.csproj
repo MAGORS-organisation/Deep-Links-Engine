@@ -2,10 +2,10 @@
 
   <!--
     Default IClickAnalyticsStore implementation over partitioned PostgreSQL
-    tables (pg_partman, BRIN). ADR-006, docs/zadanie.md §B.5.3.
+    tables (pg_partman, BRIN).
 
     Why this project references Dle.Analytics.ClickHouse:
-    SHARED-KERNEL §15 fixes the composition surface: Dle.Control/Program.cs calls
+    The composition surface is fixed: Dle.Control/Program.cs calls
     AddDleAnalytics and nothing else, so the single extension has to be able to
     hand back either provider named by Dle:Analytics:Provider. Selecting the
     opt-in provider without a compile-time reference would mean reflection over

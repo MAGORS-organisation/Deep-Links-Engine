@@ -32,7 +32,7 @@ internal fun percentDecode(value: String): String {
 }
 
 /**
- * Client side mirror of `Dle.Domain.Attribution.InstallReferrerParser` (spec §A.2.4).
+ * Client side mirror of `Dle.Domain.Attribution.InstallReferrerParser`.
  *
  * The raw value is a query string that Play returns URL encoded, and it is frequently encoded a
  * second time on the way in, so `dl_cid%3DaB3xK9pQ%26utm_source%3Dfb` is normal. The parser
@@ -79,9 +79,9 @@ internal object InstallReferrerParser {
     }
 
     /**
-     * Extracts the click identifier the engine wrote into the store URL (FR-181).
+     * Extracts the click identifier the engine wrote into the store URL.
      *
-     * @return the identifier, or `null` for an organic installation (TC-142).
+     * @return the identifier, or `null` for an organic installation.
      */
     fun clickId(referrer: String?): String? {
         val value = parse(referrer)[CLICK_ID_KEY] ?: return null

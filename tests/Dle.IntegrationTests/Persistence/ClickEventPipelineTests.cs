@@ -10,11 +10,11 @@ namespace Dle.IntegrationTests.Persistence;
 
 /// <summary>
 /// The click stream write path: a bounded channel that drops rather than blocks, and a binary
-/// <c>COPY</c> that puts the batch in the partitioned table (§C.3.2, FR-165, NFR-06).
+/// <c>COPY</c> that puts the batch in the partitioned table.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The trade this pipeline exists to make is stated in NFR-06: when the analytics layer falls behind,
+/// The trade this pipeline exists to make: when the analytics layer falls behind,
 /// telemetry is thrown away and the redirect is still served. A test that only asserted the happy
 /// path would leave the important half — that a full channel neither blocks the caller nor loses the
 /// count of what it lost — completely unexercised.
@@ -29,7 +29,6 @@ public sealed class ClickEventPipelineTests(DleInfrastructureFixture infrastruct
     : DleIntegrationTest(infrastructure)
 {
     [RequiresDockerFact]
-    [Trait("Spec", "C.3.2")]
     public async Task CopyWriter_WritesABatch_AndEveryColumnArrivesWithItsDeclaredType()
     {
         Guid tenantId = await TestSeed.TenantAsync(Database, "copy", "full", Ct);
@@ -112,8 +111,9 @@ public sealed class ClickEventPipelineTests(DleInfrastructureFixture infrastruct
         Assert.Single(row);
         Assert.Equal("203.0.113.0/24|SK|phone|in_app_fb|interstitial|42|7|01020304|true", row[0]);
 
-        // SpoofedBot has no column of its own in §B.5.3 and is carried in extra. The row that was
-        // not spoofed carries an empty object rather than a null, because the column is NOT NULL.
+        // SpoofedBot is carried in extra rather than in the spoofed_bot column, which the writer leaves at
+        // its default. The row that was not spoofed carries an empty object rather than a null, because
+        // the column is NOT NULL.
         Assert.Equal(
             "{}",
             await Sql.ScalarAsync<string>(
@@ -123,7 +123,6 @@ public sealed class ClickEventPipelineTests(DleInfrastructureFixture infrastruct
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "NFR-06")]
     public void Sink_WhenTheChannelIsFull_DropsTheEventAndCountsIt()
     {
         // No database and no clock: the whole point of the bounded channel is that the decision to
@@ -157,10 +156,9 @@ public sealed class ClickEventPipelineTests(DleInfrastructureFixture infrastruct
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "NFR-06")]
     public void Sink_WhenItDrops_PublishesTheAlertableCounter()
     {
-        // §C.6 puts an alert on dle_click_events_dropped_total. Dropping is a deliberate trade under
+        // dle_click_events_dropped_total is the counter an alert watches. Dropping is a deliberate trade under
         // load; a silent one would mean campaign numbers going quietly wrong with nothing to notice.
         long observed = 0;
 
@@ -196,7 +194,6 @@ public sealed class ClickEventPipelineTests(DleInfrastructureFixture infrastruct
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "C.3.2")]
     public async Task Sink_AndCopyWriter_Together_PersistExactlyWhatTheChannelAccepted()
     {
         Guid tenantId = await TestSeed.TenantAsync(Database, "flood", "full", Ct);

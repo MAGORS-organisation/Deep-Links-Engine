@@ -1,10 +1,10 @@
--- Deep Link Engine — ClickHouse analytics schema (ADR-006, docs/zadanie.md §B.5.3).
+-- Deep Link Engine — ClickHouse analytics schema.
 --
 -- This script is idempotent and is applied by ClickHouseSchemaScript.Build(rawRetentionDays),
 -- which substitutes the {{RAW_RETENTION_DAYS}} placeholder with the configured raw retention
--- window so that the TTL clauses below always match Dle:Privacy:Retention:RawDays (FR-247).
+-- window so that the TTL clauses below always match Dle:Privacy:Retention:RawDays.
 --
--- Two supported ways to fill these tables (§B.5.3 / ADR-006):
+-- Two supported ways to fill these tables:
 --   1. ClickHouseEventSink — the engine writes the click stream here directly, either instead of
 --      or in addition to PostgreSQL (dual write).
 --   2. Logical replication from PostgreSQL — the click stream keeps landing in the partitioned

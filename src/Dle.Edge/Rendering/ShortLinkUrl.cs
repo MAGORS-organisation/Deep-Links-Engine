@@ -12,7 +12,7 @@ namespace Dle.Edge.Rendering;
 /// </para>
 /// <para>
 /// The scheme is always <c>https</c> and is never taken from the request. A link domain has to serve
-/// TLS to work at all — Apple fetches the association file over HTTPS only (§A.2.1) — so a request that
+/// TLS to work at all — Apple fetches the association file over HTTPS only — so a request that
 /// arrived as plain HTTP, whether from a stray client or through a proxy that did not set the forwarded
 /// header, still yields the address the link actually lives at.
 /// </para>

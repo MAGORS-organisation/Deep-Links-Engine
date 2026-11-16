@@ -8,9 +8,9 @@ namespace Dle.Persistence.Fast.Configuration;
 /// <remarks>
 /// <para>
 /// Bound from the configuration section <c>Dle:Persistence:Fast</c>, with the connection strings read
-/// from the standard <c>ConnectionStrings</c> section named in SHARED-KERNEL §16:
+/// from the standard <c>ConnectionStrings</c> section:
 /// <c>ConnectionStrings:Postgres</c> for the primary and the optional
-/// <c>ConnectionStrings:PostgresRead</c> for the read replica of §B.8 profile B.
+/// <c>ConnectionStrings:PostgresRead</c> for the read replica.
 /// </para>
 /// <para>
 /// The four pool and timeout settings are owned by this section, not by the connection string: they
@@ -22,7 +22,7 @@ namespace Dle.Persistence.Fast.Configuration;
 /// <para>
 /// Validation runs eagerly in <c>AddDleFastPersistence</c> rather than through
 /// <c>ValidateOnStart</c>, because the data annotations validator is reflective and this assembly
-/// stays free of reflection (ADR-012). The failure mode is the same: the process refuses to start.
+/// stays free of reflection. The failure mode is the same: the process refuses to start.
 /// </para>
 /// </remarks>
 public sealed class FastPersistenceOptions
@@ -35,7 +35,7 @@ public sealed class FastPersistenceOptions
 
     /// <summary>
     /// Name of the optional connection string for a read replica. When it is absent the read data
-    /// source is the primary one (§B.8 profile A).
+    /// source is the primary one.
     /// </summary>
     public const string ReadConnectionStringName = "PostgresRead";
 
@@ -49,20 +49,20 @@ public sealed class FastPersistenceOptions
     public string ApplicationName { get; init; } = "dle-edge";
 
     /// <summary>
-    /// Upper bound of the primary connection pool. The default matches a four vCPU edge instance
-    /// serving the throughput target of NFR-03 at a cache hit rate above 95 %, where only misses reach
+    /// Upper bound of the primary connection pool. The default is sized for a four vCPU edge instance
+    /// meant to serve 5 000 requests a second at a cache hit rate above 95 %, where only misses reach
     /// Postgres at all.
     /// </summary>
     public int MaxPoolSize { get; init; } = 64;
 
     /// <summary>
     /// Connections kept open when idle. A small non-zero value removes the connection handshake from
-    /// the first cache miss after a quiet period, which would otherwise show up in the p99 of NFR-02.
+    /// the first cache miss after a quiet period, which would otherwise show up in the cache-miss p99.
     /// </summary>
     public int MinPoolSize { get; init; } = 4;
 
     /// <summary>
-    /// Command timeout in seconds for the read path. Deliberately short: the resolve budget of NFR-01
+    /// Command timeout in seconds for the read path. Deliberately short: the resolve budget
     /// is eight milliseconds, so a lookup that has been running for seconds has already failed its
     /// caller and is only holding a connection hostage.
     /// </summary>
@@ -76,15 +76,15 @@ public sealed class FastPersistenceOptions
 
     /// <summary>
     /// Capacity of the bounded click event channel. Once it is full, further events are dropped rather
-    /// than delaying a redirect (NFR-06, FR-165).
+    /// than delaying a redirect.
     /// </summary>
     public int ClickEventChannelCapacity { get; init; } = 100_000;
 
-    /// <summary>Largest batch handed to one <c>COPY</c> operation (§C.3.2).</summary>
+    /// <summary>Largest batch handed to one <c>COPY</c> operation.</summary>
     public int ClickEventBatchSize { get; init; } = 5_000;
 
     /// <summary>
-    /// Longest a partially filled batch waits before it is written anyway (§C.3.2). Together with
+    /// Longest a partially filled batch waits before it is written anyway. Together with
     /// <see cref="ClickEventBatchSize"/> this is the "5 000 rows or 250 ms, whichever comes first"
     /// rule.
     /// </summary>

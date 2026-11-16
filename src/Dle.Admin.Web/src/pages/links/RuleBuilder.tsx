@@ -38,7 +38,7 @@ const VERSION_OPS: (keyof VersionPredicate)[] = ['eq', 'gte', 'gt', 'lte', 'lt']
 /**
  * Builds the rule set exactly as src/Dle.Domain/Routing describes it. The default rule (no
  * `when`) is pinned last; without one the parent refuses to save and this component says so at
- * the top of the list (TC-105).
+ * the top of the list.
  */
 export function RuleBuilder({ rules, onChange, problems, serverErrors, targetUrl }: RuleBuilderProps) {
   const { t } = useI18n();

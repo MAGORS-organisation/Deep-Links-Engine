@@ -13,9 +13,9 @@ namespace Dle.UnitTests.Control;
 /// <remarks>
 /// <list type="bullet">
 ///   <item><description>One attribution per installation — the unique index on
-///   <c>attributions(install_id)</c> (TC-143).</description></item>
+///   <c>attributions(install_id)</c>.</description></item>
 ///   <item><description>One attribution per click — the partial unique index on
-///   <c>attributions(click_id) WHERE click_id IS NOT NULL</c> (TC-144).</description></item>
+///   <c>attributions(click_id) WHERE click_id IS NOT NULL</c>.</description></item>
 /// </list>
 /// Reproducing the constraints here is deliberate: the use case is being tested, not the database,
 /// and the database's own behaviour belongs to the integration suite that needs a real Postgres.

@@ -1,5 +1,5 @@
 {
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Deep Link Engine — control plane",
     "description": "Link, domain, application, tenant and credential management, plus attribution and analytics reporting. Errors are RFC 9457 problem documents whose type member is one of the stable identifiers documented at https://docs.dle.dev/problems/. Writes accept an Idempotency-Key header: the same key with the same body replays the stored response, and the same key with a different body is a conflict. The problem type identifiers are: https://docs.dle.dev/problems/validation-failed, https://docs.dle.dev/problems/slug-taken, https://docs.dle.dev/problems/slug-invalid, https://docs.dle.dev/problems/unsafe-target, https://docs.dle.dev/problems/rate-limited, https://docs.dle.dev/problems/missing-default-rule, https://docs.dle.dev/problems/invalid-routing-rules, https://docs.dle.dev/problems/domain-not-verified, https://docs.dle.dev/problems/domain-taken, https://docs.dle.dev/problems/domain-in-use, https://docs.dle.dev/problems/idempotency-conflict, https://docs.dle.dev/problems/unauthorized, https://docs.dle.dev/problems/forbidden, https://docs.dle.dev/problems/claim-code-invalid, https://docs.dle.dev/problems/link-quarantined, https://docs.dle.dev/problems/dependency-unavailable, https://docs.dle.dev/problems/write-conflict, https://docs.dle.dev/problems/link-too-large, https://docs.dle.dev/problems/app-taken.",
@@ -44,7 +44,7 @@
         "description": "A template is a campaign: creating one gives you a campaign identifier that a link can name, and naming it prefills the UTM parameters, the rules and the target defaults the link does not state for itself.",
         "operationId": "CreateLinkTemplate",
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The template.",
           "content": {
             "application/json": {
               "schema": {
@@ -170,7 +170,7 @@
           }
         ],
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The new content.",
           "content": {
             "application/json": {
               "schema": {
@@ -323,7 +323,7 @@
           {
             "name": "includeArchived",
             "in": "query",
-            "description": "Include links withdrawn by abuse handling (TC-103).",
+            "description": "Include links withdrawn by abuse handling.",
             "schema": {
               "type": "boolean"
             }
@@ -394,10 +394,10 @@
           "Links"
         ],
         "summary": "Creates a link.",
-        "description": "The cache invalidation matters even on a create, because the edge caches the absence of a\r\nslug as well as its presence: without it, a link created a second after somebody mistyped its\r\nURL would keep answering 404 for the length of the negative cache window (ADR-005).",
+        "description": "The cache invalidation matters even on a create, because the edge caches the absence of a\r\nslug as well as its presence: without it, a link created a second after somebody mistyped its\r\nURL would keep answering 404 for the length of the negative cache window.",
         "operationId": "CreateLink",
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The link to create.",
           "content": {
             "application/json": {
               "schema": {
@@ -500,7 +500,6 @@
         "description": "The request body is one BulkLinkItem per line and the response is one BulkLinkResult per line, written as each row is processed. A failing row does not fail the batch. At most two batches per tenant run at once and the row count is capped by Dle:Control:BulkMaxRows, which defaults to ten thousand.",
         "operationId": "BulkCreateLinks",
         "requestBody": {
-          "description": "Cancellation token.",
           "content": {
             "application/x-ndjson": {
               "schema": {
@@ -570,7 +569,7 @@
           "Links"
         ],
         "summary": "Reads one link.",
-        "description": "A link belonging to another tenant is not in the queryable at all, so it arrives here as an\r\nordinary miss and leaves as 404 — never 403, which would confirm the identifier exists\r\n(TC-166, SHARED-KERNEL §17.7).",
+        "description": "A link belonging to another tenant is not in the queryable at all, so it arrives here as an\r\nordinary miss and leaves as 404 — never 403, which would confirm the identifier exists.",
         "operationId": "GetLink",
         "parameters": [
           {
@@ -635,7 +634,7 @@
           }
         ],
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The fields to change.",
           "content": {
             "application/json": {
               "schema": {
@@ -757,7 +756,7 @@
         "tags": [
           "Links"
         ],
-        "summary": "Switches a link off without removing it (FR-104).",
+        "summary": "Switches a link off without removing it.",
         "description": "The slug stays reserved and the history stays readable. A link withdrawn for abuse is quarantined instead, which is a different operation with a different answer.",
         "operationId": "ArchiveLink",
         "parameters": [
@@ -810,7 +809,7 @@
         "tags": [
           "Links"
         ],
-        "summary": "Reads the revisions of a link, newest first (FR-107).",
+        "summary": "Reads the revisions of a link, newest first.",
         "description": "The stored snapshot is returned as it was written rather than re-projected into the current\r\nresponse shape. A history that silently changes shape when the API does is not a history, and\r\nthe question after an incident is what this link was serving at that moment — including the\r\nfields the current version no longer has.",
         "operationId": "ListLinkVersions",
         "parameters": [
@@ -1097,11 +1096,11 @@
         "tags": [
           "Domains"
         ],
-        "summary": "Registers a domain (FR-145).",
+        "summary": "Registers a domain.",
         "description": "Each subdomain needs its own association file and its own entitlement; nothing is inherited from the parent domain. A consent mode override may only tighten the tenant setting, never widen it.",
         "operationId": "CreateDomain",
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The host to register.",
           "content": {
             "application/json": {
               "schema": {
@@ -1237,7 +1236,7 @@
           }
         ],
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The fields to change.",
           "content": {
             "application/json": {
               "schema": {
@@ -1280,6 +1279,16 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1345,13 +1354,76 @@
         }
       }
     },
+    "/api/v1/domains/{id}/verify-ownership": {
+      "post": {
+        "tags": [
+          "Domains"
+        ],
+        "summary": "Verifies DNS TXT ownership (`_dle-verify.&lt;host&gt;`) and activates the domain.",
+        "operationId": "VerifyDomainOwnership",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The domain identifier.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainVerificationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/domains/{id}/verify": {
       "post": {
         "tags": [
           "Domains"
         ],
         "summary": "Runs every association check against a domain and records the outcome.",
-        "description": "The response carries the seven-day propagation notice whether the run passed or failed. An\r\noperator who fixes an association file, sees a green tick, tests on a device that still holds\r\nthe cached copy and concludes the fix did not work is the failure this notice exists to\r\nprevent (TC-125).",
+        "description": "The response carries the seven-day propagation notice whether the run passed or failed. An\r\noperator who fixes an association file, sees a green tick, tests on a device that still holds\r\nthe cached copy and concludes the fix did not work is the failure this notice exists to\r\nprevent.",
         "operationId": "VerifyDomain",
         "parameters": [
           {
@@ -1415,7 +1487,7 @@
           "Domains"
         ],
         "summary": "Reads the recent verification runs of a domain.",
-        "description": "History rather than a single status column, because association file problems are usually\r\nintermittent and the useful question is \"since when\", not \"right now\" (§C.6, §C.8).",
+        "description": "History rather than a single status column, because association file problems are usually\r\nintermittent and the useful question is \"since when\", not \"right now\".",
         "operationId": "ListDomainVerifications",
         "parameters": [
           {
@@ -1498,10 +1570,10 @@
           "Applications"
         ],
         "summary": "Registers an application.",
-        "description": "An Android registration whose fingerprints do not look like Play App Signing fingerprints is\r\naccepted with a warning rather than refused. It is legitimate — a build installed straight\r\nfrom a developer machine is signed with the upload certificate — but it is also the single\r\nmost common reason app links work in development and silently stop working in production, and\r\nthe operator has to be told at the moment they can still act on it (FR-144, TC-123).",
+        "description": "An Android registration whose fingerprints do not look like Play App Signing fingerprints is\r\naccepted with a warning rather than refused. It is legitimate — a build installed straight\r\nfrom a developer machine is signed with the upload certificate — but it is also the single\r\nmost common reason app links work in development and silently stop working in production, and\r\nthe operator has to be told at the moment they can still act on it.",
         "operationId": "CreateApp",
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The application to register.",
           "content": {
             "application/json": {
               "schema": {
@@ -1637,7 +1709,7 @@
           }
         ],
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The fields to change.",
           "content": {
             "application/json": {
               "schema": {
@@ -1856,7 +1928,7 @@
           "Applications"
         ],
         "summary": "Revokes a key.",
-        "description": "The row is kept and switched off rather than deleted, so that the audit entries referring to\r\nit keep referring to something that exists. The authentication lookup requires\r\n`is_active`, so a revoked key stops authenticating as soon as the lookup runs again:\r\nwithin `Dle:Identity:CredentialCacheSeconds` (60 by default) for a key that was in use,\r\nand at once for one that was not. An operator who needs revocation to bite immediately sets\r\nthat to 0 and pays a credential verification per request.",
+        "description": "The row is kept and switched off rather than deleted, so that the audit entries referring to\r\nit keep referring to something that exists. The authentication lookup requires\r\n`is_active` and revocations invalidate the verification cache immediately.",
         "operationId": "RevokeSdkKey",
         "parameters": [
           {
@@ -2003,11 +2075,11 @@
         "tags": [
           "Tenants"
         ],
-        "summary": "Provisions a tenant (FR-241).",
-        "description": "The default consent mode is `aggregate_only`, the mode that needs no consent banner. A\r\nfresh tenant therefore never collects more than the legitimate interest basis supports until\r\nsomebody deliberately widens it (§E.6.2, FR-248).",
+        "summary": "Provisions a tenant.",
+        "description": "The default consent mode is `aggregate_only`, the mode that needs no consent banner. A\r\nfresh tenant therefore never collects more than the legitimate interest basis supports until\r\nsomebody deliberately widens it.",
         "operationId": "CreateTenant",
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The tenant to create.",
           "content": {
             "application/json": {
               "schema": {
@@ -2138,7 +2210,7 @@
           "Tenants"
         ],
         "summary": "Changes a tenant.",
-        "description": "A consent mode change is recorded with the old and the new value. Tightening takes effect on\r\nthe next resolve; widening does not retroactively make already collected data lawful, and the\r\naudit entry is what lets that distinction be reconstructed later (§E.6.2).",
+        "description": "A consent mode change is recorded with the old and the new value. Tightening takes effect on\r\nthe next resolve; widening does not retroactively make already collected data lawful, and the\r\naudit entry is what lets that distinction be reconstructed later.",
         "operationId": "UpdateTenant",
         "parameters": [
           {
@@ -2153,7 +2225,7 @@
           }
         ],
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The fields to change.",
           "content": {
             "application/json": {
               "schema": {
@@ -2327,11 +2399,11 @@
         "tags": [
           "API keys"
         ],
-        "summary": "Issues a key (FR-242).",
+        "summary": "Issues a key.",
         "description": "A caller may not issue a key more powerful than their own. Without that rule an editor could\r\nmint an owner key and hold every capability the role system was meant to withhold, which is\r\nprivilege escalation through the credential endpoint rather than through the policies.",
         "operationId": "CreateApiKey",
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The key to issue.",
           "content": {
             "application/json": {
               "schema": {
@@ -2584,8 +2656,8 @@
         "tags": [
           "Analytics"
         ],
-        "summary": "Handles the attribution quality report — the deterministic, probabilistic and unmatched\r\nsplit with the mean confidence of the guesses (ADR-008, §0.2).",
-        "description": "How many installs were matched with certainty, how many were guessed and at what mean confidence, and how many were not matched at all. The unmatched share is published rather than hidden: a measurement product that only shows what it caught cannot be checked, and this number is the argument against the commercial measurement partners rather than a footnote (ADR-008, §0.2).",
+        "summary": "Handles the attribution quality report — the deterministic, probabilistic and unmatched\r\nsplit with the mean confidence of the guesses.",
+        "description": "How many installs were matched with certainty, how many were guessed and at what mean confidence, and how many were not matched at all. The unmatched share is published rather than hidden: a measurement product that only shows what it caught cannot be checked, and this number is the argument against the commercial measurement partners rather than a footnote.",
         "operationId": "GetAttributionQuality",
         "responses": {
           "200": {
@@ -2617,7 +2689,7 @@
           "Analytics"
         ],
         "summary": "A report as a CSV or Parquet download.",
-        "description": "Streams the report rather than buffering it, so a two year breakdown is a download and not an outage (FR-203).",
+        "description": "Streams the report rather than buffering it, so a two year breakdown is a download and not an outage.",
         "operationId": "ExportAnalytics",
         "parameters": [
           {
@@ -2665,7 +2737,7 @@
           "Analytics"
         ],
         "summary": "A live view of the window over Server-Sent Events.",
-        "description": "Emits a snapshot whenever the totals move and a heartbeat when they do not. The click stream is written by the edge process, so this polls the analytics store rather than forwarding an in-process event; the shape is already a stream of snapshots, so replacing the poll with a subscription later changes nothing a client can see (FR-206).",
+        "description": "Emits a snapshot whenever the totals move and a heartbeat when they do not. The click stream is written by the edge process, so this polls the analytics store rather than forwarding an in-process event; the shape is already a stream of snapshots, so replacing the poll with a subscription later changes nothing a client can see.",
         "operationId": "StreamAnalytics",
         "parameters": [
           {
@@ -2700,7 +2772,7 @@
           "Analytics"
         ],
         "summary": "Handles an export.",
-        "description": "GDPR article 20 portability and the DORA article 30 exit plan are the same feature, and this is it: newline delimited JSON per table in a ZIP, streamed straight out of the database. Credential material — key hashes, webhook secrets, account hashes — is never included, and the manifest says so explicitly rather than leaving the gap to be discovered (FR-249, §E.6.4).",
+        "description": "GDPR article 20 portability and the DORA article 30 exit plan are the same feature, and this is it: newline delimited JSON per table in a ZIP, streamed straight out of the database. Credential material — key hashes, webhook secrets, account hashes — is never included, and the manifest says so explicitly rather than leaving the gap to be discovered.",
         "operationId": "ExportTenantData",
         "responses": {
           "200": {
@@ -2719,13 +2791,76 @@
         }
       }
     },
+    "/api/v1/privacy/installs/{installId}": {
+      "delete": {
+        "tags": [
+          "Analytics"
+        ],
+        "summary": "Erases all stored data associated with one installId in scope.",
+        "description": "Removes attributions, installation records and SDK event rows belonging to the given install_id within the authenticated caller's tenant. The administrative audit entry records only aggregate counts and never writes the install_id.",
+        "operationId": "EraseInstallData",
+        "parameters": [
+          {
+            "name": "installId",
+            "in": "path",
+            "description": "The SDK installation identifier supplied by the data subject.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallErasureResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/resolve": {
       "post": {
         "tags": [
           "SDK"
         ],
         "summary": "Recovers the click context of a fresh installation.",
-        "description": "Called once on the first launch after an install. Answers with the strategy that produced the match and how much to trust it; an unmatched install is a 200 with matched=false, not an error. Limited to five calls an hour per install_id (§E.9).",
+        "description": "Called once on the first launch after an install. Answers with the strategy that produced the match and how much to trust it; an unmatched install is a 200 with matched=false, not an error. Limited to five calls an hour per install_id.",
         "operationId": "ResolveInstall",
         "requestBody": {
           "content": {
@@ -2869,7 +3004,7 @@
           "SDK"
         ],
         "summary": "Records a batch of client events, link opens included.",
-        "description": "Batched, at most 100 events per request. The link_open event is what makes a direct open through a verified Universal or App Link measurable at all: the operating system opens the application without any request reaching the engine, so without this report the most successful campaigns are the most under-counted (§B.6.4, FR-223). A link_open whose URL resolves to one of the caller's links creates a direct_open attribution with confidence 1.00.",
+        "description": "Batched, at most 100 events per request. The link_open event is what makes a direct open through a verified Universal or App Link measurable at all: the operating system opens the application without any request reaching the engine, so without this report the most successful campaigns are the most under-counted. A link_open whose URL resolves to one of the caller's links creates a direct_open attribution with confidence 1.00.",
         "operationId": "RecordSdkEvents",
         "requestBody": {
           "content": {
@@ -2941,7 +3076,7 @@
           "SDK"
         ],
         "summary": "Issues the six characters an interstitial page shows the user.",
-        "description": "The deterministic iOS path of ADR-008. The edge has just written a click event and exchanges its identifier for a short lived, single use code the user can read off the screen and type into the application (FR-184, §B.6.3). Only the keyed hash of the code is stored; the plaintext exists in this response and nowhere else.",
+        "description": "The deterministic iOS attribution path. The edge has just written a click event and exchanges its identifier for a short lived, single use code the user can read off the screen and type into the application. Only the keyed hash of the code is stored; the plaintext exists in this response and nowhere else.",
         "operationId": "IssueClaimCode",
         "requestBody": {
           "content": {
@@ -3007,6 +3142,88 @@
         }
       }
     },
+    "/v1/login-hints": {
+      "post": {
+        "tags": [
+          "SDK"
+        ],
+        "summary": "Handles `POST /v1/login-hints`.",
+        "description": "Binds a keyed account identifier from a signed-in web visit to a click identifier or short link URL when attribution consent is active, allowing S2 login attribution to resolve in O(1) without scanning click partitions.",
+        "operationId": "RecordLoginHint",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginHintRequestDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginHintResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Payload Too Large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/abuse-reports": {
       "post": {
         "tags": [
@@ -3016,7 +3233,7 @@
         "description": "The acknowledgement never reveals whether the reported link exists. A form that answered \"unknown link\" would tell anyone with a list of candidate slugs which ones are live, which is slug enumeration with the rate limit of a public form rather than of the resolve path.",
         "operationId": "SubmitAbuseReport",
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The report.",
           "content": {
             "application/json": {
               "schema": {
@@ -3264,7 +3481,7 @@
           }
         ],
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The decision.",
           "content": {
             "application/json": {
               "schema": {
@@ -3341,7 +3558,7 @@
           }
         ],
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The stated reason.",
           "content": {
             "application/json": {
               "schema": {
@@ -3417,7 +3634,7 @@
           }
         ],
         "requestBody": {
-          "description": "Cancellation token.",
+          "description": "The stated reason.",
           "content": {
             "application/json": {
               "schema": {
@@ -3532,7 +3749,7 @@
           "Webhooks"
         ],
         "summary": "Registers a postback endpoint.",
-        "description": "The destination is resolved and checked against the same target policy a link is checked against, so a webhook cannot be aimed at a private, loopback or cloud metadata address (T-02). The response carries the shared secret exactly once.",
+        "description": "The destination is resolved and checked against the same target policy a link is checked against, so a webhook cannot be aimed at a private, loopback or cloud metadata address. The response carries the shared secret exactly once.",
         "operationId": "CreateWebhook",
         "requestBody": {
           "content": {
@@ -3786,6 +4003,139 @@
           }
         }
       }
+    },
+    "/api/v1/webhooks/deliveries/{id}/replay": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Re-queues one failed or dead webhook delivery.",
+        "description": "Moves a failed or dead delivery back to pending using its originally stored and signed payload so transient downstream outages can recover without re-emitting events.",
+        "operationId": "ReplayWebhookDelivery",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryReplayResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/deliveries/replay-dead": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Re-queues dead-letter webhook deliveries for active subscriptions.",
+        "description": "Transitions exhausted ('dead') deliveries for active tenant subscriptions back to pending in bounded batches.",
+        "operationId": "ReplayDeadWebhookDeliveries",
+        "parameters": [
+          {
+            "name": "subscriptionId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookDeliveryReplayResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3807,7 +4157,7 @@
             "format": "int32"
           }
         },
-        "description": "One arm of a deterministic A/B split (FR-125)."
+        "description": "One arm of a deterministic A/B split."
       },
       "AbuseReportDetailResponse": {
         "required": [
@@ -3942,7 +4292,7 @@
             "format": "date-time"
           }
         },
-        "description": "Response to key creation. The secret appears here and nowhere else: only an Argon2id hash is\r\nstored, so a lost key is replaced, never recovered (FR-242, K5 in §E.4.1)."
+        "description": "Response to key creation. The secret appears here and nowhere else: only an Argon2id hash is\r\nstored, so a lost key is replaced, never recovered."
       },
       "ApiKeyResponse": {
         "required": [
@@ -4140,7 +4490,7 @@
             "description": "Per strategy detail."
           }
         },
-        "description": "The honest attribution split. This is the number commercial measurement partners systematically\r\nblur, and stating it plainly is the product argument, not a footnote (ADR-008, §0.2)."
+        "description": "The honest attribution split. This is the number commercial measurement partners systematically\r\nblur, and stating it plainly is the product argument, not a footnote."
       },
       "AuthConfigResponse": {
         "type": "object",
@@ -4178,7 +4528,7 @@
             "description": "Scopes to request during interactive sign in."
           }
         },
-        "description": "Public authentication and OIDC configuration for the administration UI (FR-242)."
+        "description": "Public authentication and OIDC configuration for the administration UI."
       },
       "BreakdownResponse": {
         "required": [
@@ -4232,7 +4582,7 @@
             "format": "double"
           }
         },
-        "description": "One row of a dimensional breakdown report (FR-202), for example clicks per country or per\r\ncampaign. Rows are ordered by long BreakdownRow.Clicks descending and truncated to\r\nint AnalyticsQuery.Limit."
+        "description": "One row of a dimensional breakdown report, for example clicks per country or per\r\ncampaign. Rows are ordered by long BreakdownRow.Clicks descending and truncated to\r\nint AnalyticsQuery.Limit."
       },
       "BulkLinkItem": {
         "required": [
@@ -4252,7 +4602,7 @@
             "$ref": "#/components/schemas/CreateLinkRequest"
           }
         },
-        "description": "One line of a bulk create request. Streamed as NDJSON so a ten thousand row batch never has to\r\nbe buffered whole (FR-103)."
+        "description": "One line of a bulk create request. Streamed as NDJSON so a ten thousand row batch never has to\r\nbe buffered whole."
       },
       "BulkLinkResult": {
         "required": [
@@ -4325,7 +4675,7 @@
             "format": "int32"
           }
         },
-        "description": "A freshly issued claim code. The plaintext code appears here and nowhere else: storage keeps\r\nonly its keyed hash (§E.4.1, K3)."
+        "description": "A freshly issued claim code. The plaintext code appears here and nowhere else: storage keeps\r\nonly its keyed hash."
       },
       "ConsentDto": {
         "type": "object",
@@ -4376,10 +4726,10 @@
               "null",
               "string"
             ],
-            "description": "Reporter contact address. Stored only as a hash, so follow up is possible without\r\n            keeping an identifiable address (§E.6.3)."
+            "description": "Reporter contact address. Stored only as a hash, so follow up is possible without\r\n            keeping an identifiable address."
           }
         },
-        "description": "Body of `POST /api/v1/abuse-reports`. Public and rate limited (FR-245)."
+        "description": "Body of `POST /api/v1/abuse-reports`. Public and rate limited."
       },
       "CreateApiKeyRequest": {
         "required": [
@@ -4412,7 +4762,7 @@
             "format": "date-time"
           }
         },
-        "description": "Body of `POST /api/v1/api-keys` (FR-242)."
+        "description": "Body of `POST /api/v1/api-keys`."
       },
       "CreateAppRequest": {
         "required": [
@@ -4441,7 +4791,7 @@
             "items": {
               "type": "string"
             },
-            "description": "SHA-256 signing certificate fingerprints. On Android these must come from Play\r\n            Console App signing, not from the local upload keystore (FR-144)."
+            "description": "SHA-256 signing certificate fingerprints. On Android these must come from Play\r\n            Console App signing, not from the local upload keystore."
           },
           "store_id": {
             "type": [
@@ -4462,7 +4812,7 @@
               "null",
               "string"
             ],
-            "description": "Custom URI scheme, used only as a last resort fallback. Never carry secrets over\r\n            it: any application can claim the same scheme (§A.2.3, CVE-2026-26123)."
+            "description": "Custom URI scheme, used only as a last resort fallback. Never carry secrets over\r\n            it: any application can claim the same scheme (CVE-2026-26123)."
           },
           "min_app_version": {
             "type": [
@@ -4476,7 +4826,7 @@
               "null",
               "string"
             ],
-            "description": "App Clip bundle identifier, published in the association file (FR-146)."
+            "description": "App Clip bundle identifier, published in the association file."
           },
           "domain_ids": {
             "type": "array",
@@ -4497,7 +4847,7 @@
         "properties": {
           "host": {
             "type": "string",
-            "description": "Host to serve links from, for example `link.customer.sk`. Each subdomain needs\r\n            its own association file and its own entitlement; nothing is inherited (§A.2.1)."
+            "description": "Host to serve links from, for example `link.customer.sk`. Each subdomain needs\r\n            its own association file and its own entitlement; nothing is inherited."
           },
           "is_default": {
             "type": "boolean",
@@ -4515,7 +4865,7 @@
               "null",
               "string"
             ],
-            "description": "Default language for the interstitial page on this domain (NFR-15)."
+            "description": "Default language for the interstitial page on this domain."
           },
           "default_og": {
             "oneOf": [
@@ -4529,7 +4879,7 @@
             ]
           }
         },
-        "description": "Body of `POST /api/v1/domains` (FR-145)."
+        "description": "Body of `POST /api/v1/domains`."
       },
       "CreateLinkRequest": {
         "required": [
@@ -4548,7 +4898,7 @@
               "null",
               "string"
             ],
-            "description": "Custom slug. Omit to have one generated (8 base62 characters, ADR-007). A custom\r\n            slug must be distinguishable from the generated shape, so 3 to 7 or 9 or more characters."
+            "description": "Custom slug. Omit to have one generated (8 base62 characters). A custom\r\n            slug must be distinguishable from the generated shape, so 3 to 7 or 9 or more characters."
           },
           "title": {
             "type": [
@@ -4580,7 +4930,7 @@
             "items": {
               "$ref": "#/components/schemas/RoutingRule"
             },
-            "description": "Routing rules. Must contain exactly one default rule and it must be last (TC-105)."
+            "description": "Routing rules. Must contain exactly one default rule and it must be last."
           },
           "og": {
             "oneOf": [
@@ -4588,7 +4938,7 @@
                 "type": "null"
               },
               {
-                "description": "Open Graph metadata for crawler previews. Falls back to the domain default (FR-105).",
+                "description": "Open Graph metadata for crawler previews. Falls back to the domain default.",
                 "$ref": "#/components/schemas/OgMeta"
               }
             ]
@@ -4613,7 +4963,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Free form tags used for filtering and search (FR-109)."
+            "description": "Free form tags used for filtering and search."
           },
           "starts_at": {
             "type": [
@@ -4628,7 +4978,7 @@
               "null",
               "string"
             ],
-            "description": "Instant the link stops serving (FR-104).",
+            "description": "Instant the link stops serving.",
             "format": "date-time"
           },
           "expired_url": {
@@ -4636,14 +4986,14 @@
               "null",
               "string"
             ],
-            "description": "Where an expired link redirects instead of answering 404 (TC-104)."
+            "description": "Where an expired link redirects instead of answering 404."
           },
           "is_active": {
             "type": "boolean",
             "description": "Whether the link is active on creation."
           }
         },
-        "description": "Body of `POST /api/v1/links` (FR-101, FR-102, FR-104, FR-105)."
+        "description": "Body of `POST /api/v1/links`."
       },
       "CreateTenantRequest": {
         "required": [
@@ -4665,10 +5015,10 @@
               "null",
               "string"
             ],
-            "description": "Consent mode: `off`, `aggregate_only` or `full`. Defaults to\r\n            `aggregate_only`, the mode that needs no consent banner (§E.6.2, FR-248)."
+            "description": "Consent mode: `off`, `aggregate_only` or `full`. Defaults to\r\n            `aggregate_only`, the mode that needs no consent banner."
           }
         },
-        "description": "Body of `POST /api/v1/tenants` (FR-241)."
+        "description": "Body of `POST /api/v1/tenants`."
       },
       "CreateWebhookRequest": {
         "required": [
@@ -4679,7 +5029,7 @@
         "properties": {
           "url": {
             "type": "string",
-            "description": "Destination URL. Validated against the same target policy as a link, so a webhook\r\n            cannot be pointed at a cloud metadata endpoint (T-02)."
+            "description": "Destination URL. Validated against the same target policy as a link, so a webhook\r\n            cannot be pointed at a cloud metadata endpoint."
           },
           "event_types": {
             "type": "array",
@@ -4696,7 +5046,7 @@
             "description": "Whether the subscription is active on creation. Omitted means active; only an explicit\r\n`false` registers a subscription that receives nothing until it is enabled."
           }
         },
-        "description": "Body of `POST /api/v1/webhooks` (FR-204)."
+        "description": "Body of `POST /api/v1/webhooks`."
       },
       "DeviceSignalsDto": {
         "type": "object",
@@ -4796,6 +5146,28 @@
             ],
             "description": "Consent mode override, when one is set."
           },
+          "ownership_verified_at": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When DNS TXT ownership was verified, or `null` if pending.",
+            "format": "date-time"
+          },
+          "ownership_txt_host": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "DNS TXT host name to publish for multi-tenant ownership verification."
+          },
+          "ownership_txt_value": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Expected DNS TXT record value (`dle-verify=...`) for this tenant and host."
+          },
           "created_at": {
             "type": "string",
             "description": "Creation instant.",
@@ -4831,7 +5203,7 @@
           },
           "redirect_count": {
             "type": "integer",
-            "description": "How many redirects were seen. Any value above zero fails the check (TC-124).",
+            "description": "How many redirects were seen. Any value above zero fails the check.",
             "format": "int32"
           },
           "checked_at": {
@@ -4840,7 +5212,7 @@
             "format": "date-time"
           }
         },
-        "description": "One recorded verification run (FR-143)."
+        "description": "One recorded verification run."
       },
       "DomainVerificationResponse": {
         "required": [
@@ -4881,10 +5253,10 @@
               "null",
               "string"
             ],
-            "description": "Operator facing reminder that association file changes take up to seven days to\r\n            reach devices on both platforms (§A.2.1, §A.2.2, TC-125)."
+            "description": "Operator facing reminder that association file changes take up to seven days to\r\n            reach devices on both platforms."
           }
         },
-        "description": "Result of `POST /api/v1/domains/{id}/verify` (FR-143). The warning list matters as much as\r\nthe error list: an Android fingerprint taken from the local keystore instead of Play App Signing\r\nverifies fine in a debug build and then fails silently in production (FR-144, TC-123)."
+        "description": "Result of `POST /api/v1/domains/{id}/verify`. The warning list matters as much as\r\nthe error list: an Android fingerprint taken from the local keystore instead of Play App Signing\r\nverifies fine in a debug build and then fails silently in production."
       },
       "EventBatchAcceptedDto": {
         "required": [
@@ -4938,7 +5310,7 @@
             "description": "The events. At most int EventBatchDto.MaxEventsPerBatch per request."
           }
         },
-        "description": "Body of `POST /v1/events`. Batched on purpose: an SDK on a mobile network should spend one\r\nrequest, not one per event (FR-226)."
+        "description": "Body of `POST /v1/events`. Batched on purpose: an SDK on a mobile network should spend one\r\nrequest, not one per event."
       },
       "EventDto": {
         "required": [
@@ -4998,7 +5370,7 @@
             "description": "Additional event properties."
           }
         },
-        "description": "A single SDK event. `link_open` is the important one: when the operating system opens the\r\napplication directly through a Universal or App Link, no HTTP request ever reaches the engine,\r\nso without this report the click is invisible and the most successful campaigns are the ones\r\nmost under-counted (FR-223, §B.6.4)."
+        "description": "A single SDK event. `link_open` is the important one: when the operating system opens the\r\napplication directly through a Universal or App Link, no HTTP request ever reaches the engine,\r\nso without this report the click is invisible and the most successful campaigns are the ones\r\nmost under-counted."
       },
       "FunnelSummary": {
         "required": [
@@ -5036,7 +5408,33 @@
             "format": "double"
           }
         },
-        "description": "Aggregated click to conversion funnel for one AnalyticsQuery (FR-202)."
+        "description": "Aggregated click to conversion funnel for one AnalyticsQuery."
+      },
+      "InstallErasureResponse": {
+        "required": [
+          "erased_installs",
+          "erased_attributions",
+          "erased_sdk_events"
+        ],
+        "type": "object",
+        "properties": {
+          "erased_installs": {
+            "type": "integer",
+            "description": "Number of `installs` rows removed.",
+            "format": "int32"
+          },
+          "erased_attributions": {
+            "type": "integer",
+            "description": "Number of `attributions` rows removed.",
+            "format": "int32"
+          },
+          "erased_sdk_events": {
+            "type": "integer",
+            "description": "Number of `sdk_events` rows removed.",
+            "format": "int32"
+          }
+        },
+        "description": "Response payload returned by `DELETE /api/v1/privacy/installs/{installId}`."
       },
       "InterstitialMode": {
         "enum": [
@@ -5044,7 +5442,7 @@
           "always",
           "never"
         ],
-        "description": "Per-rule override for the interstitial page (FR-162, FR-163)."
+        "description": "Per-rule override for the interstitial page."
       },
       "IssueClaimCodeRequest": {
         "required": [
@@ -5064,7 +5462,7 @@
             "description": "Link the click belongs to, as a string because the value is a 64 bit identifier."
           }
         },
-        "description": "Body of `POST /v1/claim-codes`: the interstitial page asking for the six characters it will\r\nshow the user (S3, FR-184, §B.6.3)."
+        "description": "Body of `POST /v1/claim-codes`: the interstitial page asking for the six characters it will\r\nshow the user (S3)."
       },
       "JsonElement": { },
       "JsonWebKey": {
@@ -5130,7 +5528,7 @@
             "format": "date-time"
           }
         },
-        "description": "One public key published at `/.well-known/jwks.json` so that integrators can verify\r\nwebhook signatures without holding a shared secret (§B.7.3, §B.7.4)."
+        "description": "One public key published at `/.well-known/jwks.json` so that integrators can verify\r\nwebhook signatures without holding a shared secret."
       },
       "JwksDocument": {
         "required": [
@@ -5193,7 +5591,7 @@
           },
           "qr_url": {
             "type": "string",
-            "description": "URL of the QR image for this link (FR-106)."
+            "description": "URL of the QR image for this link."
           },
           "title": {
             "type": [
@@ -5292,12 +5690,12 @@
               "null",
               "string"
             ],
-            "description": "Set when the link is quarantined after an abuse report (TC-103).",
+            "description": "Set when the link is quarantined after an abuse report.",
             "format": "date-time"
           },
           "version": {
             "type": "integer",
-            "description": "Version counter, incremented on every change (FR-107).",
+            "description": "Version counter, incremented on every change.",
             "format": "int32"
           },
           "created_at": {
@@ -5357,7 +5755,7 @@
                 "type": "null"
               },
               {
-                "description": "Default Open Graph metadata (FR-105).",
+                "description": "Default Open Graph metadata.",
                 "$ref": "#/components/schemas/OgMeta"
               }
             ]
@@ -5367,10 +5765,10 @@
             "items": {
               "type": "string"
             },
-            "description": "Tags added to every link created from this template (FR-109)."
+            "description": "Tags added to every link created from this template."
           }
         },
-        "description": "Body of `POST` and `PATCH /api/v1/links/templates/{id}` (FR-108)."
+        "description": "Body of `POST` and `PATCH /api/v1/links/templates/{id}`."
       },
       "LinkTemplateResponse": {
         "required": [
@@ -5441,7 +5839,7 @@
             "format": "date-time"
           }
         },
-        "description": "Representation of a link template (FR-108)."
+        "description": "Representation of a link template."
       },
       "LinkVersionSummary": {
         "required": [
@@ -5481,7 +5879,71 @@
             "$ref": "#/components/schemas/JsonElement"
           }
         },
-        "description": "One historical revision of a link, as stored (FR-107)."
+        "description": "One historical revision of a link, as stored."
+      },
+      "LoginHintRequestDto": {
+        "required": [
+          "login_key"
+        ],
+        "type": "object",
+        "properties": {
+          "login_key": {
+            "type": "string",
+            "description": "Client-hashed or opaque account identifier (re-keyed server-side with HMAC-SHA256)."
+          },
+          "click_id": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Public click identifier carried by `dl_cid`, if known."
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Short link URL (`https://host/slug`), resolved when string? LoginHintRequestDto.ClickId is absent."
+          },
+          "deeplink_path": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Optional override application deep-link path."
+          },
+          "consent": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "End-user consent state evaluated by `ConsentGate`.",
+                "$ref": "#/components/schemas/ConsentDto"
+              }
+            ]
+          }
+        },
+        "description": "Body of `POST /v1/login-hints`: binds a signed-in user account hash to a click or short\r\nlink URL so S2 login attribution resolves in `O(1)` without scanning raw click partitions."
+      },
+      "LoginHintResponseDto": {
+        "required": [
+          "accepted",
+          "expires_at"
+        ],
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "description": "Whether consent permitted storing the hint for S2 attribution."
+          },
+          "expires_at": {
+            "type": "string",
+            "description": "Expiry instant in UTC (or current timestamp when declined by consent).",
+            "format": "date-time"
+          }
+        },
+        "description": "Acknowledgement of `POST /v1/login-hints`."
       },
       "MatchTypeSummary": {
         "required": [
@@ -5506,7 +5968,7 @@
             "format": "double"
           }
         },
-        "description": "Distribution of attribution strategies over the reported interval — the data behind the\r\nhonest dashboard demanded by ADR-008 (\"78 % deterministic, 14 % probabilistic with an average\r\nconfidence of 0.71, 8 % unmatched\")."
+        "description": "Distribution of attribution strategies over the reported interval — the data behind the\r\nhonest dashboard (\"78 % deterministic, 14 % probabilistic with an average\r\nconfidence of 0.71, 8 % unmatched\")."
       },
       "OgMeta": {
         "type": "object",
@@ -6016,7 +6478,7 @@
         "properties": {
           "install_id": {
             "type": "string",
-            "description": "Identifier the SDK generated and persisted for this installation. Deduplication and\r\n            replay protection key off it (FR-188, TC-143)."
+            "description": "Identifier the SDK generated and persisted for this installation. Deduplication and\r\n            replay protection key off it."
           },
           "platform": {
             "type": "string",
@@ -6027,7 +6489,7 @@
               "null",
               "string"
             ],
-            "description": "Host application version, for version scoped routing rules (FR-124)."
+            "description": "Host application version, for version scoped routing rules."
           },
           "os_version": {
             "type": [
@@ -6041,21 +6503,21 @@
               "null",
               "string"
             ],
-            "description": "Raw Google Play Install Referrer string. The deterministic Android path (S1, FR-182)."
+            "description": "Raw Google Play Install Referrer string. The deterministic Android path (S1)."
           },
           "claim_code": {
             "type": [
               "null",
               "string"
             ],
-            "description": "Code the user typed from the interstitial page. A deterministic iOS path (S3, FR-184)."
+            "description": "Code the user typed from the interstitial page. A deterministic iOS path (S3)."
           },
           "login_key": {
             "type": [
               "null",
               "string"
             ],
-            "description": "Opaque, already hashed account identifier used to reconcile a web session with a\r\n            signed in user. A deterministic path on both platforms (S2, FR-185)."
+            "description": "Opaque, already hashed account identifier used to reconcile a web session with a\r\n            signed in user. A deterministic path on both platforms (S2)."
           },
           "signals": {
             "oneOf": [
@@ -6063,7 +6525,7 @@
                 "type": "null"
               },
               {
-                "description": "Device signals for probabilistic matching. Sent only when the module is enabled and\r\n            attribution consent was given; otherwise the SDK omits the object entirely (TC-145, TC-146).",
+                "description": "Device signals for probabilistic matching. Sent only when the module is enabled and\r\n            attribution consent was given; otherwise the SDK omits the object entirely.",
                 "$ref": "#/components/schemas/DeviceSignalsDto"
               }
             ]
@@ -6074,13 +6536,13 @@
                 "type": "null"
               },
               {
-                "description": "Recorded consent. Under a tenant in `full` mode, click-id linking of any kind -\r\n            the deterministic install referrer included - happens only when `attribution` is true;\r\n            absent or negative consent answers `match_type=none` with reason `consent_missing`\r\n            and a non-zero `expires_in`, so the SDK asks again once consent is recorded\r\n            (ePrivacy art. 5(3), §E.6.2). Device signals are stored only with it too.",
+                "description": "Recorded consent. Under a tenant in `full` mode, click-id linking of any kind -\r\n            the deterministic install referrer included - happens only when `attribution` is true;\r\n            absent or negative consent answers `match_type=none` with reason `consent_missing`\r\n            and a non-zero `expires_in`, so the SDK asks again once consent is recorded\r\n            (ePrivacy art. 5(3)). Device signals are stored only with it too.",
                 "$ref": "#/components/schemas/ConsentDto"
               }
             ]
           }
         },
-        "description": "Body of `POST /v1/resolve`, the call an SDK makes once on the first launch after install\r\nto recover the context of the click that led to it (§B.7.2, UC-04, UC-05)."
+        "description": "Body of `POST /v1/resolve`, the call an SDK makes once on the first launch after install\r\nto recover the context of the click that led to it."
       },
       "ResolveResponseDto": {
         "required": [
@@ -6134,7 +6596,7 @@
             "format": "int32"
           }
         },
-        "description": "Response to `POST /v1/resolve`. Always states how the match was made and how much to trust\r\nit: a probabilistic result is never dressed up as a certainty (FR-186, ADR-008)."
+        "description": "Response to `POST /v1/resolve`. Always states how the match was made and how much to trust\r\nit: a probabilistic result is never dressed up as a certainty."
       },
       "RoutingActionKind": {
         "enum": [
@@ -6144,7 +6606,7 @@
           "app_only",
           "block"
         ],
-        "description": "What a routing rule does once it has matched (§B.5.4)."
+        "description": "What a routing rule does once it has matched."
       },
       "RoutingRule": {
         "required": [
@@ -6163,7 +6625,7 @@
                 "type": "null"
               },
               {
-                "description": "The match condition. `null` marks the default rule, which matches every client.\r\nA rule set must contain exactly one such rule and it must be the last one; a set without it\r\ncannot be saved (FR-127, TC-105).",
+                "description": "The match condition. `null` marks the default rule, which matches every client.\r\nA rule set must contain exactly one such rule and it must be the last one; a set without it\r\ncannot be saved.",
                 "$ref": "#/components/schemas/RuleCondition"
               }
             ]
@@ -6173,7 +6635,7 @@
             "$ref": "#/components/schemas/RuleAction"
           }
         },
-        "description": "One routing rule (§B.5.4). Rules are data, never code: they are evaluated deterministically,\r\nin order, and the first match wins (FR-127)."
+        "description": "One routing rule. Rules are data, never code: they are evaluated deterministically,\r\nin order, and the first match wins."
       },
       "RuleAction": {
         "required": [
@@ -6197,7 +6659,7 @@
               "null",
               "string"
             ],
-            "description": "In-app path handed to the application, for example `\"/product/123\"`. It is a path, never a full URL,\r\nand never comes from the incoming request (TC-164)."
+            "description": "In-app path handed to the application, for example `\"/product/123\"`. It is a path, never a full URL,\r\nand never comes from the incoming request."
           },
           "store_url": {
             "type": [
@@ -6211,14 +6673,14 @@
               "null",
               "string"
             ],
-            "description": "Android only. Template for the Play Install Referrer string (§A.2.4), for example\r\n`\"dl_cid={click_id}&amp;utm_source={utm_source}\"`. Supported placeholders are\r\n`{click_id}`, `{utm_source}`, `{utm_medium}`, `{utm_campaign}`,\r\n`{utm_term}`, `{utm_content}` and `{link_id}`."
+            "description": "Android only. Template for the Play Install Referrer string, for example\r\n`\"dl_cid={click_id}&amp;utm_source={utm_source}\"`. Supported placeholders are\r\n`{click_id}`, `{utm_source}`, `{utm_medium}`, `{utm_campaign}`,\r\n`{utm_term}`, `{utm_content}` and `{link_id}`."
           },
           "interstitial": {
-            "description": "Per-rule override of the interstitial page (FR-162, FR-163).",
+            "description": "Per-rule override of the interstitial page.",
             "$ref": "#/components/schemas/InterstitialMode"
           }
         },
-        "description": "The `then` half of a routing rule (§B.5.4) — what happens once the rule has matched."
+        "description": "The `then` half of a routing rule — what happens once the rule has matched."
       },
       "RuleCondition": {
         "type": "object",
@@ -6239,7 +6701,7 @@
                 "type": "null"
               },
               {
-                "description": "Constraint on the operating system version reported by the client (FR-124).",
+                "description": "Constraint on the operating system version reported by the client.",
                 "$ref": "#/components/schemas/VersionPredicate"
               }
             ]
@@ -6250,7 +6712,7 @@
                 "type": "null"
               },
               {
-                "description": "Constraint on the host application version reported by the SDK (FR-124).",
+                "description": "Constraint on the host application version reported by the SDK.",
                 "$ref": "#/components/schemas/VersionPredicate"
               }
             ]
@@ -6263,7 +6725,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Countries the rule applies to, as ISO-3166-1 alpha-2 codes in upper case, for example `\"SK\"` (FR-122)."
+            "description": "Countries the rule applies to, as ISO-3166-1 alpha-2 codes in upper case, for example `\"SK\"`."
           },
           "region": {
             "type": [
@@ -6273,7 +6735,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Sub-national regions the rule applies to, in the notation produced by the GeoIP provider (FR-122)."
+            "description": "Sub-national regions the rule applies to, in the notation produced by the GeoIP provider."
           },
           "language": {
             "type": [
@@ -6283,7 +6745,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Languages the rule applies to, as lowercase primary subtags, for example `\"sk\"` (FR-123)."
+            "description": "Languages the rule applies to, as lowercase primary subtags, for example `\"sk\"`."
           },
           "channel": {
             "type": [
@@ -6301,7 +6763,7 @@
                 "type": "null"
               },
               {
-                "description": "Time constraint evaluated in UTC (FR-126).",
+                "description": "Time constraint evaluated in UTC.",
                 "$ref": "#/components/schemas/TimeWindowPredicate"
               }
             ]
@@ -6314,10 +6776,10 @@
             "items": {
               "$ref": "#/components/schemas/AbVariant"
             },
-            "description": "Deterministic A/B split (FR-125). The variants are laid out as consecutive percentage ranges over the\r\nbucket space produced by short ConsistentBucket.Of(string clickId); if the bucket falls beyond the\r\naccumulated total, the rule does not match and evaluation continues with the next rule."
+            "description": "Deterministic A/B split. The variants are laid out as consecutive percentage ranges over the\r\nbucket space produced by short ConsistentBucket.Of(string clickId); if the bucket falls beyond the\r\naccumulated total, the rule does not match and evaluation continues with the next rule."
           }
         },
-        "description": "The `when` half of a routing rule (§B.5.4, FR-121…FR-126)."
+        "description": "The `when` half of a routing rule."
       },
       "SdkKeyCreatedResponse": {
         "required": [
@@ -6463,10 +6925,10 @@
               "null",
               "string"
             ],
-            "description": "Click identifier used for deterministic A/B bucketing. Defaults to a fixed sample\r\n            value so repeated simulations are reproducible (FR-125)."
+            "description": "Click identifier used for deterministic A/B bucketing. Defaults to a fixed sample\r\n            value so repeated simulations are reproducible."
           }
         },
-        "description": "Query for `GET /api/v1/links/{id}/simulate`. Answers \"what happens for an iPhone 15 on\r\niOS 18 in Slovakia, opened from Instagram\" without generating a click event (FR-129)."
+        "description": "Query for `GET /api/v1/links/{id}/simulate`. Answers \"what happens for an iPhone 15 on\r\niOS 18 in Slovakia, opened from Instagram\" without generating a click event."
       },
       "SimulateResponse": {
         "required": [
@@ -6623,7 +7085,7 @@
             "description": "Key identifier named in the `v2` slot of the signature."
           }
         },
-        "description": "Result of `POST /api/v1/webhooks/{id}/test` (§B.7.3)."
+        "description": "Result of `POST /api/v1/webhooks/{id}/test`."
       },
       "TimeSeriesPoint": {
         "required": [
@@ -6641,7 +7103,7 @@
           },
           "clicks": {
             "type": "integer",
-            "description": "Number of human clicks in the bucket. Crawler traffic is excluded unless\r\n            bool AnalyticsQuery.IncludeBots is set (FR-205).",
+            "description": "Number of human clicks in the bucket. Crawler traffic is excluded unless\r\n            bool AnalyticsQuery.IncludeBots is set.",
             "format": "int64"
           },
           "installs": {
@@ -6655,7 +7117,7 @@
             "format": "int64"
           }
         },
-        "description": "One bucket of a time series report (FR-202). Buckets are aligned in UTC according to\r\nTimeGrain AnalyticsQuery.Grain and are returned in ascending order."
+        "description": "One bucket of a time series report. Buckets are aligned in UTC according to\r\nTimeGrain AnalyticsQuery.Grain and are returned in ascending order."
       },
       "TimeSeriesResponse": {
         "required": [
@@ -6730,7 +7192,7 @@
             "description": "Days of the week in UTC during which the rule is live, 0 = Sunday … 6 = Saturday. An empty or absent array means \"any day\"."
           }
         },
-        "description": "Time constraint on a routing rule (FR-126). Every component is evaluated in UTC so that a\r\nrule behaves identically on every node, regardless of server locale."
+        "description": "Time constraint on a routing rule. Every component is evaluated in UTC so that a\r\nrule behaves identically on every node, regardless of server locale."
       },
       "TriageDecisionRequest": {
         "required": [
@@ -6770,7 +7232,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Replacement SHA-256 signing certificate fingerprints. On Android these must be the Play\r\nConsole App signing fingerprints, not the local upload keystore (FR-144, TC-123)."
+            "description": "Replacement SHA-256 signing certificate fingerprints. On Android these must be the Play\r\nConsole App signing fingerprints, not the local upload keystore."
           },
           "play_signing_fingerprints": {
             "type": [
@@ -6801,7 +7263,7 @@
               "null",
               "string"
             ],
-            "description": "Custom URI scheme, used only as a last-resort fallback (§A.2.3)."
+            "description": "Custom URI scheme, used only as a last-resort fallback."
           },
           "min_app_version": {
             "type": [
@@ -6815,7 +7277,7 @@
               "null",
               "string"
             ],
-            "description": "App Clip bundle identifier published in the association file (FR-146)."
+            "description": "App Clip bundle identifier published in the association file."
           },
           "domain_ids": {
             "type": [
@@ -6853,7 +7315,7 @@
               "null",
               "string"
             ],
-            "description": "Consent mode override: `off`, `aggregate_only` or `full`. It may only tighten\r\nthe tenant setting; an empty string clears the override (§E.6.2)."
+            "description": "Consent mode override: `off`, `aggregate_only` or `full`. It may only tighten\r\nthe tenant setting; an empty string clears the override."
           },
           "default_og": {
             "oneOf": [
@@ -6861,7 +7323,7 @@
                 "type": "null"
               },
               {
-                "description": "Replacement default Open Graph metadata for links on this domain (FR-105).",
+                "description": "Replacement default Open Graph metadata for links on this domain.",
                 "$ref": "#/components/schemas/OgMeta"
               }
             ]
@@ -6891,7 +7353,7 @@
               "null",
               "string"
             ],
-            "description": "New web fallback target. Re-validated against the safety policy (§E.3)."
+            "description": "New web fallback target. Re-validated against the safety policy."
           },
           "deeplink_path": {
             "type": [
@@ -6977,14 +7439,14 @@
               "null",
               "boolean"
             ],
-            "description": "Activate or deactivate the link (FR-104)."
+            "description": "Activate or deactivate the link."
           },
           "change_note": {
             "type": [
               "null",
               "string"
             ],
-            "description": "Note recorded in the link version history (FR-107)."
+            "description": "Note recorded in the link version history."
           }
         },
         "description": "Body of `PATCH /api/v1/links/{id}`. Every member is optional; only the supplied ones change."
@@ -7004,7 +7466,7 @@
               "null",
               "string"
             ],
-            "description": "New consent mode: `off`, `aggregate_only` or `full` (FR-248, §E.6.2)."
+            "description": "New consent mode: `off`, `aggregate_only` or `full`."
           },
           "status": {
             "type": [
@@ -7087,7 +7549,7 @@
             "description": "Lower than or equal to this version."
           }
         },
-        "description": "Version constraint on an OS or application version (FR-124).\r\nAll bounds that are present must hold at the same time."
+        "description": "Version constraint on an OS or application version.\r\nAll bounds that are present must hold at the same time."
       },
       "WebhookCreatedResponse": {
         "required": [
@@ -7136,7 +7598,30 @@
             "description": "Key identifier of the asymmetric slot at the moment of creation, so an integrator knows\r\nwhich key of `/.well-known/jwks.json` to look for while testing."
           }
         },
-        "description": "Response to `POST /api/v1/webhooks`. The shared secret appears here and nowhere else\r\n(§B.5.2, §E.4.1 K4)."
+        "description": "Response to `POST /api/v1/webhooks`. The shared secret appears here and nowhere else."
+      },
+      "WebhookDeliveryReplayResponse": {
+        "required": [
+          "replayed_count",
+          "delivery_ids"
+        ],
+        "type": "object",
+        "properties": {
+          "replayed_count": {
+            "type": "integer",
+            "description": "Number of deliveries transitioned back to `pending`.",
+            "format": "int32"
+          },
+          "delivery_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Identifiers of the re-queued deliveries."
+          }
+        },
+        "description": "Result of re-queueing failed or dead webhook deliveries."
       },
       "WebhookDeliveryResponse": {
         "required": [
@@ -7216,7 +7701,7 @@
             "description": "The exact body that was or will be sent."
           }
         },
-        "description": "One recorded delivery attempt, as the customer sees it (FR-204)."
+        "description": "One recorded delivery attempt, as the customer sees it."
       },
       "WebhookResponse": {
         "required": [
@@ -7272,40 +7757,40 @@
   },
   "tags": [
     {
+      "name": "API keys"
+    },
+    {
+      "name": "Abuse"
+    },
+    {
+      "name": "Abuse triage"
+    },
+    {
+      "name": "Analytics"
+    },
+    {
+      "name": "Applications"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Domains"
+    },
+    {
+      "name": "Keys"
+    },
+    {
       "name": "Link templates"
     },
     {
       "name": "Links"
     },
     {
-      "name": "Domains"
-    },
-    {
-      "name": "Applications"
-    },
-    {
-      "name": "Tenants"
-    },
-    {
-      "name": "API keys"
-    },
-    {
-      "name": "Analytics"
-    },
-    {
       "name": "SDK"
     },
     {
-      "name": "Abuse"
-    },
-    {
-      "name": "Keys"
-    },
-    {
-      "name": "Auth"
-    },
-    {
-      "name": "Abuse triage"
+      "name": "Tenants"
     },
     {
       "name": "Webhooks"

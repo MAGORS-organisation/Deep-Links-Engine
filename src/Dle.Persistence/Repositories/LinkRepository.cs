@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Reads and writes links, their revision history and the snapshot the edge caches (FR-101, FR-107).
+/// Reads and writes links, their revision history and the snapshot the edge caches.
 /// </summary>
 public sealed class LinkRepository
 {
@@ -209,7 +209,7 @@ public sealed class LinkRepository
     }
 
     /// <summary>
-    /// Saves a change to a link and appends the revision that records it (FR-107).
+    /// Saves a change to a link and appends the revision that records it.
     /// </summary>
     /// <param name="link">The link, already carrying the new values.</param>
     /// <param name="changedBy">Operator making the change.</param>
@@ -328,7 +328,7 @@ public sealed class LinkRepository
     /// <remarks>
     /// Deleting is for a link the tenant created by mistake. A link withdrawn for abuse is
     /// quarantined instead, never deleted, so that it keeps answering 410 with an explanation and
-    /// the forensic trail survives (§E.3, TC-103).
+    /// the forensic trail survives.
     /// </remarks>
     public async Task<bool> RemoveAsync(long id, CancellationToken cancellationToken)
     {
@@ -369,7 +369,7 @@ public sealed class LinkRepository
     }
 
     /// <summary>
-    /// Builds the snapshot the edge caches for one short URL (§B.6.1).
+    /// Builds the snapshot the edge caches for one short URL.
     /// </summary>
     /// <param name="host">The host of the short URL.</param>
     /// <param name="slug">The slug of the short URL.</param>
@@ -379,13 +379,12 @@ public sealed class LinkRepository
     /// <para>
     /// This is the control-plane twin of the Dapper query on the resolve path: the same shape, built
     /// for cache warming, previews and the rule simulator, where an extra hundred microseconds do
-    /// not matter and the convenience does. The resolve path itself never calls it (ADR-004).
+    /// not matter and the convenience does. The resolve path itself never calls it.
     /// </para>
     /// <para>
     /// Quarantined links are deliberately included. The edge has to find one in order to answer 410
     /// Gone rather than 404, and <see cref="LinkSnapshot.GetServeState"/> makes that decision from
-    /// <see cref="LinkSnapshot.QuarantinedAt"/> — which it can only do if the row reaches it
-    /// (TC-103).
+    /// <see cref="LinkSnapshot.QuarantinedAt"/> — which it can only do if the row reaches it.
     /// </para>
     /// </remarks>
     public async Task<LinkSnapshot?> GetSnapshotAsync(

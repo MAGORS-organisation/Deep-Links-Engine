@@ -7,7 +7,7 @@ using Npgsql;
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Stores and replays the responses of idempotent requests (§B.7.3).
+/// Stores and replays the responses of idempotent requests.
 /// </summary>
 /// <remarks>
 /// A client that retries after a timeout must not create a second link. The key alone cannot decide
@@ -210,7 +210,7 @@ public sealed class IdempotencyStore
 
         // The hash is not a secret, but comparing it in constant time costs nothing and keeps the
         // habit intact: a length-leaking or early-exit comparison of a digest is exactly the shape
-        // shared kernel §17.6 forbids elsewhere.
+        // that is forbidden elsewhere.
         if (!CryptographicOperations.FixedTimeEquals(record.RequestHash, requestHash))
         {
             return IdempotencyLookup.Conflict;

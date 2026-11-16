@@ -13,16 +13,15 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Analytics;
 
 /// <summary>
-/// <c>GET /api/v1/analytics/stream</c> — a live view of the current bucket over Server-Sent Events
-/// (FR-206).
+/// <c>GET /api/v1/analytics/stream</c> — a live view of the current bucket over Server-Sent Events.
 /// </summary>
 /// <remarks>
 /// <para>
-/// A "could have" requirement implemented honestly rather than impressively. The click stream is
+/// A nice-to-have, implemented honestly rather than impressively. The click stream is
 /// written by the <em>edge</em> process, not by the control plane, so there is no in-process event
 /// the control plane could forward; a genuinely push-based stream would need the edge to publish to
 /// a bus and would put a second piece of infrastructure into a design whose whole premise is that a
-/// self-hoster needs only PostgreSQL (§B.3, ADR-006). What this endpoint does instead is poll the
+/// self-hoster needs only PostgreSQL. What this endpoint does instead is poll the
 /// analytics store on an interval the client chooses within bounds, and emit a snapshot whenever it
 /// changes. For a dashboard tile that is indistinguishable from a push; for anything that needs
 /// millisecond latency it is the wrong tool, and it says so here rather than in a support ticket.
@@ -36,8 +35,7 @@ namespace Dle.Control.Features.Analytics;
 /// </para>
 /// <para>
 /// Payloads are pre-serialized through the module's source generated context and emitted as
-/// strings, so no reflection based serializer touches a connection that stays open for hours
-/// (SHARED-KERNEL §17.3).
+/// strings, so no reflection based serializer touches a connection that stays open for hours.
 /// </para>
 /// </remarks>
 public static class StreamAnalytics

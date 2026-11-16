@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="SigningKeyRecord"/> to the <c>signing_keys</c> table (§E.4.2, ADR-013).</summary>
+/// <summary>Maps <see cref="SigningKeyRecord"/> to the <c>signing_keys</c> table.</summary>
 public sealed class SigningKeyRecordConfiguration : IEntityTypeConfiguration<SigningKeyRecord>
 {
     /// <inheritdoc />
@@ -32,8 +32,7 @@ public sealed class SigningKeyRecordConfiguration : IEntityTypeConfiguration<Sig
             .HasColumnName("public_key")
             .IsRequired();
 
-        // Encrypted at rest, and never read by the edge: the resolver verifies but does not sign
-        // (T-15).
+        // Encrypted at rest, and never read by the edge: the resolver verifies but does not sign.
         builder.Property(k => k.PrivateKeyEncrypted)
             .HasColumnName("private_key_encrypted");
 
@@ -64,7 +63,7 @@ public sealed class SigningKeyRecordConfiguration : IEntityTypeConfiguration<Sig
         builder.HasIndex(k => k.Kid).IsUnique().HasDatabaseName("uq_signing_keys_kid");
 
         // Exactly one current key per tenant and purpose. Enforced here rather than in the
-        // rotation code, because two current keys would make the signer's choice arbitrary (S-12).
+        // rotation code, because two current keys would make the signer's choice arbitrary.
         // NULLS NOT DISTINCT (PostgreSQL 15+, and the project floor is 16) so that the instance
         // wide keys, whose tenant_id is null, are covered by the same constraint instead of
         // slipping past it the way distinct nulls would.

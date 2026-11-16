@@ -1,7 +1,7 @@
 package sk.magors.dle.internal
 
 /**
- * Client side mirror of `Dle.Domain.Attribution.ClaimCode` (S3, FR-184). The two implementations
+ * Client side mirror of `Dle.Domain.Attribution.ClaimCode` (S3). The two implementations
  * must agree character for character: a code the SDK normalises differently from the server is a
  * code that cannot be redeemed.
  */

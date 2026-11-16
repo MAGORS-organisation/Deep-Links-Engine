@@ -9,7 +9,7 @@ namespace Dle.Control.Features.Attribution;
 /// </summary>
 /// <remarks>
 /// <para>
-/// SHARED-KERNEL §17.3 forbids reflection based serialization on the hot path, and these endpoints
+/// Reflection based serialization is forbidden on the hot path, and these endpoints
 /// are the SDK's half of it: <c>POST /v1/events</c> alone is allowed sixty calls a minute per
 /// installation. The handlers therefore read and write through this context explicitly instead of
 /// relying on the framework's default binder, which also keeps the wire format snake_case in this

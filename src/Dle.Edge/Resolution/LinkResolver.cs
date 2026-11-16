@@ -21,32 +21,32 @@ using Microsoft.Extensions.Primitives;
 namespace Dle.Edge.Resolution;
 
 /// <summary>
-/// The resolve pipeline of §B.6.1: normalize, look up, classify, gate on consent, evaluate the rules,
+/// The resolve pipeline: normalize, look up, classify, gate on consent, evaluate the rules,
 /// mint a click identifier, record the click without blocking, respond.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The order is not decoration. Consent is evaluated <em>before</em> routing because it is an input to
 /// the decision — it decides whether a click identifier may be attached to the outgoing URL at all —
-/// and not a filter applied to a finished answer (§A principle 5, §E.6.2). The click identifier is
+/// and not a filter applied to a finished answer. The click identifier is
 /// minted before the event is written because the event carries it, and the event is written before
-/// the response is returned because the response must never wait on telemetry (FR-165).
+/// the response is returned because the response must never wait on telemetry.
 /// </para>
 /// <para>
-/// The latency budget of §B.6.1 is 5.5 ms at the median against the 8 ms of NFR-01, which dictates the
+/// The internal latency budget is 5.5 ms at the median against an 8 ms target, which dictates the
 /// I/O shape: exactly one cache lookup, falling through to exactly one indexed query on a miss, and
-/// nothing else on the path that produces a redirect (SHARED-KERNEL §17.8). The three outcomes that
+/// nothing else on the path that produces a redirect. The three outcomes that
 /// produce an HTML document take a second, separately cached read for the domain's branding; they are
 /// already an order of magnitude more expensive to render and they are a small minority of traffic.
 /// </para>
 /// <para>
 /// Every path that answers 404 does the same work in the same order — classify, gate, mint, record —
-/// and returns the same bytes. That is the point of TC-102, TC-166 and T-07: a slug that never
+/// and returns the same bytes. That is the enumeration defence: a slug that never
 /// existed, a slug whose link lives on another host and a slug whose link is not active are
 /// indistinguishable to the client, so a scan learns nothing from either the body or the clock. On a
 /// cache miss all of them also perform the same second cache write, so the expensive path is uniform
 /// too. The single exception is a network prefix already in the enumeration shadow ban, answered
-/// before any lookup at all — by then the client has proved it is scanning, and §E.9 asks for exactly
+/// before any lookup at all — by then the client has proved it is scanning, and the ban exists for exactly
 /// that.
 /// </para>
 /// </remarks>
@@ -85,17 +85,17 @@ public sealed class LinkResolver
     /// <param name="links">The link store behind the cache.</param>
     /// <param name="domains">Per-host runtime configuration, read only for HTML responses.</param>
     /// <param name="classifier">Client classifier.</param>
-    /// <param name="botVerifier">Crawler confirmation (FR-161, TC-107).</param>
+    /// <param name="botVerifier">Crawler confirmation.</param>
     /// <param name="routing">Rule evaluator.</param>
-    /// <param name="sink">Bounded, non-blocking click event sink (FR-165, NFR-06).</param>
+    /// <param name="sink">Bounded, non-blocking click event sink.</param>
     /// <param name="clickIds">Click identifier codec.</param>
     /// <param name="ipHasher">Address hasher; supplies both the click stream fields and the limiter key.</param>
-    /// <param name="guard">Anti-enumeration budget (§E.9, T-07).</param>
+    /// <param name="guard">Anti-enumeration budget.</param>
     /// <param name="metrics">Edge instruments.</param>
     /// <param name="cacheOptions">Cache expiry policy.</param>
-    /// <param name="options">Edge options; supply the preview switch (FR-166).</param>
+    /// <param name="options">Edge options; supply the preview switch.</param>
     /// <param name="privacy">Deployment-wide ceiling on what may be derived from an address.</param>
-    /// <param name="timeProvider">Clock (SHARED-KERNEL §17.2).</param>
+    /// <param name="timeProvider">Clock.</param>
     /// <param name="logger">Logger.</param>
     /// <param name="claimCodes">Generator for deterministic iOS claim codes.</param>
     /// <param name="claimCodeWriter">Storage writer for issued claim codes.</param>
@@ -190,7 +190,7 @@ public sealed class LinkResolver
             return InterstitialResults.NotFound(language: null);
         }
 
-        // The only short circuit in the pipeline, and §E.9 requires it: a shadow banned prefix is
+        // The only short circuit in the pipeline, and a deliberate one: a shadow banned prefix is
         // answered without a cache read or a query, and sees the same document as every other miss.
         if (await _guard.IsShadowBannedAsync(networkKey, cancellationToken))
         {
@@ -200,7 +200,7 @@ public sealed class LinkResolver
             return InterstitialResults.NotFound(language: null);
         }
 
-        // TC-109: a slug carrying homoglyphs or characters outside the alphabet cannot name a link, so
+        // A slug carrying homoglyphs or characters outside the alphabet cannot name a link, so
         // it is answered like any other miss rather than being handed to the store.
         bool slugUsable = SlugPolicy.TryNormalize(rawSlug, out string slug) && !SlugPolicy.IsReserved(slug);
 
@@ -266,7 +266,7 @@ public sealed class LinkResolver
 
         double elapsedSeconds = Stopwatch.GetElapsedTime(started).TotalSeconds;
 
-        // FR-166: preview runs the whole pipeline and records nothing, so a rule can be debugged
+        // Preview runs the whole pipeline and records nothing, so a rule can be debugged
         // against production data without moving a campaign's numbers. A HEAD is the same kind of
         // request: nobody followed the link, a mail gateway or a chat client checked that it exists.
         if (!IsProbe(context.Request))
@@ -278,7 +278,7 @@ public sealed class LinkResolver
         {
             // The Location carries this visitor's click identifier and was chosen for this visitor's
             // device. A shared cache in front of the edge that kept the answer would hand both to
-            // everybody else (ADR-0009: a redirect is never cached).
+            // everybody else: a redirect is never cached.
             context.Response.Headers.CacheControl = "no-store";
         }
 
@@ -460,8 +460,7 @@ public sealed class LinkResolver
     }
 
     /// <summary>
-    /// Charges a 404 to the enumeration budget and switches to 429 for the request that drains it
-    /// (§E.9, T-07, TC-108).
+    /// Charges a 404 to the enumeration budget and switches to 429 for the request that drains it.
     /// </summary>
     /// <remarks>
     /// The budget is charged after the response has been decided rather than in middleware, because it
@@ -494,7 +493,7 @@ public sealed class LinkResolver
     }
 
     /// <summary>
-    /// The stampede-safe lookup of §C.3.1: one cache read that falls through to at most one database
+    /// The stampede-safe lookup: one cache read that falls through to at most one database
     /// query however many requests arrive for the same cold key at once.
     /// </summary>
     /// <remarks>
@@ -502,8 +501,8 @@ public sealed class LinkResolver
     /// The factory is a <c>static</c> lambda over an explicit state object, so the delegate is cached
     /// once in a static field and no closure is allocated per request. The one small object the state
     /// carries is a flag the factory sets, which is what tells the caller whether the request reached
-    /// the database — the difference between the cache-hit bucket of NFR-01 and the miss bucket of
-    /// NFR-02 being measured rather than guessed.
+    /// the database — the difference between the cache-hit latency bucket and the cache-miss bucket
+    /// being measured rather than guessed.
     /// </para>
     /// <para>
     /// A miss is always re-stamped, whether or not it found anything, and both branches cost one cache
@@ -519,9 +518,8 @@ public sealed class LinkResolver
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "§D.6 requires that an unavailable database produces 503 and never 500, and that cached links " +
-                        "keep resolving. The failure is logged and the branch returns an explicit unavailable result, " +
-                        "which satisfies SHARED-KERNEL §17.9.")]
+        Justification = "An unavailable database must produce 503 and never 500, and cached links must " +
+                        "keep resolving. The failure is logged and the branch returns an explicit unavailable result.")]
     private async ValueTask<LookupResult> LookupAsync(string host, string slug, CancellationToken cancellationToken)
     {
         var state = new LookupState(_links, host, slug);
@@ -575,14 +573,13 @@ public sealed class LinkResolver
     }
 
     /// <summary>
-    /// Classifies the client and, when the user agent claims to be a crawler, confirms the claim
-    /// (FR-161, TC-107).
+    /// Classifies the client and, when the user agent claims to be a crawler, confirms the claim.
     /// </summary>
     /// <remarks>
     /// An unconfirmed claim is not merely ignored: the context is rewritten so the request is routed as
     /// the ordinary browser it actually is, recorded with <c>is_bot=false</c> and
     /// <c>spoofed_bot=true</c>, and answered with a redirect rather than an Open Graph document. That
-    /// combination is what TC-107 asserts, and it is what stops a forged user agent from being a free
+    /// combination is what stops a forged user agent from being a free
     /// switch for keeping clicks out of — or pushing them into — somebody's campaign numbers.
     /// </remarks>
     private async ValueTask<ClientContext> ClassifyAsync(
@@ -620,12 +617,12 @@ public sealed class LinkResolver
     }
 
     /// <summary>
-    /// Turns the decision into a response (ADR-009).
+    /// Turns the decision into a response.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Every redirect is <c>permanent: false</c>, which is a 302 (ADR-009, FR-164,
-    /// SHARED-KERNEL §17.1). A 301 is cached indefinitely by browsers and by every intermediary in
+    /// Every redirect is <c>permanent: false</c>, which is a 302.
+    /// A 301 is cached indefinitely by browsers and by every intermediary in
     /// between, which would freeze an A/B split, outlive a campaign's expiry and survive a change of
     /// target — the three things a link exists to be able to do.
     /// </para>
@@ -634,8 +631,7 @@ public sealed class LinkResolver
     /// <see cref="RoutingUrlBuilder"/> already refuses to take one from a request parameter. The
     /// duplication is deliberate: it is a second, independent check that a hand-edited rule, a
     /// corrupted row or a future change to the builder would have to get past before a
-    /// <c>javascript:</c> target or a header-splitting newline could reach a <c>Location</c> header
-    /// (SHARED-KERNEL §17.4, TC-164).
+    /// <c>javascript:</c> target or a header-splitting newline could reach a <c>Location</c> header.
     /// </para>
     /// </remarks>
     private async ValueTask<ResolveOutcome> RespondAsync(
@@ -660,12 +656,12 @@ public sealed class LinkResolver
         switch (state)
         {
             case LinkServeState.Gone:
-                // TC-103: a quarantined link is withdrawn, not missing. 410 says the difference, and the
-                // page carries the route to contest it (§E.3).
+                // A quarantined link is withdrawn, not missing. 410 says the difference, and the
+                // page carries the route to contest it.
                 return await GoneAsync(host, client, ResolveOutcomes.Gone, cancellationToken);
 
             case LinkServeState.Expired:
-                // TC-104: an expired link with a configured landing page redirects there; without one it
+                // An expired link with a configured landing page redirects there; without one it
                 // is indistinguishable from a link that never existed.
                 return SafeUrl.Web(link.ExpiredUrl) is { } expiredUrl
                     ? new ResolveOutcome(Results.Redirect(expiredUrl, permanent: false), ResolveOutcomes.Redirect, DecisionNames.Web, Reason: null)
@@ -685,7 +681,7 @@ public sealed class LinkResolver
         }
 
         // A confirmed crawler gets a document whatever the rules decided, because it does not follow a
-        // redirect reliably and runs no script (ADR-009, FR-161, TC-106). The rules were still
+        // redirect reliably and runs no script. The rules were still
         // evaluated, so the click stream records the variant that would have been served.
         if (client.IsCrawler)
         {
@@ -751,8 +747,8 @@ public sealed class LinkResolver
             case DecisionKind.NotFound:
             default:
                 // No rule matched and the set carried no default. The validator refuses to store such a
-                // set (FR-127, TC-105), so reaching this is a data integrity problem rather than a
-                // client one — and it still ends in the deny-by-default answer (SHARED-KERNEL §17.9).
+                // set, so reaching this is a data integrity problem rather than a
+                // client one — and it still ends in the deny-by-default answer.
                 return NotServed(client, NotFoundReasons.NoMatchingRule);
         }
     }
@@ -877,8 +873,7 @@ public sealed class LinkResolver
         "Design",
         "CA1031:Do not catch general exception types",
         Justification = "Branding is cosmetic and must never fail a response. The failure is logged and the branch " +
-                        "returns no configuration, which renders the neutral page — the explicit fallback required by " +
-                        "SHARED-KERNEL §17.9.")]
+                        "returns no configuration, which renders the neutral page — an explicit fallback.")]
     private async ValueTask<DomainRuntimeConfig?> LoadDomainAsync(string host, CancellationToken cancellationToken)
     {
         try
@@ -907,26 +902,25 @@ public sealed class LinkResolver
     /// </summary>
     /// <remarks>
     /// Composed identically for every reason. The reason travels to the debug log and to the click
-    /// stream's <c>decision</c> column, and reaches the client in no form at all (T-07, TC-102, TC-166).
+    /// stream's <c>decision</c> column, and reaches the client in no form at all.
     /// </remarks>
     private static ResolveOutcome NotServed(ClientContext client, string reason) =>
         new(InterstitialResults.NotFound(client), ResolveOutcomes.NotFound, DecisionNames.NotFound, reason);
 
     /// <summary>
-    /// Queues the click event without blocking the response (FR-165, NFR-06, §C.3.1).
+    /// Queues the click event without blocking the response.
     /// </summary>
     /// <remarks>
     /// <para>
     /// The sink is a bounded channel with <c>DropWrite</c>: when the analytics layer falls behind the
-    /// telemetry is thrown away and the redirect is still served. That trade is what NFR-06 states, and
+    /// telemetry is thrown away and the redirect is still served. That trade is deliberate, and
     /// it is why this is <c>TryWrite</c> and not an <c>await</c>.
     /// </para>
     /// <para>
     /// What is written is the intersection of two independent ceilings: the deployment's
     /// <c>Dle:Privacy:IpStorage</c> and the per-request consent decision. Neither widens the other, so
     /// an operator who configured <c>none</c> stores nothing even for a fully consenting visitor, and a
-    /// visitor who refused attribution has no prefix stored however permissive the deployment is
-    /// (§E.6.2, TC-145, TC-146).
+    /// visitor who refused attribution has no prefix stored however permissive the deployment is.
     /// </para>
     /// </remarks>
     private void WriteClickEvent(
@@ -947,7 +941,7 @@ public sealed class LinkResolver
             && _privacy.AllowsIpPrefix
             && !string.Equals(networkKey, EdgeRateLimitPartitions.UnknownClientKey, StringComparison.Ordinal);
 
-        // `off` keeps a click counter and nothing about the visitor (docs/compliance/privacy.md): no
+        // `off` keeps a click counter and nothing about the visitor: no
         // click identifier, no user agent, no geography, no language, no referrer. The row still
         // says which link was followed, when, and what the engine decided, which is the counter.
         bool describeVisitor = consent.EffectiveMode != ConsentMode.Off;
@@ -992,13 +986,13 @@ public sealed class LinkResolver
     }
 
     /// <summary>
-    /// Whether the request must leave no trace: a decision preview (FR-166), or a <c>HEAD</c>, which
+    /// Whether the request must leave no trace: a decision preview, or a <c>HEAD</c>, which
     /// asks whether the link exists without following it. Neither is a click, and neither is shown a
     /// claim code, so neither may store one.
     /// </summary>
     private bool IsProbe(HttpRequest request) => HttpMethods.IsHead(request.Method) || IsPreview(request);
 
-    /// <summary>Whether the request asked for a decision preview (FR-166).</summary>
+    /// <summary>Whether the request asked for a decision preview.</summary>
     private bool IsPreview(HttpRequest request) =>
         request.Query.TryGetValue(_options.PreviewQueryKey, out StringValues values) &&
         values.Count > 0 &&
@@ -1016,7 +1010,7 @@ public sealed class LinkResolver
             client.IsCrawler);
 
     /// <summary>
-    /// The 503 answer for a lookup that could not complete (§D.6).
+    /// The 503 answer for a lookup that could not complete.
     /// </summary>
     /// <remarks>
     /// 503 and never 500: the request was well formed and the service is temporarily unable to answer
@@ -1041,7 +1035,7 @@ public sealed class LinkResolver
         _ => null,
     };
 
-    /// <summary>Lowercase device class names, as §B.5.3 spells them in the click stream.</summary>
+    /// <summary>Lowercase device class names, as the click stream spells them.</summary>
     private static string DeviceClassName(DeviceClass deviceClass) => deviceClass switch
     {
         DeviceClass.Phone => "phone",
@@ -1051,7 +1045,7 @@ public sealed class LinkResolver
         _ => "unknown",
     };
 
-    /// <summary>Lowercase consent mode names, as §B.5.3 spells them in the click stream.</summary>
+    /// <summary>Lowercase consent mode names, as the click stream spells them.</summary>
     private static string ConsentModeName(ConsentMode mode) => mode switch
     {
         ConsentMode.Full => "full",
@@ -1065,7 +1059,7 @@ public sealed class LinkResolver
     /// <remarks>
     /// A class rather than a tuple only because the factory has to report back that it ran. Everything
     /// else it needs is immutable and travels in the same object, so the request allocates this one
-    /// small instance and no closure (§C.3.1).
+    /// small instance and no closure.
     /// </remarks>
     private sealed class LookupState(ILinkStore store, string host, string slug)
     {

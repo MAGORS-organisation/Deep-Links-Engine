@@ -12,7 +12,7 @@ import UIKit
 /// The policy exists so the SDK never sends a URL of an arbitrary host to the engine. A URL that
 /// the operating system hands the app can come from anywhere — a `mailto:`, a custom scheme, a
 /// universal link of some other domain — and only the operator's own short links are the
-/// engine's business (FR-223, spec §E.7 item 1).
+/// engine's business.
 public enum DleLinkPolicy {
     /// Normalises one ``DleConfig/linkHosts`` entry: lower-cased, trimmed, without a trailing
     /// dot; an optional leading `*.` matches exactly one subdomain level.
@@ -143,13 +143,13 @@ public enum DleUniversalLink {
 ///
 /// Why this matters: when the app is already installed, a tap on a Universal Link opens it
 /// **directly** — no request reaches the engine — so the click is invisible unless the app
-/// reports it. This is the `link_open` event of FR-223 and spec §B.6.4, and the most
+/// reports it. This is the `link_open` event, and the most
 /// successful campaigns are the ones most under-counted without it.
 ///
 /// Every method returns the URL for the host app to route and never routes itself. Only
 /// `http(s)` URLs on the configured ``DleConfig/linkHosts`` are reported; a custom-scheme URL
 /// is returned unreported and is never logged in full, because a custom-scheme URL is exactly
-/// where a careless integration would put a token (spec §E.7 item 1).
+/// where a careless integration would put a token.
 ///
 /// Synchronous and callable from any thread: UIKit's callbacks must return a `Bool` without
 /// leaving the call stack, and ``EventQueue/enqueue(_:)`` is synchronous for that reason.

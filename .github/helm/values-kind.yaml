@@ -28,7 +28,7 @@ image:
     tag: ci
     pullPolicy: Never
 
-# Profile B of §B.8: stores handed in as connection strings. The password matches stores.yaml.
+# External stores handed in as connection strings. The password matches stores.yaml.
 externalPostgres:
   connectionString: "Host=dle-postgres;Port=5432;Database=dle;Username=dle;Password=kind-ci-postgres;Application Name=dle-control;Include Error Detail=true"
 externalValkey:

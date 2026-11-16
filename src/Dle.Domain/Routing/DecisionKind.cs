@@ -1,11 +1,11 @@
 namespace Dle.Domain.Routing;
 
 /// <summary>
-/// The response class that the edge turns into an HTTP response (ADR-009).
+/// The response class that the edge turns into an HTTP response.
 /// </summary>
 /// <remarks>
 /// A link is never answered with <c>301</c>: a permanent redirect is cached by browsers and CDNs
-/// forever and would break A/B splits, time windows and target changes (ADR-009, FR-164).
+/// forever and would break A/B splits, time windows and target changes.
 /// </remarks>
 public enum DecisionKind
 {
@@ -18,7 +18,7 @@ public enum DecisionKind
     /// <summary>Open the installed application directly, without offering the store.</summary>
     AppDirect = 2,
 
-    /// <summary><c>200</c> interstitial HTML with a real <c>&lt;a&gt;</c> button (FR-162).</summary>
+    /// <summary><c>200</c> interstitial HTML with a real <c>&lt;a&gt;</c> button.</summary>
     Interstitial = 3,
 
     /// <summary>The rule set refused to serve this client.</summary>
@@ -27,9 +27,9 @@ public enum DecisionKind
     /// <summary>No rule matched, or the link is not servable. Answered with <c>404</c>.</summary>
     NotFound = 5,
 
-    /// <summary>The link existed but was withdrawn (quarantined). Answered with <c>410</c> (TC-103).</summary>
+    /// <summary>The link existed but was withdrawn (quarantined). Answered with <c>410</c>.</summary>
     Gone = 6,
 
-    /// <summary><c>200</c> HTML preview with Open Graph tags, for crawlers and <c>?_dl=preview</c> (FR-161, FR-166).</summary>
+    /// <summary><c>200</c> HTML preview with Open Graph tags, for crawlers and <c>?_dl=preview</c>.</summary>
     Preview = 7,
 }

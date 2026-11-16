@@ -1,5 +1,5 @@
 # =============================================================================
-# Deep Link Engine (DLE) — Helm chart values (Profile B, docs/zadanie.md §B.8).
+# Deep Link Engine (DLE) — Helm chart values (Kubernetes).
 #
 #   CDN/WAF → Ingress → dle-edge (HPA 3–20)      ┐
 #                     → dle-control (2 replicas)  ├→ PostgreSQL primary + read replicas
@@ -16,7 +16,7 @@
 #   secrets.masterSecret               Dle:Crypto:MasterSecret, at least 32 characters
 #   externalPostgres.connectionString  or postgresql.enabled=true with postgresql.auth.password
 #
-# !!! /.well-known RESPONSES MUST NEVER BE REDIRECTED (§A.2.1) — see the `ingress` section. !!!
+# !!! /.well-known RESPONSES MUST NEVER BE REDIRECTED — see the `ingress` section. !!!
 # =============================================================================
 
 
@@ -89,6 +89,7 @@ secrets:
     valkeyConnectionString: valkey-connection-string     # optional (no L2 cache without it)
     clickHouseConnectionString: clickhouse-connection-string  # optional, control only
     metricsScrapeToken: metrics-scrape-token             # required when serviceMonitor.enabled
+    bootstrapOwnerKey: bootstrap-owner-key               # first start only, control only
   # Dle:Crypto:MasterSecret of the CONTROL PLANE — at least 32 characters. The slug permutation
   # and the token/webhook signing keys derive from it. It is never mounted into the edge.
   # Generate with:  openssl rand -base64 48
@@ -105,6 +106,14 @@ secrets:
   # Ignored when existingSecret is set: put a non-empty token in that Secret under
   # keys.metricsScrapeToken (the pods refuse to start without the key; an empty value is anonymous).
   metricsScrapeToken: ""
+  # The first owner API key (Dle:Bootstrap:InitialApiKey). On an empty database the control plane
+  # creates the tenant "default" with this key, so you can sign in to the admin console. It is never
+  # printed or logged: you generated it, so you already hold it. Format: "dle_", 8 and 43 characters
+  # from A-Z a-z 0-9. Generate with:
+  #   printf 'dle_%s_%s\n' "$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 8)" "$(LC_ALL=C tr -dc A-Za-z0-9 </dev/urandom | head -c 43)"
+  # Once a named owner key exists and "root-bootstrap" is revoked, it is unused. With existingSecret,
+  # put it in that Secret under keys.bootstrapOwnerKey instead. Empty: nothing is provisioned.
+  bootstrapOwnerKey: ""
 
 
 # -----------------------------------------------------------------------------
@@ -113,7 +122,7 @@ secrets:
 # Npgsql connection strings, exactly as docker-compose.yml builds them:
 #   Host=<primary>;Port=5432;Database=dle;Username=dle;Password=<pw>;SSL Mode=Require
 # PostgreSQL 16 is the minimum, 18 is recommended; extensions citext and — for the daily
-# click_events and sdk_events partitions with 180-day retention (§B.5.2) — pg_partman. Without
+# click_events and sdk_events partitions with 180-day retention — pg_partman. Without
 # pg_partman the InitialSchema migration installs plain-SQL fallbacks, dle_click_events_maintain()
 # and dle_sdk_events_maintain(), that have to be called daily (pg_cron or a CronJob). deploy/docker/Dockerfile.postgres shows the package.
 # Ignored when secrets.existingSecret is set (the Secret carries the strings) or when
@@ -122,7 +131,7 @@ secrets:
 externalPostgres:
   connectionString: ""
   # ConnectionStrings:PostgresRead — the edge moves link lookups and well-known reads to this
-  # replica (§B.8 profile B: "edge reads from a replica"). Empty = the edge reads the primary.
+  # replica. Empty = the edge reads the primary.
   # Point it at a read-only service (CloudNativePG `<cluster>-ro`, RDS reader endpoint, ...).
   readConnectionString: ""
 
@@ -170,7 +179,7 @@ postgresql:
 # round of L1 misses. Optional: without a connection string the edge runs on L1 + PostgreSQL.
 # -----------------------------------------------------------------------------
 # StackExchange.Redis connection string, e.g.  valkey.cache.svc:6379  or, for a cluster,
-# node-0:6379,node-1:6379,node-2:6379,password=...,ssl=true  (§B.8: three shards in production).
+# node-0:6379,node-1:6379,node-2:6379,password=...,ssl=true  (three shards in production).
 
 externalValkey:
   connectionString: ""
@@ -198,7 +207,7 @@ valkey:
 
 
 # -----------------------------------------------------------------------------
-# ClickHouse (optional analytics store; control plane only, §B.8 "ClickHouse (optional)")
+# ClickHouse (optional analytics store; control plane only)
 # -----------------------------------------------------------------------------
 
 externalClickHouse:
@@ -219,7 +228,7 @@ config:
   telemetry:
     # OTLP endpoint for traces/metrics, e.g. http://otel-collector.observability:4317. Empty
     # disables the exporter. The edge's network policy allows egress ONLY to DNS, PostgreSQL and
-    # Valkey (NFR-14): a collector needs a matching entry in networkPolicy.edge.extraEgress and
+    # Valkey: a collector needs a matching entry in networkPolicy.edge.extraEgress and
     # must live on your own network — never a third-party endpoint on the resolve path.
     otlpEndpoint: ""
   # Free-form environment for BOTH services, e.g.
@@ -236,7 +245,7 @@ edge:
   # Used only while autoscaling.enabled is false.
   replicaCount: 3
 
-  # NFR-10: the whole Profile A stack fits 2 vCPU / 4 GB and an edge replica is limited to
+  # The whole Docker Compose stack fits 2 vCPU / 4 GB and an edge replica is limited to
   # 0.75 CPU / 384 Mi there (~500 req/s each). Requests are what the HPA divides by, so keep them
   # honest: 250m CPU ≈ the utilisation floor at which a pod is worth its scheduling slot.
   resources:
@@ -259,9 +268,9 @@ edge:
     rps:
       enabled: false
       metricName: http_server_requests_per_second
-      # Per-pod average. ~500 req/s is what one 0.75-CPU replica sustains (NFR-10 sizing).
+      # Per-pod average. ~500 req/s is what one 0.75-CPU replica sustains (Docker Compose sizing).
       targetAverageValue: "400"
-    # §D.6: a 10× traffic step must not push p99 above 200 ms while scaling. Scale up eagerly,
+    # A 10× traffic step must not push p99 above 200 ms while scaling. Scale up eagerly,
     # scale down slowly.
     behavior:
       scaleUp:
@@ -290,7 +299,7 @@ edge:
 
   probes:
     # Liveness runs NO dependency checks by design (a database blip must never restart every
-    # replica at once). Readiness on the edge is /healthz too: NFR-06 / §D.6 require resolves to
+    # replica at once). Readiness on the edge is /healthz too: resolves must
     # keep working from cache while PostgreSQL is down, so a probe that fails on the database
     # would pull the whole fleet out of rotation at exactly the wrong moment. The edge also
     # exposes /readyz, which reports GeoIP or analytics trouble as "degraded" rather than failing;
@@ -334,13 +343,13 @@ edge:
     geoIp:
       # Dle:Edge:GeoIp:Path — the MaxMind mmdb inside the container, e.g. /geoip/GeoLite2-Country.mmdb.
       # Empty = no GeoIP: country stays null, geo rules fall through to the default rule.
-      # The edge never downloads it (NFR-14): mount it from a PVC you fill yourself
+      # The edge never downloads it: mount it from a PVC you fill yourself
       # (existingClaim) or through edge.extraVolumes / extraVolumeMounts.
       path: ""
       existingClaim: ""
       mountPath: /geoip
     botDetection:
-      # Reverse-DNS verification of self-declared crawlers (FR-161). Needs cluster DNS egress,
+      # Reverse-DNS verification of self-declared crawlers. Needs cluster DNS egress,
       # which the network policy grants; it is ON in production.
       reverseDnsVerify: true
     interstitial:
@@ -392,7 +401,7 @@ edge:
 # -----------------------------------------------------------------------------
 
 control:
-  # §B.8 profile B: two pods.
+  # Two pods.
   replicaCount: 2
 
   resources:
@@ -513,12 +522,12 @@ migrate:
 # Ingress
 # -----------------------------------------------------------------------------
 # Routes on `host` (mirrors deploy/Caddyfile):
-#   /.well-known/jwks.json                       → control (public signing keys, §B.7)
+#   /.well-known/jwks.json                       → control (public signing keys)
 #   /.well-known/*                               → edge    (AASA, assetlinks.json)
 #   /api /v1 /admin /scalar /openapi             → control
 #   everything else, i.e. /{slug}, /{slug}/qr    → edge
 #
-# !!! /.well-known MUST NEVER BE REDIRECTED (§A.2.1, TC-124) !!!
+# !!! /.well-known MUST NEVER BE REDIRECTED !!!
 # Apple's CDN and Google's verifier refuse an apple-app-site-association / assetlinks.json that
 # answers with ANY 3xx: HTTP→HTTPS, trailing slash, www canonicalisation, all of them. The chart
 # therefore renders TWO Ingress objects for the same host: `<release>-well-known`, which carries
@@ -574,7 +583,7 @@ ingress:
 # Network policy (on by default)
 # -----------------------------------------------------------------------------
 # edge:    ingress only from the ingress controller (and Prometheus when serviceMonitor.enabled);
-#          egress ONLY to cluster DNS, PostgreSQL and Valkey — NFR-14: no outbound call to any
+#          egress ONLY to cluster DNS, PostgreSQL and Valkey: no outbound call to any
 #          third party from the resolve path. Add an OTLP collector via edge.extraEgress.
 # control: ingress only from the ingress controller; egress unrestricted by default because the
 #          control plane delivers webhooks to tenant URLs and validates OIDC metadata.

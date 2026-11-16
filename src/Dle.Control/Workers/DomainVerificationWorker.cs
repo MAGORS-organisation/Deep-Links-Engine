@@ -16,7 +16,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Workers;
 
 /// <summary>
-/// Verifies every registered domain's association files and DNS every night (§C.8, FR-143, T-04).
+/// Verifies every registered domain's association files and DNS every night.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -25,7 +25,7 @@ namespace Dle.Control.Workers;
 /// <c>application/json</c> to <c>text/html</c>, a certificate expires, a new build is signed with
 /// the upload certificate instead of the Play App Signing one. In every case deep links simply stop
 /// opening the application and start opening a browser. Nothing errors, nothing logs, and the
-/// customer's first signal is a drop in a conversion metric weeks later. §C.8 puts this on a
+/// customer's first signal is a drop in a conversion metric weeks later. The check runs on a
 /// nightly schedule for exactly that reason.
 /// </para>
 /// <para>
@@ -37,7 +37,7 @@ namespace Dle.Control.Workers;
 /// </para>
 /// <para>
 /// What this worker adds on top is the part only a scheduled pass can see. A host that stops
-/// resolving <em>after</em> it has verified successfully is the visible signature of T-04, subdomain
+/// resolving <em>after</em> it has verified successfully is the visible signature of a subdomain
 /// takeover: the customer pointed <c>link.customer.example</c> at a hosting provider with a CNAME,
 /// later removed the resource but left the record, and anybody who now claims that name at the
 /// provider inherits the domain — including its association files, which means they inherit the
@@ -138,7 +138,7 @@ public sealed partial class DomainVerificationWorker : LeaderElectedBackgroundSe
 
             // Every write below is a tenant owned row, so the pass enters the owning tenant's scope
             // rather than dropping the filter. Cross-tenant reading is a listing concern; writing is
-            // never one (T-09).
+            // never one.
             using IDisposable tenantScope = tenants.BeginScope(domain.TenantId);
 
             // Read before this pass overwrites it. Whether the host was being served the last time it
@@ -197,7 +197,7 @@ public sealed partial class DomainVerificationWorker : LeaderElectedBackgroundSe
     }
 
     /// <summary>
-    /// Whether a failure looks like a subdomain takeover rather than a misconfiguration (T-04).
+    /// Whether a failure looks like a subdomain takeover rather than a misconfiguration.
     /// </summary>
     /// <param name="servedBefore">Whether the host was being served when it was last checked
     /// (<see cref="WasServed"/>, read before this pass recorded anything).</param>
@@ -246,9 +246,9 @@ public sealed partial class DomainVerificationWorker : LeaderElectedBackgroundSe
     /// <summary>Puts <c>domain.verification_failed</c> on the webhook outbox.</summary>
     /// <param name="domain">The domain that failed.</param>
     /// <param name="response">What the verification found.</param>
-    /// <param name="takeoverRisk">Whether the failure looks like a subdomain takeover (T-04).</param>
+    /// <param name="takeoverRisk">Whether the failure looks like a subdomain takeover.</param>
     /// <param name="outbox">Transactional webhook outbox.</param>
-    /// <param name="now">The current instant, from the injected clock (SHARED-KERNEL §17.2).</param>
+    /// <param name="now">The current instant, from the injected clock.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     private static async Task AnnounceAsync(
         LinkDomain domain,
@@ -299,7 +299,7 @@ public sealed partial class DomainVerificationWorker : LeaderElectedBackgroundSe
         CancellationToken cancellationToken)
     {
         using CrossTenantScope scope = db.BeginCrossTenantScope(
-            "the nightly verification pass covers every registered domain of the instance (§C.8)");
+            "the nightly verification pass covers every registered domain of the instance");
 
         return await db.Domains
             .AsNoTracking()
@@ -316,7 +316,7 @@ public sealed partial class DomainVerificationWorker : LeaderElectedBackgroundSe
         Level = LogLevel.Warning,
         Message = "Host {Host} stopped resolving after verifying successfully at {LastVerifiedAt}. "
             + "If it is a CNAME whose target has been removed, somebody else can claim that name at "
-            + "the provider and inherit this domain's association files and deep links (T-04). "
+            + "the provider and inherit this domain's association files and deep links. "
             + "Remove the record or restore the resource.")]
     private static partial void LogTakeoverRisk(ILogger logger, string host, DateTimeOffset? lastVerifiedAt);
 }

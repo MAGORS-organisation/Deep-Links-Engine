@@ -14,11 +14,11 @@ using Xunit;
 namespace Dle.UnitTests.Edge;
 
 /// <summary>
-/// §E.9 fixes the limiter keys: a /24 for IPv4 and a /48 for IPv6, so that one household or one
+/// The limiter keys are fixed: a /24 for IPv4 and a /48 for IPv6, so that one household or one
 /// mobile carrier NAT is one bucket rather than one bucket per address. The budget for 404 answers
 /// is a separate partition from the budget for successful resolves — and it has to be, because a
 /// legitimate campaign spike would otherwise drain the anti-enumeration defence exactly when the
-/// service is most worth scanning (T-07).
+/// service is most worth scanning.
 /// </summary>
 public sealed class RateLimitPartitionTests : IDisposable
 {
@@ -125,11 +125,10 @@ public sealed class RateLimitPartitionTests : IDisposable
         Assert.Equal(expected, EdgeRateLimitPartitions.Classify(method, new PathString(path)));
 
     /// <summary>
-    /// T-07 / TC-108. The 404 budget is a token bucket over the network prefix; draining it puts the
+    /// The 404 budget is a token bucket over the network prefix; draining it puts the
     /// prefix into a shadow ban, and the ban is scoped to that prefix alone.
     /// </summary>
     [Fact]
-    [Trait("TestCase", "TC-108")]
     public void NotFoundBudget_WhenDrained_ShadowBansOnlyTheOffendingNetwork()
     {
         var options = new EdgeRateLimitOptions
@@ -162,13 +161,12 @@ public sealed class RateLimitPartitionTests : IDisposable
         Assert.Equal(NotFoundVerdict.Exhausted, guard.Register(scanner));
         Assert.True(guard.IsShadowBanned(scanner));
 
-        // A legitimate visitor on another network is untouched, which is the second half of TC-108.
+        // A legitimate visitor on another network is untouched, which is the second half of the property.
         Assert.False(guard.IsShadowBanned(bystander));
         Assert.Equal(NotFoundVerdict.WithinBudget, guard.Register(bystander));
     }
 
     [Fact]
-    [Trait("TestCase", "TC-108")]
     public void ShadowBan_ExpiresWithTheConfiguredWindow()
     {
         var options = new EdgeRateLimitOptions
@@ -225,7 +223,7 @@ public sealed class RateLimitPartitionTests : IDisposable
     {
         var defaults = new NotFoundRateLimitOptions();
 
-        // §E.9: 20 per minute, burst 40, 15 minute shadow ban. The resolve budget is 600 per minute,
+        // The defaults: 20 per minute, burst 40, 15 minute shadow ban. The resolve budget is 600 per minute,
         // an order of magnitude larger, which is exactly why the two must not share a bucket.
         Assert.Equal(20, defaults.TokensPerPeriod);
         Assert.Equal(40, defaults.Burst);

@@ -6,15 +6,14 @@ using Dle.Edge.Resolution;
 namespace Dle.Edge.Rendering;
 
 /// <summary>
-/// The interstitial page: HTTP 200 HTML whose primary action is a real <c>&lt;a&gt;</c> element
-/// (FR-162, FR-163, ADR-009).
+/// The interstitial page: HTTP 200 HTML whose primary action is a real <c>&lt;a&gt;</c> element.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>Why an anchor and not a redirect.</b> Inside the Facebook, Instagram and TikTok webviews the
 /// operating system only hands a Universal Link or an App Link to the installed application on a
 /// genuine tap of an anchor. A scripted <c>window.location</c> is not a user gesture on iOS, so a page
-/// that navigates on its own reaches the store — or nothing — and never the app (§A.2.6). Everything
+/// that navigates on its own reaches the store — or nothing — and never the app. Everything
 /// else on this page is arranged around that one element: the anchor is written first, it is a real
 /// link with a real <c>href</c>, it is reachable by keyboard, and it works with scripting disabled.
 /// </para>
@@ -23,10 +22,10 @@ namespace Dle.Edge.Rendering;
 /// filtered by <see cref="SafeUrl"/> before they reach an attribute, because HTML encoding does not
 /// disarm a <c>javascript:</c> URL; the text is encoded by <see cref="HtmlBuilder"/>; and the response
 /// carries a policy with no <c>unsafe-inline</c>, so even a successful injection has no script source to
-/// execute from (T-11, S-04).
+/// execute from.
 /// </para>
 /// <para>
-/// <b>Accessibility (NFR-16).</b> One <c>h1</c>, a <c>main</c> landmark and a <c>contentinfo</c>
+/// <b>Accessibility.</b> One <c>h1</c>, a <c>main</c> landmark and a <c>contentinfo</c>
 /// footer; the anchors are ordinary links with a visible focus ring drawn as an outline so it survives
 /// forced-colours mode; the automatic redirect is announced through a <c>status</c> live region and is
 /// cancelled by the first keypress, pointer press or focus change, which is what makes a 1.2 second
@@ -59,7 +58,7 @@ internal sealed class InterstitialPageResult : HtmlPageResult
     /// <param name="fallbackTarget">What the fallback leads to; selects the anchor's label.</param>
     /// <param name="client">The classified client, supplying the language and the channel.</param>
     /// <param name="domain">The link domain's runtime configuration, when the host is known.</param>
-    /// <param name="claimCode">The one-time code issued for this click, or <see langword="null"/> (FR-184).</param>
+    /// <param name="claimCode">The one-time code issued for this click, or <see langword="null"/>.</param>
     /// <param name="consentToken">Single-use signed form token for deferred attribution opt-in, or <see langword="null"/>.</param>
     internal InterstitialPageResult(
         string? deeplinkUrl,
@@ -101,8 +100,7 @@ internal sealed class InterstitialPageResult : HtmlPageResult
     /// <remarks>
     /// <c>Dle:Edge:Interstitial:Enabled</c> is a kill switch, and honouring it here rather than in the
     /// resolve pipeline means it cannot be honoured in one code path and forgotten in another. The
-    /// redirect is <c>permanent: false</c>, as every link redirect is and must be (ADR-009,
-    /// SHARED-KERNEL §17.1).
+    /// redirect is <c>permanent: false</c>, as every link redirect is and must be.
     /// </remarks>
     public override Task ExecuteAsync(HttpContext httpContext)
     {
@@ -121,7 +119,7 @@ internal sealed class InterstitialPageResult : HtmlPageResult
 
         // The automatic redirect is suppressed inside an in-app webview on purpose. There the whole
         // point of the page is the tap on the deep link anchor, and navigating away from under the user
-        // after 1.2 seconds would remove the only interaction that can open the application (§A.2.6).
+        // after 1.2 seconds would remove the only interaction that can open the application.
         // It is also suppressed when a deferred-consent opt-in form is shown so the visitor has time
         // to grant attribution before leaving the interstitial.
         int delayMs = _isInAppWebView || _consentToken is not null ? 0 : options.AutoRedirectMs;
@@ -233,7 +231,7 @@ internal sealed class InterstitialPageResult : HtmlPageResult
     }
 
     /// <summary>
-    /// Writes the claim code block, the deterministic deferred deep link path on iOS (FR-184, §B.6.3).
+    /// Writes the claim code block, the deterministic deferred deep link path on iOS.
     /// </summary>
     /// <remarks>
     /// The code is repeated in an <c>aria-label</c> with the characters separated by spaces, because a

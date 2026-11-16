@@ -8,7 +8,7 @@ namespace Dle.UnitTests.Primitives;
 
 /// <summary>
 /// Canonical IP normalization guarantees native IPv4 and IPv4-mapped IPv6 addresses collapse to
-/// identical hashes, prefixes, and rate-limit partition keys (H-3).
+/// identical hashes, prefixes, and rate-limit partition keys.
 /// </summary>
 public sealed class IpAddressNormalizationTests
 {

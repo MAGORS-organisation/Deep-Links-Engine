@@ -1,7 +1,7 @@
 namespace Dle.Domain.Privacy;
 
 /// <summary>
-/// Consent as reported by the SDK or by a web consent management platform (specification §E.6.2).
+/// Consent as reported by the SDK or by a web consent management platform.
 /// The absence of a signal is never read as consent.
 /// </summary>
 public sealed record ConsentSignal

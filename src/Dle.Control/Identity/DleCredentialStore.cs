@@ -13,7 +13,7 @@ namespace Dle.Control.Identity;
 /// <param name="Hash">Argon2id hash of the key, in PHC form, as stored.</param>
 /// <param name="ExpiresAt">Expiry instant, or <see langword="null"/> for a key that never expires.</param>
 /// <param name="TenantStatus">Lifecycle status of the tenant.</param>
-/// <param name="TenantCreatedAt">When the tenant was provisioned, for the §E.9 new-tenant limit.</param>
+/// <param name="TenantCreatedAt">When the tenant was provisioned, for the new-tenant rate limit.</param>
 public sealed record ApiKeyCandidate(
     Guid KeyId,
     Guid TenantId,
@@ -49,7 +49,7 @@ public sealed record SdkKeyCandidate(
 /// Authentication is the one place in the control plane that genuinely cannot run inside a tenant:
 /// the credential is what establishes which tenant this is. Every read here therefore opens a
 /// <see cref="CrossTenantScope"/> with a written reason and drops the tenant filter by name, which
-/// is the sanctioned form of that step (FR-241, T-09).
+/// is the sanctioned form of that step.
 /// </para>
 /// <para>
 /// The soft-delete filter is deliberately left on. A revoked key and a deleted tenant are invisible

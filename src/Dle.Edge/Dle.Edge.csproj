@@ -3,12 +3,11 @@
   <!--
     Data plane. ASP.NET Core minimal API that serves the resolve hot path,
     the interstitial, /.well-known/* and QR codes.
-    docs/zadanie.md §B.6.1, §C.1, §C.3.1.
 
-    Program.cs must call exactly (SHARED-KERNEL §15):
+    Program.cs must call exactly:
       AddDleEdgeCore, AddDleTelemetry, AddDleFastPersistence, AddDleCrypto,
       AddDleEdgeRateLimiting
-      -> MapResolve, MapWellKnown, MapQr, MapHealth
+      -> MapResolve, MapWellKnown, MapQr, MapHealth, MapMetrics
   -->
 
   <PropertyGroup>

@@ -3,11 +3,11 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Edge.Telemetry;
 
 /// <summary>
-/// OpenTelemetry wiring, bound from <c>Dle:Telemetry</c> (NFR-12, §C.6).
+/// OpenTelemetry wiring, bound from <c>Dle:Telemetry</c>.
 /// </summary>
 /// <remarks>
 /// With no OTLP endpoint configured the pipeline is still built and the instruments still record;
-/// nothing is exported. That is intentional: a single-container evaluation deployment (NFR-09) has
+/// nothing is exported. That is intentional: a single-container evaluation deployment has
 /// nowhere to export to, and metrics that only exist when a collector happens to be configured are
 /// metrics nobody writes an alert against.
 /// </remarks>
@@ -34,7 +34,7 @@ public sealed class EdgeTelemetryOptions
     /// </summary>
     /// <remarks>
     /// The sampler is parent-based, so a trace started by an SDK and propagated through
-    /// <c>traceparent</c> keeps the decision the SDK made and stays joined end to end (NFR-12). This
+    /// <c>traceparent</c> keeps the decision the SDK made and stays joined end to end. This
     /// ratio only applies to traces the edge starts itself.
     /// </remarks>
     [Range(0d, 1d)]

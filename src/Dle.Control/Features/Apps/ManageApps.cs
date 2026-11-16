@@ -7,12 +7,12 @@ using Npgsql;
 namespace Dle.Control.Features.Apps;
 
 /// <summary>
-/// <c>GET</c>, <c>POST</c>, <c>PATCH</c> and <c>DELETE /api/v1/apps</c> (FR-141, FR-142, FR-144).
+/// <c>GET</c>, <c>POST</c>, <c>PATCH</c> and <c>DELETE /api/v1/apps</c>.
 /// </summary>
 /// <remarks>
 /// Neither the platform nor the bundle identifier can be edited. Both are part of the identity an
 /// association file publishes, and changing one in place would leave every device that has already
-/// cached the file pointing at an application that no longer claims the host (§A.2.1, §A.2.2).
+/// cached the file pointing at an application that no longer claims the host.
 /// </remarks>
 public static class ManageApps
 {
@@ -90,7 +90,7 @@ public static class ManageApps
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="apps">Application storage.</param>
     /// <param name="pairings">Writes the domain pairings.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops the cached association files of the paired hosts.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>201 with the application and any warnings, or a problem document.</returns>
@@ -99,7 +99,7 @@ public static class ManageApps
     /// accepted with a warning rather than refused. It is legitimate — a build installed straight
     /// from a developer machine is signed with the upload certificate — but it is also the single
     /// most common reason app links work in development and silently stop working in production, and
-    /// the operator has to be told at the moment they can still act on it (FR-144, TC-123).
+    /// the operator has to be told at the moment they can still act on it.
     /// </remarks>
     public static async Task<IResult> CreateAsync(
         CreateAppRequest request,
@@ -210,7 +210,7 @@ public static class ManageApps
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="apps">Application storage.</param>
     /// <param name="pairings">Writes the domain pairings.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops the cached association files of the paired hosts.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>200 with the application, or a problem document.</returns>
@@ -322,7 +322,7 @@ public static class ManageApps
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="apps">Application storage.</param>
     /// <param name="pairings">Reads the domains that will stop advertising it.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops the cached association files of the paired hosts.</param>
     /// <param name="credentialCache">Drops cached SDK key verifications for the removed application.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -395,8 +395,7 @@ public static class ManageApps
         };
 
     /// <summary>
-    /// Produces the Play App Signing warning when a fingerprint does not look Play-signed
-    /// (FR-144, TC-123).
+    /// Produces the Play App Signing warning when a fingerprint does not look Play-signed.
     /// </summary>
     /// <param name="app">The application.</param>
     /// <returns>The warnings, empty when there is nothing to say.</returns>
@@ -418,8 +417,7 @@ public static class ManageApps
             return
             [
                 "No signing certificate fingerprint is registered, so the Digital Asset Links file "
-                + "for this application cannot be generated and Android app links will not verify "
-                + "(FR-142).",
+                + "for this application cannot be generated and Android app links will not verify.",
             ];
         }
 
@@ -435,7 +433,7 @@ public static class ManageApps
                     + "local keystore, app links will verify in a debug build and silently fail for "
                     + "every install from the Play Store. Copy the SHA-256 from Play Console under "
                     + "Setup, App signing, App signing key certificate, and record it as a Play "
-                    + "signing fingerprint (FR-144).");
+                    + "signing fingerprint.");
 
                 break;
             }
@@ -455,7 +453,7 @@ public static class ManageApps
     /// <remarks>
     /// Registering an application changes what <c>/.well-known/assetlinks.json</c> and the Apple
     /// association file contain for its hosts, and those documents are cached at the edge. Without
-    /// this the change would not be visible until the entry expired (TC-125).
+    /// this the change would not be visible until the entry expired.
     /// </remarks>
     private static async Task InvalidatePairedHostsAsync(
         AppDomainPairings pairings,

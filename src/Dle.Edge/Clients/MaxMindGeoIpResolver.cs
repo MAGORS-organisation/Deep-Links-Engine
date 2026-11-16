@@ -15,19 +15,18 @@ using Microsoft.Extensions.Options;
 namespace Dle.Edge.Clients;
 
 /// <summary>
-/// Offline geographic lookup over a memory-mapped MaxMind GeoLite2 or GeoIP2 database
-/// (FR-122, §B.6.1, NFR-14).
+/// Offline geographic lookup over a memory-mapped MaxMind GeoLite2 or GeoIP2 database.
 /// </summary>
 /// <remarks>
 /// <para>
-/// NFR-14 is the constraint that shapes this class: the resolve path makes no outbound third-party
+/// One constraint shapes this class: the resolve path makes no outbound third-party
 /// call, geographic lookup included. The database is therefore a local file, opened once at start-up
 /// in <see cref="FileAccessMode.MemoryMapped"/> mode so that the operating system pages the parts
 /// actually consulted into memory and shares them between worker processes, and a lookup is a tree
 /// walk over that mapping with no allocation beyond the response object.
 /// </para>
 /// <para>
-/// A missing, unreadable or corrupt database is not an error condition (§D.6). Country stays
+/// A missing, unreadable or corrupt database is not an error condition. Country stays
 /// <see langword="null"/>, every geo-dependent routing rule therefore fails to match and evaluation
 /// falls through to the default rule, and <c>dle_geoip_available</c> drops to zero so that the
 /// operator is told. Nothing on the resolve path ever sees an exception from here — a redirect that
@@ -35,7 +34,7 @@ namespace Dle.Edge.Clients;
 /// </para>
 /// <para>
 /// Refreshing the file itself is a deployment concern — a sidecar, a cron job, a mounted volume —
-/// because downloading it would be the outbound call NFR-14 rules out. What this class does is notice
+/// because downloading it would be an outbound call, which is ruled out. What this class does is notice
 /// that the file on disk was replaced and swap the reader, which
 /// <see cref="GeoIpDatabaseRefresher"/> asks it to do on a timer.
 /// </para>
@@ -200,9 +199,9 @@ public sealed partial class MaxMindGeoIpResolver : IGeoIpResolver, IDisposable
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "§D.6 requires that a missing or corrupt geographic database degrades to country=null and an " +
+        Justification = "A missing or corrupt geographic database must degrade to country=null and an " +
                         "alert-worthy metric. Every failure is logged and the branch ends in an explicit denial of " +
-                        "geographic data, which satisfies SHARED-KERNEL §17.9.")]
+                        "geographic data.")]
     private bool ReloadCore(string path)
     {
         FileInfo file;
@@ -278,8 +277,8 @@ public sealed partial class MaxMindGeoIpResolver : IGeoIpResolver, IDisposable
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "A geographic lookup must never fail a redirect (§D.6). The branch ends in a null location, " +
-                        "which is the explicit deny-by-default outcome required by SHARED-KERNEL §17.9.")]
+        Justification = "A geographic lookup must never fail a redirect. The branch ends in a null location, " +
+                        "which is the explicit deny-by-default outcome.")]
     private GeoLocation? Lookup(Database database, IPAddress address)
     {
         try

@@ -1,12 +1,12 @@
 namespace Dle.Edge.Resolution;
 
 /// <summary>
-/// Reads the consent signal a plain browser request can carry (§E.6.2, FR-248).
+/// Reads the consent signal a plain browser request can carry.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Consent is an input to the decision pipeline, not a filter applied to its output (§A, principle
-/// 5), so it has to be available before routing runs. On the SDK path it arrives as a structured
+/// Consent is an input to the decision pipeline, not a filter applied to its output, so it
+/// has to be available before routing runs. On the SDK path it arrives as a structured
 /// object with a timestamp; a browser following a link has no such channel, so it can only carry
 /// what a consent management platform put on the URL or what the user agent itself declares.
 /// </para>

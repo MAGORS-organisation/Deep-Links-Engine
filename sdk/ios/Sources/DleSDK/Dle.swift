@@ -19,20 +19,20 @@ import UIKit
 /// What it does, and only this:
 /// * **Resolve once.** The first call to ``resolve(claimCode:loginKey:)`` after an install
 ///   posts `POST /v1/resolve` with the installation id, `ios`, the app and OS versions and the
-///   consent record; the answer is persisted and every later call returns it without a request
-///   (TC-143). Device signals are attached only when ``DleDeferredStrategies/probabilistic`` is
+///   consent record; the answer is persisted and every later call returns it without a request.
+///   Device signals are attached only when ``DleDeferredStrategies/probabilistic`` is
 ///   enabled **and** ``DleConsent/attribution`` was granted; otherwise the `signals` member is
-///   omitted from the body, not sent empty (TC-145, TC-146).
+///   omitted from the body, not sent empty.
 /// * **Report direct opens.** ``handle(_:)`` and ``handle(url:)`` queue a `link_open` for every
 ///   Universal Link the operating system hands the app, because a direct open reaches no
-///   server and is otherwise invisible (FR-223).
+///   server and is otherwise invisible.
 /// * **Batch events.** ``track(_:)`` queues; the queue persists, batches at most 100 events per
 ///   request, retries with back-off, honours `Retry-After`, and flushes when the app enters the
 ///   foreground.
 ///
 /// What it never does: read the pasteboard, touch `ASIdentifierManager` or App Tracking
-/// Transparency, derive an identifier from the device, or put anything on a custom-scheme URL
-/// (spec §C.5, §E.7). The only identifier it creates is a random UUID kept in the Keychain.
+/// Transparency, derive an identifier from the device, or put anything on a custom-scheme URL.
+/// The only identifier it creates is a random UUID kept in the Keychain.
 ///
 /// Thread-safety: every method is callable from any thread. The class is a `Sendable` final
 /// class rather than an actor because ``handle(_:)`` and ``handle(url:)`` have to return
@@ -193,10 +193,10 @@ public final class Dle: Sendable {
 
     // MARK: - Resolve
 
-    /// Recovers the context of the click that led to this installation (UC-04, UC-05).
+    /// Recovers the context of the click that led to this installation.
     ///
     /// * The first call posts `POST /v1/resolve` and persists the answer; later calls return
-    ///   the persisted answer without a request, for the life of the installation (TC-143). The
+    ///   the persisted answer without a request, for the life of the installation. The
     ///   one exception: a non-final answer (`expires_in > 0`) may be requested again after it
     ///   has expired.
     /// * A `claimCode` or `loginKey` is a deterministic supplement (S3, S2): it is sent even
@@ -236,15 +236,15 @@ public final class Dle: Sendable {
         }
     }
 
-    /// Submits the claim code the user typed (S3, FR-184). Equivalent to
+    /// Submits the claim code the user typed (S3). Equivalent to
     /// ``resolve(claimCode:loginKey:)`` with `claimCode` only. The engine redeems the code only
     /// under ``DleConsent/attribution``; without it the answer is unmatched and the code unspent.
     public func submitClaimCode(_ code: String) async throws -> DeferredLink {
         try await resolve(claimCode: code)
     }
 
-    /// Reconciles this installation with the click that carried the same account key (S2,
-    /// FR-185). `loginKey` must be opaque and already hashed; never pass an e-mail address or a
+    /// Reconciles this installation with the click that carried the same account key (S2).
+    /// `loginKey` must be opaque and already hashed; never pass an e-mail address or a
     /// raw user id. Equivalent to ``resolve(claimCode:loginKey:)`` with `loginKey` only.
     public func reconcileLogin(loginKey: String) async throws -> DeferredLink {
         try await resolve(loginKey: loginKey)
@@ -291,7 +291,7 @@ public final class Dle: Sendable {
     }
 
     /// `true` when the probabilistic strategy is enabled **and** consent allows device signals.
-    /// Both are required; neither alone turns collection on (spec §0.2, FR-227, TC-146).
+    /// Both are required; neither alone turns collection on.
     static func shouldAttachSignals(strategies: DleDeferredStrategies, consent: DleConsent) -> Bool {
         strategies.contains(.probabilistic) && consent.allowsDeviceSignals
     }
@@ -385,7 +385,7 @@ public final class Dle: Sendable {
         links.handle(url: url)
     }
 
-    /// Resolves the screen a short link the app was opened with should lead to (FR-223, §B.6.4).
+    /// Resolves the screen a short link the app was opened with should lead to.
     ///
     /// A verified Universal Link opens the app with the short URL itself — for example
     /// `https://go.example.com/AbC12345` — which does not say which screen to show. This asks the
@@ -451,7 +451,7 @@ public final class Dle: Sendable {
     /// A resolve made before attribution consent was recorded answers `none` with a non-final
     /// `expires_in`: the engine could not link the click, not because there was none. Once consent
     /// arrives that answer is stale, so it is dropped and the next ``resolve(claimCode:loginKey:)``
-    /// - the next launch, in the documented integration - asks again (TC-141).
+    /// - the next launch, in the documented integration - asks again.
     private func forgetUnmatchedAnswer() {
         let persisted = stateStore.current
         guard let existing = persisted.deferredLink, !existing.matched, !existing.isFinal else { return }

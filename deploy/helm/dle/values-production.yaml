@@ -1,5 +1,5 @@
 # =============================================================================
-# Deep Link Engine (DLE) — production overrides for Profile B (docs/zadanie.md §B.8).
+# Deep Link Engine (DLE) — production overrides for Kubernetes.
 #
 #   helm upgrade --install dle deploy/helm/dle -n dle --create-namespace \
 #     -f deploy/helm/dle/values-production.yaml --set ingress.host=go.example.com
@@ -24,6 +24,8 @@ image:
 #   postgres-connection-string       Host=<primary>;Port=5432;Database=dle;Username=dle;Password=...;SSL Mode=Require
 #   postgres-read-connection-string  the same against the read-only service (edge only)
 #   valkey-connection-string         node-0:6379,node-1:6379,node-2:6379,ssl=true,password=...
+#   bootstrap-owner-key              the first owner API key, "dle_" + 8 + "_" + 43 characters from
+#                                    A-Z a-z 0-9, read once on an empty database (see values.yaml)
 secrets:
   existingSecret: dle-secrets   # CHANGE ME
 
@@ -38,7 +40,7 @@ config:
     consentMode: aggregate_only
     ipStorage: hash_only
   telemetry:
-    # An OpenTelemetry Collector on YOUR network (§B.8: OTel collector → Prometheus/Grafana/Tempo).
+    # An OpenTelemetry Collector on YOUR network (OTel collector → Prometheus/Grafana/Tempo).
     # The edge's egress policy must allow it: see networkPolicy.edge.extraEgress below.
     otlpEndpoint: ""      # e.g. http://otel-collector.observability.svc:4317
 
@@ -70,7 +72,7 @@ edge:
       # One hop = the ingress controller. +1 for each CDN/WAF/L7 balancer in front that appends.
       forwardLimit: 2
     geoIp:
-      # A PVC you fill with the MaxMind mmdb yourself (never downloaded by the edge, NFR-14).
+      # A PVC you fill with the MaxMind mmdb yourself (never downloaded by the edge: no third-party egress).
       existingClaim: ""   # e.g. dle-geoip
       path: ""            # e.g. /geoip/GeoLite2-Country.mmdb
     botDetection:
@@ -127,7 +129,7 @@ ingress:
   # Keep the admin console and API off the link domain; jwks.json stays on `host`.
   exposeControlOnHost: false
   controlHost: admin.example.com        # CHANGE ME
-  # Never put a redirect or rewrite annotation into wellKnownAnnotations (§A.2.1).
+  # Never put a redirect or rewrite annotation into wellKnownAnnotations.
   wellKnownAnnotations: {}
   mainAnnotations: {}
 
@@ -153,7 +155,7 @@ networkPolicy:
     namespaceSelector: {}
     podSelector: {}
   edge:
-    # The OTLP collector, if config.telemetry.otlpEndpoint is set. Nothing else: NFR-14.
+    # The OTLP collector, if config.telemetry.otlpEndpoint is set. Nothing else: no third-party egress.
     extraEgress: []
     #  - to:
     #      - namespaceSelector:

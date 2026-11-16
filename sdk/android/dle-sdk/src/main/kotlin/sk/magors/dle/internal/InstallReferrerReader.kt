@@ -11,7 +11,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
 
 /**
- * Reads the Google Play Install Referrer once per installation (S1, FR-182, spec §A.2.4).
+ * Reads the Google Play Install Referrer once per installation (S1).
  *
  * The outcome is persisted through [StateStore] before it is returned. A terminal outcome
  * ([ReferrerStatus.isTerminal]: an answer, or a Play Store that cannot answer on this device) is

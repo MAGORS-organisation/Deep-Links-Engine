@@ -13,7 +13,7 @@ namespace Dle.Crypto;
 /// <para>
 /// Every algorithm specific decision about the shape of key material lives here, so that a new
 /// algorithm is one <c>case</c> in three switches rather than a change to the token format. That
-/// is the whole of the crypto agility promise in ADR-013 and §E.4.2: the format already carries
+/// is the whole of the crypto agility promise: the format already carries
 /// <c>alg</c> and <c>kid</c>, so adding ML-DSA later costs days rather than a breaking change for
 /// every integrator.
 /// </para>
@@ -57,7 +57,7 @@ public static class SigningKeyFactory
     /// <summary>Algorithms this provider implements.</summary>
     public static IReadOnlyCollection<string> SupportedAlgorithms => SupportedAlgorithmIds;
 
-    /// <summary>Algorithms gated behind <see cref="CryptoOptions.HybridPqEnabled"/> (§E.5.3).</summary>
+    /// <summary>Algorithms gated behind <see cref="CryptoOptions.HybridPqEnabled"/>.</summary>
     public static IReadOnlyCollection<string> PostQuantumAlgorithms => PostQuantumAlgorithmIds;
 
     /// <summary>Whether an algorithm identifier is implemented here.</summary>
@@ -68,7 +68,7 @@ public static class SigningKeyFactory
 
     /// <summary>Whether an algorithm carries a post-quantum component.</summary>
     /// <param name="algorithmId">The identifier to test.</param>
-    /// <returns><see langword="true"/> when the algorithm is one of the phase 1 algorithms.</returns>
+    /// <returns><see langword="true"/> when the algorithm carries a post-quantum component.</returns>
     public static bool IsPostQuantum(string? algorithmId) =>
         algorithmId is not null && Array.IndexOf(PostQuantumAlgorithmIds, algorithmId) >= 0;
 
@@ -230,8 +230,8 @@ public static class SigningKeyFactory
     /// <see cref="SignatureAlgorithms.SlhDsa128s"/> is the exception. Its private key is a
     /// structured 64 byte encoding whose last half is computed by the key generation procedure, so
     /// random or derived bytes do not form a usable key; an SLH-DSA deployment has to supply a
-    /// generated key through configuration or a key store. That is not a real limitation: §E.4.1
-    /// puts SLH-DSA on release artefacts (K7), which are signed offline anyway.
+    /// generated key through configuration or a key store. That is not a real limitation: SLH-DSA
+    /// is meant for release artefacts, which are signed offline anyway.
     /// </para>
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>

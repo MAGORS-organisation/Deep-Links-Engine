@@ -7,8 +7,8 @@ namespace Dle.Edge.WellKnown;
 /// <para>
 /// These are not ordinary routes. Apple requires
 /// <c>https://&lt;host&gt;/.well-known/apple-app-site-association</c> exactly, with no file extension
-/// and no redirect on the way (§A.2.1); Google requires
-/// <c>https://&lt;host&gt;/.well-known/assetlinks.json</c> under the same conditions (§A.2.2). Both
+/// and no redirect on the way; Google requires
+/// <c>https://&lt;host&gt;/.well-known/assetlinks.json</c> under the same conditions. Both
 /// failures are silent: the file validates, the association simply never forms, and nothing in the
 /// application logs says so.
 /// </para>
@@ -16,7 +16,7 @@ namespace Dle.Edge.WellKnown;
 /// The constants exist so that the composition root can exclude the prefix from anything that rewrites
 /// or redirects. Concretely, <c>UseHttpsRedirection</c>, <c>UseRewriter</c>, HSTS upgrades and any
 /// trailing-slash normalisation must leave <see cref="Prefix"/> alone: a 301 or 307 here is
-/// indistinguishable, to Apple, from the file being absent (TC-121, TC-124).
+/// indistinguishable, to Apple, from the file being absent.
 /// </para>
 /// </remarks>
 public static class WellKnownPaths

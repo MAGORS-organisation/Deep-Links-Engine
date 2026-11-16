@@ -1,7 +1,7 @@
 namespace Dle.Domain.Analytics;
 
 /// <summary>
-/// One row of the partitioned click stream (specification §B.5.3).
+/// One row of the partitioned click stream.
 /// The event is produced on the hot path and written asynchronously through a bounded
 /// channel, so it must stay allocation friendly and free of behaviour.
 /// </summary>

@@ -20,14 +20,14 @@ import sk.magors.dle.internal.toDeferredLink
 import sk.magors.dle.internal.toWire
 
 /**
- * The SDK wire contract of spec §B.7.2, asserted against the literal bodies of
+ * The SDK wire contract, asserted against the literal bodies of
  * `tests/Dle.ContractTests/Wire/SdkWireContractTests.cs`. A body produced here must be byte
  * identical to what the server's own serializer produces for the same DTO, and every response
  * literal the server emits must decode.
  */
 class WireModelsTest {
     @Test
-    fun resolveRequest_serialisesToTheSnakeCaseShapeOfB72() {
+    fun resolveRequest_serialisesToTheSnakeCaseShapeOfTheWireContract() {
         val request = ResolveRequest(
             installId = CONTRACT_INSTALL_ID,
             platform = "android",
@@ -70,7 +70,7 @@ class WireModelsTest {
     }
 
     @Test
-    fun resolveResponse_decodesTheLiteralOfB72() {
+    fun resolveResponse_decodesTheLiteralOfTheWireContract() {
         val link = DleJson.decodeFromString(ResolveResponse.serializer(), RESOLVE_RESPONSE_LITERAL).toDeferredLink()
 
         assertTrue(link.matched)
@@ -153,7 +153,7 @@ class WireModelsTest {
     }
 
     @Test
-    fun eventBatch_serialisesToTheSnakeCaseShapeOfB72() {
+    fun eventBatch_serialisesToTheSnakeCaseShapeOfTheWireContract() {
         val events = listOf(
             DleEvent.linkOpen("https://link.zak.sk/aB3xK9pQ", CONTRACT_MOMENT_MILLIS),
             DleEvent(

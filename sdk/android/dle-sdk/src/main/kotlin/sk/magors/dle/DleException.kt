@@ -45,7 +45,7 @@ public sealed class DleException(message: String, cause: Throwable? = null) : Ru
         override val isRetriable: Boolean
             get() = status == 429 || status == 408 || status >= 500
 
-        /** `true` when the problem type is `rate-limited` (spec §E.9). */
+        /** `true` when the problem type is `rate-limited`. */
         public val isRateLimited: Boolean
             get() = status == 429 || problem?.type == ProblemDocument.TYPE_RATE_LIMITED
 
@@ -54,7 +54,7 @@ public sealed class DleException(message: String, cause: Throwable? = null) : Ru
             get() = status == 401 || problem?.type == ProblemDocument.TYPE_UNAUTHORIZED
 
         /**
-         * `true` when a claim code could not be redeemed (TC-148). Read [ProblemDocument.canReissue]
+         * `true` when a claim code could not be redeemed. Read [ProblemDocument.canReissue]
          * to decide whether showing the interstitial again makes sense.
          */
         public val isClaimCodeInvalid: Boolean
@@ -101,7 +101,7 @@ public data class ProblemDocument(
         /** The request body failed validation. */
         public const val TYPE_VALIDATION_FAILED: String = TYPE_BASE + "validation-failed"
 
-        /** A rate limit was exceeded; `Retry-After` says how long to wait (spec §E.9). */
+        /** A rate limit was exceeded; `Retry-After` says how long to wait. */
         public const val TYPE_RATE_LIMITED: String = TYPE_BASE + "rate-limited"
 
         /** The SDK key is missing, malformed, unknown or inactive. */
@@ -110,7 +110,7 @@ public data class ProblemDocument(
         /** The credential lacks the scope the operation needs. */
         public const val TYPE_FORBIDDEN: String = TYPE_BASE + "forbidden"
 
-        /** The claim code is unknown, consumed or past its time to live (TC-148). */
+        /** The claim code is unknown, consumed or past its time to live. */
         public const val TYPE_CLAIM_CODE_INVALID: String = TYPE_BASE + "claim-code-invalid"
 
         /** A dependency the request needs is unavailable; the caller may retry. */

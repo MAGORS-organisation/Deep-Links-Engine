@@ -2,7 +2,7 @@ namespace Dle.Domain.Routing;
 
 /// <summary>
 /// The default <see cref="IRoutingEngine"/>: an ordered, first-match-wins evaluator over the rule set
-/// (FR-127) with deterministic A/B bucketing (FR-125) and the ADR-009 response shape mapping.
+/// with deterministic A/B bucketing and the per-client response shape mapping.
 /// </summary>
 public sealed class RoutingEngine : IRoutingEngine
 {
@@ -16,7 +16,7 @@ public sealed class RoutingEngine : IRoutingEngine
     /// <param name="timeProvider">
     /// Clock used for time-window predicates when the request itself does not carry a timestamp.
     /// Never <see cref="DateTime.UtcNow"/> — the clock has to be substitutable in tests and in the
-    /// rule simulator (SHARED-KERNEL §0, §17.2).
+    /// rule simulator.
     /// </param>
     /// <exception cref="ArgumentNullException"><paramref name="timeProvider"/> is <see langword="null"/>.</exception>
     public RoutingEngine(TimeProvider timeProvider)
@@ -95,7 +95,7 @@ public sealed class RoutingEngine : IRoutingEngine
     /// Consent enters the pipeline here, not as a filter applied to the finished URL: if click-id
     /// linking is not permitted, every referrer pair carrying the click-id placeholder is dropped from
     /// the decision itself, so no downstream consumer — URL builder, interstitial, simulator — can emit
-    /// it (§E.6.2, TC-145/TC-146).
+    /// it.
     /// </summary>
     private static string? ApplyConsent(string? template, ConsentDecision consent)
     {
@@ -119,7 +119,7 @@ public sealed class RoutingEngine : IRoutingEngine
     }
 
     /// <summary>
-    /// Maps the declared action onto the response class (ADR-009).
+    /// Maps the declared action onto the response class.
     /// </summary>
     private static DecisionKind ResolveKind(RuleAction action, ClientContext client) => action.Action switch
     {
@@ -137,7 +137,7 @@ public sealed class RoutingEngine : IRoutingEngine
     private static DecisionKind ResolveAppOrStore(InterstitialMode mode, ClientContext client)
     {
         // An in-app webview only surfaces a Universal/App Link on a real tap, so it always gets the
-        // interstitial — InterstitialMode.Never cannot switch that off (§A.2.6, FR-162).
+        // interstitial — InterstitialMode.Never cannot switch that off.
         if (ChannelNames.IsInAppWebView(client.Channel) || mode == InterstitialMode.Always)
         {
             return DecisionKind.Interstitial;
@@ -213,7 +213,7 @@ public sealed class RoutingEngine : IRoutingEngine
     /// <summary>
     /// Walks the variants as consecutive percentage ranges over 0..99 and returns the one whose
     /// cumulative range contains the bucket. A bucket beyond the accumulated total does not match,
-    /// which lets an author run a rule at, say, 20 % of traffic and let the rest fall through (FR-125).
+    /// which lets an author run a rule at, say, 20 % of traffic and let the rest fall through.
     /// </summary>
     private static bool TryPickVariant(AbVariant[] variants, short bucket, out string? variant)
     {
@@ -275,7 +275,7 @@ public sealed class RoutingEngine : IRoutingEngine
     /// <summary>
     /// Language matching compares primary subtags only, on both sides: a rule listing <c>"sk"</c> matches
     /// a client announcing <c>sk-SK</c>, and a rule sloppily written as <c>"sk-SK"</c> still matches
-    /// a client announcing <c>sk</c> (FR-123).
+    /// a client announcing <c>sk</c>.
     /// </summary>
     private static bool ContainsLanguage(string[] candidates, string? actual)
     {

@@ -5,7 +5,7 @@ using Xunit;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// TC-105 and FR-127. Validation runs at write time, so an invalid rule set never reaches the hot
+/// Validation runs at write time, so an invalid rule set never reaches the hot
 /// path. The error Path strings are part of the API contract (RFC 9457 problem details point the
 /// admin UI at one field), so they are asserted, not just the number of errors.
 /// </summary>
@@ -20,7 +20,6 @@ public sealed class RoutingRuleValidatorTests
     // ---------------------------------------------------------------- the default rule
 
     [Fact]
-    [Trait("TestCase", "TC-105")]
     public void Validate_RuleSetWithoutADefaultRule_IsInvalid()
     {
         List<RoutingRule> rules =
@@ -38,7 +37,6 @@ public sealed class RoutingRuleValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-105")]
     public void Validate_NullOrEmptyRuleSet_IsInvalid()
     {
         Assert.Equal("rules", Assert.Single(RoutingRuleValidator.Validate(null)).Path);
@@ -205,7 +203,6 @@ public sealed class RoutingRuleValidatorTests
     [InlineData("ftp://files.example.com/a")]
     [InlineData("myapp://product/123")]
     [InlineData("intent://scan/#Intent;scheme=zxing;end")]
-    [Trait("TestCase", "TC-161")]
     public void Validate_NonHttpScheme_IsRejectedOnTheWebUrl(string url)
     {
         List<RoutingRule> rules = [new RoutingRule { Id = "default", When = null, Then = new RuleAction { Action = RoutingActionKind.Web, Url = url } }];
@@ -216,7 +213,6 @@ public sealed class RoutingRuleValidatorTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-161")]
     public void Validate_NonHttpScheme_IsRejectedOnTheStoreUrlToo()
     {
         List<RoutingRule> rules =

@@ -6,15 +6,15 @@ using Dle.Domain.Attribution;
 namespace Dle.SecurityTests.Attribution;
 
 /// <summary>
-/// T-05 / TC-167: a click identifier edited in a Play referrer is never matched, and is recorded as
+/// A click identifier edited in a Play referrer is never matched, and is recorded as
 /// tampered.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The Play install referrer is a string an application on the device hands us, and §E.2.2 T-05 is
-/// specific about the consequence of trusting it: "distorted payouts to partners". A partner who can
+/// The Play install referrer is a string an application on the device hands us, and the consequence
+/// of trusting it is distorted payouts to partners. A partner who can
 /// edit <c>dl_cid</c> can attribute an organic install to their own campaign and get paid for it. The
-/// mitigation named there is that the identifier is "a signed short token (HMAC), not a raw ID",
+/// mitigation is that the identifier is a signed short token (HMAC), not a raw ID,
 /// which is what makes an edit detectable rather than merely unlikely.
 /// </para>
 /// <para>
@@ -42,7 +42,6 @@ public sealed class ClickIdTamperingTests
     private static readonly ClickIdCodec Codec = new(PermutationKey, MacKey);
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
     public void ClickId_AsMinted_DecodesBackToItsInstant()
     {
         // The control: an untouched identifier decodes, which is what makes the refusals below mean
@@ -56,8 +55,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
-    [Trait("Threat", "T-05")]
     public void ClickId_WithAnyOneCharacterChanged_FailsToDecode()
     {
         // Every position, every replacement character. This is the mutation a partner actually makes:
@@ -94,8 +91,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
-    [Trait("Threat", "T-05")]
     public void ClickId_MintedUnderAnotherDeploymentsKey_FailsToDecode()
     {
         // Two instances of the engine must not accept each other's identifiers. Otherwise a partner
@@ -106,8 +101,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Theory]
-    [Trait("TestCase", "TC-167")]
-    [Trait("Threat", "T-05")]
     [InlineData("")]
     [InlineData("   ")]
     [InlineData("aB3xK9pQ")]
@@ -121,8 +114,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
-    [Trait("Threat", "T-05")]
     public void ClickId_DecodeIsTotalOverArbitraryText()
     {
         // The decoder reads a value from an untrusted device, so it must terminate and answer for
@@ -138,8 +129,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
-    [Trait("Threat", "T-05")]
     public void ClickId_NoArbitraryStringIsEverAccepted()
     {
         // The complement of the mutation test: not only does editing a real identifier fail, but
@@ -151,10 +140,9 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
     public void InstallReferrer_CarriesTheClickIdUnderTheDocumentedKey()
     {
-        // §B.7.2 shows the referrer as dl_cid%3D…%26utm_source%3Dfb, which is the percent-encoded form
+        // The referrer arrives as dl_cid%3D…%26utm_source%3Dfb, which is the percent-encoded form
         // Play delivers. The parser has to see through that, or every Android attribution silently
         // becomes organic.
         string clickId = Codec.New(Minted);
@@ -166,8 +154,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
-    [Trait("Threat", "T-05")]
     public void InstallReferrer_WithATamperedClickId_ParsesButDoesNotDecode()
     {
         // Both halves in one place, because this is the exact sequence ResolveInstall performs: the
@@ -185,10 +171,9 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-142")]
     public void InstallReferrer_WithoutAClickId_IsAnOrganicInstallRatherThanAnError()
     {
-        // TC-142: an organic install carries no dl_cid, and that is not a failure. Conflating the two
+        // An organic install carries no dl_cid, and that is not a failure. Conflating the two
         // would turn every Play Store install into a logged security event.
         Assert.False(InstallReferrerParser.TryGetClickId(
             "utm_source=google-play&utm_medium=organic",
@@ -196,7 +181,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
     public void TamperedEvidence_UsesTheConstantsTheResolverWrites()
     {
         // The end-to-end assertion that the attribution row says `tampered` lives in the integration
@@ -208,7 +192,6 @@ public sealed class ClickIdTamperingTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
     public void ClickId_IsFixedWidth_SoItsLengthLeaksNothing()
     {
         // A variable-width identifier would leak the sequence number's magnitude, and with it the

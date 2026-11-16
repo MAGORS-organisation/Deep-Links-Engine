@@ -7,7 +7,7 @@ using Dle.Domain.Crypto;
 namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
-/// Builds and checks the two headers a delivery carries (§B.7.4, §E.5.3, T-13, TC-165).
+/// Builds and checks the two headers a delivery carries.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -31,7 +31,7 @@ namespace Dle.Control.Features.Webhooks;
 ///   </item>
 /// </list>
 /// <para>
-/// The second slot is also the migration path §E.5.3 lays out. Adding <c>v3=&lt;ML-DSA-65&gt;</c>
+/// The second slot is also the post-quantum migration path. Adding <c>v3=&lt;ML-DSA-65&gt;</c>
 /// later is a new member in an already multi-valued header, which every correct receiver already
 /// ignores when it does not recognise it — so a post-quantum signature lands without a breaking
 /// change for a single integrator. That is the whole reason the header is shaped this way on day
@@ -41,7 +41,7 @@ namespace Dle.Control.Features.Webhooks;
 /// <b>What is signed.</b> The signing input is the ASCII decimal Unix timestamp, a full stop, and
 /// then the response body <em>exactly as transmitted</em>: <c>t + "." + body</c>. The body bytes
 /// are the bytes stored in the outbox and handed to the HTTP client unchanged, so a retry
-/// reproduces them byte for byte and a modified body fails verification (TC-165). Binding the
+/// reproduces them byte for byte and a modified body fails verification. Binding the
 /// timestamp into the signed material is what stops a captured delivery from being replayed with a
 /// fresh <c>t</c>: rewriting it invalidates both signatures.
 /// </para>
@@ -54,7 +54,7 @@ public static class WebhookSignature
     /// <summary>Name of the header naming the algorithms in the slots.</summary>
     public const string AlgorithmHeader = "DLE-Alg";
 
-    /// <summary>Value of <see cref="AlgorithmHeader"/> for the two slot signature of §B.7.4.</summary>
+    /// <summary>Value of <see cref="AlgorithmHeader"/> for the two slot signature.</summary>
     public const string AlgorithmValue = "HS256+Ed25519";
 
     /// <summary>Separator between the timestamp and the body in the signing input.</summary>
@@ -110,20 +110,19 @@ public static class WebhookSignature
     /// <param name="body">The received body bytes.</param>
     /// <param name="secret">The shared secret of the subscription.</param>
     /// <param name="now">The receiver's current instant.</param>
-    /// <param name="tolerance">How stale the timestamp may be (§B.7.4: five minutes).</param>
+    /// <param name="tolerance">How stale the timestamp may be (five minutes).</param>
     /// <returns><see langword="true"/> only when the timestamp is fresh and the <c>v1</c> slot
     /// verifies over exactly these bytes.</returns>
     /// <remarks>
     /// <para>
     /// Shipped as product code rather than as a test helper because it is the reference the
-    /// documentation points at, and because the contract tests for TC-165 have to check the
+    /// documentation points at, and because the contract tests have to check the
     /// signature the engine actually produces rather than a second implementation that might drift
     /// from it.
     /// </para>
     /// <para>
     /// The comparison is <see cref="CryptographicOperations.FixedTimeEquals(ReadOnlySpan{byte}, ReadOnlySpan{byte})"/>. An equality
-    /// comparison on a MAC leaks it one byte at a time to anyone who can measure the response
-    /// (SHARED-KERNEL §17.6, T-17).
+    /// comparison on a MAC leaks it one byte at a time to anyone who can measure the response.
     /// </para>
     /// </remarks>
     public static bool VerifySymmetric(
@@ -169,7 +168,7 @@ public static class WebhookSignature
     /// signature slot.</returns>
     /// <remarks>
     /// Unknown members are ignored rather than refused, which is what makes adding <c>v3</c> a
-    /// non-breaking change (§E.5.3).
+    /// non-breaking change.
     /// </remarks>
     public static bool TryParse(string? headerValue, out WebhookSignatureHeader header)
     {
@@ -237,7 +236,7 @@ public static class WebhookSignature
         if (!Utf8Formatter.TryFormat(unixSeconds, timestamp, out int written))
         {
             // Cannot happen: twenty bytes hold every long. Fail closed rather than sign a
-            // truncated timestamp (SHARED-KERNEL §17.9).
+            // truncated timestamp.
             throw new InvalidOperationException("The delivery timestamp could not be formatted.");
         }
 

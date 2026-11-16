@@ -9,7 +9,7 @@ namespace Dle.Edge.Rendering;
 
 /// <summary>
 /// Renders a short link as a QR code, in SVG or PNG, with a configurable error correction level and an
-/// optional centre logo (FR-106).
+/// optional centre logo.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -30,7 +30,7 @@ namespace Dle.Edge.Rendering;
 /// <b>The logo is SVG only, and it is embedded.</b> It arrives as a base64 <c>data:</c> URI validated by
 /// <see cref="SafeUrl.ImageDataUri(string?)"/>. It cannot be an external URL: a document served as an
 /// image may not load subresources, and fetching a tenant-supplied URL from the edge would be both a
-/// third-party call on a cached path (NFR-14) and a server-side request forgery primitive. The PNG
+/// third-party call on a cached path and a server-side request forgery primitive. The PNG
 /// carries no logo because compositing one would require decoding an arbitrary image format, and an
 /// image codec is not a dependency this service is willing to expose to tenant-controlled bytes.
 /// </para>
@@ -96,8 +96,7 @@ internal static class QrCodeRenderer
             return true;
         }
 
-        // Unrecognised: refuse rather than silently substituting a format the caller did not ask for
-        // (SHARED-KERNEL §17.9).
+        // Unrecognised: refuse rather than silently substituting a format the caller did not ask for.
         return false;
     }
 

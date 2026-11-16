@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Shared;
 
 /// <summary>
-/// Requires that the caller administers the instance, not merely a tenant (FR-241).
+/// Requires that the caller administers the instance, not merely a tenant.
 /// </summary>
 /// <remarks>
 /// Tenant management is the one control-plane operation that legitimately crosses tenants, so

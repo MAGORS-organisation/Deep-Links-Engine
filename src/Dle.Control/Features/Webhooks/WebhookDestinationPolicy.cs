@@ -22,7 +22,7 @@ public readonly record struct WebhookDestinationVerdict(bool Accepted, string? R
 }
 
 /// <summary>
-/// Decides whether a webhook may be pointed at a URL (T-02, §E.3 steps 1 and 2).
+/// Decides whether a webhook may be pointed at a URL (SSRF: syntax, then the resolved address).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -79,7 +79,7 @@ public static class WebhookDestinationPolicy
             // could never do the thing it exists for: the syntax stage already refuses every
             // loopback and private literal, so a destination on a development machine or an
             // internal network was refused whatever the switch said. Everything below this line is
-            // the SSRF defence of T-02, which is exactly what an operator turns off here, knowingly
+            // the SSRF defence, which is exactly what an operator turns off here, knowingly
             // and only on an instance where no untrusted tenant can register a subscription.
             return WebhookDestinationVerdict.Ok;
         }
@@ -117,7 +117,7 @@ public static class WebhookDestinationPolicy
         {
             // A name that does not resolve is refused rather than accepted optimistically. Default
             // deny: a destination the engine cannot reach today is a destination that produces a
-            // queue of failures tomorrow (SHARED-KERNEL §17.9).
+            // queue of failures tomorrow.
             return WebhookDestinationVerdict.Reject("The destination host could not be resolved.");
         }
 
@@ -134,7 +134,7 @@ public static class WebhookDestinationPolicy
                 // resolves to one public and one link-local address is a name that can be made to
                 // resolve to the link-local one at connection time.
                 return WebhookDestinationVerdict.Reject(
-                    "The destination resolves to an address that is not a permitted target (T-02).");
+                    "The destination resolves to an address that is not a permitted target.");
             }
         }
 
@@ -177,7 +177,7 @@ public static class WebhookDestinationPolicy
             {
                 // The offending value is not echoed back. It is caller supplied text, and a
                 // problem document that repeats it is a reflection point for anything that later
-                // renders these documents (SHARED-KERNEL §17.5); naming the closed set is more
+                // renders these documents; naming the closed set is more
                 // useful to the integrator anyway.
                 reason = string.Create(
                     CultureInfo.InvariantCulture,

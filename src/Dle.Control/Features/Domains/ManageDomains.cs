@@ -11,13 +11,13 @@ using Npgsql;
 namespace Dle.Control.Features.Domains;
 
 /// <summary>
-/// <c>GET</c>, <c>POST</c>, <c>PATCH</c> and <c>DELETE /api/v1/domains</c> (FR-145).
+/// <c>GET</c>, <c>POST</c>, <c>PATCH</c> and <c>DELETE /api/v1/domains</c>.
 /// </summary>
 /// <remarks>
 /// A domain cannot be renamed. Every short URL already in circulation names the host, so a rename
 /// would break all of them at once, and the association files on the old host would keep claiming an
 /// application that no longer serves it. Moving to a new host is register-and-retire, which is also
-/// the only sequence in which both hosts stay correct throughout (§A.2.1).
+/// the only sequence in which both hosts stay correct throughout.
 /// </remarks>
 public static class ManageDomains
 {
@@ -81,12 +81,12 @@ public static class ManageDomains
             : TypedResults.Ok(Project(domain, controlOptions.Value.RequireDomainOwnershipVerification ? ownership : null));
     }
 
-    /// <summary>Registers a domain (FR-145).</summary>
+    /// <summary>Registers a domain.</summary>
     /// <param name="request">The host to register.</param>
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="domains">Domain storage.</param>
     /// <param name="tenants">Tenant storage, read for the consent mode the override may not widen.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops any cached configuration the edge holds for the host.</param>
     /// <param name="ownership">DNS TXT challenge generator.</param>
     /// <param name="controlOptions">Control-plane options.</param>
@@ -233,7 +233,7 @@ public static class ManageDomains
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="domains">Domain storage.</param>
     /// <param name="tenants">Tenant storage, read for the consent mode the override may not widen.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops the cached configuration the edge holds for the host.</param>
     /// <param name="ownership">DNS TXT challenge generator.</param>
     /// <param name="controlOptions">Control-plane options.</param>
@@ -329,7 +329,7 @@ public static class ManageDomains
 
         // Consent, branding and Open Graph defaults all live in the cached domain configuration, so
         // any of them changing has to drop it — otherwise a tightened consent mode would keep being
-        // ignored for as long as the entry lives (§E.6.2).
+        // ignored for as long as the entry lives.
         await cache.InvalidateHostAsync(domain.Host, cancellationToken);
 
         return TypedResults.Ok(Project(domain, requireOwnership ? ownership : null));
@@ -339,7 +339,7 @@ public static class ManageDomains
     /// <param name="id">The domain identifier.</param>
     /// <param name="http">The request, for the authenticated caller.</param>
     /// <param name="domains">Domain storage.</param>
-    /// <param name="audit">The administrative audit trail (FR-246).</param>
+    /// <param name="audit">The administrative audit trail.</param>
     /// <param name="cache">Drops the cached configuration the edge holds for the host.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>204, 404, or 409 when links still hang off the domain.</returns>
@@ -432,7 +432,7 @@ public static class ManageDomains
     /// A domain may only narrow what the tenant allows. Letting it widen would mean a per-host escape
     /// hatch from the tenant's own privacy decision, and the effective mode the consent gate computes
     /// is the narrower of the two anyway — so an override that claimed to widen would be silently
-    /// ignored at resolve time, which is worse than being refused here (§E.6.2).
+    /// ignored at resolve time, which is worse than being refused here.
     /// </remarks>
     private static bool TryReadConsentOverride(
         string? requested,

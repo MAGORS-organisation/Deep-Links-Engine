@@ -13,7 +13,7 @@ using Testcontainers.PostgreSql;
 namespace Dle.IntegrationTests.Chaos;
 
 /// <summary>
-/// §D.6, row one: with PostgreSQL unavailable the edge keeps serving cached links, answers 503 for
+/// With PostgreSQL unavailable the edge keeps serving cached links, answers 503 for
 /// the ones it has not cached, the control plane answers 503, and nothing anywhere answers 500.
 /// </summary>
 /// <remarks>
@@ -88,7 +88,6 @@ public sealed class PostgresUnavailableTests(DleInfrastructureFixture infrastruc
         _chaosDatabase ?? throw new InvalidOperationException("The chaos database was never created.");
 
     [RequiresDockerFact]
-    [Trait("Spec", "D.6")]
     public async Task PostgresDown_ACachedLinkStillResolves_AndAnUncachedOneIs503NotFoundOr500()
     {
         string host = TestSeed.UniqueHost("chaos-pg");
@@ -132,7 +131,6 @@ public sealed class PostgresUnavailableTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "D.6")]
     public async Task PostgresDown_TheControlPlaneAnswers503RatherThan500()
     {
         Guid tenantId = await TestSeed.TenantAsync(Chaos, "chaos-cp", cancellationToken: Ct);
@@ -169,8 +167,8 @@ public sealed class PostgresUnavailableTests(DleInfrastructureFixture infrastruc
                 during.StatusCode == HttpStatusCode.ServiceUnavailable,
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"§D.6 requires the control plane to answer 503 while PostgreSQL is unavailable, "
-                    + $"and explicitly forbids a 500. It answered {(int)during.StatusCode}. Body:\n{body}"));
+                    $"The control plane must answer 503 while PostgreSQL is unavailable, "
+                    + $"and never a 500. It answered {(int)during.StatusCode}. Body:\n{body}"));
         }
         finally
         {
@@ -179,7 +177,6 @@ public sealed class PostgresUnavailableTests(DleInfrastructureFixture infrastruc
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "D.6")]
     public async Task PostgresDown_TheEdgeStaysInRotationAndItsReadinessProbeReportsTheDatabaseAsDegraded()
     {
         DleTestHost<EdgeOptions> edge = StartEdgeAgainstChaosPostgres();
@@ -198,7 +195,7 @@ public sealed class PostgresUnavailableTests(DleInfrastructureFixture infrastruc
             using HttpResponseMessage degraded = await client.GetAsync(new Uri("http://localhost/readyz"), Ct);
             string body = await degraded.Content.ReadAsStringAsync(Ct);
 
-            // NFR-06 and §D.6: cached links keep resolving through a PostgreSQL outage, and every
+            // Cached links keep resolving through a PostgreSQL outage, and every
             // edge instance is in the same state, so the probe must not pull the instance out of
             // rotation — that would turn a degraded service into no service. It still has to say
             // what is wrong, in the body an operator and a scraper both read.
@@ -256,8 +253,8 @@ public sealed class PostgresUnavailableTests(DleInfrastructureFixture infrastruc
     /// </summary>
     /// <param name="body">The response body.</param>
     /// <remarks>
-    /// §D.6 is explicit that no path answers 500 with internals in the body, and SHARED-KERNEL §17.5
-    /// forbids logging the same values. A failure document says what the caller can do about it and
+    /// No path may answer 500 with internals in the body, and logging the same values is forbidden
+    /// too. A failure document says what the caller can do about it and
     /// nothing about the process that produced it.
     /// </remarks>
     private static void AssertNoInternals(string body)

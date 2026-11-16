@@ -1,12 +1,12 @@
 namespace Dle.Control.Features.Links;
 
 /// <summary>
-/// The sentences the rule simulator explains itself with, in English and Slovak (NFR-15, FR-129).
+/// The sentences the rule simulator explains itself with, in English and Slovak.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The simulator answers a human question — "why did rule 2 lose?" — so its output is prose and
-/// therefore user-facing text, which NFR-15 requires in both languages. The alternative, a machine
+/// therefore user-facing text, which has to exist in both languages (EN and SK). The alternative, a machine
 /// readable diff the UI would have to render into sentences, moves the same translation problem
 /// into the front end and duplicates it per client.
 /// </para>
@@ -43,7 +43,7 @@ internal sealed class SimulationVocabulary
         AbSelected = "A/B variant \"{0}\" was selected for bucket {1}.",
     };
 
-    /// <summary>Slovak, the deployment language of the first customers (NFR-15).</summary>
+    /// <summary>Slovak, the deployment language of the first customers.</summary>
     internal static SimulationVocabulary Slovak { get; } = new()
     {
         Language = "sk",

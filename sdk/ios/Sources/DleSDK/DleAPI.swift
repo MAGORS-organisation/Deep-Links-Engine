@@ -133,7 +133,7 @@ struct ResolveRequestBody: Encodable, Sendable, Hashable {
     var claimCode: String?
     /// `login_key`, an opaque already-hashed account identifier.
     var loginKey: String?
-    /// `signals`. `nil` means the member is absent from the body entirely (TC-145, TC-146).
+    /// `signals`. `nil` means the member is absent from the body entirely.
     var signals: DeviceSignalsBody?
     /// `consent`.
     var consent: ConsentBody?
@@ -245,10 +245,10 @@ struct EventBatchAccepted: Decodable, Sendable, Hashable {
 
 // MARK: - Client
 
-/// The HTTP client of the SDK plane: `POST /v1/resolve` and `POST /v1/events` (spec §B.7.2).
+/// The HTTP client of the SDK plane: `POST /v1/resolve` and `POST /v1/events`.
 ///
-/// Every request carries `Authorization: Bearer <sdkKey>` and a fresh W3C `traceparent`
-/// (spec §C.6), and is JSON in the snake_case shape of `Dle.Domain.Contracts.SdkContracts`.
+/// Every request carries `Authorization: Bearer <sdkKey>` and a fresh W3C `traceparent`,
+/// and is JSON in the snake_case shape of `Dle.Domain.Contracts.SdkContracts`.
 /// Failures become ``DleError`` values; the response status, never the body, is logged.
 struct DleAPI: Sendable {
     /// `EventBatchDto.MaxEventsPerBatch`.

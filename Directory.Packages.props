@@ -9,8 +9,6 @@
     RULE: every version below was verified to exist on nuget.org via
           https://api.nuget.org/v3-flatcontainer/<lowercase-id>/index.json
           before it was written. Never guess a version.
-
-    Stack reference: docs/zadanie.md §C.2.
   -->
 
   <PropertyGroup>
@@ -20,7 +18,6 @@
 
   <!-- ====================================================================
        Data access — EF Core for the control plane, Dapper/Npgsql hot path
-       ADR-004
        Temporary until Npgsql.EntityFrameworkCore.PostgreSQL 11.0.0 GA is
        published: 11.0.0-rc.3 strictly pins EF Core 11.0.0-rc.3.26522.148.
        ==================================================================== -->
@@ -34,7 +31,7 @@
   </ItemGroup>
 
   <!-- ====================================================================
-       Caching — HybridCache (L1) over Valkey (L2). ADR-005
+       Caching — HybridCache (L1) over Valkey (L2).
        ==================================================================== -->
   <ItemGroup Label="Caching">
     <PackageVersion Include="Microsoft.Extensions.Caching.Hybrid" Version="11.0.0" />
@@ -70,7 +67,7 @@
     <!--
       Emits the OpenAPI document to disk during the build so a contract test can diff it
       against the committed copy; a breaking change to the public surface then shows up in a
-      pull request rather than in an integrator's logs. docs/zadanie.md section B.7.3.
+      pull request rather than in an integrator's logs.
     -->
     <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="11.0.0" />
   </ItemGroup>
@@ -85,7 +82,7 @@
   </ItemGroup>
 
   <!-- ====================================================================
-       Cryptography — BCL first, BouncyCastle as PQC fallback. ADR-013, §E.5
+       Cryptography — BCL first, BouncyCastle as PQC fallback.
        ==================================================================== -->
   <ItemGroup Label="Cryptography">
     <PackageVersion Include="BouncyCastle.Cryptography" Version="2.7.0" />
@@ -93,16 +90,16 @@
   </ItemGroup>
 
   <!-- ====================================================================
-       Analytics — Postgres partitions by default, ClickHouse opt-in. ADR-006
+       Analytics — Postgres partitions by default, ClickHouse opt-in.
        ==================================================================== -->
   <ItemGroup Label="Analytics">
     <PackageVersion Include="ClickHouse.Client" Version="7.14.0" />
-    <!-- FR-203 report export. Apache-2.0, pure managed, no native dependency. -->
+    <!-- Report export. Apache-2.0, pure managed, no native dependency. -->
     <PackageVersion Include="Parquet.Net" Version="6.1.0" />
   </ItemGroup>
 
   <!-- ====================================================================
-       Observability — ILogger and OpenTelemetry OTLP. §C.6
+       Observability — ILogger and OpenTelemetry OTLP.
        ==================================================================== -->
   <ItemGroup Label="Observability">
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.18.0" />

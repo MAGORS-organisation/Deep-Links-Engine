@@ -1,7 +1,7 @@
 namespace Dle.Domain.Entities;
 
 /// <summary>
-/// One delivery attempt of a postback, with its retry state (FR-204). Maps to
+/// One delivery attempt of a postback, with its retry state. Maps to
 /// <c>webhook_deliveries</c>.
 /// </summary>
 /// <remarks>

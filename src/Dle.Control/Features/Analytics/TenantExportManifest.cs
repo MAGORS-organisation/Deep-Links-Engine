@@ -1,7 +1,7 @@
 namespace Dle.Control.Features.Analytics;
 
 /// <summary>
-/// The manifest at the root of a tenant data export (FR-249).
+/// The manifest at the root of a tenant data export.
 /// </summary>
 /// <remarks>
 /// An export without a manifest is a pile of files. The manifest is what makes it an artefact

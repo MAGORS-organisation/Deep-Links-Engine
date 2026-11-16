@@ -3,8 +3,7 @@ using Dle.Domain.Analytics;
 namespace Dle.Control.Features.Attribution;
 
 /// <summary>
-/// Wire names of <see cref="SdkEventType"/>, as an SDK spells them on <c>POST /v1/events</c>
-/// (§B.7.2).
+/// Wire names of <see cref="SdkEventType"/>, as an SDK spells them on <c>POST /v1/events</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -12,7 +11,7 @@ namespace Dle.Control.Features.Attribution;
 /// <c>switch</c> inside a handler. <c>link_open</c> is the one that matters most and is the one
 /// most often forgotten: when the operating system opens the application through a verified
 /// Universal or App Link, no HTTP request reaches the engine at all, so this event is the only
-/// evidence the open ever happened (§B.6.4, FR-223).
+/// evidence the open ever happened.
 /// </para>
 /// <para>
 /// Parsing fails closed. An unrecognised type is not silently recorded as <c>custom</c>, because
@@ -22,7 +21,7 @@ namespace Dle.Control.Features.Attribution;
 /// </remarks>
 public static class SdkEventNames
 {
-    /// <summary>The application was opened through one of our links (§B.6.4, FR-223).</summary>
+    /// <summary>The application was opened through one of our links.</summary>
     public const string LinkOpen = "link_open";
 
     /// <summary>First launch after an installation.</summary>

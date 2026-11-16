@@ -10,7 +10,7 @@
  * How an attribution was established. Mirrors `ResolveResponseDto.match_type`.
  *
  * `probabilistic` is NEVER presented as certain: it is opt-in, consent-gated, and always
- * carried together with a `confidence` below 1.0 (spec §0.2, §A.2.5, §E.6).
+ * carried together with a `confidence` below 1.0.
  */
 export type MatchType =
   | 'none'
@@ -44,10 +44,10 @@ export type Channel =
   | 'crawler'
   | 'app';
 
-/** Event kinds accepted by `POST /v1/events` (`SdkEventNames`, spec §B.7.2). */
+/** Event kinds accepted by `POST /v1/events` (`SdkEventNames`). */
 export type DleEventType = 'link_open' | 'first_open' | 'session' | 'conversion' | 'custom';
 
-/** Supported UI languages. `auto` derives from `navigator.language` (NFR-15: EN + SK). */
+/** Supported UI languages. `auto` derives from `navigator.language` (EN + SK). */
 export type Language = 'en' | 'sk' | 'auto';
 
 /** Console verbosity. `silent` disables all SDK output. */
@@ -59,7 +59,7 @@ export type LocalizedText = string | { readonly en: string; readonly sk: string 
 /**
  * Consent signal handed to the engine. Both flags default to `false` — the SDK is
  * consent-first, so nothing is collected until the host site's CMP says otherwise
- * (ePrivacy art. 5(3), spec §E.6.2).
+ * (ePrivacy art. 5(3)).
  */
 export interface DleConsent {
   /** Permission to report behavioural events (`POST /v1/events`). */
@@ -141,11 +141,11 @@ export interface SmartBannerStrings {
   readonly open: string;
   /** Accessible name of the dismiss button. */
   readonly dismiss: string;
-  /** Shown only inside in-app browsers, where only a real tap opens the app (spec §A.2.6). */
+  /** Shown only inside in-app browsers, where only a real tap opens the app. */
   readonly inAppHint: string;
 }
 
-/** Smart app banner configuration (FR-224). */
+/** Smart app banner configuration. */
 export interface SmartBannerOptions {
   /** Set to `false` to skip the banner entirely. Default `true`. */
   readonly enabled?: boolean;
@@ -154,7 +154,7 @@ export interface SmartBannerOptions {
   /**
    * Destination of the call-to-action. MUST be an `https:` URL (`http:` is permitted only for
    * loopback hosts or when `allowInsecureHttp` is explicitly enabled). A custom URI scheme is
-   * rejected: never transport codes or tokens over one (spec §A.2.3 / §E.7).
+   * rejected: never transport codes or tokens over one.
    */
   readonly openUrl: string;
   /**
@@ -220,7 +220,7 @@ export interface DleConfig {
   /**
    * Opt in to sending coarse device signals (language, screen, timezone offset) so the
    * engine may attempt a probabilistic match. Off by default, and additionally gated on
-   * `consent.attribution` at call time. Never a fingerprint hash (spec §0.2, FR-227).
+   * `consent.attribution` at call time. Never a fingerprint hash.
    */
   readonly probabilisticSignals?: boolean;
   /**
@@ -247,7 +247,7 @@ export interface DleConfig {
   readonly maxQueueSize?: number;
   /**
    * Debounce before an automatic flush, in milliseconds. Default 3000. Keeps the SDK
-   * inside the documented `/v1/events` budget of 60 events per minute (spec §E.9).
+   * inside the documented `/v1/events` budget of 60 events per minute.
    */
   readonly flushIntervalMs?: number;
   /** Storage key namespace. Default `dle`. */

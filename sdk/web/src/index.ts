@@ -222,7 +222,7 @@ export function createDle(config: DleConfig): DleClient {
         ? referrerFromSearch(search)
         : undefined);
 
-    // Consent false: no `signals` member at all — not an empty object (TC-145, TC-146).
+    // Consent false: no `signals` member at all — not an empty object.
     const signals = consent.canSendDeviceSignals(config.probabilisticSignals === true) ? collectSignals() : undefined;
 
     const body = buildResolveRequest({

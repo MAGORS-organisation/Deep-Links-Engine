@@ -20,7 +20,7 @@ namespace Dle.IntegrationTests.Infrastructure;
 /// The tenant scope is the whole of isolation. <see cref="ITenantContext"/> supplies the value the
 /// named tenant filter reads, so entering a scope here is exactly what the authentication middleware
 /// does per request — which is why a repository call made in tenant A's scope cannot see tenant B's
-/// rows without anyone writing a comparison (FR-241, T-09, TC-166).
+/// rows without anyone writing a comparison.
 /// </para>
 /// </remarks>
 public sealed class ControlPlaneScope : IAsyncDisposable

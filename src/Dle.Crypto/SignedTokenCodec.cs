@@ -9,7 +9,7 @@ namespace Dle.Crypto;
 
 /// <summary>
 /// Writes and reads tokens in the engine format
-/// <c>dlt1.&lt;alg&gt;.&lt;kid&gt;.&lt;base64url(payload)&gt;.&lt;base64url(signature)&gt;</c> (§E.4.2).
+/// <c>dlt1.&lt;alg&gt;.&lt;kid&gt;.&lt;base64url(payload)&gt;.&lt;base64url(signature)&gt;</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -43,7 +43,7 @@ public sealed class SignedTokenCodec
     /// <param name="keyRing">Source of the signer and the verifier.</param>
     /// <param name="replayGuard">Guard used by <see cref="ValidateOnceAsync"/>.</param>
     /// <param name="options">The crypto options.</param>
-    /// <param name="timeProvider">Clock. SHARED-KERNEL §17.2 rules out reading the machine clock.</param>
+    /// <param name="timeProvider">Clock. The machine clock is never read directly.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public SignedTokenCodec(
         IKeyRing keyRing,

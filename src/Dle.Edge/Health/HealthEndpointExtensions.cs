@@ -9,7 +9,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// Maps the two probes an orchestrator needs (SHARED-KERNEL §15, NFR-05).
+/// Maps the two probes an orchestrator needs.
 /// </summary>
 /// <remarks>
 /// The namespace is <c>Microsoft.AspNetCore.Builder</c>, matching every other module, so that the
@@ -38,7 +38,7 @@ public static class HealthEndpointExtensions
     /// </para>
     /// <para>
     /// Readiness asks whether this instance should receive traffic, and its checks are chosen to say
-    /// yes through exactly the failures §D.6 requires the edge to survive.
+    /// yes through exactly the failures the edge is required to survive.
     /// </para>
     /// <para>
     /// Both paths are reserved slugs, so <see cref="SlugPolicy.Reserved"/> already keeps a link from
@@ -75,7 +75,7 @@ public static class HealthEndpointExtensions
                 "200 while this instance can serve resolves, including when the geographic database is missing, " +
                 "click events are being dropped or PostgreSQL is unreachable — all three report as degraded in " +
                 "the body rather than removing the instance from rotation, because cached links keep resolving " +
-                "through a database outage (§D.6, NFR-06).")
+                "through a database outage.")
             .AllowAnonymous()
             .DisableRateLimiting();
 

@@ -9,7 +9,7 @@ using Xunit;
 namespace Dle.UnitTests.Control;
 
 /// <summary>
-/// §D.6: while PostgreSQL is unavailable the control plane answers 503 and never 500. The whole
+/// While PostgreSQL is unavailable the control plane answers 503 and never 500. The whole
 /// decision is the classification of an exception, and that is what is pinned here; the HTTP side of
 /// it — the status, the <c>Retry-After</c>, the body free of internals — is exercised by the chaos
 /// test that actually stops the database.

@@ -5,17 +5,16 @@ using Xunit;
 namespace Dle.UnitTests.Primitives;
 
 /// <summary>
-/// TC-109. A slug is a tenant-scoped identifier that a human reads off a poster. If a Cyrillic "а"
+/// A slug is a tenant-scoped identifier that a human reads off a poster. If a Cyrillic "а"
 /// were quietly folded onto the Latin "a", two tenants would fight over one address; if a
 /// compatibility form were not folded at all, one tenant would own two spellings of one name.
-/// SHARED-KERNEL section 1 asks for both: NFKC first, then a strict character allowlist.
+/// The policy does both: NFKC first, then a strict character allowlist.
 /// </summary>
 public sealed class SlugPolicyTests
 {
     // ---------------------------------------------------------------- confusables must be refused
 
     [Theory]
-    [Trait("TestCase", "TC-109")]
     [InlineData("аbc", "Cyrillic small letter a (U+0430)")]
     [InlineData("pаypal", "Cyrillic small letter a inside a brand name")]
     [InlineData("еxample", "Cyrillic small letter ie (U+0435)")]
@@ -34,7 +33,6 @@ public sealed class SlugPolicyTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-109")]
     public void TryNormalize_CyrillicHomoglyph_DoesNotCollideWithTheLatinSlug()
     {
         Assert.True(SlugPolicy.TryNormalize("promo", out string latin));
@@ -47,7 +45,6 @@ public sealed class SlugPolicyTests
     // ---------------------------------------------------------------- NFKC
 
     [Theory]
-    [Trait("TestCase", "TC-109")]
     [InlineData("ＰＲＯＭＯ", "promo")]     // full width PROMO
     [InlineData("１２３", "123")]                     // full width digits
     [InlineData("①②", "12")]                            // circled digits one and two
@@ -60,7 +57,7 @@ public sealed class SlugPolicyTests
             string.Create(
                 CultureInfo.InvariantCulture,
                 $"""
-                SHARED-KERNEL section 1 requires NFKC normalisation before the character allowlist,
+                The slug policy requires NFKC normalisation before the character allowlist,
                 so "{raw}" must fold to "{expected}" rather than be refused.
 
                 Root cause if this fails: Directory.Build.props sets InvariantGlobalization=true for

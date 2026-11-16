@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace Dle.SecurityTests.Hardening;
 
 /// <summary>
-/// T-11: the administration console is served under a Content-Security-Policy that keeps foreign
+/// The administration console is served under a Content-Security-Policy that keeps foreign
 /// scripts off the origin that holds an owner-capable key.
 /// </summary>
 public sealed class AdminConsoleHeaderTests : IDisposable
@@ -25,7 +25,6 @@ public sealed class AdminConsoleHeaderTests : IDisposable
 
     [Theory]
     [MemberData(nameof(ConsolePaths))]
-    [Trait("Threat", "T-11")]
     public async Task ConsolePages_CarryAStrictContentSecurityPolicy(string path)
     {
         using HttpClient client = _host.CreateClient();
@@ -47,7 +46,6 @@ public sealed class AdminConsoleHeaderTests : IDisposable
     [Theory]
     [InlineData("/admin/assets/app.js")]
     [InlineData("/admin/assets/app.css")]
-    [Trait("Threat", "T-11")]
     public async Task ConsoleAssets_AreServedWithoutACredential(string path)
     {
         // The browser fetches the bundle before anybody has signed in. The deny-by-default policy

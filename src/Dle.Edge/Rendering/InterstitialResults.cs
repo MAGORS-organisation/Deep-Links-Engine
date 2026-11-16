@@ -1,7 +1,7 @@
 namespace Dle.Edge.Rendering;
 
 /// <summary>
-/// Every HTML response the resolve pipeline can produce, in one place (§C.3.1, ADR-009).
+/// Every HTML response the resolve pipeline can produce, in one place.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -11,10 +11,10 @@ namespace Dle.Edge.Rendering;
 /// </para>
 /// <para>
 /// No page is rendered through a template engine. Razor would compile at first request on a path whose
-/// budget is measured in milliseconds and whose first request after a deployment is the one under load
-/// (§C.2), and its encoding rules would then be the thing standing between stored Open Graph metadata
+/// budget is measured in milliseconds and whose first request after a deployment is the one under load,
+/// and its encoding rules would then be the thing standing between stored Open Graph metadata
 /// and a script tag. The pages are written by hand through <see cref="HtmlBuilder"/>, where the encoding
-/// is visible at every call site (T-11).
+/// is visible at every call site.
 /// </para>
 /// </remarks>
 internal static class InterstitialResults
@@ -26,7 +26,7 @@ internal static class InterstitialResults
     private static readonly string[] GooglePlayHosts = ["play.google.com", "market.android.com", "play.app.goo.gl"];
 
     /// <summary>
-    /// The interstitial page, whose primary action is a real anchor (FR-162, FR-163).
+    /// The interstitial page, whose primary action is a real anchor.
     /// </summary>
     /// <param name="link">The link being resolved.</param>
     /// <param name="decision">The routing decision that asked for an interstitial.</param>
@@ -34,7 +34,7 @@ internal static class InterstitialResults
     /// <param name="client">The classified client.</param>
     /// <returns>A 200 HTML response, or the 404 page when nothing safe can be offered.</returns>
     /// <remarks>
-    /// This overload is the one in §C.3.1. It carries no consent decision, so
+    /// This overload carries no consent decision, so
     /// <see cref="RoutingUrlBuilder"/> treats consent as denied and no click id reaches any URL on the
     /// page. The resolve path uses the overload that takes the gate's decision.
     /// </remarks>
@@ -46,7 +46,7 @@ internal static class InterstitialResults
         Page(link, decision, clickId, client, consent: null);
 
     /// <summary>
-    /// The interstitial page, whose primary action is a real anchor (FR-162, FR-163).
+    /// The interstitial page, whose primary action is a real anchor.
     /// </summary>
     /// <param name="link">The link being resolved.</param>
     /// <param name="decision">The routing decision that asked for an interstitial.</param>
@@ -54,10 +54,10 @@ internal static class InterstitialResults
     /// <param name="client">The classified client.</param>
     /// <param name="consent">
     /// The consent gate's decision. <see langword="null"/> means denied, which is the safe reading of a
-    /// caller that has not run the gate (ePrivacy art. 5(3), §E.6.2).
+    /// caller that has not run the gate (ePrivacy art. 5(3)).
     /// </param>
     /// <param name="domain">The link domain's runtime configuration, for branding and language.</param>
-    /// <param name="claimCode">The one-time code issued for this click, or <see langword="null"/> (FR-184).</param>
+    /// <param name="claimCode">The one-time code issued for this click, or <see langword="null"/>.</param>
     /// <returns>A 200 HTML response, or the 404 page when nothing safe can be offered.</returns>
     /// <remarks>
     /// <para>
@@ -67,8 +67,8 @@ internal static class InterstitialResults
     /// </para>
     /// <para>
     /// When neither the store nor the web URL survives <see cref="SafeUrl"/> the method answers 404
-    /// rather than rendering a page with a dead or dangerous anchor. That is the default-deny branch
-    /// SHARED-KERNEL §17.9 asks for, and in practice it is unreachable: the control plane validates
+    /// rather than rendering a page with a dead or dangerous anchor. That is the default-deny branch,
+    /// and in practice it is unreachable: the control plane validates
     /// <c>TargetUrl</c> on write.
     /// </para>
     /// </remarks>
@@ -127,7 +127,7 @@ internal static class InterstitialResults
     }
 
     /// <summary>
-    /// The interstitial page, built from URLs the caller has already produced (FR-162, FR-163).
+    /// The interstitial page, built from URLs the caller has already produced.
     /// </summary>
     /// <param name="link">The link being resolved, supplying the custom scheme the deep link may use.</param>
     /// <param name="decision">The routing decision that asked for an interstitial.</param>
@@ -135,13 +135,13 @@ internal static class InterstitialResults
     /// <param name="fallbackUrl">The store or web URL, as built by <see cref="RoutingUrlBuilder"/>.</param>
     /// <param name="deeplinkUrl">The deep link URL, or <see langword="null"/> when the link has none.</param>
     /// <param name="domain">The link domain's runtime configuration, for branding and language.</param>
-    /// <param name="claimCode">The one-time code issued for this click, or <see langword="null"/> (FR-184).</param>
+    /// <param name="claimCode">The one-time code issued for this click, or <see langword="null"/>.</param>
     /// <param name="consentToken">Single-use token allowing deferred attribution opt-in on <c>POST /_dl/consent</c>, or <see langword="null"/>.</param>
     /// <returns>A 200 HTML response, or the 404 page when nothing safe can be offered.</returns>
     /// <remarks>
     /// This is the overload the resolve pipeline uses. It exists so that the URLs are built exactly once,
     /// by the code that already holds the consent decision, and so that the page never becomes a second
-    /// place where a redirect target is assembled (SHARED-KERNEL §17.4). Both URLs are still filtered
+    /// place where a redirect target is assembled. Both URLs are still filtered
     /// here: passing them in moves where they are built, not whether they are checked.
     /// </remarks>
     internal static IResult Page(
@@ -190,7 +190,7 @@ internal static class InterstitialResults
     }
 
     /// <summary>
-    /// The crawler preview: 200 HTML with Open Graph tags and no redirect (FR-105, FR-161, TC-106).
+    /// The crawler preview: 200 HTML with Open Graph tags and no redirect.
     /// </summary>
     /// <param name="link">The link being previewed.</param>
     /// <returns>A 200 HTML response.</returns>
@@ -198,7 +198,7 @@ internal static class InterstitialResults
         OgPreview(link, ClientContext.Empty, domain: null, canonicalUrl: null);
 
     /// <summary>
-    /// The crawler preview: 200 HTML with Open Graph tags and no redirect (FR-105, FR-161, TC-106).
+    /// The crawler preview: 200 HTML with Open Graph tags and no redirect.
     /// </summary>
     /// <param name="link">The link being previewed.</param>
     /// <param name="client">The classified client, supplying the language.</param>
@@ -220,7 +220,7 @@ internal static class InterstitialResults
         new OgPreviewResult(link, client, domain, canonicalUrl, targetUrl);
 
     /// <summary>
-    /// The 410 page for a link withdrawn by abuse handling (TC-103, §E.3).
+    /// The 410 page for a link withdrawn by abuse handling.
     /// </summary>
     /// <param name="client">The classified client, supplying the language. May be <see langword="null"/>.</param>
     /// <param name="domain">The link domain's runtime configuration, when the host is known.</param>
@@ -229,7 +229,7 @@ internal static class InterstitialResults
         Gone(client?.Language, domain);
 
     /// <summary>
-    /// The 410 page for a link withdrawn by abuse handling (TC-103, §E.3).
+    /// The 410 page for a link withdrawn by abuse handling.
     /// </summary>
     /// <param name="language">Primary language subtag from the request, or <see langword="null"/>.</param>
     /// <param name="domain">The link domain's runtime configuration, when the host is known.</param>
@@ -238,8 +238,7 @@ internal static class InterstitialResults
         new GonePageResult(language, domain);
 
     /// <summary>
-    /// The 404 page. The same page, byte for byte, for every reason a slug does not resolve
-    /// (TC-102, TC-166).
+    /// The 404 page. The same page, byte for byte, for every reason a slug does not resolve.
     /// </summary>
     /// <param name="client">The classified client, supplying the language. May be <see langword="null"/>.</param>
     /// <param name="domain">The link domain's runtime configuration, when the host is known.</param>
@@ -248,15 +247,13 @@ internal static class InterstitialResults
     /// Neither overload accepts a link, a slug or a tenant, and neither ever will. A missing slug, a
     /// deactivated link and a link owned by another tenant reach this method with identical arguments,
     /// which is what makes the responses identical — including <c>Content-Length</c>, since the only
-    /// per-response difference is the fixed-width nonce. A <c>403</c> is never an option
-    /// (SHARED-KERNEL §17.7).
+    /// per-response difference is the fixed-width nonce. A <c>403</c> is never an option.
     /// </remarks>
     internal static IResult NotFound(ClientContext? client, DomainRuntimeConfig? domain = null) =>
         NotFound(client?.Language, domain);
 
     /// <summary>
-    /// The 404 page. The same page, byte for byte, for every reason a slug does not resolve
-    /// (TC-102, TC-166).
+    /// The 404 page. The same page, byte for byte, for every reason a slug does not resolve.
     /// </summary>
     /// <param name="language">Primary language subtag from the request, or <see langword="null"/>.</param>
     /// <param name="domain">The link domain's runtime configuration, when the host is known.</param>
@@ -265,7 +262,7 @@ internal static class InterstitialResults
         new NotFoundPageResult(language, domain);
 
     /// <summary>
-    /// The 429 page, carrying <c>Retry-After</c> when the limiter reported a wait (§E.9).
+    /// The 429 page, carrying <c>Retry-After</c> when the limiter reported a wait.
     /// </summary>
     /// <param name="client">The classified client, supplying the language. May be <see langword="null"/>.</param>
     /// <param name="domain">The link domain's runtime configuration, when the host is known.</param>
@@ -278,7 +275,7 @@ internal static class InterstitialResults
         TooManyRequests(client?.Language, domain, retryAfter);
 
     /// <summary>
-    /// The 429 page, carrying <c>Retry-After</c> when the limiter reported a wait (§E.9).
+    /// The 429 page, carrying <c>Retry-After</c> when the limiter reported a wait.
     /// </summary>
     /// <param name="language">Primary language subtag from the request, or <see langword="null"/>.</param>
     /// <param name="domain">The link domain's runtime configuration, when the host is known.</param>

@@ -8,7 +8,7 @@
 #
 # Gradle: sdk/android/gradle/wrapper/gradle-wrapper.properties exists but there is NO gradlew
 # script and NO gradle-wrapper.jar in the repository (a committed wrapper JAR is also a
-# supply-chain question, T-14). The version is read from the properties file and installed with
+# supply-chain question). The version is read from the properties file and installed with
 # gradle/actions/setup-gradle, so the properties file stays the single source of truth.
 #
 # Toolchain (from sdk/android/gradle/libs.versions.toml and the module build files):

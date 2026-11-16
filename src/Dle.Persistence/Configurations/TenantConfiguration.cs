@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="Tenant"/> to the <c>tenants</c> table (§B.5.2).</summary>
+/// <summary>Maps <see cref="Tenant"/> to the <c>tenants</c> table.</summary>
 public sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
 {
     /// <inheritdoc />
@@ -26,7 +26,7 @@ public sealed class TenantConfiguration : IEntityTypeConfiguration<Tenant>
             .IsRequired();
 
         // active|suspended|deleted — text, not an integer, so the value is readable in the
-        // database and survives a reordering of the enum (shared kernel §12).
+        // database and survives a reordering of the enum.
         builder.Property(t => t.Status)
             .HasColumnName("status")
             .HasDefaultValue("active")

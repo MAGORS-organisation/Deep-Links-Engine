@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="DomainVerification"/> to the <c>domain_verifications</c> table (FR-143).</summary>
+/// <summary>Maps <see cref="DomainVerification"/> to the <c>domain_verifications</c> table.</summary>
 /// <remarks>
 /// The table has no tenant column and is listed as tenant exempt in <see cref="DleDbContext"/>:
 /// a check result belongs to a domain, and every query reaches it through the tenant filtered
@@ -38,7 +38,7 @@ public sealed class DomainVerificationConfiguration : IEntityTypeConfiguration<D
             .HasColumnName("http_status");
 
         // Any value above zero fails the check: both Apple and Google refuse a redirected
-        // association file, and that is one of the most common silent breakages (TC-124).
+        // association file, and that is one of the most common silent breakages.
         builder.Property(v => v.RedirectCount)
             .HasColumnName("redirect_count")
             .HasDefaultValue(0)

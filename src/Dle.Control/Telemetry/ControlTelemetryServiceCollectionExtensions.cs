@@ -16,8 +16,7 @@ using OpenTelemetry.Trace;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// The single composition entry point of the control-plane observability module
-/// (SHARED-KERNEL §15, §C.6, NFR-12).
+/// The single composition entry point of the control-plane observability module.
 /// </summary>
 public static class ControlTelemetryServiceCollectionExtensions
 {
@@ -36,8 +35,8 @@ public static class ControlTelemetryServiceCollectionExtensions
     /// </para>
     /// <para>
     /// ASP.NET Core instrumentation is configured to drop the health probes and never to record a
-    /// full query string. Prohibition 5 forbids logging the <c>Authorization</c> header, a full
-    /// referrer, a full query string or a raw address at information level or below, and a trace
+    /// full query string. Nothing may log the <c>Authorization</c> header, a full referrer, a full
+    /// query string or a raw address at information level or below, and a trace
     /// attribute is a log line with a different name.
     /// </para>
     /// </remarks>

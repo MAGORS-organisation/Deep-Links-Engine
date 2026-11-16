@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
-/// Configuration of the webhook module, bound from <c>Dle:Webhooks</c> (SHARED-KERNEL §16, §B.7.4).
+/// Configuration of the webhook module, bound from <c>Dle:Webhooks</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -11,11 +11,10 @@ namespace Dle.Control.Features.Webhooks;
 /// minutes must not lose its deliveries, and a customer endpoint that is down for two days must
 /// not be able to hold the queue hostage. Exponential backoff with jitter and a bounded attempt
 /// count is how both are true at once; what is left over lands in the dead letter queue, which is
-/// visible as <c>dle_webhook_dlq_size</c> precisely so that a silent loss becomes a loud one
-/// (§C.6).
+/// visible as <c>dle_webhook_dlq_size</c> precisely so that a silent loss becomes a loud one.
 /// </para>
 /// <para>
-/// The tolerance is five minutes, matching §B.7.4 and T-13. It is published here rather than
+/// The tolerance is five minutes. It is published here rather than
 /// hidden in the signer because the receiver has to apply the same number: a timestamp older than
 /// the tolerance must be refused by the receiver even when the signature verifies, or the
 /// signature is a replayable token rather than a proof of freshness.
@@ -66,7 +65,7 @@ public sealed class WebhookOptions
     public int ConnectTimeoutSeconds { get; set; } = 5;
 
     /// <summary>
-    /// How stale a signature may be before a receiver should refuse it, in minutes (§B.7.4).
+    /// How stale a signature may be before a receiver should refuse it, in minutes.
     /// </summary>
     [Range(1, 60)]
     public int SignatureToleranceMinutes { get; set; } = 5;
@@ -81,7 +80,7 @@ public sealed class WebhookOptions
 
     /// <summary>Largest number of subscriptions one tenant may register.</summary>
     /// <remarks>
-    /// A soft quota in the sense of §E.9: exceeding it blocks creating another subscription and
+    /// A soft quota: exceeding it blocks creating another subscription and
     /// never blocks a delivery that already exists.
     /// </remarks>
     [Range(1, 1000)]
@@ -98,7 +97,7 @@ public sealed class WebhookOptions
     /// <para>
     /// Off, and it should stay off outside a test harness or a development machine. The checks it
     /// turns off are what stop a webhook from being aimed at <c>169.254.169.254</c> and turning the
-    /// control plane into a proxy for the cloud metadata service (T-02).
+    /// control plane into a proxy for the cloud metadata service.
     /// </para>
     /// <para>
     /// On, it also allows plain <c>http</c>, because a loopback listener with a certificate nobody

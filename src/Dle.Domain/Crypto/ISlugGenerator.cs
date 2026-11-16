@@ -2,7 +2,7 @@ namespace Dle.Domain.Crypto;
 
 /// <summary>
 /// Turns a database sequence value into a link slug and back: sequence, keyed permutation, then
-/// base62 over exactly eight characters (ADR-007).
+/// base62 over exactly eight characters.
 /// </summary>
 /// <remarks>
 /// Because the mapping is a bijection, a generated slug never collides and creating a link needs

@@ -229,6 +229,9 @@ pre-install,pre-upgrade
 {{- with .Values.secrets.metricsScrapeToken }}
 {{ $.Values.secrets.keys.metricsScrapeToken }}: {{ . | quote }}
 {{- end }}
+{{- with .Values.secrets.bootstrapOwnerKey }}
+{{ $.Values.secrets.keys.bootstrapOwnerKey }}: {{ . | quote }}
+{{- end }}
 {{- end -}}
 
 {{/*

@@ -34,7 +34,7 @@ public sealed record WebhookSingleReplayResult(
 public sealed record WebhookBatchReplayResult(IReadOnlyList<Guid> DeliveryIds);
 
 /// <summary>
-/// Re-queues failed or dead webhook deliveries within the caller's tenant scope (FR-204).
+/// Re-queues failed or dead webhook deliveries within the caller's tenant scope.
 /// </summary>
 public interface IWebhookReplayStore
 {

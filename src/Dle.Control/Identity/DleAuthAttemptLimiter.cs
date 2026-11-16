@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Identity;
 
 /// <summary>
-/// The authentication attempt limiter of §E.9: ten attempts a minute per caller, with constant-time
+/// The authentication attempt limiter: ten attempts a minute per caller, with constant-time
 /// verification either way.
 /// </summary>
 /// <remarks>
@@ -28,7 +28,7 @@ namespace Dle.Control.Identity;
 /// <para>
 /// A refused attempt costs the same as an accepted one from the caller's point of view: the handler
 /// still reports "the credential was refused" and never distinguishes "unknown key" from "too many
-/// attempts" in the time it takes to answer (T-07).
+/// attempts" in the time it takes to answer.
 /// </para>
 /// </remarks>
 public sealed class DleAuthAttemptLimiter : IDisposable
@@ -49,7 +49,7 @@ public sealed class DleAuthAttemptLimiter : IDisposable
     private bool _disposed;
 
     /// <summary>Creates the limiter.</summary>
-    /// <param name="options">Rate limit configuration; the defaults are the §E.9 values.</param>
+    /// <param name="options">Rate limit configuration.</param>
     /// <param name="timeProvider">Clock the token bucket refills against.</param>
     /// <param name="distributedStore">Optional Valkey store to share attempt budgets across control-plane replicas.</param>
     public DleAuthAttemptLimiter(

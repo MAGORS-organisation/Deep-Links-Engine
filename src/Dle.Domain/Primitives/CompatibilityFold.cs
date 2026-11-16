@@ -10,7 +10,7 @@ namespace Dle.Domain.Primitives;
 /// The product builds with <c>InvariantGlobalization</c>, and in globalization-invariant mode
 /// <see cref="string.Normalize(NormalizationForm)"/> is a silent no-op: it returns its input
 /// unchanged and <see cref="string.IsNormalized(NormalizationForm)"/> answers <see langword="true"/>
-/// for text that is not normalised at all. The NFKC step that SHARED-KERNEL section 1 requires of
+/// for text that is not normalised at all. The NFKC step required of
 /// <see cref="SlugPolicy.TryNormalize"/> therefore did not run, and compatibility spellings such as
 /// full width <c>PROMO</c> were refused instead of folded.
 /// </para>
@@ -20,7 +20,7 @@ namespace Dle.Domain.Primitives;
 /// character folds to something the allowlist refuses anyway, so omitting it cannot change a verdict.
 /// Confusables are deliberately absent: NFKC does not map Cyrillic <c>а</c> (U+0430) onto Latin
 /// <c>a</c>, and neither does this table, which is what keeps one tenant out of another's address
-/// space (TC-109).
+/// space.
 /// </para>
 /// <para>
 /// Applying this fold after <see cref="string.Normalize(NormalizationForm)"/> is safe with or without

@@ -3,14 +3,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Dle.Control.Features.Apps;
 
 /// <summary>
-/// Reads and writes which hosts advertise which applications (FR-141, FR-142).
+/// Reads and writes which hosts advertise which applications.
 /// </summary>
 /// <remarks>
 /// <para>
-/// <c>app_domains</c> carries no tenant column — §B.5.2 does not give it one — so every query here
+/// <c>app_domains</c> carries no tenant column, so every query here
 /// reaches it only through the tenant-filtered <c>apps</c> and <c>domains</c> tables. That join is
 /// not decoration: it is the only thing standing between a caller with a foreign identifier and a
-/// row that would make one tenant's host advertise another tenant's application (T-09).
+/// row that would make one tenant's host advertise another tenant's application.
 /// </para>
 /// <para>
 /// The context is used directly rather than through a repository because
@@ -112,7 +112,7 @@ public sealed class AppDomainPairings
     /// <remarks>
     /// A foreign domain identifier is not an error the caller is told about: the pair operation
     /// refuses it, and the identifier simply does not appear in the returned set. Reporting "that
-    /// domain is not yours" would confirm it exists, which is the disclosure TC-166 forbids.
+    /// domain is not yours" would confirm it exists, which is exactly the disclosure to avoid.
     /// </remarks>
     public async Task<IReadOnlyList<Guid>> ReplaceAsync(
         Guid appId,

@@ -1,7 +1,7 @@
 import XCTest
 @testable import DleSDK
 
-/// `StateStore` persistence, and the rule it exists for: one resolve per installation (TC-143).
+/// `StateStore` persistence, and the rule it exists for: one resolve per installation.
 final class StateStoreTests: XCTestCase {
     private let moment = TestDates.moment
 
@@ -58,7 +58,7 @@ final class StateStoreTests: XCTestCase {
         XCTAssertFalse(store.current.firstOpenTracked)
     }
 
-    // MARK: - Resolve once (TC-143)
+    // MARK: - Resolve once
 
     func testResolveHappensOncePerInstallation() async throws {
         let storage = try TestSupport.makeStorage()

@@ -9,7 +9,7 @@ import org.junit.jupiter.params.provider.ValueSource
 import sk.magors.dle.internal.ClaimCode
 
 /**
- * Mirrors `Dle.Domain.Attribution.ClaimCode` (S3, FR-184). The two implementations must agree
+ * Mirrors `Dle.Domain.Attribution.ClaimCode` (S3). The two implementations must agree
  * character for character: a code the SDK normalises differently from the server cannot be
  * redeemed.
  */

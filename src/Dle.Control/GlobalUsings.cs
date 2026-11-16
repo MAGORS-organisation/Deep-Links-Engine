@@ -3,7 +3,7 @@
 // The three groups below are the ones that appear in practically every file of this project:
 // the shared kernel (which is one contract cut into folders, so its namespaces travel together),
 // the persistence module the control plane is written against, and the two BCL namespaces the
-// coding standard mandates — InvariantCulture for every parse and format (SHARED-KERNEL §0) and
+// coding standard mandates — InvariantCulture for every parse and format and
 // System.Text.Json for the source-generated serialization contexts.
 //
 // Dle.Domain.Entities.AppDomain collides with System.AppDomain, which ImplicitUsings imports

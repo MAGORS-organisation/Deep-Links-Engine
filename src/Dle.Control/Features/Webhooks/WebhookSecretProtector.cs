@@ -9,7 +9,7 @@ namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
 /// Encrypts and decrypts the shared secret stored in
-/// <see cref="Dle.Domain.Entities.WebhookSubscription.SecretEncrypted"/> (§B.5.2, §E.4.1 K4).
+/// <see cref="Dle.Domain.Entities.WebhookSubscription.SecretEncrypted"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -128,7 +128,7 @@ public sealed class WebhookSecretProtector
     /// Failure is reported rather than thrown, and the caller's answer to it is to record the
     /// delivery as failed. A subscription whose secret cannot be decrypted must never be delivered
     /// to with an unsigned or differently signed request: the receiver would either reject it or,
-    /// worse, accept it (SHARED-KERNEL §17.9).
+    /// worse, accept it.
     /// </remarks>
     public bool TryUnprotect(byte[]? stored, out byte[] secret)
     {

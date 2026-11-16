@@ -6,7 +6,7 @@ namespace Dle.Crypto;
 /// <remarks>
 /// The reason is for logs and metrics, never for the response body. Telling a caller whether a
 /// token failed on its signature, its audience or its expiry turns validation into an oracle;
-/// SHARED-KERNEL §17.7 makes the same point about tenant isolation, where a foreign resource is a
+/// tenant isolation follows the same rule, where a foreign resource is a
 /// 404 rather than a 403.
 /// </remarks>
 public sealed record TokenValidationResult

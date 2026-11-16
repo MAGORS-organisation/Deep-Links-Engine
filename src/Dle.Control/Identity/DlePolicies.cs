@@ -7,7 +7,7 @@ namespace Dle.Control.Identity;
 /// <para>
 /// The default is deny. <c>AuthorizationOptions.FallbackPolicy</c> is a policy nothing satisfies, so
 /// an endpoint registered without <c>RequireAuthorization</c> refuses the request instead of serving
-/// it — a forgotten attribute has to fail closed (SHARED-KERNEL §17.9). Endpoints that are genuinely
+/// it — a forgotten attribute has to fail closed. Endpoints that are genuinely
 /// public say so with <c>AllowAnonymous</c>, which is one word and greppable.
 /// </para>
 /// <para>
@@ -16,8 +16,8 @@ namespace Dle.Control.Identity;
 /// never one instead of the other.
 /// </para>
 /// <para>
-/// Each policy also names the authentication schemes it accepts, and this is where §E.2.1 TB2 is
-/// enforced. An SDK key ships inside an APK or an IPA and must be assumed extracted, so
+/// Each policy also names the authentication schemes it accepts, and this is where the SDK key's
+/// trust boundary is enforced. An SDK key ships inside an APK or an IPA and must be assumed extracted, so
 /// <see cref="SdkIngest"/> is the only policy that accepts the SDK scheme, and it is the only policy
 /// the SDK scheme can satisfy. No confusion of roles or scopes can turn an extracted SDK key into
 /// something that writes configuration, because authorization rejects the scheme before it reads a
@@ -70,8 +70,7 @@ public static class DlePolicies
     public const string AnalyticsRead = "dle.analytics.read";
 
     /// <summary>
-    /// The SDK ingestion policy: the SDK scheme only, and the one scope that scheme ever issues
-    /// (§E.2.1, TB2).
+    /// The SDK ingestion policy: the SDK scheme only, and the one scope that scheme ever issues.
     /// </summary>
     public const string SdkIngest = "dle.sdk.ingest";
 

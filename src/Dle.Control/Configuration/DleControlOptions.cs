@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Control.Configuration;
 
 /// <summary>
-/// Control-plane behaviour bound from the <c>Dle:Control</c> configuration section (§C.4).
+/// Control-plane behaviour bound from the <c>Dle:Control</c> configuration section.
 /// </summary>
 /// <remarks>
 /// Everything here is a policy decision an operator may reasonably want to change without a
@@ -29,13 +29,13 @@ public sealed class DleControlOptions
     public string PublicScheme { get; set; } = "https";
 
     /// <summary>
-    /// Path suffix appended to a short URL to reach its QR image on the edge (FR-106).
+    /// Path suffix appended to a short URL to reach its QR image on the edge.
     /// </summary>
     [Required]
     [StringLength(32, MinimumLength = 1)]
     public string QrPathSuffix { get; set; } = "/qr";
 
-    /// <summary>Default number of items returned by a list endpoint (FR-109).</summary>
+    /// <summary>Default number of items returned by a list endpoint.</summary>
     [Range(1, 500)]
     public int DefaultPageSize { get; set; } = 50;
 
@@ -44,10 +44,10 @@ public sealed class DleControlOptions
     public int MaxPageSize { get; set; } = 200;
 
     /// <summary>
-    /// Largest number of rows accepted by one NDJSON bulk create request (FR-103, §E.9).
+    /// Largest number of rows accepted by one NDJSON bulk create request.
     /// </summary>
     /// <remarks>
-    /// The requirement is "at least ten thousand", and the value is a cap rather than a target: the
+    /// Ten thousand rows by default, and the value is a cap rather than a target: the
     /// request is streamed, so the number bounds the work a single caller may queue, not the memory
     /// the server needs to hold.
     /// </remarks>
@@ -56,12 +56,12 @@ public sealed class DleControlOptions
 
     /// <summary>
     /// How many days an association-file change takes to reach every device, quoted back to the
-    /// operator after a domain verification (§A.2.1, §A.2.2, TC-125).
+    /// operator after a domain verification.
     /// </summary>
     [Range(1, 30)]
     public int AssociationPropagationDays { get; set; } = 7;
 
-    /// <summary>How many historical link revisions a single request may read (FR-107).</summary>
+    /// <summary>How many historical link revisions a single request may read.</summary>
     [Range(1, 500)]
     public int MaxLinkVersions { get; set; } = 50;
 
@@ -74,8 +74,7 @@ public sealed class DleControlOptions
     /// enough on its own. Naming the operator tenant here is the multi-tenant answer;
     /// <see cref="AllowTenantSelfService"/> is the single-organisation one. With neither set, the
     /// tenant found under <c>Dle:Bootstrap:DefaultTenantSlug</c> is the operator while
-    /// <c>Dle:Bootstrap:Enabled</c> is on; otherwise the tenant routes deny every caller
-    /// (SHARED-KERNEL §17.9).
+    /// <c>Dle:Bootstrap:Enabled</c> is on; otherwise the tenant routes deny every caller.
     /// </remarks>
     public Guid? InstanceTenantId { get; set; }
 
@@ -87,7 +86,7 @@ public sealed class DleControlOptions
 
     /// <summary>
     /// Identifier of this process within the deployment, 0 to 1023, used by the link identifier
-    /// generator (ADR-007 adjacent: the Snowflake layout of <c>links.id</c>).
+    /// generator (the Snowflake layout of <c>links.id</c>).
     /// </summary>
     /// <remarks>
     /// Two replicas sharing one node identifier can mint the same identifier in the same

@@ -2,13 +2,13 @@ using System.Collections.ObjectModel;
 
 namespace Dle.Domain.Contracts;
 
-/// <summary>Body of <c>POST /api/v1/links</c> (FR-101, FR-102, FR-104, FR-105).</summary>
+/// <summary>Body of <c>POST /api/v1/links</c>.</summary>
 public sealed record CreateLinkRequest
 {
     /// <summary>Domain that will serve the link.</summary>
     public required Guid DomainId { get; init; }
 
-    /// <summary>Custom slug. Omit to have one generated (8 base62 characters, ADR-007). A custom
+    /// <summary>Custom slug. Omit to have one generated (8 base62 characters). A custom
     /// slug must be distinguishable from the generated shape, so 3 to 7 or 9 or more characters.</summary>
     public string? Slug { get; init; }
 
@@ -24,10 +24,10 @@ public sealed record CreateLinkRequest
     /// <summary>Path handed to the application, for example <c>/product/123</c>.</summary>
     public string? DeeplinkPath { get; init; }
 
-    /// <summary>Routing rules. Must contain exactly one default rule and it must be last (TC-105).</summary>
+    /// <summary>Routing rules. Must contain exactly one default rule and it must be last.</summary>
     public IReadOnlyList<RoutingRule> RoutingRules { get; init; } = [];
 
-    /// <summary>Open Graph metadata for crawler previews. Falls back to the domain default (FR-105).</summary>
+    /// <summary>Open Graph metadata for crawler previews. Falls back to the domain default.</summary>
     public OgMeta? Og { get; init; }
 
     /// <summary>UTM parameters appended to the web target.</summary>
@@ -36,16 +36,16 @@ public sealed record CreateLinkRequest
     /// <summary>Campaign this link belongs to.</summary>
     public Guid? CampaignId { get; init; }
 
-    /// <summary>Free form tags used for filtering and search (FR-109).</summary>
+    /// <summary>Free form tags used for filtering and search.</summary>
     public IReadOnlyList<string> Tags { get; init; } = [];
 
     /// <summary>Instant the link starts serving. Before it the link answers as not found.</summary>
     public DateTimeOffset? StartsAt { get; init; }
 
-    /// <summary>Instant the link stops serving (FR-104).</summary>
+    /// <summary>Instant the link stops serving.</summary>
     public DateTimeOffset? ExpiresAt { get; init; }
 
-    /// <summary>Where an expired link redirects instead of answering 404 (TC-104).</summary>
+    /// <summary>Where an expired link redirects instead of answering 404.</summary>
     public string? ExpiredUrl { get; init; }
 
     /// <summary>Whether the link is active on creation.</summary>
@@ -63,7 +63,7 @@ public sealed record UpdateLinkRequest
     /// <summary>New description.</summary>
     public string? Description { get; init; }
 
-    /// <summary>New web fallback target. Re-validated against the safety policy (§E.3).</summary>
+    /// <summary>New web fallback target. Re-validated against the safety policy.</summary>
     public string? TargetUrl { get; init; }
 
     /// <summary>New deep link path.</summary>
@@ -93,10 +93,10 @@ public sealed record UpdateLinkRequest
     /// <summary>New expiry redirect target.</summary>
     public string? ExpiredUrl { get; init; }
 
-    /// <summary>Activate or deactivate the link (FR-104).</summary>
+    /// <summary>Activate or deactivate the link.</summary>
     public bool? IsActive { get; init; }
 
-    /// <summary>Note recorded in the link version history (FR-107).</summary>
+    /// <summary>Note recorded in the link version history.</summary>
     public string? ChangeNote { get; init; }
 }
 
@@ -121,7 +121,7 @@ public sealed record LinkResponse
     /// <summary>The full public URL, ready to paste.</summary>
     public required string ShortUrl { get; init; }
 
-    /// <summary>URL of the QR image for this link (FR-106).</summary>
+    /// <summary>URL of the QR image for this link.</summary>
     public required string QrUrl { get; init; }
 
     /// <summary>Human readable title.</summary>
@@ -163,10 +163,10 @@ public sealed record LinkResponse
     /// <summary>Expiry redirect target.</summary>
     public string? ExpiredUrl { get; init; }
 
-    /// <summary>Set when the link is quarantined after an abuse report (TC-103).</summary>
+    /// <summary>Set when the link is quarantined after an abuse report.</summary>
     public DateTimeOffset? QuarantinedAt { get; init; }
 
-    /// <summary>Version counter, incremented on every change (FR-107).</summary>
+    /// <summary>Version counter, incremented on every change.</summary>
     public required int Version { get; init; }
 
     /// <summary>Creation instant.</summary>
@@ -192,7 +192,7 @@ public sealed record PagedResponse<T>
 
 /// <summary>
 /// One line of a bulk create request. Streamed as NDJSON so a ten thousand row batch never has to
-/// be buffered whole (FR-103).
+/// be buffered whole.
 /// </summary>
 public sealed record BulkLinkItem
 {
@@ -227,7 +227,7 @@ public sealed record BulkLinkResult
 
 /// <summary>
 /// Query for <c>GET /api/v1/links/{id}/simulate</c>. Answers "what happens for an iPhone 15 on
-/// iOS 18 in Slovakia, opened from Instagram" without generating a click event (FR-129).
+/// iOS 18 in Slovakia, opened from Instagram" without generating a click event.
 /// </summary>
 public sealed record SimulateRequest
 {
@@ -259,7 +259,7 @@ public sealed record SimulateRequest
     public DateTimeOffset? At { get; init; }
 
     /// <summary>Click identifier used for deterministic A/B bucketing. Defaults to a fixed sample
-    /// value so repeated simulations are reproducible (FR-125).</summary>
+    /// value so repeated simulations are reproducible.</summary>
     public string? ClickId { get; init; }
 }
 
@@ -294,7 +294,7 @@ public sealed record SimulateResponse
     public IReadOnlyList<string> Trace { get; init; } = [];
 }
 
-/// <summary>One historical version of a link (FR-107).</summary>
+/// <summary>One historical version of a link.</summary>
 public sealed record LinkVersionResponse
 {
     /// <summary>Version number.</summary>

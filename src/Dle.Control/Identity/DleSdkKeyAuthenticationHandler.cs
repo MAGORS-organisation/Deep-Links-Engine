@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Identity;
 
 /// <summary>
-/// Authenticates a key that ships inside a customer application (§E.2.1, TB2).
+/// Authenticates a key that ships inside a customer application.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -29,7 +29,7 @@ namespace Dle.Control.Identity;
 /// </para>
 /// <para>
 /// The verification itself is the same as for a control-plane key: prefix lookup, Argon2id,
-/// constant-time comparison, one shared attempt budget (SHARED-KERNEL §17.6, §E.9).
+/// constant-time comparison, one shared attempt budget.
 /// </para>
 /// </remarks>
 public sealed class DleSdkKeyAuthenticationHandler
@@ -48,7 +48,7 @@ public sealed class DleSdkKeyAuthenticationHandler
     /// <param name="encoder">URL encoder.</param>
     /// <param name="store">Cross-tenant credential lookup.</param>
     /// <param name="cache">Short-lived verification cache.</param>
-    /// <param name="limiter">The §E.9 authentication attempt limiter.</param>
+    /// <param name="limiter">The authentication attempt limiter.</param>
     /// <param name="decoy">Hash verified against when no candidate row exists.</param>
     public DleSdkKeyAuthenticationHandler(
         IOptionsMonitor<DleKeyAuthenticationOptions> options,

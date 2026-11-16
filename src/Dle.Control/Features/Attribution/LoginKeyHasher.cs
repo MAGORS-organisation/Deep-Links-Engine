@@ -9,7 +9,7 @@ namespace Dle.Control.Features.Attribution;
 
 /// <summary>
 /// Turns the account identifier an SDK reports after sign-in into the keyed hash that login
-/// reconciliation compares (S2, FR-185).
+/// reconciliation compares (S2).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -97,8 +97,7 @@ public sealed class LoginKeyHasher
     }
 
     /// <summary>
-    /// Compares a hash against the value recorded with a click, in constant time
-    /// (SHARED-KERNEL §17.6).
+    /// Compares a hash against the value recorded with a click, in constant time.
     /// </summary>
     /// <param name="hash">The hash computed from this request.</param>
     /// <param name="recorded">The value read from <c>click_events.extra</c>, or
@@ -123,7 +122,7 @@ public sealed class LoginKeyHasher
         {
             // Explicit default: a value that is not hexadecimal is not a match. The click stream is
             // written by another component, so a malformed entry has to fail closed rather than
-            // throw on the attribution path (SHARED-KERNEL §17.9).
+            // throw on the attribution path.
             return false;
         }
 

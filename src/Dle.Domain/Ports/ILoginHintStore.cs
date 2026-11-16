@@ -3,7 +3,7 @@ using Dle.Domain.Entities;
 namespace Dle.Domain.Ports;
 
 /// <summary>
-/// Indexed lookup and persistence store for S2 login reconciliation hints (FR-185).
+/// Indexed lookup and persistence store for S2 login reconciliation hints.
 /// </summary>
 public interface ILoginHintStore
 {

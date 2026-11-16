@@ -52,7 +52,7 @@ import java.util.TimeZone
  *
  * The process wide entry point. Every call forwards to the [DleClient] created by [initialize];
  * hold on to that client instead when you prefer injecting it. The SDK reads no clipboard, asks
- * for no advertising identifier and computes no fingerprint (FR-227, spec §E.7): its inputs are
+ * for no advertising identifier and computes no fingerprint: its inputs are
  * the Play Install Referrer, App Link opens, and the evidence the application hands it.
  */
 public object Dle {
@@ -183,7 +183,7 @@ public class DleClient internal constructor(
     /**
      * The identifier of this installation: a random UUID minted once, persisted, never derived
      * from the device. Hand it to your backend when you call the engine's deletion endpoint on a
-     * user's behalf (spec §E.6.3).
+     * user's behalf.
      */
     public val installId: String
         get() = installIdStore.getOrCreate()
@@ -203,14 +203,14 @@ public class DleClient internal constructor(
     private val osVersion: String? = Build.VERSION.RELEASE?.takeIf { it.isNotBlank() }
 
     /**
-     * Recovers the click that led to this installation (`POST /v1/resolve`, spec §B.7.2).
+     * Recovers the click that led to this installation (`POST /v1/resolve`).
      *
      * The first call reads the Play Install Referrer once (S1), sends it with the platform,
      * versions, consent and any evidence in [options], and persists the answer. Later calls
-     * return that answer without a request (TC-143), with two exceptions: a non final answer
+     * return that answer without a request, with two exceptions: a non final answer
      * whose [DeferredLink.expiresIn] has elapsed, and a call carrying new evidence
      * ([ResolveOptions.hasExplicitEvidence]) while the stored answer is not deterministic. An
-     * organic installation is not a failure: the engine answers [MatchType.NONE] (TC-142).
+     * organic installation is not a failure: the engine answers [MatchType.NONE].
      * Because a match comes back on every later call, route on it only when [cachedLink] was
      * not already a match before the call.
      *
@@ -276,12 +276,12 @@ public class DleClient internal constructor(
     }
 
     /**
-     * Buffers an event for `POST /v1/events` (FR-226). Events are batched and delivered
+     * Buffers an event for `POST /v1/events`. Events are batched and delivered
      * [DleConfig.flushDelayMillis] later, survive process death and are retried offline.
      *
      * Behavioural events are dropped here, not buffered, while [DleConsent.analytics] is `false`
-     * and [DleConfig.requireAnalyticsConsentForEvents] is on. [DleEventType.LINK_OPEN] is exempt
-     * (FR-223). Never throws.
+     * and [DleConfig.requireAnalyticsConsentForEvents] is on. [DleEventType.LINK_OPEN] is exempt.
+     * Never throws.
      *
      * @param event the event, built with the factories on [DleEvent].
      */
@@ -295,13 +295,13 @@ public class DleClient internal constructor(
     }
 
     /**
-     * Reports an App Link open (FR-223). With [DleConfig.autoReportOpens] the SDK calls this for
+     * Reports an App Link open. With [DleConfig.autoReportOpens] the SDK calls this for
      * every resumed activity; call it yourself from `onCreate` and `onNewIntent` otherwise, and
      * in any case call `setIntent(intent)` in `onNewIntent` so the resumed activity carries the
      * new link. Each intent is reported once however often it is handed in.
      *
      * The returned [AppLinkOpen.url] is untrusted input even though the operating system
-     * delivered it: validate it with a [DeepLinkAllowlist] before navigating (spec §E.7).
+     * delivered it: validate it with a [DeepLinkAllowlist] before navigating.
      *
      * @param intent the activity's intent, or `null`.
      * @return the open, or `null` when the intent does not carry an `http(s)` link.
@@ -310,7 +310,7 @@ public class DleClient internal constructor(
 
     /**
      * Resolves the screen a short link the app was opened with should lead to
-     * (`POST /v1/resolve-link`, FR-223, spec §B.6.4).
+     * (`POST /v1/resolve-link`).
      *
      * A verified App Link opens the app with the short URL itself — `https://go.example.com/AbC12345`
      * — which does not say which screen to show. This asks the engine: the answer has
@@ -359,7 +359,7 @@ public class DleClient internal constructor(
     }
 
     /**
-     * Records the user's decision (spec §E.6.2). The decision is persisted, sent with the next
+     * Records the user's decision. The decision is persisted, sent with the next
      * resolve request as its `consent` member, and gates device signals and behavioural events
      * from now on. It never triggers a new resolve on its own: a final answer stays final.
      *
@@ -379,7 +379,7 @@ public class DleClient internal constructor(
      * A resolve made before attribution consent was recorded answers `none` with reason
      * `consent_missing` and a non-final `expires_in`: the engine could not link the click, not
      * because there was none. Once consent arrives that answer is stale, so it is dropped and the
-     * next [resolve] - the next launch, in the documented integration - asks again (TC-141).
+     * next [resolve] - the next launch, in the documented integration - asks again.
      */
     private fun forgetUnmatchedAnswer() {
         val cached = state.cachedResolve() ?: return
@@ -520,7 +520,7 @@ public class DleClient internal constructor(
          * Coarse device signals for `DeviceSignalsDto`: the UI language, the screen size in
          * pixels, the UTC offset in minutes and the model name. Each is shared by millions of
          * devices; nothing is hashed or combined. Invoked by [DleApi] only when the operator and
-         * the user both opted in (spec §0.2, §A.6).
+         * the user both opted in.
          */
         fun collectSignals(application: Context, clock: Clock): SignalsWire {
             val metrics = try {

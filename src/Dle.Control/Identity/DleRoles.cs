@@ -1,7 +1,7 @@
 namespace Dle.Control.Identity;
 
 /// <summary>
-/// The four control-plane roles (FR-242).
+/// The four control-plane roles.
 /// </summary>
 /// <remarks>
 /// The roles are totally ordered: an owner can do everything an admin can, an admin everything an
@@ -33,7 +33,7 @@ public static class DleRoles
     /// <returns>0 for viewer through 3 for owner; <c>-1</c> when the value is not a known role.</returns>
     /// <remarks>
     /// An unknown role ranks below every policy rather than above any, so a credential carrying a
-    /// role this build does not understand can do nothing at all (SHARED-KERNEL §17.9).
+    /// role this build does not understand can do nothing at all.
     /// </remarks>
     public static int Rank(string? role)
     {

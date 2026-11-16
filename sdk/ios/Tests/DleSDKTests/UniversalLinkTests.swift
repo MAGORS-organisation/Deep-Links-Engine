@@ -1,7 +1,7 @@
 import XCTest
 @testable import DleSDK
 
-/// Direct opens (FR-223): the URLs iOS hands the app become `link_open` events — only the
+/// Direct opens: the URLs iOS hands the app become `link_open` events — only the
 /// `http(s)` ones on the configured hosts, and never a custom-scheme URL.
 final class UniversalLinkTests: XCTestCase {
     func testHostPatternsAreNormalisedAndMatched() {

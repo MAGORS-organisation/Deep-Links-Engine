@@ -14,19 +14,19 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// Publishes the public key set (SHARED-KERNEL §15).
+/// Publishes the public key set.
 /// </summary>
 /// <remarks>
 /// The endpoint is anonymous on purpose: a public key is public, and a verifier that had to
 /// authenticate in order to fetch one could not verify anything it received out of band — which is
-/// precisely the situation a webhook receiver is in (§B.7.4, T-13).
+/// precisely the situation a webhook receiver is in.
 /// </remarks>
 public static class JwksEndpointExtensions
 {
     /// <summary>How long a cached key set stays fresh, in seconds.</summary>
     /// <remarks>
     /// Short enough that a key published now is picked up by a verifier within minutes, which is
-    /// what makes a rotation with an overlap window safe (S-12); long enough that the endpoint is
+    /// what makes a rotation with an overlap window safe; long enough that the endpoint is
     /// not a per-delivery round trip for a busy receiver.
     /// </remarks>
     private const int CacheSeconds = 300;
@@ -66,7 +66,7 @@ public static class JwksEndpointExtensions
 
     /// <summary>Builds, caches and serves the key set.</summary>
     /// <param name="context">The request.</param>
-    /// <param name="keyRing">The token signing keys (§E.4.2).</param>
+    /// <param name="keyRing">The token signing keys.</param>
     /// <param name="contributors">Modules with keys of their own, for example webhook signing.</param>
     /// <param name="timeProvider">Clock.</param>
     /// <returns>The key set, or 304 when the caller already has this version.</returns>
@@ -101,8 +101,8 @@ public static class JwksEndpointExtensions
         List<JsonWebKey> published = [.. keys.Values];
         published.Sort(static (left, right) => string.CompareOrdinal(left.Kid, right.Kid));
 
-        // Source generated metadata rather than reflection, as the shared kernel requires of every
-        // document the product emits (SHARED-KERNEL §0).
+        // Source generated metadata rather than reflection, as is required of every
+        // document the product emits.
         string json = JsonSerializer.Serialize(
             new JwksDocument(published),
             DleDomainJsonContext.Default.JwksDocument);

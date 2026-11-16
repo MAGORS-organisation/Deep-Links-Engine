@@ -3,7 +3,7 @@ using Dle.Domain.Abuse;
 namespace Dle.Control.Features.Abuse;
 
 /// <summary>
-/// One reputation source consulted about a target URL (§E.3 step 3).
+/// One reputation source consulted about a target URL.
 /// </summary>
 /// <remarks>
 /// <para>

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Links;
 
 /// <summary>
-/// Turns a stored link into the representation the API returns (FR-101, FR-106).
+/// Turns a stored link into the representation the API returns.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -17,7 +17,7 @@ namespace Dle.Control.Features.Links;
 /// </para>
 /// <para>
 /// The QR URL points at the edge, not at the control plane. Rendering the image is a data-plane
-/// concern with its own rate limit (§E.9), and the control plane's job is only to say where it
+/// concern with its own rate limit, and the control plane's job is only to say where it
 /// lives.
 /// </para>
 /// </remarks>
@@ -41,7 +41,7 @@ public sealed class LinkPresentation
         CultureInfo.InvariantCulture,
         $"{_options.PublicScheme}://{host}/{slug}");
 
-    /// <summary>Composes the URL of the QR image of a link (FR-106).</summary>
+    /// <summary>Composes the URL of the QR image of a link.</summary>
     /// <param name="host">Host of the serving domain.</param>
     /// <param name="slug">Slug of the link.</param>
     /// <returns>The URL of the image.</returns>

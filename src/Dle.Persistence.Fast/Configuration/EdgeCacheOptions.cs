@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 namespace Dle.Persistence.Fast.Configuration;
 
 /// <summary>
-/// Expiration policy for the two-level link cache (ADR-005), read from <c>Dle:Edge:Cache</c>.
+/// Expiration policy for the two-level link cache, read from <c>Dle:Edge:Cache</c>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -21,7 +21,7 @@ namespace Dle.Persistence.Fast.Configuration;
 /// </remarks>
 public sealed class EdgeCacheOptions
 {
-    /// <summary>Configuration section these options are read from (SHARED-KERNEL §16).</summary>
+    /// <summary>Configuration section these options are read from.</summary>
     public const string SectionName = "Dle:Edge:Cache";
 
     /// <summary>Lifetime of an entry in the in-process L1 cache, in seconds.</summary>

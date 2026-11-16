@@ -1,6 +1,6 @@
 namespace Dle.Persistence.Configurations;
 
-/// <summary>Maps <see cref="LinkVersion"/> to the <c>link_versions</c> table (FR-107).</summary>
+/// <summary>Maps <see cref="LinkVersion"/> to the <c>link_versions</c> table.</summary>
 /// <remarks>
 /// The table has no tenant column and is listed as tenant exempt in <see cref="DleDbContext"/>: a
 /// revision belongs to a link, and every query reaches it through the tenant filtered link.

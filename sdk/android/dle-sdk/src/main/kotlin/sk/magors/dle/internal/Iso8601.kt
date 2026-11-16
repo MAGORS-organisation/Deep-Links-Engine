@@ -12,7 +12,7 @@ import java.util.TimeZone
  * `tests/Dle.ContractTests/Wire/SdkWireContractTests.cs`.
  *
  * `java.time` would be the natural tool, but on minSdk 23 it needs core library desugaring in
- * every consuming application, which is a dependency in all but name (spec §C.5).
+ * every consuming application, which is a dependency in all but name.
  */
 internal object Iso8601 {
     private val utc: TimeZone = TimeZone.getTimeZone("UTC")

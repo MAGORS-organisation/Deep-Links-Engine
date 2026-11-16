@@ -2,7 +2,7 @@ namespace Dle.Domain.Clients;
 
 /// <summary>
 /// Coarse location derived from the remote address by the offline GeoIP database. Nothing finer
-/// than a city is ever resolved, and the lookup never leaves the process (NFR-14).
+/// than a city is ever resolved, and the lookup never leaves the process.
 /// </summary>
 public sealed record GeoLocation
 {

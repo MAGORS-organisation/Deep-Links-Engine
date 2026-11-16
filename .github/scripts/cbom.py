@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Cryptographic Bill of Materials (CBOM) generator for the Deep Link Engine.
 
-docs/zadanie.md section E.5.3 Phase 0 makes a CBOM a mandatory release artefact, and section E.4.1
-is the inventory it has to reflect (K1..K9). This script emits a CycloneDX 1.6 JSON document whose
+A CBOM is a mandatory release artefact, and the cryptographic inventory below (K1..K9) is what it
+has to reflect. This script emits a CycloneDX 1.6 JSON document whose
 components are cryptographic-asset entries:
 
   * one component per algorithm the product uses (HMAC-SHA-256, Ed25519, ML-DSA-65, ...),
-  * one component per section E.4.1 inventory line (K1..K9) as related-crypto-material / protocol,
+  * one component per inventory line (K1..K9) as related-crypto-material / protocol,
   * dependencies linking each inventory line to the algorithms it relies on.
 
 Evidence is real, not asserted: every algorithm component carries evidence.occurrences found by
@@ -88,7 +88,7 @@ ALGORITHMS: list[dict] = [
         "nistQuantumSecurityLevel": 0,
         "patterns": [r"Ed25519Signer", r"\bEd25519\b"],
         "note": "Control-plane default token algorithm and webhook v2 slot (K4). Broken by Shor; "
-                "the v3 migration slot is reserved (section E.5.3).",
+                "the v3 migration slot is reserved.",
     },
     {
         "ref": "alg:ml-dsa-65",
@@ -101,7 +101,7 @@ ALGORITHMS: list[dict] = [
         "nistQuantumSecurityLevel": 3,
         "patterns": [r"MlDsa65Signer", r"ML-DSA-65", r"MLDSA65", r"MLDsaParameters"],
         "note": "FIPS 204. Selectable through Dle:Crypto:SigningAlgorithm; BouncyCastle implementation "
-                "(section E.5.2 fallback).",
+                "(the post-quantum fallback).",
     },
     {
         "ref": "alg:slh-dsa-sha2-128s",
@@ -124,7 +124,9 @@ ALGORITHMS: list[dict] = [
         "classicalSecurityLevel": 128,
         "nistQuantumSecurityLevel": 3,
         "patterns": [r"CompositeSigner", r"Ed25519MlDsa65", r"Ed25519\+MLDSA65"],
-        "note": "Hybrid signature per draft-ietf-lamps-pq-composite-sigs; the section E.5.3 Phase 2 default.",
+        "note": "Hybrid signature per draft-ietf-lamps-pq-composite-sigs; opt-in through "
+                "Dle:Crypto:HybridPqEnabled today, and the intended default at a later stage of the "
+                "post-quantum migration.",
     },
     {
         "ref": "alg:argon2id",
@@ -146,7 +148,7 @@ ALGORITHMS: list[dict] = [
         "classicalSecurityLevel": 0,
         "nistQuantumSecurityLevel": 0,
         "patterns": [r"FeistelPermutation", r"SlugFeistelRounds"],
-        "note": "Slug generation (ADR-007): hides the sequence behind an unpredictable order. Not a "
+        "note": "Slug generation: hides the sequence behind an unpredictable order. Not a "
                 "confidentiality primitive; the security level is deliberately reported as 0.",
     },
     {
@@ -182,8 +184,9 @@ ALGORITHMS: list[dict] = [
         "classicalSecurityLevel": 128,
         "nistQuantumSecurityLevel": 3,
         "patterns": [r"X25519MLKEM768", r"MLKem", r"HybridPqEnabled"],
-        "note": "TLS 1.3 hybrid group (K1). Negotiated by the OS or the reverse proxy (section E.5.3 "
-                "Phase 0); Dle:Crypto:HybridPqEnabled records the deployment's intent.",
+        "note": "TLS 1.3 hybrid group (K1). Negotiated by the OS or the reverse proxy, so adopting it is a "
+                "deployment change with no DLE code involved; Dle:Crypto:HybridPqEnabled records the "
+                "deployment's intent.",
     },
     {
         "ref": "alg:ecdsa-p256-sha256",
@@ -197,12 +200,12 @@ ALGORITHMS: list[dict] = [
         "nistQuantumSecurityLevel": 0,
         "patterns": [r"cosign", r"sigstore"],
         "note": "Release artefact signing via Sigstore/cosign keyless (K7). Highest-priority "
-                "post-quantum migration item (section E.4.1, CNSA 2.0 deadline 2030).",
+                "post-quantum migration item (CNSA 2.0 deadline 2030).",
     },
 ]
 
 # --------------------------------------------------------------------------------------------------
-# Section E.4.1 inventory. Each line becomes a component of its own that depends on the algorithms
+# Cryptographic inventory. Each line becomes a component of its own that depends on the algorithms
 # it uses.
 # --------------------------------------------------------------------------------------------------
 INVENTORY: list[dict] = [
@@ -241,7 +244,7 @@ INVENTORY: list[dict] = [
      "assetType": "related-crypto-material", "material": "salt",
      "lifetime": "24 h (Dle:Privacy:IpSaltRotationHours)", "pqRisk": "none",
      "uses": ["alg:hmac-sha-256", "alg:hkdf-sha-256"]},
-    {"id": "K-slug", "ref": "inv:slug-permutation", "name": "Slug permutation key (ADR-007)",
+    {"id": "K-slug", "ref": "inv:slug-permutation", "name": "Slug permutation key",
      "assetType": "related-crypto-material", "material": "secret-key",
      "lifetime": "lifetime of the deployment", "pqRisk": "none (not a confidentiality boundary)",
      "uses": ["alg:keyed-feistel-permutation", "alg:hkdf-sha-256"]},

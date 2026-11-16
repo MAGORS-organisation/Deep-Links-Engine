@@ -13,23 +13,23 @@ using QRCoder;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// Maps <c>GET /{slug}/qr</c>, which renders a short link as a QR code (FR-106, §B.5).
+/// Maps <c>GET /{slug}/qr</c>, which renders a short link as a QR code.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>The endpoint does not look the link up.</b> It encodes <c>https://host/slug</c> for any slug the
 /// naming policy accepts on a domain this instance serves, whether or not a link with that slug exists.
 /// That is a security property, not a shortcut: the endpoint is unauthenticated and rate limited at
-/// thirty requests a minute (§E.9), and answering 404 for an unknown slug would turn it into a slug
-/// oracle that enumerates a tenant's links far more cheaply than the resolve path allows (T-07, TC-102,
-/// TC-108). A code for a slug that does not resolve is harmless — it points at a 404 — and a code for a
+/// thirty requests a minute, and answering 404 for an unknown slug would turn it into a slug
+/// oracle that enumerates a tenant's links far more cheaply than the resolve path allows.
+/// A code for a slug that does not resolve is harmless — it points at a 404 — and a code for a
 /// link created a moment later works immediately.
 /// </para>
 /// <para>
 /// <b>The payload is built, never received.</b> It is the request's own normalized host and the
 /// normalized slug from the route, joined by <see cref="ShortLinkUrl"/>. No query parameter reaches it,
 /// which is what stops the endpoint from becoming a generator of QR codes pointing at somebody else's
-/// site under a trusted brand domain (SHARED-KERNEL §17.4).
+/// site under a trusted brand domain.
 /// </para>
 /// </remarks>
 public static class QrEndpointExtensions
@@ -38,7 +38,7 @@ public static class QrEndpointExtensions
     public const string RoutePattern = "/{slug}/qr";
 
     /// <summary>
-    /// Name of the rate limiting policy §E.9 defines for this endpoint: a sliding window of thirty
+    /// Name of the rate limiting policy for this endpoint: a sliding window of thirty
     /// requests a minute keyed by address.
     /// </summary>
     /// <remarks>

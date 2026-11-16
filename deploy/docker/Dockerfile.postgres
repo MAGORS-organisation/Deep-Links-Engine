@@ -3,7 +3,7 @@
 # Deep Link Engine (DLE) — optional PostgreSQL 18 image WITH pg_partman.
 #
 # The official postgres image ships citext (contrib) but not pg_partman, which DLE uses for the
-# daily click_events partitions and their 180-day retention (docs/zadanie.md §B.5.2/§B.5.3).
+# daily click_events partitions and their 180-day retention.
 # The schema migration copes without it (deploy/postgres/init/01-extensions.sql explains how),
 # but a real installation wants the extension. This file installs the PGDG package
 # postgresql-<major>-partman on top of the official Debian-based image; PG_MAJOR is an

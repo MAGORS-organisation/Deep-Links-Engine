@@ -3,8 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Control.Configuration;
 
 /// <summary>
-/// Rate limits for the control plane, bound from <c>Dle:RateLimits</c>. The defaults are the values
-/// tabulated in §E.9.
+/// Rate limits for the control plane, bound from <c>Dle:RateLimits</c>.
 /// </summary>
 /// <remarks>
 /// The numbers are configuration because a self-hosted instance serving one marketing team and a
@@ -17,12 +16,12 @@ public sealed class DleRateLimitOptions
     /// <summary>Configuration section this class binds to.</summary>
     public const string SectionName = "Dle:RateLimits";
 
-    /// <summary>Link creations per minute for one API key (§E.9).</summary>
+    /// <summary>Link creations per minute for one API key.</summary>
     [Range(1, 100_000)]
     public int LinkCreatePerMinute { get; set; } = 60;
 
     /// <summary>
-    /// Link creations per minute for a tenant younger than <see cref="NewTenantDays"/> (§E.9).
+    /// Link creations per minute for a tenant younger than <see cref="NewTenantDays"/>.
     /// </summary>
     /// <remarks>
     /// A freshly provisioned tenant creating links as fast as the API allows is the shape of a
@@ -32,11 +31,11 @@ public sealed class DleRateLimitOptions
     [Range(1, 100_000)]
     public int NewTenantLinkCreatePerMinute { get; set; } = 10;
 
-    /// <summary>How many days a tenant counts as new for the stricter limit above (§E.9).</summary>
+    /// <summary>How many days a tenant counts as new for the stricter limit above.</summary>
     [Range(0, 365)]
     public int NewTenantDays { get; set; } = 7;
 
-    /// <summary>Concurrent bulk batches permitted per tenant (§E.9).</summary>
+    /// <summary>Concurrent bulk batches permitted per tenant.</summary>
     [Range(1, 64)]
     public int BulkConcurrentBatches { get; set; } = 2;
 
@@ -44,7 +43,7 @@ public sealed class DleRateLimitOptions
     [Range(0, 64)]
     public int BulkQueuedBatches { get; set; }
 
-    /// <summary>Authentication attempts per minute for one caller (§E.9).</summary>
+    /// <summary>Authentication attempts per minute for one caller.</summary>
     /// <remarks>
     /// Keyed on the remote address together with the presented key prefix, so one noisy client
     /// cannot lock another out, and the verification itself stays constant time whether or not the

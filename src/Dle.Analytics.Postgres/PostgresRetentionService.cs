@@ -10,7 +10,7 @@ using Npgsql;
 namespace Dle.Analytics.Postgres;
 
 /// <summary>
-/// Enforces the analytics retention policy against PostgreSQL (FR-247, §E.6.3).
+/// Enforces the analytics retention policy against PostgreSQL.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -49,7 +49,7 @@ public sealed partial class PostgresRetentionService : IRetentionService
     /// <summary>Creates the service.</summary>
     /// <param name="connections">Factory for analytics database connections.</param>
     /// <param name="options">Monitor over the retention options.</param>
-    /// <param name="timeProvider">Clock. Never <see cref="DateTime.UtcNow"/> (SHARED-KERNEL §17).</param>
+    /// <param name="timeProvider">Clock. Never <see cref="DateTime.UtcNow"/>.</param>
     /// <param name="logger">Logger for the job's own audit trail.</param>
     public PostgresRetentionService(
         IAnalyticsConnectionFactory connections,
@@ -73,7 +73,7 @@ public sealed partial class PostgresRetentionService : IRetentionService
         "Design",
         "CA1031:Do not catch general exception types",
         Justification =
-            "§E.6.3 requires the retention job's own execution to be auditable, which includes the "
+            "The retention job's own execution has to be auditable, which includes the "
             + "runs that fail: the audit row has to be written whatever went wrong. The exception "
             + "is logged and rethrown, so nothing is swallowed and the caller still fails.")]
     public async Task<RetentionRunResult> RunAsync(CancellationToken ct)
@@ -99,7 +99,7 @@ public sealed partial class PostgresRetentionService : IRetentionService
 
             // Raw events are the only copy of anything the rollups have not aggregated yet, so the
             // cutoff never passes the watermark: a rollup job that is behind (or has never run)
-            // holds the drop back rather than taking the data with it (§E.6.3).
+            // holds the drop back rather than taking the data with it.
             DateTimeOffset rawCutoff = Earlier(requestedCutoff, aggregatedThrough);
 
             if (rawCutoff < requestedCutoff)

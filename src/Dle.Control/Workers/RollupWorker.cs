@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Workers;
 
 /// <summary>
-/// Aggregates the click stream into the reporting tables (§B.3 component C-09, FR-202).
+/// Aggregates the click stream into the reporting tables.
 /// </summary>
 /// <remarks>
 /// <para>

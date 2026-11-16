@@ -39,7 +39,7 @@ function harness(
 const http = (status: number, retryAfterMs?: number) =>
   new DleError('http', `HTTP ${status}`, { status, retriable: status === 429 || status >= 500, retryAfterMs });
 
-describe('offline event queue (FR-226)', () => {
+describe('offline event queue', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-03T10:00:00Z'));

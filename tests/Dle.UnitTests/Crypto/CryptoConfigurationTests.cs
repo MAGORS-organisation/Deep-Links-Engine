@@ -10,7 +10,7 @@ namespace Dle.UnitTests.Crypto;
 
 /// <summary>
 /// Start-up validation of the crypto options, the configuration backed key store and the
-/// process-local replay guard (§E.4.2, §E.5.3, SHARED-KERNEL §16).
+/// process-local replay guard.
 /// </summary>
 /// <remarks>
 /// The theme is failing at start rather than under load. A mistyped key, an algorithm with no
@@ -65,7 +65,7 @@ public sealed class CryptoConfigurationTests
     [Fact]
     public void Validate_PostQuantumSigningAlgorithmWithoutTheFlag_IsRefused()
     {
-        // §E.5.3 keeps the post-quantum algorithms off in phase 0; turning one on by editing the
+        // The post-quantum algorithms stay off unless their flag is set; turning one on by editing the
         // algorithm alone must not quietly work.
         CryptoOptions options = Valid();
         options.SigningAlgorithm = SignatureAlgorithms.MlDsa65;
@@ -257,7 +257,7 @@ public sealed class CryptoConfigurationTests
     [Fact]
     public async Task ConfigurationStore_Retire_ClosesTheWindowWithoutRemovingTheKey()
     {
-        // Retiring is not deleting: the key has to keep verifying until its window closes (S-12).
+        // Retiring is not deleting: the key has to keep verifying until its window closes.
         CryptoOptions options = Valid();
         options.Keys.Add(KeyOptions("k1"));
 
@@ -349,7 +349,7 @@ public sealed class CryptoConfigurationTests
     [Fact]
     public async Task ReplayGuard_FullOfLiveEntries_RefusesRatherThanForgetting()
     {
-        // SHARED-KERNEL §17.9: the default is deny. Forgetting an identifier it promised to
+        // The default is deny. Forgetting an identifier it promised to
         // remember would turn a full guard into a replay window.
         CryptoTestClock clock = new(Now);
         InMemoryTokenReplayGuard guard = new(2, clock, NullLogger<InMemoryTokenReplayGuard>.Instance);

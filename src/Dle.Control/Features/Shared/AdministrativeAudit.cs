@@ -6,7 +6,7 @@ using Dle.Domain.Ports;
 namespace Dle.Control.Features.Shared;
 
 /// <summary>
-/// The action names written to the administrative audit trail (FR-246).
+/// The action names written to the administrative audit trail.
 /// </summary>
 /// <remarks>
 /// Constants rather than interpolated strings, because these values are queried: an operator asking
@@ -119,7 +119,7 @@ public static class AuditActions
 }
 
 /// <summary>
-/// Writes one audit entry per administrative operation (FR-246).
+/// Writes one audit entry per administrative operation.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -130,7 +130,7 @@ public static class AuditActions
 /// of the GDPR: the two requirements only contradict each other when the immutable record contains
 /// data about a data subject, and here it structurally cannot. An erasure request therefore only
 /// ever reaches the click stream and the attributions, where no retention obligation stands in its
-/// way (§E.6.3, FR-246).
+/// way.
 /// </para>
 /// <para>
 /// <see cref="AuditLogWriter"/> enforces the same rule again on the way into the database, refusing

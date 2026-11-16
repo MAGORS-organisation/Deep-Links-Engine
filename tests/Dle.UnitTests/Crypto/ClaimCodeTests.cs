@@ -6,7 +6,7 @@ using Xunit;
 namespace Dle.UnitTests.Crypto;
 
 /// <summary>
-/// A claim code is read off a screen and typed into a phone (FR-184, TC-148). Everything about it
+/// A claim code is read off a screen and typed into a phone. Everything about it
 /// follows from that: the alphabet excludes characters people confuse, normalisation forgives the
 /// separators and the case people add, and the stored form is a keyed hash compared in fixed time.
 /// </summary>

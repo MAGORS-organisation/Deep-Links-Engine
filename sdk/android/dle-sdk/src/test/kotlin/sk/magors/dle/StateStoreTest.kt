@@ -10,7 +10,7 @@ import sk.magors.dle.internal.ReferrerOutcome
 import sk.magors.dle.internal.ReferrerStatus
 import sk.magors.dle.internal.StateStore
 
-/** What the SDK remembers between launches, and the resolve-once rule built on it (TC-143). */
+/** What the SDK remembers between launches, and the resolve-once rule built on it. */
 class StateStoreTest {
     private val prefs = FakeSharedPreferences()
     private val store = StateStore(prefs)

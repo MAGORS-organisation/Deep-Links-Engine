@@ -1,10 +1,10 @@
 namespace Dle.Analytics.Postgres;
 
 /// <summary>
-/// Accepted values of the <c>Dle:Analytics:Provider</c> configuration key (SHARED-KERNEL §16).
+/// Accepted values of the <c>Dle:Analytics:Provider</c> configuration key.
 /// </summary>
 /// <remarks>
-/// ADR-006 in one sentence: a self-hoster must not need a second database on day one, and an
+/// The design in one sentence: a self-hoster must not need a second database on day one, and an
 /// installation past roughly fifty million events a month must be able to move without a rewrite.
 /// The provider name is the only switch between the two.
 /// </remarks>

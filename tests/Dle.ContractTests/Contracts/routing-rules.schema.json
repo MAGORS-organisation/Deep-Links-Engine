@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://docs.dle.dev/schemas/routing-rules.schema.json",
   "title": "DLE routing rules",
-  "description": "The value of links.routing_rules (docs/zadanie.md B.5.4). Rules are data, not code: they are evaluated in order, the first match wins, and the last rule must be the default one. The default rule is the rule that omits \"when\" - a rule set without it would answer 404 to any client that matched nothing, for a link its owner believes is live (TC-105, FR-127).",
+  "description": "The value of links.routing_rules. Rules are data, not code: they are evaluated in order, the first match wins, and the last rule must be the default one. The default rule is the rule that omits \"when\" - a rule set without it would answer 404 to any client that matched nothing, for a link its owner believes is live.",
   "type": "array",
   "minItems": 1,
   "maxItems": 50,
@@ -132,7 +132,7 @@
           "type": "string",
           "maxLength": 2048,
           "pattern": "^https?://",
-          "description": "Web target. Only http and https; a javascript:, data:, file: or intent: target is refused (E.3 step 1)."
+          "description": "Web target. Only http and https; a javascript:, data:, file: or intent: target is refused."
         },
         "deeplink_path": { "type": "string", "maxLength": 2048 },
         "store_url": {

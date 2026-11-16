@@ -10,7 +10,7 @@ namespace Dle.UnitTests.Crypto;
 
 /// <summary>
 /// The token format is <c>dlt1.&lt;alg&gt;.&lt;kid&gt;.&lt;payload&gt;.&lt;signature&gt;</c> and the
-/// signature covers the first four segments, not only the payload (§E.4.2). Signing the payload
+/// signature covers the first four segments, not only the payload. Signing the payload
 /// alone would leave the algorithm and the key identifier unauthenticated — the classic JWT
 /// confusion failure.
 /// </summary>

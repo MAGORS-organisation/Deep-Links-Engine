@@ -5,7 +5,7 @@ namespace Dle.Control.Features.Links;
 
 /// <summary>
 /// Answers "what happens for an iPhone 15 on iOS 18 in Slovakia, opened from Instagram" without
-/// generating a click (FR-129).
+/// generating a click.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -29,7 +29,7 @@ public static class SimulateLink
     /// <summary>Runs the simulation.</summary>
     /// <param name="id">The link identifier, as text because identifiers are 64 bit.</param>
     /// <param name="request">The client to simulate.</param>
-    /// <param name="acceptLanguage">Language of the explanation (NFR-15).</param>
+    /// <param name="acceptLanguage">Language of the explanation.</param>
     /// <param name="links">Link storage.</param>
     /// <param name="domains">Domain storage, used to resolve the serving host.</param>
     /// <param name="engine">The routing engine the edge itself runs.</param>
@@ -64,7 +64,7 @@ public static class SimulateLink
         }
 
         // The tenant query filter is what makes a foreign identifier indistinguishable from an
-        // unknown one, so no ownership comparison appears here (TC-166, SHARED-KERNEL §17.7).
+        // unknown one, so no ownership comparison appears here.
         Link? link = await links.GetAsync(linkId, includeQuarantined: true, cancellationToken);
 
         if (link is null)
@@ -93,7 +93,7 @@ public static class SimulateLink
 
         // The simulation assumes a visitor who accepted, so that the operator sees the fullest URL
         // the tenant's own configuration permits. The effective mode is reported back, which is what
-        // tells them whether that assumption is reachable at all (§E.6.2).
+        // tells them whether that assumption is reachable at all.
         ConsentDecision consent = ConsentGate.Evaluate(
             snapshot.TenantConsentMode,
             snapshot.DomainConsentMode,
@@ -242,7 +242,7 @@ public static class SimulateLink
     }
 
     /// <summary>
-    /// Explains every rule in evaluation order, so a marketer can see why rule 2 lost (FR-129).
+    /// Explains every rule in evaluation order, so a marketer can see why rule 2 lost.
     /// </summary>
     /// <param name="rules">The rule set.</param>
     /// <param name="client">The simulated client.</param>

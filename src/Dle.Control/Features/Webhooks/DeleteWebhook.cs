@@ -9,19 +9,19 @@ using Microsoft.AspNetCore.Http;
 namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
-/// <c>DELETE /api/v1/webhooks/{id}</c> — stops delivering to a subscription (FR-204).
+/// <c>DELETE /api/v1/webhooks/{id}</c> — stops delivering to a subscription.
 /// </summary>
 /// <remarks>
 /// <para>
 /// Deactivation, not deletion. The row stays, so the delivery history stays with it and a customer
 /// asking "did you ever send us the conversions for that campaign?" can be answered from the
 /// record rather than from memory. It is the same reasoning quarantine uses for abused links: quiet
-/// removal destroys exactly the evidence that will be asked for later (§E.3 step 8).
+/// removal destroys exactly the evidence that will be asked for later.
 /// </para>
 /// <para>
 /// A subscription of another tenant answers 404, not 403. The tenant filter means the row is not in
 /// the queryable at all, so the two cases are indistinguishable inside the process and therefore
-/// indistinguishable from outside (SHARED-KERNEL §17.7, TC-166).
+/// indistinguishable from outside.
 /// </para>
 /// </remarks>
 public static class DeleteWebhook
@@ -35,7 +35,7 @@ public static class DeleteWebhook
     /// <param name="subscriptionId">The subscription.</param>
     /// <param name="context">The request, for the authenticated caller.</param>
     /// <param name="webhooks">Subscription storage.</param>
-    /// <param name="audit">Audit trail (FR-246).</param>
+    /// <param name="audit">Audit trail.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>204 when it was deactivated, 404 when there is no such subscription here.</returns>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>

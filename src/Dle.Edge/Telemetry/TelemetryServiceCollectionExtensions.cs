@@ -14,7 +14,7 @@ using OpenTelemetry.Trace;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// The single composition entry point of the observability module (SHARED-KERNEL §15, NFR-12, §C.6).
+/// The single composition entry point of the observability module.
 /// </summary>
 /// <remarks>
 /// The namespace is <c>Microsoft.Extensions.DependencyInjection</c>, matching every other module, so
@@ -33,12 +33,12 @@ public static class TelemetryServiceCollectionExtensions
     /// <para>
     /// Both meters are registered with the metrics pipeline: the edge's own and the one the bounded
     /// click channel publishes from <c>Dle.Persistence.Fast</c>. Without the second one
-    /// <c>dle_click_events_dropped_total</c> would exist but never be exported, and §C.6 puts an
-    /// alert on precisely that counter.
+    /// <c>dle_click_events_dropped_total</c> would exist but never be exported, and an
+    /// alert watches precisely that counter.
     /// </para>
     /// <para>
     /// Trace context arrives and leaves through the W3C <c>traceparent</c> header, which is what
-    /// joins an SDK span to the server span it caused (NFR-12). ASP.NET Core extracts it before the
+    /// joins an SDK span to the server span it caused. ASP.NET Core extracts it before the
     /// endpoint runs, so the <c>resolve</c> span and everything under it is already a child of the
     /// caller's trace; the sampler is parent based so that a trace the SDK decided to record is not
     /// then dropped here.
@@ -111,8 +111,8 @@ public static class TelemetryServiceCollectionExtensions
         {
             _ = tracing.AddAspNetCoreInstrumentation(instrumentation =>
             {
-                // The recorded URL would otherwise carry the full query string, and SHARED-KERNEL
-                // §17.5 rules that out. Health probes are filtered because they would otherwise be
+                // The recorded URL would otherwise carry the full query string, which must never
+                // be recorded. Health probes are filtered because they would otherwise be
                 // most of the sampled traces on an idle instance.
                 instrumentation.RecordException = true;
                 instrumentation.Filter = static context => !IsProbe(context.Request.Path);
@@ -132,8 +132,8 @@ public static class TelemetryServiceCollectionExtensions
         _ = metrics.AddMeter(EdgeMetrics.MeterName);
         _ = metrics.AddMeter(FastPersistenceMetrics.MeterName);
 
-        // Buckets are the latency budget of NFR-01 written down: p50 ≤ 8 ms, p95 ≤ 25 ms,
-        // p99 ≤ 50 ms on a cache hit and p99 ≤ 120 ms on a miss (NFR-02). The default OpenTelemetry
+        // Buckets are the latency budget written down: p50 ≤ 8 ms, p95 ≤ 25 ms,
+        // p99 ≤ 50 ms on a cache hit and p99 ≤ 120 ms on a miss. The default OpenTelemetry
         // boundaries start at 5 ms and jump to 10, which puts the entire service-level objective into
         // two buckets and makes the p95 unmeasurable.
         _ = metrics.AddView(

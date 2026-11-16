@@ -11,12 +11,12 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Registration of the background workers (SHARED-KERNEL §15, §B.3).
+/// Registration of the background workers.
 /// </summary>
 /// <remarks>
 /// <para>
-/// §B.3 puts every background service inside the control plane process and elects a leader through
-/// a PostgreSQL advisory lock, "no further system". Every worker registered here therefore derives
+/// Every background service runs inside the control plane process and elects a leader through
+/// a PostgreSQL advisory lock, with no further system. Every worker registered here therefore derives
 /// from <see cref="LeaderElectedBackgroundService"/>, which supplies the lock, the failure
 /// isolation and the instruments; a worker cannot opt out of any of the three by being written
 /// carelessly.

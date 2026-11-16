@@ -16,7 +16,7 @@ export interface Logger {
  * Shorten a value so it can appear in a log line without disclosing it.
  *
  * The SDK never logs the SDK key, an `Authorization` header, a full referrer or a full
- * query string — that is a hard rule on the server side (SHARED-KERNEL §17.5) and there is
+ * query string — that is a hard rule on the server side and there is
  * no reason for the client to be laxer. Install ids are shortened for the same reason:
  * a support engineer needs to correlate, not to re-identify.
  */

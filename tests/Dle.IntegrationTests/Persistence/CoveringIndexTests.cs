@@ -3,13 +3,13 @@ using System.Globalization;
 namespace Dle.IntegrationTests.Persistence;
 
 /// <summary>
-/// The planner note of §B.5.2: <c>ix_links_resolve</c> has to be answered by an index-only scan, and
+/// <c>ix_links_resolve</c> has to be answered by an index-only scan, and
 /// that has to be verified with <c>EXPLAIN (ANALYZE, BUFFERS)</c> rather than assumed.
 /// </summary>
 /// <remarks>
 /// <para>
-/// This is the only place in the product where that claim can be checked, and §B.5.2 is explicit
-/// that the latency budget of §B.6.1 does not hold without it. Two things can break it
+/// This is the only place in the product where that claim can be checked, and the resolve latency
+/// budget does not hold without it. Two things can break it
 /// independently. The index can stop covering the query — every column the query projects has to be
 /// a key or an included column — and the visibility map can go stale, which sends an otherwise
 /// index-only scan back to the heap; the migration lowers <c>autovacuum_vacuum_scale_factor</c> to
@@ -84,8 +84,10 @@ public sealed class CoveringIndexTests(DleInfrastructureFixture infrastructure)
         """;
 
     /// <summary>
-    /// The columns §B.5.2 puts in the index, projected on their own. This is the shape the index was
-    /// designed to cover.
+    /// The nine included columns of a minimal <c>ix_links_resolve</c>, projected on their own, without
+    /// the five (<c>id</c>, <c>utm</c>, <c>title</c>, <c>campaign_id</c>, <c>expired_url</c>) that the
+    /// resolve statement also reads and the index carries as well. <see cref="ResolveQuery"/> reads all
+    /// fourteen.
     /// </summary>
     private const string CoveredProjection = """
         SELECT l.target_url,
@@ -102,7 +104,6 @@ public sealed class CoveringIndexTests(DleInfrastructureFixture infrastructure)
         """;
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task ResolveIndex_ForTheColumnsItCovers_IsAnsweredByAnIndexOnlyScan()
     {
         Seeded seeded = await SeedAsync();
@@ -123,11 +124,10 @@ public sealed class CoveringIndexTests(DleInfrastructureFixture infrastructure)
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task ResolveQuery_AsTheEdgeIssuesIt_IsAnsweredByAnIndexOnlyScanOnIxLinksResolve()
     {
-        // §B.5.2: "verify with EXPLAIN (ANALYZE, BUFFERS) that the index-only scan is really used —
-        // otherwise the latency budget of §B.6.1 does not hold." This asserts the specified behaviour against the
+        // EXPLAIN (ANALYZE, BUFFERS) has to show that the index-only scan is really used, otherwise
+        // the resolve latency budget does not hold. This asserts that against the
         // statement the resolve path actually runs, not against a reduced one.
         Seeded seeded = await SeedAsync();
 
@@ -142,11 +142,10 @@ public sealed class CoveringIndexTests(DleInfrastructureFixture infrastructure)
             plan.Contains("Index Only Scan using ix_links_resolve on links", StringComparison.Ordinal)
             && plan.Contains("Heap Fetches: 0", StringComparison.Ordinal),
             "The resolve query was not answered by an index-only scan on ix_links_resolve with no heap "
-            + "fetch. §B.5.2 says the latency budget of §B.6.1 does not hold without one. The plan was:\n" + plan);
+            + "fetch. The resolve latency budget does not hold without one. The plan was:\n" + plan);
     }
 
     [RequiresDockerFact]
-    [Trait("Spec", "B.5.2")]
     public async Task ResolveIndex_IsPreferredOverASequentialScanOnceTheTableIsRealisticallySized()
     {
         // The weaker claim, and the one that is worth having even if the covering scan is not

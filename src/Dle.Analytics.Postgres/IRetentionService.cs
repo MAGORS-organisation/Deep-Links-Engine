@@ -1,8 +1,8 @@
 namespace Dle.Analytics.Postgres;
 
 /// <summary>
-/// Enforces the analytics retention policy (FR-247, §E.6.3). Called by the retention worker
-/// (component C-09); this module registers no background service of its own.
+/// Enforces the analytics retention policy. Called by the retention worker; this module
+/// registers no background service of its own.
 /// </summary>
 /// <remarks>
 /// <para>

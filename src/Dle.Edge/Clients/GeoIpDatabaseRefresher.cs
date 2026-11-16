@@ -10,11 +10,11 @@ namespace Dle.Edge.Clients;
 
 /// <summary>
 /// Background job that notices a replaced GeoLite2 file and asks
-/// <see cref="MaxMindGeoIpResolver"/> to swap the reader (§B.6.1, §D.6).
+/// <see cref="MaxMindGeoIpResolver"/> to swap the reader.
 /// </summary>
 /// <remarks>
 /// <para>
-/// It watches, it does not download. NFR-14 forbids an outbound third-party call from anything the
+/// It watches, it does not download. No outbound third-party call is allowed from anything the
 /// resolve path depends on, and the database is exactly that; fetching a new edition belongs to the
 /// deployment — a <c>geoipupdate</c> sidecar, a cron job, a re-mounted volume — and this loop's whole
 /// job is to make the process pick the new file up without a restart.
@@ -37,7 +37,7 @@ public sealed partial class GeoIpDatabaseRefresher : BackgroundService
     /// <summary>Creates the refresher.</summary>
     /// <param name="resolver">The resolver whose reader is swapped.</param>
     /// <param name="options">Geographic options; supply the refresh interval.</param>
-    /// <param name="timeProvider">Clock driving the timer (SHARED-KERNEL §17.2).</param>
+    /// <param name="timeProvider">Clock driving the timer.</param>
     /// <param name="logger">Logger.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public GeoIpDatabaseRefresher(
@@ -63,7 +63,7 @@ public sealed partial class GeoIpDatabaseRefresher : BackgroundService
         "CA1031:Do not catch general exception types",
         Justification = "A background loop that dies takes the refresh with it for the life of the process. Every " +
                         "failure is logged and the loop continues with the database it already has, which is the " +
-                        "explicit fallback SHARED-KERNEL §17.9 asks for.")]
+                        "explicit fallback.")]
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!_options.AutoUpdate)

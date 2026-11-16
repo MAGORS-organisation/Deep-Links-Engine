@@ -5,7 +5,7 @@ using Dle.Persistence.Internal;
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// Reads and writes link domains and their verification history (FR-143, FR-145).
+/// Reads and writes link domains and their verification history.
 /// </summary>
 public sealed class DomainRepository
 {
@@ -142,7 +142,7 @@ public sealed class DomainRepository
     }
 
     /// <summary>
-    /// Appends a verification run and updates the summary columns of the domain (FR-143).
+    /// Appends a verification run and updates the summary columns of the domain.
     /// </summary>
     /// <param name="verification">The run to record. Its checked instant is filled in when unset.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -229,7 +229,7 @@ public sealed class DomainRepository
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The configuration, or <see langword="null"/> when the host is unknown.</returns>
     /// <remarks>
-    /// This is one of the places where the repository returns a shared-kernel type rather than an
+    /// This is one of the places where the repository returns a shared kernel type rather than an
     /// entity: <see cref="DomainRuntimeConfig"/> carries the tenant's consent mode alongside the
     /// domain's override, because the effective mode is the narrower of the two and neither row
     /// alone can answer it.

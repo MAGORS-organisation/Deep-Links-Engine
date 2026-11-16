@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// Maps the application registration routes (SHARED-KERNEL §15, FR-141, FR-142, FR-144).
+/// Maps the application registration routes.
 /// </summary>
 public static class AppEndpointExtensions
 {

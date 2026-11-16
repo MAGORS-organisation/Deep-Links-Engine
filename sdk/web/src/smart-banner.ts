@@ -12,10 +12,10 @@ import type {
 } from './types.js';
 
 /**
- * Smart app banner (FR-224), rendered into a shadow root so host CSS cannot break it and
+ * Smart app banner, rendered into a shadow root so host CSS cannot break it and
  * the banner cannot leak styles into the host page.
  *
- * Accessibility (WCAG 2.2 AA, NFR-16): a labelled region landmark, a real `<a>` for the
+ * Accessibility (WCAG 2.2 AA): a labelled region landmark, a real `<a>` for the
  * call-to-action and a real `<button>` for dismissal, 44 px targets, AA contrast in both
  * colour schemes, a visible focus ring, `Escape` to dismiss, `lang` on the banner, no focus
  * stealing on appearance and no focus loss on dismissal. Motion only under
@@ -24,7 +24,7 @@ import type {
  * Why an anchor and not a redirect: inside an in-app WebView (Facebook, Instagram, TikTok,
  * …) the operating system hands a Universal Link / App Link to the native app **only on a
  * genuine user tap on an `<a>` element**. `window.location.href` from script is not a user
- * gesture on iOS (spec §A.2.6). The banner's anchor IS that tap; nothing here ever calls
+ * gesture on iOS. The banner's anchor IS that tap; nothing here ever calls
  * `location.assign`, opens a custom URI scheme or fires a timer-driven redirect.
  */
 
@@ -176,7 +176,7 @@ export function createSmartBanner(options: SmartBannerOptions, context: BannerCo
   );
   if (platform.isInAppWebView) text.appendChild(el('span', 'h', strings.inAppHint));
 
-  // The genuine tap of §A.2.6. Plain anchor, same tab, no handler that cancels navigation.
+  // A genuine user tap, which the OS needs. Plain anchor, same tab, no handler that cancels navigation.
   const cta = el('a', 'cta', strings.open);
   cta.href = options.openUrl;
   cta.rel = 'noopener';

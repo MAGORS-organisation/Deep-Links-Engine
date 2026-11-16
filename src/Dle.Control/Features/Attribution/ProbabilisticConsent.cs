@@ -5,8 +5,7 @@ using Dle.Domain.Privacy;
 namespace Dle.Control.Features.Attribution;
 
 /// <summary>
-/// The capability that has to be held before device signals may be looked at, let alone stored
-/// (TC-145, TC-146, §E.6.2).
+/// The capability that has to be held before device signals may be looked at, let alone stored.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -20,9 +19,9 @@ namespace Dle.Control.Features.Attribution;
 /// never written to <c>attributions.evidence</c> and never persisted anywhere else.
 /// </para>
 /// <para>
-/// This is the difference §E.6.2 insists on: "without documented consent the signals are not
-/// processed and not written" — not "written and deleted later". A boolean checked before an insert
-/// would satisfy the letter of the test and none of its intent, because the next person to add a
+/// This is the difference that matters: without documented consent the signals are not
+/// processed and not written — not "written and deleted later". A boolean checked before an insert
+/// would satisfy the letter of the rule and none of its intent, because the next person to add a
 /// code path would simply forget the check. A capability cannot be forgotten; the code that would
 /// process the signals does not compile without it.
 /// </para>

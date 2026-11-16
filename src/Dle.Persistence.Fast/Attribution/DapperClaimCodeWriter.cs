@@ -11,7 +11,7 @@ using NpgsqlTypes;
 namespace Dle.Persistence.Fast.Attribution;
 
 /// <summary>
-/// Writes issued claim codes to Postgres using parameterized SQL (FR-184).
+/// Writes issued claim codes to Postgres using parameterized SQL.
 /// </summary>
 public sealed class DapperClaimCodeWriter : IClaimCodeWriter
 {

@@ -3,14 +3,14 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Edge.RateLimiting;
 
 /// <summary>
-/// The edge half of <c>Dle:RateLimits</c>. Defaults are the values in §E.9 verbatim.
+/// The edge half of <c>Dle:RateLimits</c>.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The two resolve limits are separate on purpose and that separation is the single most important
-/// property in the table. A campaign that goes viral produces a burst of <em>successful</em> resolves;
+/// property of the edge rate limits. A campaign that goes viral produces a burst of <em>successful</em> resolves;
 /// if the anti-enumeration budget shared a counter with it, the burst would exhaust the budget and
-/// the enumeration defence (T-07) would switch itself off exactly when the service is most visible.
+/// the enumeration defence would switch itself off exactly when the service is most visible.
 /// </para>
 /// <para>
 /// Both are keyed by network prefix rather than by address — /24 for IPv4, /48 for IPv6 — because an
@@ -46,11 +46,11 @@ public sealed class ResolveRateLimitOptions
     /// <summary>Configuration section this type binds to.</summary>
     public const string SectionName = "Dle:RateLimits:Edge:Resolve";
 
-    /// <summary>Requests permitted per window. §E.9 default: 600.</summary>
+    /// <summary>Requests permitted per window. Default: 600.</summary>
     [Range(1, 1_000_000)]
     public int PermitsPerWindow { get; set; } = 600;
 
-    /// <summary>Window length in seconds. §E.9 default: 60.</summary>
+    /// <summary>Window length in seconds. Default: 60.</summary>
     [Range(1, 3_600)]
     public int WindowSeconds { get; set; } = 60;
 
@@ -64,27 +64,27 @@ public sealed class ResolveRateLimitOptions
 
 /// <summary>
 /// Token bucket and shadow ban for resolve requests that ended in 404, bound from
-/// <c>Dle:RateLimits:Edge:NotFound</c> (§E.9, T-07, TC-108).
+/// <c>Dle:RateLimits:Edge:NotFound</c>.
 /// </summary>
 public sealed class NotFoundRateLimitOptions
 {
     /// <summary>Configuration section this type binds to.</summary>
     public const string SectionName = "Dle:RateLimits:Edge:NotFound";
 
-    /// <summary>Tokens replenished per period. §E.9 default: 20 per minute.</summary>
+    /// <summary>Tokens replenished per period. Default: 20 per minute.</summary>
     [Range(1, 100_000)]
     public int TokensPerPeriod { get; set; } = 20;
 
-    /// <summary>Replenishment period in seconds. §E.9 default: 60.</summary>
+    /// <summary>Replenishment period in seconds. Default: 60.</summary>
     [Range(1, 3_600)]
     public int ReplenishmentPeriodSeconds { get; set; } = 60;
 
-    /// <summary>Bucket capacity, which is the permitted burst. §E.9 default: 40.</summary>
+    /// <summary>Bucket capacity, which is the permitted burst. Default: 40.</summary>
     [Range(1, 100_000)]
     public int Burst { get; set; } = 40;
 
     /// <summary>
-    /// How long a prefix stays shadow banned once it has drained the bucket. §E.9 default: 15 minutes.
+    /// How long a prefix stays shadow banned once it has drained the bucket. Default: 15 minutes.
     /// </summary>
     /// <remarks>
     /// A shadow banned prefix is answered with the same 404 body as any other miss and the database is
@@ -106,18 +106,18 @@ public sealed class NotFoundRateLimitOptions
 /// </summary>
 /// <remarks>
 /// QR rendering is a rasterisation, not a lookup, so its limit is an order of magnitude tighter than
-/// the resolve limit and is keyed by the full address rather than by prefix, matching §E.9.
+/// the resolve limit and is keyed by the full address rather than by prefix.
 /// </remarks>
 public sealed class QrRateLimitOptions
 {
     /// <summary>Configuration section this type binds to.</summary>
     public const string SectionName = "Dle:RateLimits:Edge:Qr";
 
-    /// <summary>Requests permitted per window. §E.9 default: 30.</summary>
+    /// <summary>Requests permitted per window. Default: 30.</summary>
     [Range(1, 100_000)]
     public int PermitsPerWindow { get; set; } = 30;
 
-    /// <summary>Window length in seconds. §E.9 default: 60.</summary>
+    /// <summary>Window length in seconds. Default: 60.</summary>
     [Range(1, 3_600)]
     public int WindowSeconds { get; set; } = 60;
 

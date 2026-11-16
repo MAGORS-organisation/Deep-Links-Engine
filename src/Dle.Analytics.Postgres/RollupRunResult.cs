@@ -52,7 +52,7 @@ public sealed record RollupRunResult
     /// <summary>Rows written or updated in the daily install and conversion rollup.</summary>
     public int InstallRowsDaily { get; init; }
 
-    /// <summary>Rows written or updated in the attribution quality rollup (ADR-008).</summary>
+    /// <summary>Rows written or updated in the attribution quality rollup.</summary>
     public int AttributionQualityRows { get; init; }
 
     /// <summary>Whether the pass aggregated anything at all.</summary>

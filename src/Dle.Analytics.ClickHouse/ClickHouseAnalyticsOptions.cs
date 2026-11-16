@@ -3,9 +3,9 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Analytics.ClickHouse;
 
 /// <summary>
-/// Configuration of the experimental opt-in ClickHouse query-only analytics provider (ADR-006),
+/// Configuration of the experimental opt-in ClickHouse query-only analytics provider,
 /// bound from the <c>Dle:Analytics:ClickHouse</c> section. The connection string itself
-/// is taken from <c>ConnectionStrings:ClickHouse</c> (SHARED-KERNEL §16) and copied into
+/// is taken from <c>ConnectionStrings:ClickHouse</c> and copied into
 /// <see cref="ConnectionString"/> during registration.
 /// </summary>
 /// <remarks>
@@ -44,7 +44,7 @@ public sealed class ClickHouseAnalyticsOptions
     /// <summary>
     /// Retention of raw event tables in days, written into the <c>TTL</c> clause of the embedded
     /// DDL. Mirrors <c>Dle:Privacy:Retention:RawDays</c> so that both providers expire raw events
-    /// on the same schedule (FR-247, §E.6.3).
+    /// on the same schedule.
     /// </summary>
     [Range(1, 3650)]
     public int RawRetentionDays { get; set; } = 30;

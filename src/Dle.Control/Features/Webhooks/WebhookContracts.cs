@@ -1,8 +1,7 @@
 namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
-/// Response to <c>POST /api/v1/webhooks</c>. The shared secret appears here and nowhere else
-/// (§B.5.2, §E.4.1 K4).
+/// Response to <c>POST /api/v1/webhooks</c>. The shared secret appears here and nowhere else.
 /// </summary>
 /// <remarks>
 /// Shown exactly once, like an API key. The stored copy is encrypted and the engine needs it to
@@ -40,7 +39,7 @@ public sealed record WebhookCreatedResponse
     public string? SigningKeyId { get; init; }
 }
 
-/// <summary>One recorded delivery attempt, as the customer sees it (FR-204).</summary>
+/// <summary>One recorded delivery attempt, as the customer sees it.</summary>
 /// <remarks>
 /// The payload is included because a customer debugging a failed integration needs to see what was
 /// sent; the signature is not, because it is reproducible from the payload and the secret and
@@ -82,7 +81,7 @@ public sealed record WebhookDeliveryResponse
     public string? Payload { get; init; }
 }
 
-/// <summary>Result of <c>POST /api/v1/webhooks/{id}/test</c> (§B.7.3).</summary>
+/// <summary>Result of <c>POST /api/v1/webhooks/{id}/test</c>.</summary>
 /// <remarks>
 /// Synchronous on purpose. The whole value of the test button is that the integrator presses it and
 /// immediately learns whether their endpoint answered, what it answered, and how long it took —
@@ -112,7 +111,7 @@ public sealed record TestWebhookResponse
     public string? SigningKeyId { get; init; }
 }
 
-/// <summary>Result of re-queueing failed or dead webhook deliveries (§B.7.3, FR-204).</summary>
+/// <summary>Result of re-queueing failed or dead webhook deliveries.</summary>
 public sealed record WebhookDeliveryReplayResponse
 {
     /// <summary>Number of deliveries transitioned back to <c>pending</c>.</summary>

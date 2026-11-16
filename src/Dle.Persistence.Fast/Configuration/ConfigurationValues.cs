@@ -8,13 +8,13 @@ namespace Dle.Persistence.Fast.Configuration;
 /// <remarks>
 /// <para>
 /// <c>IConfiguration.Get&lt;T&gt;()</c> and <c>Bind()</c> resolve properties by reflection, which is
-/// exactly what ADR-012 rules out for this assembly: the edge resolver is the component that is meant
+/// exactly what is ruled out for this assembly: the edge resolver is the component that is meant
 /// to be publishable ahead of time, and one reflective binder in its composition root is enough to
 /// close that door. Every value this module needs is a string, an integer or a boolean, so reading
 /// them explicitly costs a few lines and keeps the module trimmable.
 /// </para>
 /// <para>
-/// Parsing is invariant culture throughout (SHARED-KERNEL §0) and a malformed value is an error at
+/// Parsing is invariant culture throughout and a malformed value is an error at
 /// composition time rather than a silently substituted default: a mistyped pool size that halves
 /// throughput is far more expensive to find in production than a failed start.
 /// </para>

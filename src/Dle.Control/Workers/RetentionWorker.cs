@@ -11,11 +11,11 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Workers;
 
 /// <summary>
-/// Enforces the click stream retention policy (FR-247, §E.6.3, §B.3 component C-09).
+/// Enforces the click stream retention policy.
 /// </summary>
 /// <remarks>
 /// <para>
-/// FR-247 asks for three things and this pass does all three: hash the address after the configured
+/// Retention has three parts and this pass does all three: hash the address after the configured
 /// window, drop the raw data, and — the part that is easy to skip — make the job's own execution
 /// auditable. A retention control nobody can prove ran is not a control. Each pass therefore leaves
 /// three traces that have to agree: a row in <c>analytics_retention_runs</c> written by the service
@@ -120,7 +120,7 @@ public sealed partial class RetentionWorker : LeaderElectedBackgroundService
         Metrics.Items(Job, "anonymised_row", result.RowsAnonymised);
         Metrics.Items(Job, "rollup_row_deleted", result.RollupRowsDeleted);
 
-        // The audit of the run itself (§E.6.3). It is logged as well as stored because the two
+        // The audit of the run itself. It is logged as well as stored because the two
         // answer different questions: the row proves the policy was applied, the log line is what an
         // operator sees when they ask whether last night's pass did anything unusual.
         LogRetentionRun(
@@ -137,7 +137,7 @@ public sealed partial class RetentionWorker : LeaderElectedBackgroundService
         if (string.Equals(result.Status, RetentionRunResult.StatusFailed, StringComparison.Ordinal))
         {
             // Surfaced as a failed pass rather than swallowed as a completed one: a retention job
-            // that half ran is the case an operator most needs to see (SHARED-KERNEL §17.9).
+            // that half ran is the case an operator most needs to see.
             throw new InvalidOperationException(
                 "The retention pass failed: " + (result.Error ?? "no detail was recorded."));
         }

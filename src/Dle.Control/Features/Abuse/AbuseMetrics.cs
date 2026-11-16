@@ -3,11 +3,11 @@ using System.Diagnostics.Metrics;
 namespace Dle.Control.Features.Abuse;
 
 /// <summary>
-/// The instruments the abuse module publishes (§C.6).
+/// The instruments the abuse module publishes.
 /// </summary>
 /// <remarks>
 /// Names use the OpenTelemetry dotted spelling; a Prometheus exporter renders
-/// <c>dle.abuse.blocked</c> as <c>dle_abuse_blocked_total</c>, which is the metric §C.6 names.
+/// <c>dle.abuse.blocked</c> as <c>dle_abuse_blocked_total</c>.
 /// The counter is tagged by the source of the verdict, because "blocked by our own list" and
 /// "blocked by URLhaus" answer different operational questions: the first says the operator is
 /// working, the second says the feed is.
@@ -36,17 +36,17 @@ public sealed class AbuseMetrics : IDisposable
         _blocked = _meter.CreateCounter<long>(
             "dle.abuse.blocked",
             unit: "{target}",
-            description: "Target URLs refused or withdrawn because a safety check rejected them (§E.3).");
+            description: "Target URLs refused or withdrawn because a safety check rejected them.");
 
         _reports = _meter.CreateCounter<long>(
             "dle.abuse.reports",
             unit: "{report}",
-            description: "Abuse reports accepted through the public form (FR-245, DSA article 16).");
+            description: "Abuse reports accepted through the public form (DSA article 16).");
 
         _quarantines = _meter.CreateCounter<long>(
             "dle.abuse.quarantines",
             unit: "{link}",
-            description: "Links withdrawn from service, and links released back into it (TC-103).");
+            description: "Links withdrawn from service, and links released back into it.");
 
         _lookupFailures = _meter.CreateCounter<long>(
             "dle.abuse.lookup_failures",

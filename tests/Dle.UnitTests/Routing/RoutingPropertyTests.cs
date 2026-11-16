@@ -11,7 +11,7 @@ using Xunit;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// Section D.4 asks for property based tests "mainly for the routing engine and URL normalisation".
+/// Property based tests matter most for the routing engine and URL normalisation.
 /// Two laws matter operationally: the engine is total (a validated rule set always produces a
 /// decision, so a click is never dropped) and the URL builder never emits something a browser will
 /// refuse to follow.

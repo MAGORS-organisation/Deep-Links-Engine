@@ -8,7 +8,7 @@ namespace Dle.Control.Features.Shared;
 
 /// <summary>
 /// Makes an outbound HTTP client refuse to open a connection to an address that is not a public
-/// one (T-02).
+/// one.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -121,9 +121,9 @@ internal static class PublicEndpointGuard
         if (permitted.Count == 0)
         {
             // Fail closed: an address list that is empty because every entry was forbidden, and one
-            // that is empty because the name does not resolve, are both refusals (§17.9).
+            // that is empty because the name does not resolve, are both refusals.
             throw new HttpRequestException(
-                "The destination resolves only to addresses that are not permitted targets (T-02).");
+                "The destination resolves only to addresses that are not permitted targets.");
         }
 
         return await ConnectToFirstAsync(permitted, port, cancellationToken);

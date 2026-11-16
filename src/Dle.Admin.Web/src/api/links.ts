@@ -57,7 +57,7 @@ export const links = {
   },
 
   /**
-   * FR-129. GET is used so nothing is written and the request is trivially repeatable. The query
+   * GET is used so nothing is written and the request is trivially repeatable. The query
    * names are the snake_case ones the route declares explicitly (ua, os_version, app_version,
    * click_id).
    */
@@ -80,7 +80,7 @@ export const links = {
     });
   },
 
-  /** FR-103. Streams BulkLinkItem rows as application/x-ndjson and emits per-row results. */
+  /** Streams BulkLinkItem rows as application/x-ndjson and emits per-row results. */
   async bulkCreateNdjson(
     items: readonly BulkLinkItem[],
     onResult?: (result: BulkLinkResult) => void,

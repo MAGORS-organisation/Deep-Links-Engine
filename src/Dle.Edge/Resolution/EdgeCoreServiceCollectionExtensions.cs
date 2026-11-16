@@ -17,11 +17,11 @@ using Microsoft.Extensions.Hosting;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// The single composition entry point of the edge data plane (SHARED-KERNEL §15).
+/// The single composition entry point of the edge data plane.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Everything the resolve path needs and nothing it does not: the options that §16 defines, the client
+/// Everything the resolve path needs and nothing it does not: the <c>Dle:Edge</c> options, the client
 /// classification chain, the routing engine, the page renderer and the pipeline that joins them. The
 /// cache, the link store, the event sink, the click identifier codec and the instruments come from
 /// <c>AddDleFastPersistence</c>, <c>AddDleCrypto</c> and <c>AddDleTelemetry</c>, which is why
@@ -36,7 +36,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 public static class EdgeCoreServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers the resolve pipeline and binds every <c>Dle:Edge</c> option of §16.
+    /// Registers the resolve pipeline and binds every <c>Dle:Edge</c> option.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configuration">
@@ -85,7 +85,7 @@ public static class EdgeCoreServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Binds each §16 subsection as its own options type.
+    /// Binds each <c>Dle:Edge</c> subsection as its own options type.
     /// </summary>
     /// <remarks>
     /// Separately rather than as nested properties of one object, because
@@ -162,8 +162,8 @@ public static class EdgeCoreServiceCollectionExtensions
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The client address is not cosmetic here: it is the rate limiting partition key (§E.9), the input
-    /// to the hashed identifier in the click stream (FR-247) and the geographic lookup key. Honouring
+    /// The client address is not cosmetic here: it is the rate limiting partition key, the input
+    /// to the hashed identifier in the click stream and the geographic lookup key. Honouring
     /// <c>X-Forwarded-For</c> from an arbitrary peer would let any client choose its own rate limit
     /// bucket and its own country, so the header is only trusted when the immediate peer is a
     /// configured proxy.

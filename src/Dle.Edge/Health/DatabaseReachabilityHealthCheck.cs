@@ -10,7 +10,7 @@ namespace Dle.Edge.Health;
 /// </summary>
 /// <remarks>
 /// <para>
-/// §D.6 and NFR-06 are explicit about what a PostgreSQL outage means for the edge: cached links keep
+/// A PostgreSQL outage has a defined meaning for the edge: cached links keep
 /// resolving from L1 and L2, uncached ones answer 503. An instance in that state is still the best
 /// thing the load balancer has — every instance is in the same state — so the probe must not take
 /// it out of rotation. Degraded keeps the probe at 200 and puts the fact in the body, where an
@@ -33,8 +33,8 @@ public sealed class DatabaseReachabilityHealthCheck : IHealthCheck
 
     /// <summary>Creates the check.</summary>
     /// <param name="readDataSource">
-    /// The pool the resolve statement reads from - the replica when one is configured (§B.8
-    /// profile B), otherwise the primary. Probing the primary while resolves read a replica would
+    /// The pool the resolve statement reads from - the replica when one is configured,
+    /// otherwise the primary. Probing the primary while resolves read a replica would
     /// describe the wrong dependency in both directions.
     /// </param>
     /// <exception cref="ArgumentNullException"><paramref name="readDataSource"/> is <see langword="null"/>.</exception>
@@ -79,6 +79,6 @@ public sealed class DatabaseReachabilityHealthCheck : IHealthCheck
 
     private static HealthCheckResult Degraded(string reason, Exception? exception) =>
         HealthCheckResult.Degraded(
-            reason + "; cached links keep resolving from L1 and L2, uncached links answer 503 (§D.6).",
+            reason + "; cached links keep resolving from L1 and L2, uncached links answer 503.",
             exception);
 }

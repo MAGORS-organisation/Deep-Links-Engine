@@ -7,12 +7,12 @@ using Npgsql;
 namespace Dle.Control.Workers;
 
 /// <summary>
-/// Leader election over a PostgreSQL session advisory lock (§B.3).
+/// Leader election over a PostgreSQL session advisory lock.
 /// </summary>
 /// <remarks>
 /// <para>
-/// §B.3 is explicit about the constraint: background services run inside the control plane process
-/// and elect a leader "through a Postgres advisory lock — no further system". That sentence is a
+/// The constraint is explicit: background services run inside the control plane process
+/// and elect a leader through a Postgres advisory lock, with no further system. That is a
 /// product decision, not an implementation detail. A self-hosted deployment that already has to
 /// run PostgreSQL must not also be told to run ZooKeeper, etcd, Redis Sentinel or a Kubernetes
 /// lease controller in order to have a nightly job run once instead of three times.
@@ -86,7 +86,7 @@ public sealed partial class PostgresLeaderLock
     /// <returns>
     /// A handle to dispose when the pass is over, or <see langword="null"/> when another replica
     /// holds the lock or the database could not be reached. Both are "not the leader"; neither is
-    /// an error the caller has to handle differently (SHARED-KERNEL §17.9).
+    /// an error the caller has to handle differently.
     /// </returns>
     public async Task<LeaderLease?> TryAcquireAsync(
         string jobName,

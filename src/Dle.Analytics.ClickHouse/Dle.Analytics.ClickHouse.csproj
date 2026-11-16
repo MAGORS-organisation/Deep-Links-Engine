@@ -2,7 +2,7 @@
 
   <!--
     Opt-in IClickAnalyticsStore implementation over ClickHouse, selected with
-    Dle:Analytics:Provider = clickhouse. ADR-006.
+    Dle:Analytics:Provider = clickhouse.
 
     Nothing in this assembly runs unless AddDleAnalytics selects the ClickHouse
     provider: there is no hosted service, no module initializer and no eagerly

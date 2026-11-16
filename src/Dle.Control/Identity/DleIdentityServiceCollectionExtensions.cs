@@ -15,12 +15,12 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// The single composition entry point of the identity module (SHARED-KERNEL §15, FR-242).
+/// The single composition entry point of the identity module.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Three credentials, three authentication schemes. That separation is the mechanism behind §E.2.1
-/// TB2: an SDK key ships inside an APK or an IPA and must be assumed to be in an attacker's hands,
+/// Three credentials, three authentication schemes. That separation is the trust boundary around SDK
+/// keys: an SDK key ships inside an APK or an IPA and must be assumed to be in an attacker's hands,
 /// so the policies that guard configuration writes simply do not list the SDK scheme among the
 /// schemes they accept. No confusion of roles or scopes can make an extracted SDK key satisfy them,
 /// because the authorization stack refuses the scheme before it ever looks at a claim.
@@ -28,7 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// <para>
 /// The default is deny. The fallback policy is one nothing satisfies, so an endpoint registered
 /// without <c>RequireAuthorization</c> refuses the request instead of serving it — a forgotten
-/// attribute has to fail closed (SHARED-KERNEL §17.9).
+/// attribute has to fail closed.
 /// </para>
 /// </remarks>
 public static class DleIdentityServiceCollectionExtensions
@@ -45,8 +45,8 @@ public static class DleIdentityServiceCollectionExtensions
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     /// <exception cref="InvalidOperationException">
     /// The SDK key name and the control-plane key name are equal, which would make the two
-    /// credentials indistinguishable before verification and collapse the scheme separation §E.2.1
-    /// TB2 rests on into a lookup order.
+    /// credentials indistinguishable before verification and collapse the scheme separation into a
+    /// lookup order.
     /// </exception>
     public static IServiceCollection AddDleIdentity(
         this IServiceCollection services,
@@ -72,7 +72,7 @@ public static class DleIdentityServiceCollectionExtensions
             throw new InvalidOperationException(
                 "Dle:Identity:SdkKeyName must differ from Dle:Crypto:ApiKeyPrefix. If the two "
                 + "matched, a control-plane key and an application key would be indistinguishable "
-                + "before verification, and the scheme separation of §E.2.1 TB2 would become a "
+                + "before verification, and the scheme separation would become a "
                 + "lookup order.");
         }
 
@@ -270,7 +270,7 @@ public static class DleIdentityServiceCollectionExtensions
                 new DleInstanceOperatorRequirement()));
 
         // The only policy that accepts the SDK scheme, and the only policy the SDK scheme can
-        // satisfy (§E.2.1, TB2).
+        // satisfy.
         builder.AddPolicy(DlePolicies.SdkIngest, policy => policy
             .AddAuthenticationSchemes(DleAuthenticationSchemes.SdkKey)
             .RequireAuthenticatedUser()

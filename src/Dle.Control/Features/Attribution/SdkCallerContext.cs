@@ -20,7 +20,7 @@ namespace Dle.Control.Features.Attribution;
 /// A principal that authenticated but carries no application identifier is refused rather than
 /// defaulted. An SDK key is issued for exactly one application, so a missing claim means the
 /// credential is not what it says it is, and inventing <see cref="Guid.Empty"/> would file every
-/// such installation under one imaginary application (SHARED-KERNEL §17.9).
+/// such installation under one imaginary application.
 /// </para>
 /// </remarks>
 public static class SdkCallerContext

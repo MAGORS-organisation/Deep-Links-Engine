@@ -9,7 +9,7 @@ import type { Channel, DevicePlatform, PlatformInfo } from './types.js';
  *
  * This is deliberately **coarse**: a small ordered table of substring probes, no version
  * matrices, no entropy accumulation. UA parsing for channel routing is not fingerprinting;
- * the SDK never combines these signals into a stable identifier (FR-227).
+ * the SDK never combines these signals into a stable identifier.
  */
 
 /** Every canonical channel name, in `ChannelNames.cs` order. `app` is never produced here. */
@@ -164,7 +164,7 @@ export function isInAppChannel(channel: Channel): boolean {
 /**
  * Whether opening the native app requires a **real user tap on an anchor element**.
  *
- * Spec §A.2.6: an in-app WebView (Facebook, Instagram, TikTok, …) does not run OS-level
+ * An in-app WebView (Facebook, Instagram, TikTok, …) does not run OS-level
  * Universal Link / App Link interception when a page loads, and on iOS a
  * `window.location.href` assignment from JavaScript does not count as a user gesture. Only
  * a genuine tap on an `<a href="https://…">` can hand the navigation to the operating

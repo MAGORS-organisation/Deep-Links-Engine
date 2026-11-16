@@ -5,7 +5,7 @@ using Dle.Persistence.Fast.Configuration;
 namespace Dle.Persistence.Fast.Telemetry;
 
 /// <summary>
-/// The non-blocking hand-off from the resolve path to the click stream writer (NFR-06, FR-165).
+/// The non-blocking hand-off from the resolve path to the click stream writer.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -13,7 +13,7 @@ namespace Dle.Persistence.Fast.Telemetry;
 /// design in one setting: when the writer cannot keep up, the event being offered is discarded and the
 /// caller returns immediately. The alternative — waiting for room — would make a user's redirect
 /// depend on the health of the analytics database, turning an analytics incident into a user-visible
-/// outage. Losing rows is the cheaper failure, and FR-165 says so explicitly.
+/// outage. Losing rows is the cheaper failure, and the choice is deliberate.
 /// </para>
 /// <para>
 /// <see cref="BoundedChannelFullMode.DropWrite"/> drops the incoming event rather than an already
@@ -22,7 +22,7 @@ namespace Dle.Persistence.Fast.Telemetry;
 /// <para>
 /// Drops are counted twice on purpose: <see cref="DroppedCount"/> is a process-lifetime total that
 /// health endpoints and tests can read synchronously, and the metric behind
-/// <c>dle_click_events_dropped_total</c> is what the alert of §C.6 fires on. Dropping is a signal, not
+/// <c>dle_click_events_dropped_total</c> is what the alert fires on. Dropping is a signal, not
 /// silence.
 /// </para>
 /// </remarks>

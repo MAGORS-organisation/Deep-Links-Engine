@@ -4,18 +4,18 @@ namespace Dle.Domain.Attribution;
 
 /// <summary>
 /// Outcome of an attribution attempt. Carries the strategy and the confidence side by side, so a
-/// probabilistic match can never be presented as a certainty (FR-186, ADR-008).
+/// probabilistic match can never be presented as a certainty.
 /// </summary>
 /// <remarks>
 /// <see cref="Evidence"/> is not decoration. Every attribution has to be explainable after the
 /// fact: when a customer asks why an install was credited to a campaign, the recorded evidence is
-/// the only defence (§B.5.3). For a probabilistic match it lists the signals that agreed and the
+/// the only defence. For a probabilistic match it lists the signals that agreed and the
 /// weight each contributed.
 /// </remarks>
 public sealed record AttributionResult
 {
     /// <summary>Whether any strategy matched. <see langword="false"/> means the install is
-    /// reported as organic and the application continues normally (TC-142).</summary>
+    /// reported as organic and the application continues normally.</summary>
     public required bool Matched { get; init; }
 
     /// <summary>The strategy that produced the match.</summary>

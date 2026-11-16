@@ -5,7 +5,7 @@ using Xunit;
 namespace Dle.UnitTests.Routing;
 
 /// <summary>
-/// ADR-009 and FR-162. The action a customer authored is not the HTTP shape the edge serves: an
+/// The action a customer authored is not the HTTP shape the edge serves: an
 /// in-app webview only surfaces a Universal or App Link on a real tap, so app_or_store inside a
 /// webview must always become an interstitial with a real anchor, and InterstitialMode.Never must
 /// not be able to switch that off.
@@ -65,7 +65,6 @@ public sealed class RoutingDecisionKindTests
     [InlineData(ClientChannel.InAppTelegram)]
     [InlineData(ClientChannel.InAppPinterest)]
     [InlineData(ClientChannel.InAppGeneric)]
-    [Trait("TestCase", "TC-101")]
     public void Evaluate_AppOrStoreInsideAnInAppWebView_IsAlwaysAnInterstitial(ClientChannel channel)
     {
         foreach (InterstitialMode mode in Enum.GetValues<InterstitialMode>())
@@ -129,7 +128,7 @@ public sealed class RoutingDecisionKindTests
     public void Evaluate_UnknownActionValue_FallsBackToTheWebDecision()
     {
         // Only hand-edited data can produce this. Serving the web fallback never opens an application
-        // and never blocks a real user, which is the safe default (SHARED-KERNEL section 17.9).
+        // and never blocks a real user, which is the safe default.
         Assert.Equal(DecisionKind.Web, Kind((RoutingActionKind)77, InterstitialMode.Auto, ClientChannel.Browser, Platform.Ios));
     }
 

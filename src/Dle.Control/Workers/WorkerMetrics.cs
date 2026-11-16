@@ -3,13 +3,13 @@ using System.Diagnostics.Metrics;
 namespace Dle.Control.Workers;
 
 /// <summary>
-/// The instruments the background workers publish (§C.6).
+/// The instruments the background workers publish.
 /// </summary>
 /// <remarks>
 /// <para>
 /// A background job that fails silently is worse than one that does not exist, because the
 /// deployment believes it is protected. Every pass of every worker therefore reports an outcome,
-/// and <c>dle_domain_verification_failures</c> — the gauge §C.6 names and asks to be alerted on —
+/// and <c>dle_domain_verification_failures</c> — the gauge an alert watches —
 /// is published from here rather than from the worker, so that a worker which crashes on its first
 /// line still leaves the last known value visible instead of leaving a blank panel.
 /// </para>
@@ -54,7 +54,7 @@ public sealed class WorkerMetrics : IDisposable
             "dle.worker.runs",
             unit: "{run}",
             description: "Worker passes, tagged by job and outcome. 'not_leader' is the normal case "
-                + "on every replica but one (§B.3).");
+                + "on every replica but one.");
 
         _duration = _meter.CreateHistogram<double>(
             "dle.worker.duration",
@@ -71,7 +71,7 @@ public sealed class WorkerMetrics : IDisposable
             "dle.domain.verification.failures",
             () => Volatile.Read(ref _domainVerificationFailures),
             unit: "{domain}",
-            description: "Domains whose association files or DNS are currently failing (§C.6). Alert above zero.");
+            description: "Domains whose association files or DNS are currently failing. Alert above zero.");
     }
 
     /// <summary>Records the outcome of one pass.</summary>
@@ -113,7 +113,7 @@ public sealed class WorkerMetrics : IDisposable
             new KeyValuePair<string, object?>("kind", kind));
     }
 
-    /// <summary>Publishes how many domains are currently failing verification (§C.6, FR-143).</summary>
+    /// <summary>Publishes how many domains are currently failing verification.</summary>
     /// <param name="failures">The count from the last completed verification pass.</param>
     public void ReportDomainVerificationFailures(long failures) =>
         Volatile.Write(ref _domainVerificationFailures, failures);

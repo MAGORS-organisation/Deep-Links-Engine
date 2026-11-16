@@ -14,9 +14,9 @@ namespace Dle.UnitTests.Edge;
 
 /// <summary>
 /// Classification is the input to every routing rule and to every row of the click stream, so a
-/// misread user agent is a wrong redirect and a wrong report at the same time (§B.6.1 step 3). The
+/// misread user agent is a wrong redirect and a wrong report at the same time. The
 /// table below is real traffic: the in-app browsers of the nine networks the interstitial exists
-/// for, ordinary browsers on every form factor, and the crawler set of §D.2.
+/// for, ordinary browsers on every form factor, and the link preview and search engine crawlers.
 /// </summary>
 public sealed class ClientClassifierTests
 {
@@ -208,7 +208,10 @@ public sealed class ClientClassifierTests
         },
     };
 
-    /// <summary>The crawler set of §D.2: every one of these must be answered with an OG document.</summary>
+    /// <summary>
+    /// The crawlers of <c>CrawlerCatalog</c>, link preview fetchers and search engines alike: every one
+    /// of these must be answered with an OG document.
+    /// </summary>
     public static TheoryData<string, string> Crawlers() => new()
     {
         { "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)", CrawlerCatalog.Facebook },
@@ -254,7 +257,6 @@ public sealed class ClientClassifierTests
 
     [Theory]
     [MemberData(nameof(Crawlers))]
-    [Trait("TestCase", "TC-106")]
     public void Classify_Crawler_IsDetectedAndNamed(string userAgent, string expectedName)
     {
         ClientContext context = Classifier().Classify(Request(userAgent));

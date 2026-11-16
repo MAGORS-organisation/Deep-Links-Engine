@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Crypto;
 
 /// <summary>
-/// Mints and verifies control plane API keys (FR-242, K5 of the cryptographic inventory).
+/// Mints and verifies control plane API keys.
 /// </summary>
 /// <remarks>
 /// <para>

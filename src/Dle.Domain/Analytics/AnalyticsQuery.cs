@@ -1,8 +1,8 @@
 namespace Dle.Domain.Analytics;
 
 /// <summary>
-/// Parameters of a reporting query (FR-202). The analytics store implementation translates
-/// this into SQL for PostgreSQL or ClickHouse (ADR-006); the shape is deliberately provider
+/// Parameters of a reporting query. The analytics store implementation translates
+/// this into SQL for PostgreSQL or ClickHouse; the shape is deliberately provider
 /// neutral and always tenant scoped.
 /// </summary>
 public sealed record AnalyticsQuery
@@ -31,7 +31,7 @@ public sealed record AnalyticsQuery
     /// <summary>Restrict the report to one platform name, for example <c>ios</c>.</summary>
     public string? Platform { get; init; }
 
-    /// <summary>Whether crawler traffic is included. Defaults to <see langword="false"/> (FR-205).</summary>
+    /// <summary>Whether crawler traffic is included. Defaults to <see langword="false"/>.</summary>
     public bool IncludeBots { get; init; }
 
     /// <summary>Maximum number of rows returned for breakdown queries.</summary>

@@ -5,13 +5,13 @@ namespace Dle.Control.Identity;
 /// <summary>
 /// The authenticated caller, read from the claims the authentication handlers produced.
 /// </summary>
-/// <param name="TenantId">Tenant every query and write in this request is scoped to (FR-241).</param>
+/// <param name="TenantId">Tenant every query and write in this request is scoped to.</param>
 /// <param name="ActorId">Identifier of the credential or the user.</param>
 /// <param name="ActorType">Kind of actor, as recorded in the audit trail.</param>
 /// <param name="Role">The role from <see cref="DleRoles"/>.</param>
 /// <param name="Scopes">Granted scopes; empty means the role alone governs.</param>
 /// <param name="KeyPrefix">Non-secret prefix of the presented key, safe to log.</param>
-/// <param name="TenantCreatedAt">When the tenant was provisioned, for the §E.9 new-tenant limit.</param>
+/// <param name="TenantCreatedAt">When the tenant was provisioned, for the new-tenant rate limit.</param>
 public sealed record DleCaller(
     Guid TenantId,
     Guid? ActorId,
@@ -66,7 +66,7 @@ public static class DleCallerExtensions
     /// A principal without a parseable tenant claim yields <see langword="null"/> rather than a
     /// caller scoped to <see cref="Guid.Empty"/>. Everything downstream then refuses the request,
     /// which is the required behaviour: there is no such thing as a request that touches tenant data
-    /// without a tenant (FR-241, T-09).
+    /// without a tenant.
     /// </remarks>
     public static DleCaller? GetDleCaller(this ClaimsPrincipal? principal)
     {
@@ -77,7 +77,7 @@ public static class DleCallerExtensions
 
         // A principal can carry several identities (an endpoint policy that lists more than one scheme
         // merges them). If they name different tenants the caller has no tenant at all: picking the
-        // first would make the answer depend on scheme order (T-09).
+        // first would make the answer depend on scheme order.
         Guid tenantId = Guid.Empty;
 
         foreach (Claim claim in principal.FindAll(DleClaimTypes.TenantId))

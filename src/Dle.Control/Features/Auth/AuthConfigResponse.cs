@@ -1,7 +1,7 @@
 namespace Dle.Control.Features.Auth;
 
 /// <summary>
-/// Public authentication and OIDC configuration for the administration UI (FR-242).
+/// Public authentication and OIDC configuration for the administration UI.
 /// </summary>
 public sealed class AuthConfigResponse
 {

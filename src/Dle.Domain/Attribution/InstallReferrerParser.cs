@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 namespace Dle.Domain.Attribution;
 
 /// <summary>
-/// Parses the Android Play Install Referrer string (§A.2.4). This is the one deterministic
+/// Parses the Android Play Install Referrer string. This is the one deterministic
 /// channel that survives an installation, so everything about this parser is written to be total:
 /// it never throws and it never guesses.
 /// </summary>
@@ -99,13 +99,13 @@ public static class InstallReferrerParser
     }
 
     /// <summary>
-    /// Extracts the click identifier written by the engine into the store URL (FR-181).
+    /// Extracts the click identifier written by the engine into the store URL.
     /// </summary>
     /// <param name="referrer">The raw referrer string, or <see langword="null"/>.</param>
     /// <param name="clickId">The click identifier when one was present, otherwise
     /// <see cref="string.Empty"/>.</param>
     /// <returns><see langword="true"/> when a non empty <c>dl_cid</c> was found. An organic
-    /// install has no <c>dl_cid</c> and legitimately returns <see langword="false"/> (TC-142).</returns>
+    /// install has no <c>dl_cid</c> and legitimately returns <see langword="false"/>.</returns>
     public static bool TryGetClickId(string? referrer, out string clickId)
     {
         IReadOnlyDictionary<string, string> values = Parse(referrer);

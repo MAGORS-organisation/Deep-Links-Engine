@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Auth;
 
 /// <summary>
-/// Public authentication and OIDC discovery endpoints for the administration console (FR-242).
+/// Public authentication and OIDC discovery endpoints for the administration console.
 /// </summary>
 public static class AuthConfigEndpoints
 {

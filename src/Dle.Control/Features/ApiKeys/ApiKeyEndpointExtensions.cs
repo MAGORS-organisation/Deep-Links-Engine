@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// Maps the API key routes (SHARED-KERNEL §15, FR-242).
+/// Maps the API key routes.
 /// </summary>
 public static class ApiKeyEndpointExtensions
 {

@@ -2,8 +2,8 @@
 
   <!--
     Implementations of the Dle.Domain.Crypto abstractions: ISigner/IVerifier,
-    the keyed Feistel slug permutation (ADR-007), click-id codec, IP hashing,
-    JWKS and key rotation. ADR-013 / docs/zadanie.md §E.4, §E.5.
+    the keyed Feistel slug permutation, click-id codec, IP hashing,
+    JWKS and key rotation.
   -->
 
   <PropertyGroup>
@@ -12,10 +12,10 @@
     <Description>Deep Link Engine cryptography: crypto-agile signing (HS256, Ed25519, ML-DSA-65, SLH-DSA), JWKS, key rotation, keyed slug permutation and click-id codec.</Description>
 
     <!--
-      docs/zadanie.md §E.5.2: the post-quantum primitives (ML-KEM, ML-DSA,
+      The post-quantum primitives (ML-KEM, ML-DSA,
       SLH-DSA, Composite ML-DSA) ship in .NET 10 behind the [Experimental]
       attribute with diagnostic id SYSLIB5006, which is emitted as an error.
-      Using them is an explicit architectural decision (ADR-013), so the
+      Using them is an explicit architectural decision, so the
       diagnostic is suppressed here and only here.
     -->
     <NoWarn>$(NoWarn);SYSLIB5006</NoWarn>

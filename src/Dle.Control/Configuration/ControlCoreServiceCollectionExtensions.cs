@@ -26,7 +26,7 @@ using StackExchange.Redis;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// The single composition entry point of the control-plane core (SHARED-KERNEL §15, §C.4).
+/// The single composition entry point of the control-plane core.
 /// </summary>
 /// <remarks>
 /// Everything here is either policy the endpoints share — the wire format, the problem document
@@ -190,7 +190,7 @@ public static class ControlCoreServiceCollectionExtensions
             json.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower));
         });
 
-        // A lost PostgreSQL is a 503 with Retry-After, never a 500 (§D.6). Registered ahead of the
+        // A lost PostgreSQL is a 503 with Retry-After, never a 500. Registered ahead of the
         // problem-details fallback, which handles everything this one declines.
         services.AddExceptionHandler<DependencyUnavailableExceptionHandler>();
 
@@ -198,7 +198,7 @@ public static class ControlCoreServiceCollectionExtensions
         {
             // The trace identifier is what turns "it returned 500" into a log query. Nothing else is
             // added: a problem document is returned to a caller who may hold no credential at all,
-            // so it carries no request detail, no header value and no address (SHARED-KERNEL §17.5).
+            // so it carries no request detail, no header value and no address.
             context.ProblemDetails.Extensions["trace_id"] = context.HttpContext.TraceIdentifier;
 
             context.ProblemDetails.Type ??= ProblemCodes.Base
@@ -212,7 +212,7 @@ public static class ControlCoreServiceCollectionExtensions
     /// <remarks>
     /// The cache invalidator is registered here rather than left to the edge's module. The control
     /// plane is what changes a link, and a change the edge cannot be told about is a change that
-    /// takes effect whenever the cached entry happens to expire — which is exactly what TC-125 rules
+    /// takes effect whenever the cached entry happens to expire — which is exactly what has to be ruled
     /// out. It is the same implementation the edge registers, over the same two-level cache, so a
     /// removal reaches both levels on every replica.
     /// </remarks>
@@ -249,7 +249,7 @@ public static class ControlCoreServiceCollectionExtensions
 
             // Valkey speaks the Redis protocol, so the StackExchange.Redis backed IDistributedCache
             // is the shared level; HybridCache picks it up simply by it being registered. Without a
-            // connection string the cache is in-process only, which is §B.8 profile A.
+            // connection string the cache is in-process only.
             services.AddStackExchangeRedisCache(redis =>
             {
                 redis.Configuration = valkey;
@@ -269,7 +269,7 @@ public static class ControlCoreServiceCollectionExtensions
     /// <param name="services">The service collection.</param>
     /// <remarks>
     /// A verification target is a customer-supplied host name, which makes this an outbound request
-    /// to an address the customer chooses — the shape of T-02. The handler validates the address at
+    /// to an address the customer chooses — the shape of an SSRF attack. The handler validates the address at
     /// the socket rather than the name before it, so nothing can move between the check and the
     /// connection, and it never follows a redirect on its own.
     /// </remarks>
@@ -294,7 +294,7 @@ public static class ControlCoreServiceCollectionExtensions
                 tags: [HealthEndpointExtensions.ReadyTag]);
 
     /// <summary>
-    /// Registers the OpenAPI 3.1 document (§B.7.3).
+    /// Registers the OpenAPI 3.1 document.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <remarks>
@@ -338,7 +338,7 @@ public static class ControlCoreServiceCollectionExtensions
 }
 
 /// <summary>
-/// Publishes the stable RFC 9457 problem type identifiers on the document (§B.7.3).
+/// Publishes the stable RFC 9457 problem type identifiers on the document.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -393,7 +393,7 @@ internal sealed class DleProblemCodeTransformer : Microsoft.AspNetCore.OpenApi.I
 }
 
 /// <summary>
-/// Declares the credential schemes on the OpenAPI document (FR-242).
+/// Declares the credential schemes on the OpenAPI document.
 /// </summary>
 /// <remarks>
 /// Two schemes rather than one, because the two credentials really are different: a control-plane

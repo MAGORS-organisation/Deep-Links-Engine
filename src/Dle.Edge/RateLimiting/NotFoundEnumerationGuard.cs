@@ -10,12 +10,12 @@ using Microsoft.Extensions.Options;
 namespace Dle.Edge.RateLimiting;
 
 /// <summary>
-/// The anti-enumeration budget of §E.9: a token bucket over resolve requests that ended in 404, and
-/// a shadow ban for a network prefix that drains it (T-07, TC-108).
+/// The anti-enumeration budget: a token bucket over resolve requests that ended in 404, and
+/// a shadow ban for a network prefix that drains it.
 /// </summary>
 /// <remarks>
 /// <para>
-/// This is the single most important limit in the table, and the reason it lives here rather than in
+/// This is the single most important of the edge rate limits, and the reason it lives here rather than in
 /// the rate limiting middleware is that it is a limit on a <em>response</em>. Middleware decides
 /// before the handler runs and therefore cannot know whether a request will find a link; only the
 /// resolve pipeline can, which is why it calls <see cref="Register"/> at the point it has decided to
@@ -23,7 +23,7 @@ namespace Dle.Edge.RateLimiting;
 /// </para>
 /// <para>
 /// It is a separate partition from the sliding window over successful resolves, and that separation
-/// is the whole point (§E.9, T-07). Sharing a counter would mean a campaign going viral — a burst of
+/// is the whole point. Sharing a counter would mean a campaign going viral — a burst of
 /// <em>successes</em> — exhausts the budget and switches the enumeration defence off at the moment
 /// the service is most visible and most worth scanning.
 /// </para>
@@ -50,8 +50,8 @@ public sealed partial class NotFoundEnumerationGuard : IDisposable
     private bool _disposed;
 
     /// <summary>Creates the guard.</summary>
-    /// <param name="options">Edge rate limit options; supplies the §E.9 values.</param>
-    /// <param name="timeProvider">Clock driving ban expiry (SHARED-KERNEL §17.2).</param>
+    /// <param name="options">Edge rate limit options; supplies the budget values.</param>
+    /// <param name="timeProvider">Clock driving ban expiry.</param>
     /// <param name="metrics">Edge instruments; counts requests answered from the ban list.</param>
     /// <param name="logger">Logger.</param>
     /// <param name="distributedStore">Optional Valkey store for sharing 404 budgets and shadow bans across replicas.</param>
@@ -90,8 +90,8 @@ public sealed partial class NotFoundEnumerationGuard : IDisposable
                 ReplenishmentPeriod = _period,
 
                 // No queue. A caller that is out of tokens is told so immediately; making it wait
-                // would hold a request open on the resolve path, which is the one place §17.8 rules
-                // out blocking.
+                // would hold a request open on the resolve path, which is the one place where
+                // blocking is ruled out.
                 QueueLimit = 0,
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 AutoReplenishment = true,

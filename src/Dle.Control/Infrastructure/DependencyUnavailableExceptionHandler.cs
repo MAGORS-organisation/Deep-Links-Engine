@@ -5,8 +5,8 @@ namespace Dle.Control.Infrastructure;
 
 /// <summary>
 /// Turns a PostgreSQL that cannot be reached into a <c>503</c> problem document rather than the
-/// <c>500</c> the default exception handler would produce (§D.6: "the control plane returns 503;
-/// never a 500").
+/// <c>500</c> the default exception handler would produce: the control plane returns 503 and
+/// never a 500.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -17,7 +17,7 @@ namespace Dle.Control.Infrastructure;
 /// is a genuine error, an exception that never got one is an outage.
 /// </para>
 /// <para>
-/// The document itself follows SHARED-KERNEL §17.5: a problem type, a title and a sentence of
+/// The document itself carries a problem type, a title and a sentence of
 /// detail, and nothing that names a host, a driver or a stack frame.
 /// </para>
 /// </remarks>
@@ -113,6 +113,6 @@ public sealed partial class DependencyUnavailableExceptionHandler : IExceptionHa
     [LoggerMessage(
         EventId = 5901,
         Level = LogLevel.Warning,
-        Message = "The control-plane database was unavailable while serving {Path}; answered 503 (§D.6).")]
+        Message = "The control-plane database was unavailable while serving {Path}; answered 503.")]
     private static partial void LogDependencyUnavailable(ILogger logger, string path, Exception exception);
 }

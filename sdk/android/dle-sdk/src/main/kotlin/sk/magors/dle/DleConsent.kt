@@ -4,18 +4,19 @@ package sk.magors.dle
  * The user's consent state, as the host application collected it.
  *
  * The engine is consent first: consent is an **input to the decision**, not a filter applied
- * afterwards (spec §E.6.2). For this SDK concretely:
+ * afterwards. For this SDK concretely:
  *
  * - `attribution == false` means the `signals` object is **omitted** from `POST /v1/resolve`
  *   entirely (not sent empty), the Install Referrer is neither read nor transmitted, and the
  *   engine links nothing to this installation: it answers `none` with a non-final `expires_in`,
- *   and a claim code or login key is not redeemed (TC-145, TC-146). Note that the engine only
+ *   and a claim code or login key is not redeemed. Note that the engine only
  *   sees a recorded decision, one with [timestampMillis].
  * - `analytics == false` means behavioural events (`first_open`, `session`, `conversion`,
  *   `custom`) are dropped at [DleClient.track] time, never buffered. `link_open` is exempt: the
- *   engine treats a direct open as first party measurement of the link itself and FR-223 requires
- *   it to be reported. Set [DleConfig.Builder.requireAnalyticsConsentForEvents] to `false` to lift
- *   the gate when your legal basis does not need it.
+ *   engine treats a direct open as first party measurement of the link itself, and the report must
+ *   be sent because a direct open is otherwise invisible to the engine. Set
+ *   [DleConfig.Builder.requireAnalyticsConsentForEvents] to `false` to lift the gate when your
+ *   legal basis does not need it.
  *
  * The SDK never infers consent. Until [DleClient.setConsent] is called, the value from
  * [DleConfig.consent] applies, and its default is [denied]. A recorded decision is persisted and
@@ -40,7 +41,7 @@ public data class DleConsent(
     /**
      * Whether coarse device signals may be collected and transmitted at all. Signals are
      * additionally gated on [DleConfig.probabilisticSignals]: consent alone does not switch
-     * probabilistic matching on (spec §0.2, §A.6).
+     * probabilistic matching on.
      */
     public val allowsDeviceSignals: Boolean
         get() = attribution

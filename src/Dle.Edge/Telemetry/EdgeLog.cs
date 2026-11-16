@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 namespace Dle.Edge.Telemetry;
 
 /// <summary>
-/// Source-generated log messages for the resolve path (§C.2).
+/// Source-generated log messages for the resolve path.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -13,7 +13,7 @@ namespace Dle.Edge.Telemetry;
 /// argument array and format a string on every request whether or not anybody is listening.
 /// </para>
 /// <para>
-/// What is <em>not</em> here matters as much as what is. SHARED-KERNEL §17.5 forbids logging the
+/// What is <em>not</em> here matters as much as what is. Nothing is allowed to log the
 /// <c>Authorization</c> header, the full referrer, the full query string or a raw client address at
 /// <c>Information</c> or below, so no parameter below carries any of them: the referrer appears as a
 /// host, the address as a /24 or /48 network prefix, and the query string never appears at all.
@@ -80,7 +80,7 @@ public static partial class EdgeLog
     [LoggerMessage(
         EventId = 1005,
         Level = LogLevel.Warning,
-        Message = "Click event dropped because the bounded channel is full; {Dropped} dropped so far. The redirect was still served (FR-165).")]
+        Message = "Click event dropped because the bounded channel is full; {Dropped} dropped so far. The redirect was still served.")]
     public static partial void ClickEventDropped(ILogger logger, long dropped);
 
     /// <summary>Logs a successful load of the geographic database.</summary>
@@ -99,7 +99,7 @@ public static partial class EdgeLog
     [LoggerMessage(
         EventId = 1011,
         Level = LogLevel.Warning,
-        Message = "Geographic database {Path} is missing or unreadable; country stays null and geo-dependent rules fall through to the default rule (§D.6).")]
+        Message = "Geographic database {Path} is missing or unreadable; country stays null and geo-dependent rules fall through to the default rule.")]
     public static partial void GeoIpUnavailable(ILogger logger, string path);
 
     /// <summary>Logs that the geographic database could not be opened.</summary>

@@ -3,7 +3,7 @@ namespace Dle.Domain.Analytics;
 /// <summary>
 /// A single event reported by an SDK. Without these events a direct application open is
 /// invisible to the engine, which systematically under-reports the most successful
-/// campaigns (specification §B.6.4).
+/// campaigns.
 /// </summary>
 public sealed record SdkEvent
 {

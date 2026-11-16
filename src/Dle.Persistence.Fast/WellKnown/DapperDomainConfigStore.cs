@@ -8,7 +8,7 @@ namespace Dle.Persistence.Fast.WellKnown;
 
 /// <summary>
 /// Loads per-domain configuration and the applications a host is associated with, and hands them to
-/// <see cref="WellKnownBuilder"/> (FR-141, FR-142, §C.3.3).
+/// <see cref="WellKnownBuilder"/>.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -16,14 +16,14 @@ namespace Dle.Persistence.Fast.WellKnown;
 /// input. That split is what makes the association files testable without a database and without HTTP,
 /// and it keeps the one rule that matters here in one place: when a host has no application of that
 /// platform the builder returns <see langword="null"/> and the endpoint must answer <c>404</c>.
-/// Serving an empty but well-formed document instead is TC-122 — Apple accepts it, caches it for about
+/// Serving an empty but well-formed document instead is a trap — Apple accepts it, caches it for about
 /// a week, and the domain's universal links are dead for that week.
 /// </para>
 /// <para>
 /// Android fingerprints are emitted with the Play App Signing certificates first. That ordering is the
-/// point of FR-144: with Play App Signing the certificate that matters on a real device is the one
+/// point: with Play App Signing the certificate that matters on a real device is the one
 /// Google re-signs with, and publishing only the local upload certificate is the single most common
-/// reason App Links work in a debug build and fail in production (TC-123). Upload certificates are
+/// reason App Links work in a debug build and fail in production. Upload certificates are
 /// still emitted after them so that internally distributed builds keep working.
 /// </para>
 /// </remarks>
@@ -60,7 +60,7 @@ public sealed class DapperDomainConfigStore : IDomainConfigStore
         """;
 
     // default_language is read out of the branding document rather than from a column of its own:
-    // §B.5.2 and SHARED-KERNEL §12 give `domains` a branding jsonb and no language column, and the
+    // The schema gives `domains` a branding jsonb and no language column, and the
     // interstitial's default language is branding, not routing.
     private const string DomainSql = """
         SELECT d.id,
@@ -84,7 +84,7 @@ public sealed class DapperDomainConfigStore : IDomainConfigStore
     /// <summary>
     /// Creates the store.
     /// </summary>
-    /// <param name="readDataSource">The read pool, which is a replica under §B.8 profile B.</param>
+    /// <param name="readDataSource">The read pool, which is a replica when one is configured.</param>
     /// <param name="options">Hot-path persistence options; supplies the command timeout.</param>
     /// <exception cref="ArgumentNullException">An argument is <see langword="null"/>.</exception>
     public DapperDomainConfigStore(DleReadDataSource readDataSource, FastPersistenceOptions options)

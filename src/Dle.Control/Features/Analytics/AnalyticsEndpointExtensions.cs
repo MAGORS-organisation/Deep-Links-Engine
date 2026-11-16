@@ -14,7 +14,7 @@ using Microsoft.Extensions.Options;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// The reporting endpoints (SHARED-KERNEL §15, §B.7.3, FR-202, FR-203, FR-206).
+/// The reporting endpoints.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -27,11 +27,11 @@ namespace Microsoft.AspNetCore.Builder;
 /// deterministic matches, probabilistic ones and installs that were not matched at all, with the
 /// mean confidence of the guesses. Commercial measurement partners report one attributed number and
 /// leave the composition unstated; stating it is the argument this product is built on, and it is
-/// an endpoint rather than a footnote (ADR-008, §0.2).
+/// an endpoint rather than a footnote.
 /// </para>
 /// <para>
 /// The tenant data export is mapped from here rather than from <c>MapTenants</c> because it is an
-/// export and this is the export surface — SHARED-KERNEL §15 names no <c>MapExports</c>, and adding
+/// export and this is the export surface — the composition contract has no <c>MapExports</c>, and adding
 /// one would be a change to a contract that other slices already code against.
 /// </para>
 /// </remarks>
@@ -58,8 +58,7 @@ public static class AnalyticsEndpointExtensions
             .WithDescription(
                 "Bucketed by hour, day, week or month, filtered by link, campaign, country or "
                 + "platform. Bot traffic is excluded unless include_bots=true is passed explicitly, "
-                + "because a crawler's click is a real event that must not inflate a campaign "
-                + "(FR-205, TC-106).")
+                + "because a crawler's click is a real event that must not inflate a campaign.")
             .Produces<TimeSeriesResponse>(StatusCodes.Status200OK, "application/json")
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
@@ -67,7 +66,7 @@ public static class AnalyticsEndpointExtensions
             .WithName("GetInstallAnalytics")
             .WithSummary("The same series, from the install side.")
             .WithDescription(
-                "Named separately because §B.7.3 names it, and answered by the same query: clicks, "
+                "Named separately so the install side has its own route, and answered by the same query: clicks, "
                 + "installs and conversions come out of one pass over one window, and serving them "
                 + "from three requests would triple the work to produce numbers that have to agree "
                 + "anyway.")
@@ -105,7 +104,7 @@ public static class AnalyticsEndpointExtensions
                 + "mean confidence, and how many were not matched at all. The unmatched share is "
                 + "published rather than hidden: a measurement product that only shows what it "
                 + "caught cannot be checked, and this number is the argument against the commercial "
-                + "measurement partners rather than a footnote (ADR-008, §0.2).")
+                + "measurement partners rather than a footnote.")
             .Produces<AttributionQualityResponse>(StatusCodes.Status200OK, "application/json")
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
@@ -133,7 +132,7 @@ public static class AnalyticsEndpointExtensions
             .WithSummary("A report as a CSV or Parquet download.")
             .WithDescription(
                 "Streams the report rather than buffering it, so a two year breakdown is a download "
-                + "and not an outage (FR-203).")
+                + "and not an outage.")
             .Produces(StatusCodes.Status200OK, contentType: "text/csv")
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
@@ -151,7 +150,7 @@ public static class AnalyticsEndpointExtensions
                 + "click stream is written by the edge process, so this polls the analytics store "
                 + "rather than forwarding an in-process event; the shape is already a stream of "
                 + "snapshots, so replacing the poll with a subscription later changes nothing a "
-                + "client can see (FR-206).")
+                + "client can see.")
             .Produces(StatusCodes.Status200OK, contentType: "text/event-stream")
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
@@ -167,7 +166,7 @@ public static class AnalyticsEndpointExtensions
                 + "and this is it: newline delimited JSON per table in a ZIP, streamed straight out "
                 + "of the database. Credential material — key hashes, webhook secrets, account "
                 + "hashes — is never included, and the manifest says so explicitly rather than "
-                + "leaving the gap to be discovered (FR-249, §E.6.4).")
+                + "leaving the gap to be discovered.")
             .Produces(StatusCodes.Status200OK, contentType: "application/zip")
             .ProducesProblem(StatusCodes.Status404NotFound);
 
@@ -182,7 +181,7 @@ public static class AnalyticsEndpointExtensions
             .WithDescription(
                 "Removes attributions, installation records and SDK event rows belonging to the "
                 + "given install_id within the authenticated caller's tenant. The administrative audit "
-                + "entry records only aggregate counts and never writes the install_id (§E.6.3).")
+                + "entry records only aggregate counts and never writes the install_id.")
             .Produces<InstallErasureResponse>(StatusCodes.Status200OK, "application/json")
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)

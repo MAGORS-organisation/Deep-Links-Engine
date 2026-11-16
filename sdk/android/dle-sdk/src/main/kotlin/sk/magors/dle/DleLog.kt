@@ -27,7 +27,7 @@ public enum class DleLogLevel {
  * Hard rules the SDK keeps regardless of the sink: it never logs the SDK key or any
  * `Authorization` value, never a full URL including its query string, never a raw install id
  * (only a short prefix) and never a full Install Referrer. These mirror the server's own logging
- * prohibitions (spec S-08, SHARED-KERNEL §17.5).
+ * prohibitions.
  */
 public fun interface DleLogger {
     /**

@@ -15,7 +15,7 @@ namespace Dle.IntegrationTests.Infrastructure;
 /// A webhook delivery is only observable from outside: the signature, the algorithm header and the
 /// body reach the subscriber and nothing else. Asserting them against a public address would be
 /// asserting a third party's behaviour, so the suite listens on loopback and reads what actually
-/// arrived. The webhook destination policy refuses loopback by design (T-02); the host under test
+/// arrived. The webhook destination policy refuses loopback by design; the host under test
 /// sets <c>Dle:Webhooks:AllowPrivateDestinations</c> for that reason and for no other.
 /// </para>
 /// </remarks>

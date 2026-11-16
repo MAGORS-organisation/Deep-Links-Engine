@@ -19,8 +19,8 @@
  * and keyboard-operable even when this request never completes. Nothing here is
  * allowed to be load bearing for accessibility.
  *
- * No @import, no external font, no CDN reference: NFR-14 forbids a third-party
- * call from a page the resolve path serves.
+ * No @import, no external font, no CDN reference: a page the resolve path
+ * serves makes no third-party call.
  */
 
 .dle-shell {

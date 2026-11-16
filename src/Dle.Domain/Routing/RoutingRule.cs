@@ -1,8 +1,8 @@
 namespace Dle.Domain.Routing;
 
 /// <summary>
-/// One routing rule (§B.5.4). Rules are data, never code: they are evaluated deterministically,
-/// in order, and the first match wins (FR-127).
+/// One routing rule. Rules are data, never code: they are evaluated deterministically,
+/// in order, and the first match wins.
 /// </summary>
 public sealed record RoutingRule
 {
@@ -15,7 +15,7 @@ public sealed record RoutingRule
     /// <summary>
     /// The match condition. <see langword="null"/> marks the default rule, which matches every client.
     /// A rule set must contain exactly one such rule and it must be the last one; a set without it
-    /// cannot be saved (FR-127, TC-105).
+    /// cannot be saved.
     /// </summary>
     public RuleCondition? When { get; init; }
 

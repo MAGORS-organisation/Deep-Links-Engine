@@ -9,7 +9,7 @@ namespace Dle.Control.Features.Webhooks;
 
 /// <summary>
 /// <c>GET /api/v1/webhooks</c> and <c>GET /api/v1/webhooks/deliveries</c> — what the tenant has
-/// registered, and what happened to it (FR-204, §B.7.3).
+/// registered, and what happened to it.
 /// </summary>
 /// <remarks>
 /// <para>

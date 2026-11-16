@@ -3,13 +3,13 @@ using System.Diagnostics.Metrics;
 namespace Dle.Control.Features.Attribution;
 
 /// <summary>
-/// The instruments the attribution module publishes (§C.6).
+/// The instruments the attribution module publishes.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The two instruments §C.6 names are <c>dle_attribution_total</c>, tagged by match type, and
-/// <c>dle_attribution_confidence</c> as a histogram. Together they are the honest dashboard ADR-008
-/// asks for: "78 % of attributions deterministic, 14 % probabilistic at average confidence 0.71,
+/// The two instruments behind the honest split are <c>dle_attribution_total</c>, tagged by match
+/// type, and <c>dle_attribution_confidence</c> as a histogram. Together they can show, for example,
+/// "78 % of attributions deterministic, 14 % probabilistic at average confidence 0.71,
 /// 8 % unmatched". A counter without the confidence distribution would let a deployment quietly
 /// drift towards guessing and still look healthy.
 /// </para>
@@ -47,12 +47,12 @@ public sealed class AttributionMetrics : IDisposable
         _attributions = _meter.CreateCounter<long>(
             "dle.attribution",
             unit: "{attribution}",
-            description: "Attribution decisions, tagged by match type. 'none' is a decision too (§C.6).");
+            description: "Attribution decisions, tagged by match type. 'none' is a decision too.");
 
         _confidence = _meter.CreateHistogram<double>(
             "dle.attribution.confidence",
             unit: "1",
-            description: "Distribution of attribution confidence, tagged by match type (§C.6).");
+            description: "Distribution of attribution confidence, tagged by match type.");
 
         _rejected = _meter.CreateCounter<long>(
             "dle.attribution.rejected",
@@ -62,7 +62,7 @@ public sealed class AttributionMetrics : IDisposable
         _claimCodes = _meter.CreateCounter<long>(
             "dle.attribution.claim_code",
             unit: "{code}",
-            description: "Claim codes by outcome: issued, redeemed, expired, unknown or already consumed (TC-148).");
+            description: "Claim codes by outcome: issued, redeemed, expired, unknown or already consumed.");
     }
 
     /// <summary>Records one attribution decision.</summary>
@@ -83,7 +83,7 @@ public sealed class AttributionMetrics : IDisposable
     public void Rejected(string outcome) =>
         _rejected.Add(1, new KeyValuePair<string, object?>(OutcomeTag, outcome));
 
-    /// <summary>Counts one tampered click identifier (TC-167).</summary>
+    /// <summary>Counts one tampered click identifier.</summary>
     /// <param name="strategy">Strategy that detected it.</param>
     public void Tampered(string strategy) =>
         _rejected.Add(

@@ -7,12 +7,12 @@ using Microsoft.Extensions.Options;
 namespace Dle.Edge.Health;
 
 /// <summary>
-/// Readiness of the resolve path (§D.6, NFR-05).
+/// Readiness of the resolve path.
 /// </summary>
 /// <remarks>
 /// <para>
 /// The check deliberately performs no I/O, and in particular does not ask whether PostgreSQL is
-/// reachable. §D.6 requires that resolve keeps serving cached links through a database outage, so an
+/// reachable. Resolve must keep serving cached links through a database outage, so an
 /// instance that reported itself unready during one would be removed from rotation by the orchestrator
 /// — turning a degradation the design already survives into a full outage, and doing it to every
 /// instance at once. Whether the database is reachable belongs on a dashboard, not on a probe that
@@ -21,8 +21,8 @@ namespace Dle.Edge.Health;
 /// <para>
 /// What it does report is the two conditions that make this instance's answers worse than another's
 /// while it stays perfectly able to serve: a geographic database that failed to load, which silently
-/// sends every geo-conditioned rule to the default (§D.6), and a click event channel that is dropping
-/// telemetry because the writer cannot keep up (NFR-06). Both are <em>degraded</em>, which maps to a
+/// sends every geo-conditioned rule to the default, and a click event channel that is dropping
+/// telemetry because the writer cannot keep up. Both are <em>degraded</em>, which maps to a
 /// 200 response, so the instance keeps serving and the operator still sees it.
 /// </para>
 /// </remarks>

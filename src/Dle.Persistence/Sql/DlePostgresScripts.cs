@@ -21,7 +21,7 @@ internal static class DlePostgresScripts
     /// Creates <c>dle_uuidv7()</c>, the identifier default for every uuid primary key.
     /// </summary>
     /// <remarks>
-    /// PostgreSQL 18 has a native <c>uuidv7()</c>; the project floor is 16, which does not (ADR-003).
+    /// PostgreSQL 18 has a native <c>uuidv7()</c>; the project floor is 16, which does not.
     /// The function therefore dispatches on the server version at call time and falls back to an
     /// RFC 9562 conformant construction: the top 48 bits are the Unix millisecond timestamp, the
     /// version nibble is forced to 7, and everything else stays the randomness
@@ -70,7 +70,7 @@ internal static class DlePostgresScripts
         """;
 
     /// <summary>
-    /// Creates the partitioned click stream table of §B.5.3 with its three indexes.
+    /// Creates the partitioned click stream table with its three indexes.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -78,7 +78,7 @@ internal static class DlePostgresScripts
     /// partition key in every unique constraint. That is also why <c>attributions.click_id</c>
     /// cannot be a foreign key into this table: there is no unique constraint on <c>click_id</c>
     /// alone to reference, so the one-click-one-install invariant is enforced by a partial unique
-    /// index on the attribution side instead (TC-144).
+    /// index on the attribution side instead.
     /// </para>
     /// <para>
     /// The index choices follow the access patterns. <c>occurred_at</c> gets a BRIN index rather
@@ -88,9 +88,8 @@ internal static class DlePostgresScripts
     /// serves "the recent clicks of this link", which is the report query.
     /// </para>
     /// <para>
-    /// <c>spoofed_bot</c> is not in the DDL sketch but is in the <c>ClickEvent</c> contract of the
-    /// shared kernel: a user agent that claims to be a crawler while reverse DNS disagrees is
-    /// recorded rather than silently trusted (TC-107).
+    /// <c>spoofed_bot</c> is in the <c>ClickEvent</c> contract: a user agent that claims to be a
+    /// crawler while reverse DNS disagrees is recorded rather than silently trusted.
     /// </para>
     /// </remarks>
     internal const string CreateClickEvents = """
@@ -147,8 +146,8 @@ internal static class DlePostgresScripts
     /// </summary>
     /// <remarks>
     /// <para>
-    /// §B.5.3 spells out <c>click_events</c> only. This table is the other half of the funnel the
-    /// analytics queries of §C join it to, and its column list is the contract the batch writer in
+    /// This table is the other half of the funnel the analytics queries join <c>click_events</c>
+    /// to, and its column list is the contract the batch writer in
     /// <c>Dle.Persistence.Fast</c> copies into: <c>event_type</c>, <c>event_name</c> and
     /// <c>event_value</c> rather than <c>type</c>, <c>name</c> and <c>value</c>, which read
     /// ambiguously in an aggregate query.
@@ -368,8 +367,7 @@ internal static class DlePostgresScripts
     /// </para>
     /// <para>
     /// The retention is a delete, not an archive: <c>retention_keep_table = false</c> drops the
-    /// partition. Aggregated data has a longer life than raw click rows, which is the retention
-    /// split of §E.6.
+    /// partition. Aggregated data has a longer life than raw click rows.
     /// </para>
     /// </remarks>
     internal const string ConfigurePartitioning = """
@@ -499,9 +497,9 @@ internal static class DlePostgresScripts
     /// <remarks>
     /// <c>INCLUDE</c> makes the index covering, but an index-only scan still consults the
     /// visibility map, and a stale map sends the planner back to the heap — at which point the
-    /// latency budget of §B.6.1 no longer holds. Vacuuming after two per cent of the table has
+    /// resolve latency budget no longer holds. Vacuuming after two per cent of the table has
     /// changed, rather than the default twenty, keeps the map fresh. Verify it with
-    /// <c>EXPLAIN (ANALYZE, BUFFERS)</c>, do not assume it (planner note in §B.5.2).
+    /// <c>EXPLAIN (ANALYZE, BUFFERS)</c>, do not assume it.
     /// </remarks>
     internal const string TuneLinksAutovacuum = """
         ALTER TABLE links SET (autovacuum_vacuum_scale_factor = 0.02);

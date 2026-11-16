@@ -6,7 +6,7 @@ using Xunit;
 namespace Dle.UnitTests.Attribution;
 
 /// <summary>
-/// TC-147 and FR-186. Probabilistic attribution is the part of the product that is allowed to be
+/// Probabilistic attribution is the part of the product that is allowed to be
 /// wrong, which is exactly why it must never quietly widen. Outside the window the score is zero,
 /// not a "weak match"; a signal that is missing on either side contributes nothing and its weight is
 /// not redistributed onto the signals that did match.
@@ -24,10 +24,9 @@ public sealed class ProbabilisticScorerTests
         Screen = "1080x2400",
     };
 
-    // ================================================================ TC-147: the window is a wall
+    // ================================================================ the window is a wall
 
     [Theory]
-    [Trait("TestCase", "TC-147")]
     [InlineData(60)]
     [InlineData(61)]
     [InlineData(90)]
@@ -40,7 +39,6 @@ public sealed class ProbabilisticScorerTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-147")]
     public void Score_NinetyMinutesInASixtyMinuteWindow_IsZeroForAPerfectSignalMatch()
     {
         // The signals agree on every axis. The only reason to refuse is the window, and it must win.

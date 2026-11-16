@@ -1,7 +1,7 @@
 namespace Dle.Persistence.Repositories;
 
 /// <summary>
-/// What an <c>Idempotency-Key</c> means for the request carrying it (§B.7.3).
+/// What an <c>Idempotency-Key</c> means for the request carrying it.
 /// </summary>
 public enum IdempotencyOutcome
 {

@@ -4,8 +4,8 @@ using Xunit;
 namespace Dle.UnitTests.Links;
 
 /// <summary>
-/// SHARED-KERNEL section 5: the order of the checks in GetServeState is the contract, not an
-/// implementation detail. A quarantined link that also expired must answer 410 Gone (TC-103), never
+/// The order of the checks in GetServeState is the contract, not an
+/// implementation detail. A quarantined link that also expired must answer 410 Gone, never
 /// a redirect to the expired URL, because the abuse decision outranks the schedule.
 /// </summary>
 public sealed class LinkSnapshotTests
@@ -22,7 +22,6 @@ public sealed class LinkSnapshotTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-103")]
     public void GetServeState_QuarantinedLink_IsGone()
     {
         LinkSnapshot link = TestLinks.Snapshot(quarantinedAt: Now.AddDays(-1));
@@ -32,7 +31,6 @@ public sealed class LinkSnapshotTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-103")]
     public void GetServeState_QuarantinedAndExpiredLink_IsGoneNotExpired()
     {
         LinkSnapshot link = TestLinks.Snapshot(
@@ -44,7 +42,6 @@ public sealed class LinkSnapshotTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-103")]
     public void GetServeState_QuarantinedAndInactiveAndNotYetStarted_IsGone()
     {
         LinkSnapshot link = TestLinks.Snapshot(
@@ -97,7 +94,6 @@ public sealed class LinkSnapshotTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-104")]
     public void GetServeState_PastTheExpiryInstant_IsExpired()
     {
         LinkSnapshot link = TestLinks.Snapshot(
@@ -108,7 +104,6 @@ public sealed class LinkSnapshotTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-104")]
     public void GetServeState_AtTheExpiryInstant_IsAlreadyExpired()
     {
         LinkSnapshot link = TestLinks.Snapshot(expiresAt: Now);

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Control.Features.Abuse;
 
 /// <summary>
-/// Configuration of the abuse module, bound from <c>Dle:Abuse</c> (SHARED-KERNEL §16, §E.3).
+/// Configuration of the abuse module, bound from <c>Dle:Abuse</c>.
 /// </summary>
 /// <remarks>
 /// The defaults are the ones a self-hoster can run without signing anything: URLhaus is free and
@@ -23,7 +23,7 @@ public sealed class AbuseOptions
         + "Auth-Key; without one every lookup fails and targets would pass unchecked. Set the key or "
         + "set UrlHausEnabled to false.";
 
-    /// <summary>Whether the URLhaus reputation source is consulted (§E.3 step 3).</summary>
+    /// <summary>Whether the URLhaus reputation source is consulted.</summary>
     public bool UrlHausEnabled { get; set; } = true;
 
     /// <summary>Endpoint of the URLhaus lookup API.</summary>
@@ -59,12 +59,12 @@ public sealed class AbuseOptions
     /// <summary>How often active links are re-checked against the reputation sources, in hours.</summary>
     /// <remarks>
     /// Changing the target after creation is the classic abuse pattern, so a check that only ran at
-    /// creation would be the one check an abuser plans around (§E.3 step 5).
+    /// creation would be the one check an abuser plans around.
     /// </remarks>
     [Range(1, 720)]
     public int RecheckIntervalHours { get; set; } = 24;
 
-    /// <summary>How many reports one IP address may submit per hour (§E.9).</summary>
+    /// <summary>How many reports one IP address may submit per hour.</summary>
     [Range(1, 1000)]
     public int ReportsPerHourPerIp { get; set; } = 5;
 

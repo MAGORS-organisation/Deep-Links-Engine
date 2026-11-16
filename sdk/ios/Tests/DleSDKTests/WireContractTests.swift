@@ -1,7 +1,7 @@
 import XCTest
 @testable import DleSDK
 
-/// The SDK wire contract of §B.7.2, asserted against the literal bodies of
+/// The SDK wire contract, asserted against the literal bodies of
 /// `tests/Dle.ContractTests/Wire/SdkWireContractTests.cs`.
 ///
 /// The literals are copied, not re-derived: the point is that the bytes this SDK produces are
@@ -13,7 +13,7 @@ final class WireContractTests: XCTestCase {
 
     // MARK: - ResolveRequestDto
 
-    func testResolveRequestSerializesToTheAndroidLiteralOfB72() throws {
+    func testResolveRequestSerializesToTheAndroidLiteralOfTheWireContract() throws {
         // Android literal, reproduced so the model is proven member-complete against the contract.
         let expected = """
             {"install_id":"9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1","platform":"android","app_version":"3.4.1","os_version":"15","referrer":"dl_cid%3DaB3xK9pQ%26utm_source%3Dfb","signals":{"language":"sk-SK","screen":"1080x2400","tz_offset":120},"consent":{"analytics":true,"attribution":true,"ts":"2026-09-03T10:00:00+00:00"}}
@@ -96,7 +96,7 @@ final class WireContractTests: XCTestCase {
         XCTAssertEqual(DleAPI.resolveLinkPath, "/v1/resolve-link")
     }
 
-    func testResolveResponseDecodesTheLiteralOfB72() throws {
+    func testResolveResponseDecodesTheLiteralOfTheWireContract() throws {
         let literal = """
             {"matched":true,"match_type":"install_referrer","confidence":1.0,"click_id":"aB3xK9pQ","link":{"id":"7286414500000000001","deeplink_path":"/promo/jesen","campaign":"jesen26"},"params":{"utm_source":"fb","utm_campaign":"jesen26","promo":"AUTUMN20"},"expires_in":0}
             """
@@ -181,7 +181,7 @@ final class WireContractTests: XCTestCase {
 
     // MARK: - EventBatchDto
 
-    func testEventBatchSerializesToTheLiteralOfB72() throws {
+    func testEventBatchSerializesToTheLiteralOfTheWireContract() throws {
         let expected = """
             {"install_id":"9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1","events":[{"type":"link_open","url":"https://link.zak.sk/aB3xK9pQ","ts":"2026-09-03T10:00:00+00:00"},{"type":"conversion","name":"purchase","value":24.9,"currency":"EUR","ts":"2026-09-03T10:05:00+00:00"}]}
             """

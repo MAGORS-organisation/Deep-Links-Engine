@@ -6,12 +6,12 @@ using Dle.Edge.Rendering;
 namespace Dle.SecurityTests.OpenRedirect;
 
 /// <summary>
-/// T-01 / CWE-601 / TC-164: no request-supplied value may ever steer a redirect.
+/// CWE-601: no request-supplied value may ever steer a redirect.
 /// </summary>
 /// <remarks>
 /// <para>
-/// A link engine is a redirector, and §E.1 is blunt about what that means: "every redirector is, in
-/// essence, a machine for bypassing reputation filters". The whole value of the domain is that a
+/// A link engine is a redirector, and every redirector is, in essence, a machine for bypassing
+/// reputation filters. The whole value of the domain is that a
 /// recipient trusts it, and one query parameter that reaches the <c>Location</c> header spends that
 /// trust on whoever found it.
 /// </para>
@@ -63,8 +63,6 @@ public sealed class OpenRedirectTests
 
     [Theory]
     [MemberData(nameof(SampledCorpus))]
-    [Trait("TestCase", "TC-164")]
-    [Trait("Threat", "T-01")]
     public async Task Resolve_HostileValueInASteeringParameter_NeverReachesTheLocationHeader(string hostile)
     {
         using HttpClient client = _edge.Factory.CreateClientFrom("203.0.113.10");
@@ -83,8 +81,6 @@ public sealed class OpenRedirectTests
 
     [Theory]
     [MemberData(nameof(SampledCorpus))]
-    [Trait("TestCase", "TC-164")]
-    [Trait("Threat", "T-01")]
     public async Task Resolve_HostileValueInAForwardableParameter_IsCarriedAsDataNotAsADestination(string hostile)
     {
         // The allow-listed parameters are the interesting ones. They *are* copied into the target, so
@@ -106,8 +102,6 @@ public sealed class OpenRedirectTests
 
     [Theory]
     [MemberData(nameof(SampledCorpus))]
-    [Trait("TestCase", "TC-164")]
-    [Trait("Threat", "T-01")]
     public async Task Resolve_HostileValueAsTheSlug_IsNeverEchoedIntoALocationHeader(string hostile)
     {
         // The slug is the other request-controlled input. Most of the corpus cannot even route to the
@@ -124,11 +118,9 @@ public sealed class OpenRedirectTests
 
     [Theory]
     [MemberData(nameof(SampledCorpus))]
-    [Trait("TestCase", "TC-164")]
-    [Trait("Threat", "T-01")]
     public async Task Resolve_HostileValueInTheReferrer_DoesNotInfluenceTheDestination(string hostile)
     {
-        // The referrer is attacker controlled on any page that links here, and §E.6.3 already limits
+        // The referrer is attacker controlled on any page that links here, and the engine already limits
         // what may be stored from it. It must not reach the response either.
         using HttpClient client = _edge.Factory.CreateClientFrom("198.18.0.13");
 
@@ -141,7 +133,6 @@ public sealed class OpenRedirectTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-164")]
     public async Task Resolve_WithNoHostileInput_StillRedirectsToTheConfiguredTarget()
     {
         // The control. Everything above would also pass against an engine that answered 500 to every
@@ -162,8 +153,6 @@ public sealed class OpenRedirectTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-164")]
-    [Trait("Threat", "T-01")]
     public void UrlBuilder_AcrossTheWholeCorpus_NeverProducesAnAttackerControlledTarget()
     {
         // The same property one layer down, over the entire cross product rather than a sample. This is
@@ -209,14 +198,13 @@ public sealed class OpenRedirectTests
     }
 
     [Fact]
-    [Trait("Threat", "T-01")]
     public void SafeUrl_AcrossTheWholeCorpus_NeverProducesAnythingButAnAbsoluteHttpUrl()
     {
         // SafeUrl is the last gate before a value reaches a Location header or an href, and it is a
         // scheme and shape gate rather than a host gate: an operator is entitled to point a link at any
-        // public host, so a hostile *stored* target is E.3's problem and not this one. What SafeUrl must
-        // never do is hand on something that is not an absolute http or https URL - a protocol-relative
-        // value, a javascript: value, or anything carrying a control character.
+        // public host, so a hostile *stored* target is the write-time check's problem and not this one.
+        // What SafeUrl must never do is hand on something that is not an absolute http or https URL - a
+        // protocol-relative value, a javascript: value, or anything carrying a control character.
         List<string> accepted = [];
 
         foreach (string hostile in HostileUrlCorpus.Values)
@@ -251,8 +239,6 @@ public sealed class OpenRedirectTests
     }
 
     [Fact]
-    [Trait("Threat", "T-01")]
-    [Trait("TestCase", "TC-161")]
     public void SafeUrl_WithNoCustomSchemeConfigured_RefusesEveryNonWebScheme()
     {
         // The deep link slot is the one place a non-web scheme is ever allowed, and only when the link

@@ -3,7 +3,7 @@ using System.Reflection;
 namespace Dle.ContractTests.OpenApi;
 
 /// <summary>
-/// The error half of the contract (§B.7.3: "Errors: RFC 9457 Problem Details").
+/// The error half of the contract: every error is an RFC 9457 Problem Details document.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -96,7 +96,7 @@ public sealed class ProblemContractTests
     public void EveryDocumentedFailure_UsesTheProblemMediaType()
     {
         // A 4xx or 5xx that answers application/json rather than application/problem+json is the
-        // second error format §B.7.3 exists to prevent.
+        // second error format that a single Problem Details contract exists to prevent.
         JsonObject operations = _api.Contract["operations"] as JsonObject ?? [];
 
         List<string> wrong = [];
@@ -160,7 +160,7 @@ public sealed class ProblemContractTests
                 $"""
                  {missing.Count} of the {DeclaredProblemCodes.Count} problem type identifiers the
                  product declares appear nowhere in the OpenAPI document. ProblemCodes calls them part
-                 of the public API surface, and §B.7.3 makes the document the published reference, so
+                 of the public API surface, and the document is the published reference, so
                  an integrator has no way to learn them except by reading the server's source or by
                  triggering each failure in production.
 

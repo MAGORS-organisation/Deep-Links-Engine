@@ -6,9 +6,9 @@ namespace Dle.Domain.Links;
 /// <remarks>
 /// <para>
 /// This is the unit of caching: it is read from the L1 in-process cache, and on a miss from the L2
-/// Valkey cache, and only then from Postgres (§B.6.1). Because it is serialized into L2 it has to be
+/// Valkey cache, and only then from Postgres. Because it is serialized into L2 it has to be
 /// covered by the source-generated JSON context <c>DleDomainJsonContext</c> — reflection-based
-/// serialization is forbidden on this path (SHARED-KERNEL §17.3).
+/// serialization is forbidden on this path.
 /// </para>
 /// <para>
 /// It is a snapshot, not an entity: nothing here is ever written back. A change in the control plane
@@ -20,7 +20,7 @@ public sealed record LinkSnapshot
     /// <summary>Database identity of the link.</summary>
     public required long Id { get; init; }
 
-    /// <summary>Owning tenant. Every lookup is scoped by it; a cross-tenant hit answers <c>404</c>, never <c>403</c> (TC-166).</summary>
+    /// <summary>Owning tenant. Every lookup is scoped by it; a cross-tenant hit answers <c>404</c>, never <c>403</c>.</summary>
     public required Guid TenantId { get; init; }
 
     /// <summary>The link domain this slug lives under. Slugs are unique per domain, not globally.</summary>
@@ -35,7 +35,7 @@ public sealed record LinkSnapshot
     /// <summary>Default in-app path, used when the matched rule does not supply one.</summary>
     public string? DeeplinkPath { get; init; }
 
-    /// <summary>The rule set, in author order. Evaluated first-match-wins by <see cref="IRoutingEngine"/> (FR-127).</summary>
+    /// <summary>The rule set, in author order. Evaluated first-match-wins by <see cref="IRoutingEngine"/>.</summary>
     public required IReadOnlyList<RoutingRule> RoutingRules { get; init; }
 
     /// <summary>Open Graph metadata for crawler previews and the interstitial page.</summary>
@@ -59,7 +59,7 @@ public sealed record LinkSnapshot
     /// <summary>Exclusive end of the link's validity window; from it the link is <see cref="LinkServeState.Expired"/>.</summary>
     public DateTimeOffset? ExpiresAt { get; init; }
 
-    /// <summary>Where to send a client that arrives after expiry (TC-104). When absent, the edge answers <c>404</c>.</summary>
+    /// <summary>Where to send a client that arrives after expiry. When absent, the edge answers <c>404</c>.</summary>
     public string? ExpiredUrl { get; init; }
 
     /// <summary>When the link was withdrawn by abuse handling. Any value here makes the link <see cref="LinkServeState.Gone"/>.</summary>
@@ -71,10 +71,10 @@ public sealed record LinkSnapshot
     /// <summary>Per-domain consent override. It can only ever narrow <see cref="TenantConsentMode"/>, never widen it.</summary>
     public ConsentMode? DomainConsentMode { get; init; }
 
-    /// <summary>iOS custom URI scheme used as the last-resort deep link fallback (§A.2.3).</summary>
+    /// <summary>iOS custom URI scheme used as the last-resort deep link fallback.</summary>
     public string? IosCustomScheme { get; init; }
 
-    /// <summary>Android custom URI scheme used as the last-resort deep link fallback (§A.2.3).</summary>
+    /// <summary>Android custom URI scheme used as the last-resort deep link fallback.</summary>
     public string? AndroidCustomScheme { get; init; }
 
     /// <summary>App Store URL used when the matched rule does not supply one.</summary>
@@ -91,7 +91,7 @@ public sealed record LinkSnapshot
     /// <remarks>
     /// The order of the checks is part of the contract and is load bearing. Quarantine is evaluated
     /// first, so a withdrawn link answers <c>410</c> even if it is also expired or deactivated: abuse
-    /// handling must be visible rather than hidden behind a generic <c>404</c> (TC-103). Deactivation
+    /// handling must be visible rather than hidden behind a generic <c>404</c>. Deactivation
     /// comes next and is deliberately indistinguishable from a missing link.
     /// </remarks>
     public LinkServeState GetServeState(DateTimeOffset now)

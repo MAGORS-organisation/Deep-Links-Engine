@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace Microsoft.AspNetCore.Builder;
 
 /// <summary>
-/// Maps the tenant management routes (SHARED-KERNEL §15, FR-241).
+/// Maps the tenant management routes.
 /// </summary>
 /// <remarks>
 /// Everything except <c>/tenants/me</c> is instance administration, which is why those routes carry

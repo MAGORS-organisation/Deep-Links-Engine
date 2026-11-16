@@ -2,7 +2,7 @@ namespace Dle.Domain.Analytics;
 
 /// <summary>
 /// Distribution of attribution strategies over the reported interval — the data behind the
-/// honest dashboard demanded by ADR-008 ("78 % deterministic, 14 % probabilistic with an average
+/// honest dashboard ("78 % deterministic, 14 % probabilistic with an average
 /// confidence of 0.71, 8 % unmatched").
 /// </summary>
 /// <remarks>

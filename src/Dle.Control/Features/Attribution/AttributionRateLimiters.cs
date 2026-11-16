@@ -8,19 +8,19 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Features.Attribution;
 
 /// <summary>
-/// The rate limits of the SDK endpoints, keyed by installation and by caller address (§E.9).
+/// The rate limits of the SDK endpoints, keyed by installation and by caller address.
 /// </summary>
 /// <remarks>
 /// <para>
 /// These are endpoint-level limiters rather than <c>Microsoft.AspNetCore.RateLimiting</c> policies
-/// for one concrete reason: §E.9 keys both SDK limits on <c>install_id</c>, and <c>install_id</c>
+/// for one concrete reason: both SDK limits are keyed on <c>install_id</c>, and <c>install_id</c>
 /// arrives in the JSON body. The rate limiting middleware runs long before the body is read, so a
 /// middleware policy would have to buffer and parse every request just to find its partition key —
 /// which is exactly the work the limit exists to avoid. Acquiring the lease after the body is
 /// deserialized costs one parse of a bounded payload and gets the correct partition.
 /// </para>
 /// <para>
-/// The numbers are §E.9 verbatim. Resolve is a fixed window of five per hour per installation,
+/// Resolve is a fixed window of five per hour per installation,
 /// because a correct SDK calls it once in the lifetime of an installation and five leaves room for
 /// four retries. Events is a token bucket of sixty a minute with a burst of a hundred and twenty,
 /// which lets an application that was offline flush its queue in one go and then settle. Wrong
@@ -167,8 +167,8 @@ public sealed class AttributionRateLimiters : IDisposable
     /// <returns>The lease.</returns>
     /// <remarks>
     /// The batch costs one permit per event, not one per request. A limit of sixty requests a
-    /// minute with a hundred events each would be six thousand events a minute, which is not the
-    /// limit §E.9 intends.
+    /// minute with a hundred events each would be six thousand events a minute, which is not what the
+    /// limit intends.
     /// </remarks>
     public ValueTask<RateLimitLease> AcquireEventsAsync(string installId, int permits, CancellationToken cancellationToken) =>
         _events.AcquireAsync(installId, Math.Max(permits, 1), cancellationToken);

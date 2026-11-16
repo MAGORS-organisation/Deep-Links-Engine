@@ -8,10 +8,10 @@ namespace Dle.UnitTests.Crypto;
 
 /// <summary>
 /// The click identifier is public — it travels in the Play install referrer — so it is
-/// authenticated rather than secret (§B.6.3). Two properties matter: the embedded instant must
+/// authenticated rather than secret. Two properties matter: the embedded instant must
 /// survive the round trip to the millisecond, because the attribution query prunes partitions with
 /// it; and any mutation must fail loudly, because a mutated identifier that still decoded would
-/// point the lookup at a plausible but wrong instant and silently find nothing (T-05, TC-167).
+/// point the lookup at a plausible but wrong instant and silently find nothing.
 /// </summary>
 public sealed class ClickIdCodecTests
 {
@@ -90,12 +90,11 @@ public sealed class ClickIdCodecTests
     }
 
     /// <summary>
-    /// T-05 / TC-167. Every single-character mutation of a valid identifier — 17 positions times
+    /// Every single-character mutation of a valid identifier — 17 positions times
     /// the 61 other base62 digits — must be refused. This is the whole reason the identifier is a
     /// MAC-ed token rather than a raw counter.
     /// </summary>
     [Fact]
-    [Trait("TestCase", "TC-167")]
     public void TryDecode_EverySingleCharacterMutation_IsRejected()
     {
         ClickIdCodec codec = Codec();
@@ -130,7 +129,6 @@ public sealed class ClickIdCodecTests
     }
 
     [Fact]
-    [Trait("TestCase", "TC-167")]
     public void TryDecode_IdentifierMintedWithAnotherKey_IsRejected()
     {
         string foreign = Codec("other").New(Instant);
@@ -187,5 +185,5 @@ public sealed class ClickIdCodecTests
     public void MacComparison_UsesFixedTimeEquals() =>
         Assert.True(
             ConstantTimeAssertion.CallsFixedTimeEquals(typeof(ClickIdCodec), "MacMatches"),
-            "ClickIdCodec.MacMatches must compare the presented MAC with CryptographicOperations.FixedTimeEquals (T-17, S-03).");
+            "ClickIdCodec.MacMatches must compare the presented MAC with CryptographicOperations.FixedTimeEquals.");
 }

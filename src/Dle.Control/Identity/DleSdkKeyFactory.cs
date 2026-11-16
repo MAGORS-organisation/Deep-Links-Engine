@@ -10,7 +10,7 @@ namespace Dle.Control.Identity;
 
 /// <summary>
 /// Mints keys for customer applications, in the same shape as a control-plane key but under a
-/// different name field (§E.2.1, TB2).
+/// different name field.
 /// </summary>
 /// <remarks>
 /// The two credentials look alike on the wire on purpose — the same three fields, the same prefix

@@ -4,7 +4,7 @@ namespace Dle.Domain.Ports;
 
 /// <summary>
 /// Confirms that a client claiming to be a known crawler really is one, by reverse DNS with a
-/// forward confirmation (FR-161, TC-107).
+/// forward confirmation.
 /// </summary>
 /// <remarks>
 /// The user agent string is free text and anyone can claim to be Googlebot. An unverified claim

@@ -2,7 +2,7 @@ namespace Dle.Domain.Crypto;
 
 /// <summary>
 /// Remembers the identifiers of single use tokens so that one cannot be presented twice
-/// (§E.4.2: replay protection over <c>jti</c>, with a time to live).
+/// (replay protection over <c>jti</c>, with a time to live).
 /// </summary>
 /// <remarks>
 /// The process-local implementation (<c>Dle.Crypto.InMemoryTokenReplayGuard</c>) is correct for

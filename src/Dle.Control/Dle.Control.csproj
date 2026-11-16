@@ -3,9 +3,9 @@
   <!--
     Control plane. ASP.NET Core minimal API in vertical slices: link and domain
     management, attribution, analytics reporting, abuse handling, webhooks and
-    the background workers. docs/zadanie.md §B.7.3, §C.1.
+    the background workers.
 
-    Program.cs must call exactly (SHARED-KERNEL §15):
+    Program.cs must call exactly:
       AddDleControlCore, AddDleTelemetry, AddDlePersistence, AddDleCrypto,
       AddDleAnalytics, AddDleAttribution, AddDleAbuse, AddDleWebhooks,
       AddDleIdentity, AddDleWorkers, AddDleControlRateLimiting

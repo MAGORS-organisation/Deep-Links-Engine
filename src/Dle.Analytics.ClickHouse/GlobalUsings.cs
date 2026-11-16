@@ -1,4 +1,4 @@
-// Global usings for the optional ClickHouse analytics provider (ADR-006).
+// Global usings for the optional ClickHouse analytics provider.
 //
 // The shared kernel namespaces are imported project wide for the same reason they are imported
 // project wide inside Dle.Domain itself: this assembly is one adapter for one port, and repeating

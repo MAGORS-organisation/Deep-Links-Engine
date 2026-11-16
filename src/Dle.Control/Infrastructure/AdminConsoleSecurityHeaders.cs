@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 namespace Dle.Control.Infrastructure;
 
 /// <summary>
-/// The response headers the bundled administration console is served with (T-11).
+/// The response headers the bundled administration console is served with.
 /// </summary>
 /// <remarks>
 /// <para>

@@ -13,7 +13,7 @@ namespace Dle.Control.Features.Webhooks;
 /// <summary>
 /// <c>POST /api/v1/webhooks/deliveries/{id}/replay</c> and
 /// <c>POST /api/v1/webhooks/deliveries/replay-dead</c> — re-queues failed or dead webhook
-/// deliveries for immediate retry without regenerating their signed payload (FR-204).
+/// deliveries for immediate retry without regenerating their signed payload.
 /// </summary>
 public static class ReplayWebhookDelivery
 {

@@ -7,7 +7,7 @@ namespace Dle.Domain.Clients;
 /// <remarks>
 /// Every field is already minimised: the parsed user agent families instead of the raw header, the
 /// referrer host instead of the full referrer, the primary language subtag instead of the whole
-/// <c>Accept-Language</c> list (specification §E.6.3).
+/// <c>Accept-Language</c> list.
 /// </remarks>
 public sealed record ClientContext
 {
@@ -46,12 +46,12 @@ public sealed record ClientContext
 
     /// <summary>
     /// The client is a verified crawler. Crawlers get the Open Graph page and are excluded from
-    /// campaign statistics (TC-106).
+    /// campaign statistics.
     /// </summary>
     public bool IsCrawler { get; init; }
 
     /// <summary>
-    /// The user agent claims to be a crawler but reverse DNS does not confirm it (TC-107). Such a
+    /// The user agent claims to be a crawler but reverse DNS does not confirm it. Such a
     /// client is treated as an ordinary visitor, and the discrepancy is recorded.
     /// </summary>
     public bool IsSpoofedBot { get; init; }

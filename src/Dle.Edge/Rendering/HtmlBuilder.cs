@@ -14,7 +14,7 @@ namespace Dle.Edge.Rendering;
 /// rather than the templates. Only <see cref="Raw(string)"/> writes unencoded text, only the renderers
 /// call it, and it is only ever called with literals the compiler can see. Open Graph metadata, link
 /// titles, branding and anything reaching the page from the query string travel through
-/// <see cref="Text(string?)"/> or <see cref="Attribute(string, string?)"/> (T-11).
+/// <see cref="Text(string?)"/> or <see cref="Attribute(string, string?)"/>.
 /// </para>
 /// <para>
 /// The encoder is <see cref="HtmlEncoder.Default"/>, which escapes the five markup characters and

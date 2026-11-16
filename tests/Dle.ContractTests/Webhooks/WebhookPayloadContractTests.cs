@@ -5,7 +5,7 @@ using Dle.Control.Features.Webhooks;
 namespace Dle.ContractTests.Webhooks;
 
 /// <summary>
-/// The webhook payload contract of §B.7.4: one committed JSON Schema per event type, each checked
+/// The webhook payload contract: one committed JSON Schema per event type, each checked
 /// against a sample the product itself renders.
 /// </summary>
 /// <remarks>
@@ -94,7 +94,6 @@ public sealed class WebhookPayloadContractTests
 
     [Theory]
     [MemberData(nameof(Samples))]
-    [Trait("Contract", "B.7.4")]
     public void RenderedPayload_SatisfiesTheCommittedSchemaForItsEventType(
         string eventType,
         Dictionary<string, string> data)
@@ -123,7 +122,6 @@ public sealed class WebhookPayloadContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void EveryDeclaredEventType_HasACommittedSchema()
     {
         // The regression this guards is adding an event type without publishing what it carries: a
@@ -139,7 +137,6 @@ public sealed class WebhookPayloadContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void EveryCommittedSchema_BelongsToADeclaredEventType()
     {
         // The other direction. A schema for an event type that no longer exists is documentation for
@@ -156,8 +153,7 @@ public sealed class WebhookPayloadContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
-    public void Envelope_HasExactlyTheFourMembersOfB74()
+    public void Envelope_HasExactlyTheFourPublishedMembers()
     {
         string payload = WebhookEventTypes.Render(
             WebhookEventTypes.Test,
@@ -170,13 +166,12 @@ public sealed class WebhookPayloadContractTests
             {"event":"webhook.test","id":"0192f4f0-1c1a-7c3d-9b2e-4d5a6f7b8c9d","occurred_at":"2026-09-03T10:00:00+00:00","data":{"k":"v"}}
             """;
 
-        // Literal, because §B.7.4 prints the envelope literally and because a receiver written in
+        // Literal, because the envelope is published literally and because a receiver written in
         // three languages parses these four names.
         Assert.Equal(expected, payload);
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void Envelope_PreservesDataKeysVerbatim()
     {
         // The naming policy renames properties, not dictionary keys. A `data` map whose keys were
@@ -191,7 +186,6 @@ public sealed class WebhookPayloadContractTests
     }
 
     [Fact]
-    [Trait("Contract", "B.7.4")]
     public void AttributionEventName_IsSpelledTheSameInBothPlacesItIsDeclared()
     {
         // The string exists twice in the product: WebhookEventTypes.AttributionCreated, which the
