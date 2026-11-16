@@ -31,7 +31,7 @@ describe('wire contract (literals from SdkWireContractTests.cs)', () => {
 
   it('serialises EventBatchDto byte-for-byte', () => {
     const body = buildEventBatch(WIRE.INSTALL_ID, [
-      { type: 'link_open', url: 'https://link.zak.sk/aB3xK9pQ', ts: '2026-09-03T10:00:00+00:00' },
+      { type: 'link_open', url: 'https://link.example.sk/aB3xK9pQ', ts: '2026-09-03T10:00:00+00:00' },
       { type: 'conversion', name: 'purchase', value: 24.9, currency: 'EUR', ts: '2026-09-03T10:05:00+00:00' },
     ]);
     expect(JSON.stringify(body)).toBe(WIRE.EVENT_BATCH);

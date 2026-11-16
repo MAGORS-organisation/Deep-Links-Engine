@@ -16,7 +16,7 @@ using Xunit;
 namespace Dle.UnitTests.Control;
 
 /// <summary>
-/// Covers C3: <c>DELETE /api/v1/privacy/installs/{installId}</c> — tenant-scoped DSAR erasure
+/// Covers <c>DELETE /api/v1/privacy/installs/{installId}</c> — tenant-scoped DSAR erasure
 /// and audit-log PII exclusion.
 /// </summary>
 public sealed class PrivacyErasureTests

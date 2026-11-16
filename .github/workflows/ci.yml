@@ -9,8 +9,9 @@
 # executable run with `dotnet run --project … -- <runner options>`; the runner's TRX switch is
 # `-result-trx <file>` (verified against `--help`: `--report-trx` is rejected as unknown).
 #
-# Integration tests use Testcontainers (postgres:18, valkey:8). Without Docker they SKIP, which
-# would silently turn 97 tests into 0 — DLE_TESTS_REQUIRE_DOCKER=1 makes that a loud failure.
+# Integration tests use Testcontainers (postgres:18, valkey:8). Without Docker every
+# [RequiresDockerFact] / [RequiresDockerTheory] test SKIPS, which would silently pass the suite with
+# nothing run — DLE_TESTS_REQUIRE_DOCKER=1 makes that a loud failure.
 #
 # Coverage: dotnet-coverage (dynamic instrumentation, Linux x64) wraps each suite — the child
 # command is passed as ONE quoted string, the form the tool's documentation uses — the four

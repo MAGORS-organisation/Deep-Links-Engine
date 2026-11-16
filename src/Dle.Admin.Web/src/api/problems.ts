@@ -3,7 +3,7 @@
  * puts one of these in the `type` member of every RFC 9457 problem document, and the console
  * branches on them for field-level feedback instead of pattern matching on English text.
  */
-export const PROBLEM_BASE = 'https://docs.dle.dev/problems/';
+export const PROBLEM_BASE = 'https://kyberware.net/dle/problems/';
 
 export const ProblemCodes = {
   ValidationFailed: `${PROBLEM_BASE}validation-failed`,

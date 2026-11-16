@@ -115,6 +115,8 @@ WORKDIR /app
 COPY --from=build --chown=$APP_UID:$APP_UID /app/publish ./
 COPY --from=build --chown=$APP_UID:$APP_UID /app/efbundle ./efbundle
 COPY --from=spa   --chown=$APP_UID:$APP_UID /spa/dist/ ./wwwroot/admin/
+# The licence travels with the binaries (AGPL-3.0-only): LICENSE and NOTICE from the build context.
+COPY --chown=$APP_UID:$APP_UID LICENSE NOTICE /app/licenses/
 ENV ASPNETCORE_HTTP_PORTS=8081 \
     ASPNETCORE_ENVIRONMENT=Production \
     Dle__Control__SpaIndexFile=admin/index.html \
@@ -151,6 +153,8 @@ WORKDIR /app
 COPY --from=build --chown=$APP_UID:$APP_UID /app/publish ./
 COPY --from=build --chown=$APP_UID:$APP_UID /app/efbundle ./efbundle
 COPY --from=spa   --chown=$APP_UID:$APP_UID /spa/dist/ ./wwwroot/admin/
+# The licence travels with the binaries (AGPL-3.0-only): LICENSE and NOTICE from the build context.
+COPY --chown=$APP_UID:$APP_UID LICENSE NOTICE /app/licenses/
 
 ENV ASPNETCORE_HTTP_PORTS=8081 \
     ASPNETCORE_ENVIRONMENT=Production \

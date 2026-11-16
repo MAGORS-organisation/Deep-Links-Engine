@@ -32,7 +32,7 @@ using Xunit;
 namespace Dle.UnitTests.Control;
 
 /// <summary>
-/// Covers A2: <c>POST /v1/login-hints</c>, <c>ILoginHintStore</c> <c>O(1)</c> indexed S2
+/// Covers <c>POST /v1/login-hints</c>, <c>ILoginHintStore</c> <c>O(1)</c> indexed S2
 /// lookup inside <see cref="ResolveInstall"/>, Valkey write-through cache hits in
 /// <see cref="DapperLoginHintStore"/>, consent gating, and tenant isolation.
 /// </summary>
@@ -230,7 +230,7 @@ public sealed class LoginHintTests : IDisposable
                 Campaign: "winback",
                 Title: "Cart",
                 Parameters: ReadOnlyDictionary<string, string>.Empty),
-            host: "go.acme.sk",
+            host: "go.example.sk",
             slug: "cart20");
 
         using var limiters = new AttributionRateLimiters(Options.Create(new AttributionRateLimitOptions()));
@@ -239,7 +239,7 @@ public sealed class LoginHintTests : IDisposable
             new LoginHintRequestDto
             {
                 LoginKey = "buyer-99",
-                Url = "https://go.acme.sk/cart20",
+                Url = "https://go.example.sk/cart20",
                 Consent = new ConsentDto { Analytics = true, Attribution = true, Ts = Now },
             },
             CallerA,

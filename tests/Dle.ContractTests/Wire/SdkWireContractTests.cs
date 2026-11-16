@@ -87,7 +87,7 @@ public sealed class SdkWireContractTests
             InstallId = "9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1",
             Events =
             [
-                new EventDto { Type = "link_open", Url = "https://link.zak.sk/aB3xK9pQ", Ts = Moment },
+                new EventDto { Type = "link_open", Url = "https://link.example.sk/aB3xK9pQ", Ts = Moment },
                 new EventDto
                 {
                     Type = "conversion",
@@ -101,7 +101,7 @@ public sealed class SdkWireContractTests
 
         const string expected =
             """
-            {"install_id":"9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1","events":[{"type":"link_open","url":"https://link.zak.sk/aB3xK9pQ","ts":"2026-09-03T10:00:00+00:00"},{"type":"conversion","name":"purchase","value":24.9,"currency":"EUR","ts":"2026-09-03T10:05:00+00:00"}]}
+            {"install_id":"9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1","events":[{"type":"link_open","url":"https://link.example.sk/aB3xK9pQ","ts":"2026-09-03T10:00:00+00:00"},{"type":"conversion","name":"purchase","value":24.9,"currency":"EUR","ts":"2026-09-03T10:05:00+00:00"}]}
             """;
 
         Assert.Equal(expected, JsonSerializer.Serialize(batch, DleJson.Default));

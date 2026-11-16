@@ -12,11 +12,14 @@
     <Description>Deep Link Engine cryptography: crypto-agile signing (HS256, Ed25519, ML-DSA-65, SLH-DSA), JWKS, key rotation, keyed slug permutation and click-id codec.</Description>
 
     <!--
-      The post-quantum primitives (ML-KEM, ML-DSA,
-      SLH-DSA, Composite ML-DSA) ship in .NET 10 behind the [Experimental]
-      attribute with diagnostic id SYSLIB5006, which is emitted as an error.
-      Using them is an explicit architectural decision, so the
-      diagnostic is suppressed here and only here.
+      As of .NET 11, SLH-DSA, Composite ML-DSA and Composite ML-KEM, and the
+      pre-hash and external-mu members of ML-DSA, are still marked
+      [Experimental] with diagnostic id SYSLIB5006, which is emitted as an
+      error; ML-KEM and the rest of ML-DSA are no longer experimental. The
+      signers in this project use BouncyCastle rather than these types, but
+      this is the one project where adopting them would be an explicit
+      architectural decision, so the diagnostic is suppressed here and only
+      here.
     -->
     <NoWarn>$(NoWarn);SYSLIB5006</NoWarn>
   </PropertyGroup>

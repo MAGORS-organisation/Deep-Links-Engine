@@ -80,7 +80,7 @@ public static class WorkersServiceCollectionExtensions
         // network must be able to point at it.
         services.AddHttpClient(GeoIpUpdateWorker.HttpClientName, static client =>
         {
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("dle-control/1.0 (+https://docs.dle.dev)");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("dle-control/1.0 (+https://kyberware.net/dle)");
             client.Timeout = TimeSpan.FromMinutes(10);
         });
 

@@ -1,10 +1,14 @@
 # =============================================================================
 # iOS SDK (sdk/ios, SwiftPM, swift-tools 6.0, Swift 6 language mode).
 #
-# FIRST COMPILATION: the iOS SDK has never been compiled. It was written on a machine without
-# Xcode, so this workflow is the first time the package is built or its tests (DleSDKTests) are
-# run anywhere. A red first run is expected to be the compiler's list of what to fix, not a CI
-# defect. Swift 6 strict concurrency in particular is only ever proven by a compiler.
+# This workflow is the SDK's build check: the package is built and its tests (DleSDKTests) run on
+# every change to sdk/ios or to the root Package.swift. Swift 6 strict concurrency in particular is
+# only ever proven by a compiler, so this is where a data-race diagnostic shows up.
+#
+# Two manifests describe the same sources: sdk/ios/Package.swift, which the build and test steps
+# use, and Package.swift at the repository root, which is what consumers resolve when they add the
+# repository URL to Xcode or SwiftPM. The root manifest is parsed from the repository root as its
+# own step, so a broken path in it fails here rather than in a consumer's project.
 #
 # Sources are iOS-only in practice (UIKit / app-links behaviour), so the build targets the iOS
 # Simulator even though Package.swift also lists other platforms. The Sample/ directory is not a
@@ -19,11 +23,13 @@ on:
   pull_request:
     paths:
       - "sdk/ios/**"
+      - "Package.swift"
       - ".github/workflows/sdk-ios.yml"
   push:
     branches: [develop, master]
     paths:
       - "sdk/ios/**"
+      - "Package.swift"
       - ".github/workflows/sdk-ios.yml"
 
 permissions:
@@ -62,6 +68,12 @@ jobs:
           xcodebuild -version
           swift --version
           swift package describe --type json > /dev/null && echo "Package.swift parses"
+
+      - name: Root package manifest (what consumers resolve)
+        # Package.swift at the repository root points at sdk/ios/Sources and sdk/ios/Tests by path.
+        # Describing it from the root checks that it parses and that every target path exists.
+        working-directory: ${{ github.workspace }}
+        run: swift package describe --type json > /dev/null && echo "root Package.swift parses"
 
       - name: Pick an available iPhone simulator
         # The set of simulators is a property of the runner image and changes without notice: the

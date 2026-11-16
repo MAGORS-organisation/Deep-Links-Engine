@@ -72,7 +72,7 @@ internal static class SafeUrl
     /// Returns a URL in a form that may be written into a response header.
     /// </summary>
     /// <remarks>
-    /// A target such as <c>https://obchod.sk/košík</c> or <c>https://müller.de/</c> is a perfectly
+    /// A target such as <c>https://obchod.example.sk/košík</c> or <c>https://müller.de/</c> is a perfectly
     /// good link, but Kestrel refuses a header value with a character outside ASCII, so handing it to
     /// <c>Location</c> or to the content security policy as typed turns the request into a 500. An
     /// ASCII URL is returned untouched; otherwise the path and query are percent-encoded and the host

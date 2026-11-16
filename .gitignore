@@ -232,6 +232,13 @@ test-results/
 .playwright/
 zap-report*.html
 zap-report*.json
+# Packaged archives: `helm package` charts and `npm pack` tarballs.
+*.tgz
+
+## ---------------------------------------------------------------------------
+## Python (.github/scripts)
+## ---------------------------------------------------------------------------
+__pycache__/
 
 ## ---------------------------------------------------------------------------
 ## macOS

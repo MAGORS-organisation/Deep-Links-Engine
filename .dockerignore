@@ -31,13 +31,13 @@
 **/*.tsbuildinfo
 src/Dle.Control/wwwroot/admin
 
-# Not needed for either image
+# Not needed for either image. LICENSE and NOTICE stay in the context: both runtime stages of
+# each image copy them to /app/licenses/.
 tests
 docs
 sdk
 deploy/aspire
 deploy/helm
-deploy/k6
 deploy/postgres
 deploy/*.yml
 deploy/.env
@@ -45,8 +45,6 @@ deploy/.env.*
 deploy/Caddyfile
 deploy/geoip
 *.md
-!src/Dle.Admin.Web/README.md
-LICENSE
 
 # Local secrets and databases
 **/.env

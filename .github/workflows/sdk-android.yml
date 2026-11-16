@@ -1,10 +1,9 @@
 # =============================================================================
 # Android SDK (sdk/android) — :dle-sdk release AAR, its unit tests, and the :sample app.
 #
-# FIRST COMPILATION: the Android SDK has never been compiled. The machine it was written on had
-# no JDK, no Android SDK and no Gradle, so this workflow is the first time
-# `:dle-sdk:assembleRelease` runs anywhere. Expect the first run to surface compile errors that
-# a local build would have caught; that is the job doing its work, not a CI problem.
+# This workflow is the SDK's build check: `:dle-sdk:assembleRelease`, the unit tests and the sample
+# app are compiled on every change to sdk/android, so a compile error or a failing test shows up
+# here, not in a consumer's build.
 #
 # Gradle: sdk/android/gradle/wrapper/gradle-wrapper.properties exists but there is NO gradlew
 # script and NO gradle-wrapper.jar in the repository (a committed wrapper JAR is also a

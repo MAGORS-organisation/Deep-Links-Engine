@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/MAGORS-organisation/Deep-Links-Engine/deploy/helm/dle/values.schema.json",
+  "$id": "https://kyberware.net/dle/schemas/helm-values.schema.json",
   "title": "Deep Link Engine Helm chart values",
   "description": "Validated by `helm install/upgrade/lint`. The postgresql and valkey subtrees are passed to the Bitnami subcharts verbatim and are only checked for the keys this chart reads.",
   "type": "object",

@@ -14,7 +14,7 @@ namespace Dle.Domain.Contracts;
 public static class ProblemCodes
 {
     /// <summary>Base URI that every problem type is derived from.</summary>
-    public const string Base = "https://docs.dle.dev/problems/";
+    public const string Base = "https://kyberware.net/dle/problems/";
 
     /// <summary>Request body or query failed validation. Carries an <c>errors</c> extension.</summary>
     public const string ValidationFailed = Base + "validation-failed";

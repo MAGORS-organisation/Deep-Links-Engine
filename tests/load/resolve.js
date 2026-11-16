@@ -15,14 +15,20 @@
 // the 404 path and the anti-enumeration budget are part of what is being measured, not noise
 // to be excluded. 12 % of all requests carry a crawler user agent.
 //
-// Run it against a seeded instance:
+// Run it against a seeded instance. Seed first: seed.js creates the links through the control plane
+// and writes corpus.json next to this file. It needs the control-plane URL, an API key with the
+// links:write scope, the id of a verified link domain and that domain's host, as environment
+// variables or as the matching --control, --api-key, --domain-id and --host flags:
 //
-//   node seed.js                      # writes corpus.json (see README.md)
+//   DLE_CONTROL_URL=https://control.example.com DLE_API_KEY=dle_<prefix>_<secret> \
+//   DLE_DOMAIN_ID=<domain id> DLE_LINK_HOST=link.example.com node seed.js
 //   k6 run -e BASE_URL=https://link.example.com resolve.js
 //
 // NOT RUN in this repository's development environment: k6 is not installed on the machine this file
-// was written on, and the profile needs a deployed edge with PostgreSQL and Valkey behind it. See
-// README.md for what has to be true before the numbers mean anything.
+// was written on, and the profile needs a deployed edge with PostgreSQL and Valkey behind it. The
+// numbers only mean something when corpus.json was seeded against the instance under test and the
+// edge does not throttle the generator: on a test or staging instance set
+// Dle:RateLimits:Edge:Enabled to false for the run, or raise its limits well above the profile.
 
 import http from 'k6/http';
 import exec from 'k6/execution';
@@ -54,7 +60,9 @@ const corpus = new SharedArray('links', function () {
 
   if (!data.hot || data.hot.length === 0 || !data.all || data.all.length === 0) {
     throw new Error(
-      'corpus.json has no links. Run `node seed.js` against the target instance first; see README.md.',
+      'corpus.json has no links. Run `node seed.js` against the target instance first, with ' +
+        'DLE_CONTROL_URL, DLE_API_KEY (links:write scope), DLE_DOMAIN_ID and DLE_LINK_HOST set ' +
+        '(or the --control, --api-key, --domain-id and --host flags).',
     );
   }
 
@@ -240,8 +248,9 @@ function record(response, kind, isCrawler) {
 
   if (kind === 'miss') {
     // 429 is a correct answer once a generator address has drained its 404 budget. It is counted
-    // separately rather than treated as a failure, and the README explains how to keep the miss
-    // stream spread across enough source addresses for it to stay rare.
+    // separately rather than treated as a failure. The 404 budget is kept per network prefix (/24
+    // for IPv4, /48 for IPv6), so keep it rare by spreading the generator across enough source
+    // networks, or raise Dle:RateLimits:Edge:NotFound for the run and say so in the report.
     expected = status === 404 || status === 429;
 
     if (status === 404) {

@@ -14,13 +14,19 @@
 //     --host link.example.com \
 //     --total 10000 --hot 100
 //
+// The four required values can come from the environment instead of the flags: DLE_CONTROL_URL,
+// DLE_API_KEY, DLE_DOMAIN_ID and DLE_LINK_HOST.
+//
 // The counts default to the profile's own needs: a hundred hot links, because the hot set
 // is the top hundred, and ten thousand in total so that the 15 % "random existing" stream is spread
 // widely enough to actually miss the cache sometimes. A corpus of a few hundred would sit entirely
 // in L1 and the run would report a cache hit rate of 100 % that means nothing.
 //
-// NOT RUN in this repository's development environment: it needs a deployed control plane and a
-// verified domain. See README.md.
+// NOT RUN in this repository's development environment: it needs a deployed control plane, an API
+// key with the links:write scope and a verified link domain (its id and its host). Seeding goes
+// through the bulk endpoint by default (--bulk false creates the links one at a time, retrying on
+// 429), and every slug starts with the --prefix (default k6load), so the links can be found and
+// deleted afterwards.
 
 import { writeFile } from 'node:fs/promises';
 import { argv, exit } from 'node:process';

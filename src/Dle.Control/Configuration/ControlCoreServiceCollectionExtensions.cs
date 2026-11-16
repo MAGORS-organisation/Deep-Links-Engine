@@ -278,7 +278,7 @@ public static class ControlCoreServiceCollectionExtensions
         services.AddHttpClient(DomainVerificationService.HttpClientName, static client =>
         {
             client.Timeout = TimeSpan.FromSeconds(10);
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("dle-control/1.0 (+https://docs.dle.dev)");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("dle-control/1.0 (+https://kyberware.net/dle)");
             client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
         })
             .ConfigurePrimaryHttpMessageHandler(
@@ -324,7 +324,7 @@ public static class ControlCoreServiceCollectionExtensions
                         "Link, domain, application, tenant and credential management, plus "
                         + "attribution and analytics reporting. Errors are RFC 9457 problem "
                         + "documents whose type member is one of the stable identifiers documented "
-                        + "at https://docs.dle.dev/problems/. Writes accept an Idempotency-Key "
+                        + "at " + ProblemCodes.Base + ". Writes accept an Idempotency-Key "
                         + "header: the same key with the same body replays the stored response, and "
                         + "the same key with a different body is a conflict.",
                 };

@@ -300,7 +300,7 @@ class DleApiTest {
         server.enqueue(MockResponse().setResponseCode(202).setHeader("Content-Type", "application/json").setBody("""{"accepted":2,"rejected":0}"""))
         val api = api()
         val events = listOf(
-            DleEvent.linkOpen("https://link.zak.sk/aB3xK9pQ", CONTRACT_MOMENT_MILLIS),
+            DleEvent.linkOpen("https://link.example.sk/aB3xK9pQ", CONTRACT_MOMENT_MILLIS),
             DleEvent(type = DleEventType.CONVERSION, name = "purchase", value = 24.9, currency = "EUR", timestampMillis = CONTRACT_MOMENT_MILLIS + 300_000L),
         )
         val batch = EventBatch(installId = CONTRACT_INSTALL_ID, events = events.map { it.toWire(0L) })

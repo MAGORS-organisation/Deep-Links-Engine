@@ -12,9 +12,16 @@
 # src/Dle.Control/appsettings.json). Anything not modelled here can be passed through
 # config.extra / edge.config.extra / control.config.extra as  ENV_NAME: "value".
 #
-# Two values are REQUIRED before the chart renders (unless secrets.existingSecret is set):
-#   secrets.masterSecret               Dle:Crypto:MasterSecret, at least 32 characters
+# Three values are REQUIRED before the chart renders (unless secrets.existingSecret is set, which
+# then has to carry them under the secrets.keys.* names):
+#   secrets.masterSecret               Dle:Crypto:MasterSecret of the control plane, at least 32
+#                                      characters
+#   secrets.edgeSecret                 the edge's own secret, at least 32 characters and different
+#                                      from masterSecret
 #   externalPostgres.connectionString  or postgresql.enabled=true with postgresql.auth.password
+# and one more whenever ingress.enabled is true (the default):
+#   ingress.host                       the public host name of your links; the go.example.com set
+#                                      below is a placeholder and must be replaced
 #
 # !!! /.well-known RESPONSES MUST NEVER BE REDIRECTED — see the `ingress` section. !!!
 # =============================================================================

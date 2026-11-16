@@ -159,7 +159,7 @@ public sealed record EventBatchDto
     /// <summary>Host application version.</summary>
     public string? AppVersion { get; init; }
 
-    /// <summary>The events. At most <see cref="MaxEventsPerBatch"/> per request.</summary>
+    /// <summary>The events. At most 100 per request.</summary>
     public required IReadOnlyList<EventDto> Events { get; init; }
 }
 
@@ -184,7 +184,7 @@ public sealed record EventDto
     /// <summary>Monetary value of a conversion.</summary>
     public decimal? Value { get; init; }
 
-    /// <summary>ISO 4217 currency code accompanying <see cref="Value"/>.</summary>
+    /// <summary>ISO 4217 currency code accompanying <c>value</c>.</summary>
     public string? Currency { get; init; }
 
     /// <summary>When the event happened on the device. Absent means "on arrival".</summary>
@@ -216,7 +216,7 @@ public sealed record LoginHintRequestDto
     /// <summary>Public click identifier carried by <c>dl_cid</c>, if known.</summary>
     public string? ClickId { get; init; }
 
-    /// <summary>Short link URL (<c>https://host/slug</c>), resolved when <see cref="ClickId"/> is absent.</summary>
+    /// <summary>Short link URL (<c>https://host/slug</c>), resolved when <c>click_id</c> is absent.</summary>
     public string? Url { get; init; }
 
     /// <summary>Optional override application deep-link path.</summary>

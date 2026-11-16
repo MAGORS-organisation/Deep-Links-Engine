@@ -21,11 +21,11 @@ public sealed class SafeUrlAsciiTests
     [Fact]
     public void Web_NonAsciiPathAndQuery_ArePercentEncoded()
     {
-        string? url = SafeUrl.Web("https://www.obchod.sk/košík?q=čaj");
+        string? url = SafeUrl.Web("https://www.obchod.example.sk/košík?q=čaj");
 
         Assert.NotNull(url);
         Assert.True(Ascii.IsValid(url));
-        Assert.StartsWith("https://www.obchod.sk/ko%C5%A1%C3%ADk?q=", url, StringComparison.Ordinal);
+        Assert.StartsWith("https://www.obchod.example.sk/ko%C5%A1%C3%ADk?q=", url, StringComparison.Ordinal);
     }
 
     [Fact]

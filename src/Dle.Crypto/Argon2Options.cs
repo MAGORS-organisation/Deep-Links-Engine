@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Dle.Crypto;
 
 /// <summary>
-/// Cost parameters of the Argon2id hash used for API keys (K5 of the cryptographic inventory).
+/// Cost parameters of the Argon2id hash used for API keys.
 /// Bound from <c>Dle:Crypto:Argon2</c>.
 /// </summary>
 /// <remarks>

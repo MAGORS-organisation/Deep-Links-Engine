@@ -1035,12 +1035,12 @@ public sealed record SimulateResponse { string MatchedRuleId; string Decision; s
 // Domény, aplikácie, webhooky, abuse — analogicky; podrobnosti v OpenAPI.
 public sealed record ProblemCodes                 // stabilné kódy chýb v RFC 9457 `type`
 {
-    public const string ValidationFailed  = "https://docs.dle.dev/problems/validation-failed";
-    public const string SlugTaken         = "https://docs.dle.dev/problems/slug-taken";
-    public const string UnsafeTarget      = "https://docs.dle.dev/problems/unsafe-target";
-    public const string RateLimited       = "https://docs.dle.dev/problems/rate-limited";
-    public const string MissingDefaultRule= "https://docs.dle.dev/problems/missing-default-rule";
-    public const string DomainNotVerified = "https://docs.dle.dev/problems/domain-not-verified";
+    public const string ValidationFailed  = "https://kyberware.net/dle/problems/validation-failed";
+    public const string SlugTaken         = "https://kyberware.net/dle/problems/slug-taken";
+    public const string UnsafeTarget      = "https://kyberware.net/dle/problems/unsafe-target";
+    public const string RateLimited       = "https://kyberware.net/dle/problems/rate-limited";
+    public const string MissingDefaultRule= "https://kyberware.net/dle/problems/missing-default-rule";
+    public const string DomainNotVerified = "https://kyberware.net/dle/problems/domain-not-verified";
 }
 ```
 

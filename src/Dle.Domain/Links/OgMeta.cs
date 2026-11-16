@@ -28,10 +28,10 @@ public sealed record OgMeta
     /// <summary><c>og:site_name</c>.</summary>
     public string? SiteName { get; init; }
 
-    /// <summary><c>og:type</c>. Defaults to <see cref="DefaultType"/>.</summary>
+    /// <summary><c>og:type</c>. Defaults to <c>website</c>.</summary>
     public string? Type { get; init; }
 
-    /// <summary><c>twitter:card</c>. Defaults to <see cref="DefaultTwitterCard"/>.</summary>
+    /// <summary><c>twitter:card</c>. Defaults to <c>summary_large_image</c>.</summary>
     public string? TwitterCard { get; init; }
 
     /// <summary>Metadata with nothing set beyond the two format defaults.</summary>

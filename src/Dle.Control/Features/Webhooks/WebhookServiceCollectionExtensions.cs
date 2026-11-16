@@ -70,7 +70,7 @@ public static class WebhookServiceCollectionExtensions
 
         services.AddHttpClient(WebhookDispatcher.HttpClientName, static client =>
         {
-            client.DefaultRequestHeaders.UserAgent.ParseAdd("dle-control/1.0 (+https://docs.dle.dev)");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("dle-control/1.0 (+https://kyberware.net/dle)");
             client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
 
             // The per-attempt timeout is applied by the dispatcher from options; this is only a

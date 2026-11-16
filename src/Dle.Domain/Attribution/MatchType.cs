@@ -28,7 +28,7 @@ public enum MatchType
 
     /// <summary>
     /// The application was already installed and the universal or app link opened it directly;
-    /// the SDK reported the URL back (S0). Deterministic, and the most frequent case of all
+    /// the SDK reported the URL back. Deterministic, and the most frequent case of all
     /// — which is exactly why it is easy to forget.
     /// </summary>
     DirectOpen = 5,

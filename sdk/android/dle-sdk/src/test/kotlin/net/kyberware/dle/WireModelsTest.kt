@@ -161,7 +161,7 @@ class WireModelsTest {
     @Test
     fun eventBatch_serialisesToTheSnakeCaseShapeOfTheWireContract() {
         val events = listOf(
-            DleEvent.linkOpen("https://link.zak.sk/aB3xK9pQ", CONTRACT_MOMENT_MILLIS),
+            DleEvent.linkOpen("https://link.example.sk/aB3xK9pQ", CONTRACT_MOMENT_MILLIS),
             DleEvent(
                 type = DleEventType.CONVERSION,
                 name = "purchase",
@@ -214,6 +214,6 @@ class WireModelsTest {
             """{"matched":true,"match_type":"install_referrer","confidence":1.0,"click_id":"aB3xK9pQ","link":{"id":"7286414500000000001","deeplink_path":"/promo/jesen","campaign":"jesen26"},"params":{"utm_source":"fb","utm_campaign":"jesen26","promo":"AUTUMN20"},"expires_in":0}"""
 
         const val EVENT_BATCH_LITERAL: String =
-            """{"install_id":"9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1","events":[{"type":"link_open","url":"https://link.zak.sk/aB3xK9pQ","ts":"2026-09-03T10:00:00+00:00"},{"type":"conversion","name":"purchase","value":24.9,"currency":"EUR","ts":"2026-09-03T10:05:00+00:00"}]}"""
+            """{"install_id":"9f2c1b64-0c3f-4a8e-9c2d-8f4c1f0a77b1","events":[{"type":"link_open","url":"https://link.example.sk/aB3xK9pQ","ts":"2026-09-03T10:00:00+00:00"},{"type":"conversion","name":"purchase","value":24.9,"currency":"EUR","ts":"2026-09-03T10:05:00+00:00"}]}"""
     }
 }

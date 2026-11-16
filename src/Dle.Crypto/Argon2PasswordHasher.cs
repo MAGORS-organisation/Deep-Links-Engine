@@ -5,7 +5,7 @@ using Konscious.Security.Cryptography;
 namespace Dle.Crypto;
 
 /// <summary>
-/// Argon2id hashing in the PHC string format, used for API keys (K5).
+/// Argon2id hashing in the PHC string format, used for API keys.
 /// </summary>
 /// <remarks>
 /// <para>

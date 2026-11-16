@@ -14,7 +14,7 @@ namespace Dle.Domain.Crypto;
 public static class SignatureAlgorithms
 {
     /// <summary>HMAC with SHA-256. Symmetric, and the default for click tokens and webhook
-    /// signatures (K2, K4). No post-quantum exposure: 256 bits leaves 128 after Grover.</summary>
+    /// signatures. No post-quantum exposure: 256 bits leaves 128 after Grover.</summary>
     public const string Hs256 = "HS256";
 
     /// <summary>Ed25519. Asymmetric, so a third party can verify a webhook without holding a
