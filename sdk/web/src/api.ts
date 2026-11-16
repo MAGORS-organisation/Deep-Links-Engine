@@ -37,7 +37,11 @@ export const PROBLEM_CODES = {
  */
 export function problemCodeOf(type: unknown): string | undefined {
   if (typeof type !== 'string') return undefined;
-  const path = (type.split(/[?#]/, 1)[0] ?? '').replace(/\/+$/, '');
+  // Linear on purpose: the input comes from a server body, so no backtracking regex.
+  const cut = type.search(/[?#]/);
+  let end = cut === -1 ? type.length : cut;
+  while (end > 0 && type.charCodeAt(end - 1) === 0x2f /* '/' */) end -= 1;
+  const path = type.slice(0, end);
   const code = path.slice(path.lastIndexOf('/') + 1);
   return code.length > 0 ? code : undefined;
 }

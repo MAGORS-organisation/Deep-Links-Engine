@@ -130,6 +130,15 @@ describe('api client', () => {
     expect(new DleError('http', 'x', { problem: { type: null } as never }).problemCode).toBeUndefined();
   });
 
+  it('reads the problem code in linear time, whatever the server sends', () => {
+    const slashes = '/'.repeat(200_000);
+    const started = performance.now();
+    expect(problemCodeOf(`${slashes}x${slashes}`)).toBe('x');
+    expect(problemCodeOf(`${slashes}x`)).toBe('x');
+    expect(problemCodeOf(slashes)).toBeUndefined();
+    expect(performance.now() - started).toBeLessThan(500);
+  });
+
   it('times out with AbortController and reports a retriable timeout', async () => {
     vi.useFakeTimers();
     const hanging = vi.fn(
