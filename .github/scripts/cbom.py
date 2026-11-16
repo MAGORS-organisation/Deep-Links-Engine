@@ -19,7 +19,7 @@ enumerate cryptography, and a CBOM that could only be produced on one vendor's m
 an inventory anybody could audit.
 
 Usage:
-  cbom.py --repo-root . --version 0.1.0 --output cbom.cdx.json
+  cbom.py --repo-root . --version 1.0.0 --output cbom.cdx.json
 """
 from __future__ import annotations
 

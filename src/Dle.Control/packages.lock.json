@@ -251,15 +251,15 @@
         "type": "Project",
         "dependencies": {
           "ClickHouse.Client": "[7.14.0, )",
-          "Dle.Domain": "[0.1.0, )"
+          "Dle.Domain": "[1.0.0, )"
         }
       },
       "dle.analytics.postgres": {
         "type": "Project",
         "dependencies": {
           "Dapper": "[2.1.79, )",
-          "Dle.Analytics.ClickHouse": "[0.1.0, )",
-          "Dle.Domain": "[0.1.0, )",
+          "Dle.Analytics.ClickHouse": "[1.0.0, )",
+          "Dle.Domain": "[1.0.0, )",
           "Npgsql": "[10.0.3, )",
           "Parquet.Net": "[6.1.0, )"
         }
@@ -268,7 +268,7 @@
         "type": "Project",
         "dependencies": {
           "BouncyCastle.Cryptography": "[2.7.0, )",
-          "Dle.Domain": "[0.1.0, )",
+          "Dle.Domain": "[1.0.0, )",
           "Konscious.Security.Cryptography.Argon2": "[1.3.1, )"
         }
       },
@@ -278,7 +278,7 @@
       "dle.persistence": {
         "type": "Project",
         "dependencies": {
-          "Dle.Domain": "[0.1.0, )",
+          "Dle.Domain": "[1.0.0, )",
           "Microsoft.EntityFrameworkCore": "[11.0.0-rc.3.26522.148, )",
           "Microsoft.EntityFrameworkCore.Relational": "[11.0.0-rc.3.26522.148, )",
           "Npgsql": "[10.0.3, )",
@@ -288,7 +288,7 @@
       "dle.persistence.fast": {
         "type": "Project",
         "dependencies": {
-          "Dle.Domain": "[0.1.0, )",
+          "Dle.Domain": "[1.0.0, )",
           "Microsoft.Extensions.Caching.Hybrid": "[11.0.0, )",
           "Microsoft.Extensions.Caching.StackExchangeRedis": "[11.0.0, )",
           "Npgsql": "[10.0.3, )"

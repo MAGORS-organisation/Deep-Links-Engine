@@ -537,7 +537,7 @@
         "type": "Project",
         "dependencies": {
           "ClickHouse.Client": "[7.14.0, )",
-          "Dle.Domain": "[0.1.0, )",
+          "Dle.Domain": "[1.0.0, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[11.0.0, )"
         }
       },
@@ -545,8 +545,8 @@
         "type": "Project",
         "dependencies": {
           "Dapper": "[2.1.79, )",
-          "Dle.Analytics.ClickHouse": "[0.1.0, )",
-          "Dle.Domain": "[0.1.0, )",
+          "Dle.Analytics.ClickHouse": "[1.0.0, )",
+          "Dle.Domain": "[1.0.0, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[11.0.0, )",
           "Microsoft.Extensions.Options.DataAnnotations": "[11.0.0, )",
           "Npgsql": "[10.0.3, )",
@@ -556,12 +556,12 @@
       "dle.control": {
         "type": "Project",
         "dependencies": {
-          "Dle.Analytics.ClickHouse": "[0.1.0, )",
-          "Dle.Analytics.Postgres": "[0.1.0, )",
-          "Dle.Crypto": "[0.1.0, )",
-          "Dle.Domain": "[0.1.0, )",
-          "Dle.Persistence": "[0.1.0, )",
-          "Dle.Persistence.Fast": "[0.1.0, )",
+          "Dle.Analytics.ClickHouse": "[1.0.0, )",
+          "Dle.Analytics.Postgres": "[1.0.0, )",
+          "Dle.Crypto": "[1.0.0, )",
+          "Dle.Domain": "[1.0.0, )",
+          "Dle.Persistence": "[1.0.0, )",
+          "Dle.Persistence.Fast": "[1.0.0, )",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[11.0.0, )",
           "Microsoft.AspNetCore.OpenApi": "[11.0.0, )",
           "Microsoft.EntityFrameworkCore": "[11.0.0-rc.3.26522.148, )",
@@ -579,7 +579,7 @@
         "type": "Project",
         "dependencies": {
           "BouncyCastle.Cryptography": "[2.7.0, )",
-          "Dle.Domain": "[0.1.0, )",
+          "Dle.Domain": "[1.0.0, )",
           "Konscious.Security.Cryptography.Argon2": "[1.3.1, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[11.0.0, )",
           "Microsoft.Extensions.Options.DataAnnotations": "[11.0.0, )"
@@ -591,9 +591,9 @@
       "dle.edge": {
         "type": "Project",
         "dependencies": {
-          "Dle.Crypto": "[0.1.0, )",
-          "Dle.Domain": "[0.1.0, )",
-          "Dle.Persistence.Fast": "[0.1.0, )",
+          "Dle.Crypto": "[1.0.0, )",
+          "Dle.Domain": "[1.0.0, )",
+          "Dle.Persistence.Fast": "[1.0.0, )",
           "MaxMind.GeoIP2": "[6.1.0, )",
           "Microsoft.Extensions.Caching.Hybrid": "[11.0.0, )",
           "Microsoft.Extensions.Caching.StackExchangeRedis": "[11.0.0, )",
@@ -609,7 +609,7 @@
       "dle.persistence": {
         "type": "Project",
         "dependencies": {
-          "Dle.Domain": "[0.1.0, )",
+          "Dle.Domain": "[1.0.0, )",
           "Microsoft.EntityFrameworkCore": "[11.0.0-rc.3.26522.148, )",
           "Microsoft.EntityFrameworkCore.Relational": "[11.0.0-rc.3.26522.148, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[11.0.0, )",
@@ -621,7 +621,7 @@
       "dle.persistence.fast": {
         "type": "Project",
         "dependencies": {
-          "Dle.Domain": "[0.1.0, )",
+          "Dle.Domain": "[1.0.0, )",
           "Microsoft.Extensions.Caching.Hybrid": "[11.0.0, )",
           "Microsoft.Extensions.Caching.StackExchangeRedis": "[11.0.0, )",
           "Npgsql": "[10.0.3, )"
@@ -631,9 +631,9 @@
         "type": "Project",
         "dependencies": {
           "CsCheck": "[4.8.0, )",
-          "Dle.Control": "[0.1.0, )",
-          "Dle.Domain": "[0.1.0, )",
-          "Dle.Edge": "[0.1.0, )",
+          "Dle.Control": "[1.0.0, )",
+          "Dle.Domain": "[1.0.0, )",
+          "Dle.Edge": "[1.0.0, )",
           "Microsoft.AspNetCore.Mvc.Testing": "[11.0.0, )",
           "NSubstitute": "[6.2.0, )",
           "xunit.v3": "[4.0.0, )"

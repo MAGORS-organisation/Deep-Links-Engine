@@ -30,7 +30,7 @@ body:
     attributes:
       label: Version
       description: Release tag, image digest, or commit SHA. `GET /healthz` on the edge/control reports the build.
-      placeholder: v0.1.0 / ghcr.io/…/dle-edge@sha256:… / 1a2b3c4
+      placeholder: v1.0.0 / ghcr.io/…/dle-edge@sha256:… / 1a2b3c4
     validations:
       required: true
   - type: textarea

@@ -68,7 +68,7 @@ export { BANNER_STRINGS, resolveLanguage } from './smart-banner.js';
 export { generateInstallId } from './install-id.js';
 
 /** SDK version. Kept equal to `package.json` by a test. */
-export const VERSION = '0.1.0';
+export const VERSION = '1.0.0';
 
 const RESOLVE_CACHE_KEY = 'resolve';
 const PLATFORMS: readonly DevicePlatform[] = ['ios', 'android', 'desktop', 'other'];
