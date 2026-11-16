@@ -43,8 +43,8 @@ internal static class PageStyles
     /// (10.2:1) in the dark one. The focus ring is drawn with <c>outline</c> rather than a shadow so
     /// that it survives forced-colours mode, and it never shrinks below the 2px minimum of SC 2.4.13.
     /// </remarks>
-    internal const string CriticalCss = """,
-        * *::before,*::after{box-sizing:border-box}
+    internal const string CriticalCss = """
+        *,*::before,*::after{box-sizing:border-box}
         :root{
         color-scheme:light dark;
         --dle-bg:#f6f7f9;--dle-surface:#ffffff;--dle-inset:#f2f4f7;
