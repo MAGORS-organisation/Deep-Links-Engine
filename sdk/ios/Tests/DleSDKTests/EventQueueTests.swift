@@ -127,7 +127,7 @@ final class EventQueueTests: XCTestCase {
     }
 
     func testNonRetriableFailureDropsTheBatch() async {
-        let spy = SenderSpy(failures: [.http(status: 400, problem: DleProblem(type: DleProblem.validationFailed, status: 400), retryAfter: nil)])
+        let spy = SenderSpy(failures: [.http(status: 400, problem: DleProblem(type: "https://problems.example/problems/" + DleProblem.Code.validationFailed, status: 400), retryAfter: nil)])
         let queue = makeQueue(spy: spy, clock: FakeClock())
         queue.enqueue(.custom(name: "refused"))
 

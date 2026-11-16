@@ -18,23 +18,46 @@ public enum DleClaimCodeRejection: String, Sendable, Hashable, CaseIterable {
 
 /// An RFC 9457 problem document as the engine sends it, reduced to the members an SDK can
 /// branch on. Anything else in the body is ignored.
+///
+/// Branch on ``code`` — the last path segment of ``type``, such as `rate-limited` — and the
+/// values in ``Code``, never on the whole ``type`` URI: the host it is published under may
+/// change, the codes never do.
 public struct DleProblem: Sendable, Hashable, Decodable {
-    /// Base URI every problem `type` is derived from (`ProblemCodes.Base`).
-    public static let base = "https://docs.dle.dev/problems/"
-    /// The request body failed validation.
-    public static let validationFailed = base + "validation-failed"
-    /// A rate limit was exceeded. Carries `Retry-After`.
-    public static let rateLimited = base + "rate-limited"
-    /// The SDK key is missing, malformed, unknown or inactive.
-    public static let unauthorized = base + "unauthorized"
-    /// The credential lacks the scope the operation needs.
-    public static let forbidden = base + "forbidden"
-    /// The claim code cannot be redeemed. Carries `reason` and `can_reissue`.
-    public static let claimCodeInvalid = base + "claim-code-invalid"
-    /// A dependency the engine needs did not answer.
-    public static let dependencyUnavailable = base + "dependency-unavailable"
+    /// The stable problem codes an integrator may branch on.
+    public enum Code {
+        /// The request body failed validation.
+        public static let validationFailed = "validation-failed"
+        /// A rate limit was exceeded. Carries `Retry-After`.
+        public static let rateLimited = "rate-limited"
+        /// The SDK key is missing, malformed, unknown or inactive.
+        public static let unauthorized = "unauthorized"
+        /// The credential lacks the scope the operation needs.
+        public static let forbidden = "forbidden"
+        /// The claim code cannot be redeemed. Carries `reason` and `can_reissue`.
+        public static let claimCodeInvalid = "claim-code-invalid"
+        /// A dependency the engine needs did not answer.
+        public static let dependencyUnavailable = "dependency-unavailable"
+    }
 
-    /// Stable problem type URI.
+    /// The code of a problem type URI: its last path segment, ignoring a query, a fragment and
+    /// a trailing slash. `nil` when there is none.
+    public static func code(of type: String?) -> String? {
+        guard let type else { return nil }
+        var path = Substring(type)
+        if let cut = path.firstIndex(where: { $0 == "?" || $0 == "#" }) {
+            path = path[..<cut]
+        }
+        while path.hasSuffix("/") {
+            path = path.dropLast()
+        }
+        let code = path.split(separator: "/", omittingEmptySubsequences: false).last.map(String.init) ?? ""
+        return code.isEmpty ? nil : code
+    }
+
+    /// The problem code, such as `rate-limited`: the stable part of ``type``.
+    public var code: String? { Self.code(of: type) }
+
+    /// Problem type URI. Compare ``code`` instead.
     public let type: String?
     /// Short human-readable summary.
     public let title: String?
@@ -87,7 +110,7 @@ public struct DleProblem: Sendable, Hashable, Decodable {
 
     /// The claim-code rejection this problem describes, or `nil` when it is not one.
     public var claimCodeRejection: DleClaimCodeRejection? {
-        guard type == Self.claimCodeInvalid else { return nil }
+        guard code == Code.claimCodeInvalid else { return nil }
         return DleClaimCodeRejection(rawValue: reason ?? "") ?? .unknown
     }
 }

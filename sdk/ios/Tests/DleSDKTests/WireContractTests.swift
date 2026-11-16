@@ -224,7 +224,7 @@ final class WireContractTests: XCTestCase {
     func testClaimCodeProblemBecomesClaimCodeRejected() throws {
         let problem = try TestSupport.decode(
             DleProblem.self,
-            #"{"type":"https://docs.dle.dev/problems/claim-code-invalid","title":"Claim code invalid","status":400,"reason":"expired","can_reissue":true,"unknown":1}"#)
+            #"{"type":"https://problems.example/problems/claim-code-invalid","title":"Claim code invalid","status":400,"reason":"expired","can_reissue":true,"unknown":1}"#)
         XCTAssertEqual(problem.claimCodeRejection, .expired)
         XCTAssertEqual(problem.canReissue, true)
 
@@ -235,11 +235,20 @@ final class WireContractTests: XCTestCase {
 
     func testRateLimitedProblemCarriesRetryAfter() throws {
         let problem = try TestSupport.decode(
-            DleProblem.self, #"{"type":"https://docs.dle.dev/problems/rate-limited","status":429}"#)
+            DleProblem.self, #"{"type":"https://problems.example/problems/rate-limited","status":429}"#)
         let error = DleAPI.classify(status: 429, problem: problem, retryAfter: 30)
         XCTAssertEqual(error, .http(status: 429, problem: problem, retryAfter: 30))
         XCTAssertTrue(error.isRetriable)
         XCTAssertEqual(error.retryAfter, 30)
+        XCTAssertEqual(problem.code, DleProblem.Code.rateLimited)
+    }
+
+    func testProblemCodeIsTheLastPathSegmentWhateverTheHost() {
+        XCTAssertEqual(DleProblem.code(of: "https://docs.example/problems/rate-limited"), "rate-limited")
+        XCTAssertEqual(DleProblem.code(of: "https://other.example/errors/rate-limited/?v=2#top"), "rate-limited")
+        XCTAssertEqual(DleProblem.code(of: "rate-limited"), "rate-limited")
+        XCTAssertNil(DleProblem.code(of: ""))
+        XCTAssertNil(DleProblem.code(of: nil))
     }
 
     func testRetryAfterParsesSecondsAndHttpDates() {
@@ -290,7 +299,7 @@ final class WireContractTests: XCTestCase {
 
     func testEventsEndpoint429SurfacesRetryAfterAndIsRetriable() async throws {
         let transport = StubTransport([
-            .init(status: 429, body: #"{"type":"https://docs.dle.dev/problems/rate-limited","status":429}"#, headers: ["Retry-After": "7"]),
+            .init(status: 429, body: #"{"type":"https://problems.example/problems/rate-limited","status":429}"#, headers: ["Retry-After": "7"]),
         ])
         let api = DleAPI(endpoint: URL(string: "https://links.example.test")!, sdkKey: "k", transport: transport, timeout: 10, clock: FakeClock())
 
@@ -300,7 +309,7 @@ final class WireContractTests: XCTestCase {
         } catch let error as DleError {
             XCTAssertEqual(error.retryAfter, 7)
             XCTAssertTrue(error.isRetriable)
-            XCTAssertEqual(error.problem?.type, DleProblem.rateLimited)
+            XCTAssertEqual(error.problem?.code, DleProblem.Code.rateLimited)
         }
     }
 

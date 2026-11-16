@@ -33,8 +33,7 @@ import type {
 export type * from './types.js';
 export {
   DleError,
-  PROBLEM_BASE,
-  PROBLEM_TYPES,
+  PROBLEM_CODES,
   MAX_EVENTS_PER_BATCH,
   buildEventBatch,
   buildResolveRequest,
@@ -43,6 +42,7 @@ export {
   isDeterministic,
   parseResolveResponse,
   parseRetryAfter,
+  problemCodeOf,
   toEventWire,
 } from './api.js';
 export type {

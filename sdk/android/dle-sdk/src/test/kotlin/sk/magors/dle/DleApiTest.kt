@@ -174,7 +174,7 @@ class DleApiTest {
                 .setHeader("Content-Type", "application/problem+json")
                 .setHeader("Retry-After", "30")
                 .setBody(
-                    """{"type":"https://docs.dle.dev/problems/rate-limited","title":"Too many requests","status":429,"detail":"Slow down.","instance":"/v1/resolve"}""",
+                    """{"type":"https://problems.example/problems/rate-limited","title":"Too many requests","status":429,"detail":"Slow down.","instance":"/v1/resolve"}""",
                 ),
         )
         val api = api()
@@ -185,7 +185,7 @@ class DleApiTest {
         assertTrue(failure.isRateLimited)
         assertTrue(failure.isRetriable)
         assertEquals(30_000L, failure.retryAfterMillis)
-        assertEquals(ProblemDocument.TYPE_RATE_LIMITED, failure.problem?.type)
+        assertEquals(ProblemDocument.CODE_RATE_LIMITED, failure.problem?.code)
         assertEquals("Too many requests", failure.problem?.title)
         assertEquals(429, failure.problem?.status)
         assertEquals("Slow down.", failure.problem?.detail)
@@ -200,7 +200,7 @@ class DleApiTest {
                 .setResponseCode(400)
                 .setHeader("Content-Type", "application/problem+json")
                 .setBody(
-                    """{"type":"https://docs.dle.dev/problems/claim-code-invalid","title":"Claim code invalid","status":400,"reason":"expired","can_reissue":true,"errors":{"claim_code":["expired"]}}""",
+                    """{"type":"https://problems.example/problems/claim-code-invalid","title":"Claim code invalid","status":400,"reason":"expired","can_reissue":true,"errors":{"claim_code":["expired"]}}""",
                 ),
         )
         val api = api()

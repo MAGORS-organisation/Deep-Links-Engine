@@ -1,4 +1,4 @@
-import { DleError, PROBLEM_TYPES, isDeterministic } from './api.js';
+import { DleError, PROBLEM_CODES, isDeterministic } from './api.js';
 import { VERSION, createDle } from './index.js';
 import { CHANNELS, detect } from './platform.js';
 import { resolveLanguage } from './smart-banner.js';
@@ -24,7 +24,7 @@ import type { DleClient, Language, SmartBannerOptions } from './types.js';
  * The global surface is deliberately smaller than the ESM one (size budget): bundler users
  * import the full module.
  */
-export { CHANNELS, DleError, PROBLEM_TYPES, VERSION, createDle, detect, isDeterministic, resolveLanguage };
+export { CHANNELS, DleError, PROBLEM_CODES, VERSION, createDle, detect, isDeterministic, resolveLanguage };
 export type * from './types.js';
 
 let instance: DleClient | null = null;

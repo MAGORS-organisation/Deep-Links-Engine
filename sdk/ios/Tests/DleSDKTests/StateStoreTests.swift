@@ -144,7 +144,7 @@ final class StateStoreTests: XCTestCase {
 
     func testClaimCodeRejectionIsSurfacedAndNothingIsPersisted() async throws {
         let transport = StubTransport([
-            .init(status: 400, body: #"{"type":"https://docs.dle.dev/problems/claim-code-invalid","status":400,"reason":"consumed","can_reissue":false}"#),
+            .init(status: 400, body: #"{"type":"https://problems.example/problems/claim-code-invalid","status":400,"reason":"consumed","can_reissue":false}"#),
         ])
         let dle = try TestSupport.makeDle(transport: transport, storage: nil)
 

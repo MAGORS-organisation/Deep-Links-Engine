@@ -156,8 +156,10 @@ Channel names are exactly those of the engine (`browser`, `crawler`, `in_app_fb`
 ## Errors
 
 Failures are `DleError` with `code` (`config` | `network` | `timeout` | `http` | `malformed`),
-`status`, `retriable`, `retryAfterMs` and the RFC 9457 `problem` document. `PROBLEM_TYPES` lists the
-stable `type` URIs.
+`status`, `retriable`, `retryAfterMs` and the RFC 9457 `problem` document. Branch on
+`problemCode` — the last path segment of the problem `type`, such as `rate-limited` — and the
+values in `PROBLEM_CODES`, never on the whole `type` URI: the host it is published under may
+change, the codes never do.
 
 ## Observability
 

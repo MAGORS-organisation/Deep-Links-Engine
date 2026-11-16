@@ -17,18 +17,34 @@ import type { DevicePlatform, DleEvent, DleEventType, MatchType, ResolveLink, Re
 // Problem types (RFC 9457) — the subset the SDK plane can answer with, from ProblemCodes.cs
 // ---------------------------------------------------------------------------------------
 
-/** Base URI every problem `type` is derived from (`ProblemCodes.Base`). */
-export const PROBLEM_BASE = 'https://docs.dle.dev/problems/';
-
-/** Stable problem `type` URIs an integrator may branch on. */
-export const PROBLEM_TYPES = {
-  validationFailed: `${PROBLEM_BASE}validation-failed`,
-  rateLimited: `${PROBLEM_BASE}rate-limited`,
-  unauthorized: `${PROBLEM_BASE}unauthorized`,
-  forbidden: `${PROBLEM_BASE}forbidden`,
-  claimCodeInvalid: `${PROBLEM_BASE}claim-code-invalid`,
-  dependencyUnavailable: `${PROBLEM_BASE}dependency-unavailable`,
+/**
+ * Stable problem codes an integrator may branch on: the last path segment of a problem `type`
+ * URI. Compare codes (`DleError.problemCode`), never the whole URI — the host the URIs are
+ * published under may change, the codes never do.
+ */
+export const PROBLEM_CODES = {
+  validationFailed: 'validation-failed',
+  rateLimited: 'rate-limited',
+  unauthorized: 'unauthorized',
+  forbidden: 'forbidden',
+  claimCodeInvalid: 'claim-code-invalid',
+  dependencyUnavailable: 'dependency-unavailable',
 } as const;
+
+/**
+ * The code of a problem `type` URI — its last path segment — or `undefined`. Never throws: a
+ * missing or wrongly typed `type` in a server body is simply no code, as in the native SDKs.
+ */
+export function problemCodeOf(type: unknown): string | undefined {
+  if (typeof type !== 'string') return undefined;
+  // Linear on purpose: the input comes from a server body, so no backtracking regex.
+  const cut = type.search(/[?#]/);
+  let end = cut === -1 ? type.length : cut;
+  while (end > 0 && type.charCodeAt(end - 1) === 0x2f /* '/' */) end -= 1;
+  const path = type.slice(0, end);
+  const code = path.slice(path.lastIndexOf('/') + 1);
+  return code.length > 0 ? code : undefined;
+}
 
 /** An RFC 9457 problem document as the engine sends it. */
 export interface ProblemDocument {
@@ -77,6 +93,11 @@ export class DleError extends Error {
   /** The problem `type` URI, when the server answered with a problem document. */
   get problemType(): string | undefined {
     return this.problem?.type;
+  }
+
+  /** The problem code (see {@link PROBLEM_CODES}), the stable part of {@link problemType}. */
+  get problemCode(): string | undefined {
+    return problemCodeOf(this.problem?.type);
   }
 }
 

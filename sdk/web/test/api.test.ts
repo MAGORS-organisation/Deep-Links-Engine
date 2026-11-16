@@ -1,11 +1,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { DleError, PROBLEM_TYPES, createApiClient, createTraceparent, parseRetryAfter } from '../src/api';
+import {
+  DleError,
+  PROBLEM_CODES,
+  createApiClient,
+  createTraceparent,
+  parseRetryAfter,
+  problemCodeOf,
+} from '../src/api';
 import { createDle } from '../src/index';
 import type { Logger } from '../src/log';
 import { createFetchMock, jsonResponse } from './helpers';
 
 const SDK_KEY = 'dle_pk_0123456789abcdef_SECRETSECRET';
+
+/** A problem `type` URI. The host is arbitrary on purpose: the SDK must only read the code. */
+const problemType = (code: string): string => `https://problems.example/problems/${code}`;
 
 function spyLogger(): { logger: Logger; lines: unknown[][] } {
   const lines: unknown[][] = [];
@@ -71,7 +81,7 @@ describe('api client', () => {
     const { fetch } = createFetchMock(() =>
       jsonResponse(
         429,
-        { type: PROBLEM_TYPES.rateLimited, title: 'Too many requests', status: 429, detail: 'slow down' },
+        { type: problemType(PROBLEM_CODES.rateLimited), title: 'Too many requests', status: 429, detail: 'slow down' },
         { 'retry-after': '30' },
       ),
     );
@@ -83,19 +93,21 @@ describe('api client', () => {
     expect(dle.status).toBe(429);
     expect(dle.retriable).toBe(true);
     expect(dle.retryAfterMs).toBe(30_000);
-    expect(dle.problemType).toBe('https://docs.dle.dev/problems/rate-limited');
+    expect(dle.problemType).toBe('https://problems.example/problems/rate-limited');
+    expect(dle.problemCode).toBe(PROBLEM_CODES.rateLimited);
     expect(dle.problem?.detail).toBe('slow down');
   });
 
   it.each([
-    [400, PROBLEM_TYPES.validationFailed, false],
-    [401, PROBLEM_TYPES.unauthorized, false],
-    [403, PROBLEM_TYPES.forbidden, false],
-    [413, PROBLEM_TYPES.validationFailed, false],
+    [400, PROBLEM_CODES.validationFailed, false],
+    [401, PROBLEM_CODES.unauthorized, false],
+    [403, PROBLEM_CODES.forbidden, false],
+    [413, PROBLEM_CODES.validationFailed, false],
     [408, undefined, true],
     [500, undefined, true],
-    [503, PROBLEM_TYPES.dependencyUnavailable, true],
-  ])('classifies HTTP %i (retriable: %s)', async (status, type, retriable) => {
+    [503, PROBLEM_CODES.dependencyUnavailable, true],
+  ])('classifies HTTP %i (retriable: %s)', async (status, code, retriable) => {
+    const type = code === undefined ? undefined : problemType(code);
     const { fetch } = createFetchMock(() => jsonResponse(status, type === undefined ? undefined : { type, status }));
     const api = createApiClient({ endpoint: 'https://links.example.sk', sdkKey: SDK_KEY, timeoutMs: 4000, fetchImpl: fetch });
     const error = (await api.resolve({ install_id: 'a', platform: 'ios' }).catch((e: unknown) => e)) as DleError;
@@ -103,6 +115,28 @@ describe('api client', () => {
     expect(error.status).toBe(status);
     expect(error.retriable).toBe(retriable);
     expect(error.problemType).toBe(type);
+    expect(error.problemCode).toBe(code);
+  });
+
+  it('reads the problem code from any host, ignoring query, fragment and a trailing slash', () => {
+    expect(problemCodeOf('https://docs.example/problems/rate-limited')).toBe('rate-limited');
+    expect(problemCodeOf('https://other.example/errors/rate-limited/?v=2#top')).toBe('rate-limited');
+    expect(problemCodeOf('rate-limited')).toBe('rate-limited');
+    expect(problemCodeOf('https://docs.example/')).toBe('docs.example');
+    expect(problemCodeOf('')).toBeUndefined();
+    expect(problemCodeOf(undefined)).toBeUndefined();
+    expect(problemCodeOf(null)).toBeUndefined();
+    expect(problemCodeOf(123)).toBeUndefined();
+    expect(new DleError('http', 'x', { problem: { type: null } as never }).problemCode).toBeUndefined();
+  });
+
+  it('reads the problem code in linear time, whatever the server sends', () => {
+    const slashes = '/'.repeat(200_000);
+    const started = performance.now();
+    expect(problemCodeOf(`${slashes}x${slashes}`)).toBe('x');
+    expect(problemCodeOf(`${slashes}x`)).toBe('x');
+    expect(problemCodeOf(slashes)).toBeUndefined();
+    expect(performance.now() - started).toBeLessThan(500);
   });
 
   it('times out with AbortController and reports a retriable timeout', async () => {
@@ -171,7 +205,7 @@ describe('api client', () => {
 
   it('never writes the SDK key to the console or into an error', async () => {
     const { logger, lines } = spyLogger();
-    const { fetch } = createFetchMock(() => jsonResponse(401, { type: PROBLEM_TYPES.unauthorized, title: 'Unauthorized' }));
+    const { fetch } = createFetchMock(() => jsonResponse(401, { type: problemType(PROBLEM_CODES.unauthorized), title: 'Unauthorized' }));
     const api = createApiClient({ endpoint: 'https://links.example.sk', sdkKey: SDK_KEY, timeoutMs: 4000, fetchImpl: fetch, logger });
     const error = (await api.resolve({ install_id: 'a', platform: 'ios' }).catch((e: unknown) => e)) as DleError;
     expect(error.message).not.toContain(SDK_KEY);
