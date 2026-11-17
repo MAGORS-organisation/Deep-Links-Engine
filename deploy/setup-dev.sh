@@ -104,7 +104,7 @@ fi
 # 4. Summary & next steps
 echo "[4/4] Environment Ready!"
 echo ""
-echo "Endpoints for Local Development (using docker-compose.override.yml):"
+echo "Endpoints for Local Development (docker-compose.yml + docker-compose.dev.yml):"
 echo "  * Edge (Data Plane, Redirects, QR): http://localhost:8080"
 echo "  * Control API & OpenAPI (Scalar):   http://localhost:8081/scalar/v1"
 echo "  * Administration SPA:               http://localhost:8081/admin/"
@@ -136,15 +136,15 @@ if [ "$BUILD_STACK" = true ] || [ "$UP_STACK" = true ]; then
   cd "$SCRIPT_DIR"
   if [ "$BUILD_STACK" = true ]; then
     echo "Building images and launching compose stack..."
-    docker compose up -d --build
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
   else
     echo "Starting compose stack..."
-    docker compose up -d
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
   fi
-  echo "Stack started! Check status with: docker compose ps -a"
+  echo "Stack started! Check status with: cd deploy && docker compose -f docker-compose.yml -f docker-compose.dev.yml ps -a"
 else
   echo "To start the local stack now, run:"
-  echo "  cd deploy && docker compose up -d --build"
+  echo "  cd deploy && docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build"
   echo "or with this script:"
   echo "  ./setup-dev.sh --build"
 fi

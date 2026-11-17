@@ -29,7 +29,7 @@ docker compose -f docker-compose.yml up -d --build   # no images are published y
 docker compose -f docker-compose.yml ps -a           # -a: plain `ps` hides the exited migrate container
 ```
 
-Always name the file: a plain `docker compose …` in `deploy/` also loads `docker-compose.override.yml`, the development profile (Caddy's internal CA, `Development` mode, plain-HTTP `PublicScheme`, tenant self-service on, one edge replica).
+The development profile (Caddy's internal CA, `Development` mode, plain-HTTP `PublicScheme`, tenant self-service on, one edge replica) is `docker-compose.dev.yml` and is loaded only when named; never name it on a production host.
 
 You are done with this step when every service is `healthy`, `migrate` is `exited (0)`, and:
 

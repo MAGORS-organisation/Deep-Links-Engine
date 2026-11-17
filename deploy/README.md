@@ -4,7 +4,7 @@ Two supported shapes, both from `docs/zadanie.md` §B.8:
 
 | Profile | Where | What | Files |
 |---|---|---|---|
-| **A — one server** | Docker Compose | Caddy (TLS, HTTP/2+3) → 2× dle-edge + 1× dle-control → postgres:18 + valkey:8. Sized for 2 vCPU / 4 GB / 20 GB, ~1 000 req/s (NFR-09, NFR-10). | `docker-compose.yml`, `docker-compose.override.yml`, `.env.example`, `Caddyfile`, `docker/`, `postgres/` |
+| **A — one server** | Docker Compose | Caddy (TLS, HTTP/2+3) → 2× dle-edge + 1× dle-control → postgres:18 + valkey:8. Sized for 2 vCPU / 4 GB / 20 GB, ~1 000 req/s (NFR-09, NFR-10). | `docker-compose.yml`, `docker-compose.dev.yml`, `.env.example`, `Caddyfile`, `docker/`, `postgres/` |
 | **B — production cluster** | Kubernetes + Helm | Ingress → dle-edge (HPA 3–20) + dle-control (2) → external PostgreSQL primary + read replicas, Valkey cluster, optional ClickHouse (experimental and not wired end to end — do not enable it, see [Known gaps](../README.md#known-gaps)). | `helm/dle/` |
 
 Both run the same two images (`ghcr.io/magors-organisation/dle-edge`, `…/dle-control`, built by `docker/Dockerfile.*`) with the same environment variable names (`Dle__Section__Key` ↔ `Dle:Section:Key`; the full inventory is `src/Dle.Edge/appsettings.json` and `src/Dle.Control/appsettings.json`). No images have been published to GHCR yet: build them from source — compose does it from its `build:` sections, and for Helm you push them to a registry your cluster can pull from. `deploy/aspire/` is the developer inner loop and is not covered here.
@@ -28,7 +28,7 @@ curl -sI "https://$(grep ^DLE_DOMAIN .env | cut -d= -f2)/.well-known/apple-app-s
 
 Required in `.env` (compose refuses to start without them): `DLE_DOMAIN` (the public link host), `DLE_TLS`, `POSTGRES_PASSWORD`, `VALKEY_PASSWORD`, `DLE_MASTER_SECRET` and `DLE_EDGE_SECRET` — the two secrets at least 32 characters each and different from each other (`openssl rand -base64 48`; the setup scripts generate every secret). Caddy serves TLS for `DLE_DOMAIN` only; every additional link domain needs its own pair of site blocks in `Caddyfile` (HTTPS, and `http://` with the `/.well-known` exemption). `DLE_TLS` is an e-mail address for ACME certificates or `internal` for Caddy's local CA. Every other variable has a default and is documented in `.env.example`.
 
-Naming the file (`-f docker-compose.yml`) keeps `docker-compose.override.yml` out of the stack. That override is for **local development only**: `docker compose up --build` in this directory publishes edge (8080), control (8081), postgres and valkey on 127.0.0.1, runs one edge replica, runs both services with `ASPNETCORE_ENVIRONMENT=Development`, turns on tenant self-service and `PublicScheme=http`, and keeps Caddy on `https://localhost` with its own CA (`tls internal`). Every compose command for a production host therefore names the file: `docker compose -f docker-compose.yml …`.
+`docker compose up -d` in this directory reads `docker-compose.yml` alone; `-f docker-compose.yml` says the same explicitly. The development profile is `docker-compose.dev.yml`, loaded only by name and for **local development only**: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build` publishes edge (8080), control (8081), postgres and valkey on 127.0.0.1, runs one edge replica, runs both services with `ASPNETCORE_ENVIRONMENT=Development`, turns on tenant self-service and `PublicScheme=http`, and keeps Caddy on `https://localhost` with its own CA (`tls internal`). Never name `docker-compose.dev.yml` on a production host, and never add a `docker-compose.override.yml` there, which compose would merge on its own.
 
 Then: admin console `https://<host>/admin/`, API reference `https://<host>/scalar`, links `https://<host>/<slug>`.
 
@@ -69,7 +69,7 @@ Fresh installations provide two working ways to obtain the first credential:
    ./setup-dev.sh --build
    ```
 
-`Dle:Identity:Oidc:RequireHttpsMetadata` stays `true` in production (the compose override switches it off for `localhost` only).
+`Dle:Identity:Oidc:RequireHttpsMetadata` stays `true` in production (`docker-compose.dev.yml` switches it off for `localhost` only).
 
 ---
 

@@ -20,8 +20,8 @@
 #   postgres, valkey  →  migrate (one-shot EF Core migration, exits 0)  →  dle-control, dle-edge
 #   →  caddy
 #
-# Production: `docker compose -f docker-compose.yml up -d` — naming the file explicitly keeps
-# docker-compose.override.yml (local development: published ports, plain HTTP) out of the stack.
+# Production: `docker compose up -d` in this directory reads this file alone. Local development
+# adds docker-compose.dev.yml by name (published ports, plain HTTP, Development); see its header.
 # =============================================================================
 
 name: dle

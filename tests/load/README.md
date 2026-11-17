@@ -38,7 +38,7 @@ On one Linux machine with Docker, k6, Node 22 and jq, without a staging instance
 what the k6 gate in `release.yml` and the `Load test` workflow do):
 
 ```bash
-docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml \
+docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml \
   -f tests/load/compose.loadtest.yml up -d --build --wait
 DLE_API_KEY=<the DLE_BOOTSTRAP_INITIAL_API_KEY the stack started with> bash tests/load/run-on-compose.sh
 ```

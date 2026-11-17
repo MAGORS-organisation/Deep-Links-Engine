@@ -3,7 +3,7 @@
 # release.yml runs the same profile as its k6 gate (the loadtest job), against the released images.
 # This workflow is the rehearsal before a tag, run by hand on the machine the release will use: both
 # images are built here from the checked-out commit, the stack starts from deploy/docker-compose.yml,
-# the override and tests/load/compose.loadtest.yml, and tests/load/run-on-compose.sh seeds it and
+# docker-compose.dev.yml and tests/load/compose.loadtest.yml, and tests/load/run-on-compose.sh seeds it and
 # runs tests/load/resolve.js straight against the edge. The thresholds inside resolve.js decide,
 # exactly as in the release.
 #
@@ -36,13 +36,16 @@ jobs:
     runs-on: ${{ inputs.runner || vars.DLE_LOADTEST_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 60
     env:
-      COMPOSE_FILES: -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml -f tests/load/compose.loadtest.yml
+      COMPOSE_FILES: -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml -f tests/load/compose.loadtest.yml
       DLE_EDGE_IMAGE: dle-edge:loadtest
       DLE_CONTROL_IMAGE: dle-control:loadtest
       DLE_DOMAIN: localhost
       DLE_TLS: internal
-      DLE_HTTP_PORT: "8088"
-      DLE_HTTPS_PORT: "8443"
+      # Caddy is the one service docker-compose.yml publishes; on a self-hosted machine with no
+      # inbound firewall the throw-away stack would otherwise face the network (Docker's own
+      # iptables rules bypass ufw, and the daemon's "ip" default does not reach compose networks).
+      DLE_HTTP_PORT: "127.0.0.1:8088"
+      DLE_HTTPS_PORT: "127.0.0.1:8443"
       # Placeholders so that "Stack logs" and "Tear down" can interpolate the compose file even when
       # the job fails before the throw-away-secrets step, which overrides all four for the real stack.
       POSTGRES_PASSWORD: placeholder-overridden-before-the-stack-starts

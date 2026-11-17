@@ -52,6 +52,12 @@
       vulnerabilities remain enforced by the hard gate in .github/scripts/nuget-vulnerabilities.py.
     -->
     <NoWarn>$(NoWarn);CA1848;CA2007;CA1812;CA1515;NU1901;NU1902</NoWarn>
+    <!--
+      High (NU1903) and Critical (NU1904) advisories stay warnings in the build itself: an advisory
+      published after a tag would otherwise break restore of that tag for everyone who builds it
+      later. The same hard gate as above fails CI on them.
+    -->
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1903;NU1904</WarningsNotAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Label="Runtime behaviour">
