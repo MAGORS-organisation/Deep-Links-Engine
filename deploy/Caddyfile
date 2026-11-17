@@ -123,17 +123,18 @@
 # ---- sites -------------------------------------------------------------------------------------
 
 # HTTPS. `tls internal` = local CA; `tls admin@example.com` = ACME with that account e-mail.
+#
+# No access log on either site. Caddy's would record every client's address, the full URI with its
+# query string, the destination in Location and the X-Api-Key header in plain text, against the
+# engine's own privacy defaults (IP addresses hashed, query strings never logged). Caddy still logs
+# its own errors. If you need one, add a `log` with `format filter` that drops request>remote_ip,
+# request>client_ip, request>uri's query, request>headers>X-Api-Key and resp_headers>Location.
 {$DLE_DOMAIN} {
 	tls {$DLE_TLS}
 
 	encode zstd gzip
 	import security_headers
 	import dle_routes
-
-	log {
-		output stdout
-		format json
-	}
 }
 
 # Plain HTTP. The well-known files are served straight through (never redirected — see the top
@@ -143,11 +144,6 @@ http://{$DLE_DOMAIN} {
 
 	handle {
 		redir https://{host}{uri} 308
-	}
-
-	log {
-		output stdout
-		format json
 	}
 }
 
