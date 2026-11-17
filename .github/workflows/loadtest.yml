@@ -6,6 +6,11 @@
 # tests/load/run-on-compose.sh seeds it and runs tests/load/resolve.js straight against the edge.
 # The thresholds inside resolve.js decide, exactly as in the release.
 #
+# A standard runner (4 vCPU) holds the steady scenario but cannot generate the 12 000/s spike next to
+# the stack. A run by hand takes the machine release.yml would use: the runner input, else the
+# repository variable DLE_LOADTEST_RUNNER. Pull requests always use the standard runner, so no pull
+# request reaches a self-hosted machine through this file.
+#
 # Read-only: no registry login, no push.
 
 name: Load test
@@ -16,6 +21,11 @@ on:
       - "tests/load/**"
       - ".github/workflows/loadtest.yml"
   workflow_dispatch:
+    inputs:
+      runner:
+        description: runs-on label (empty = DLE_LOADTEST_RUNNER, else ubuntu-latest)
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -27,7 +37,7 @@ concurrency:
 jobs:
   k6:
     name: k6 resolve profile (compose stack on the runner)
-    runs-on: ubuntu-latest
+    runs-on: ${{ github.event_name == 'workflow_dispatch' && (inputs.runner || vars.DLE_LOADTEST_RUNNER) || 'ubuntu-latest' }}
     timeout-minutes: 60
     env:
       COMPOSE_FILES: -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml -f tests/load/compose.loadtest.yml

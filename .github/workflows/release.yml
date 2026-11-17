@@ -17,8 +17,13 @@
 # runner's CPUs), registers link.dle.test with the throw-away bootstrap owner key (a domain is
 # active at once while Dle:Control:RequireDomainOwnershipVerification is off, its default), points
 # it at 127.0.0.1 and runs the profile straight against the edge. Stack and generator share the
-# runner, and the release notes say so. A persistent staging instance takes its place when all
-# four repository secrets are set:
+# runner, and the release notes say so. A standard runner (4 vCPU) holds the steady scenario but
+# cannot generate the 12 000/s spike next to the stack, so a GA tag needs a larger machine: set the
+# repository variable DLE_LOADTEST_RUNNER to the runs-on label of a larger GitHub-hosted runner or of
+# a dedicated self-hosted one (Linux, Docker, passwordless sudo; with fork pull requests from
+# outside collaborators requiring approval, since a public repository's workflows choose their
+# runner). A persistent staging instance takes the stack's place when all four repository secrets
+# are set:
 #   DLE_LOADTEST_CONTROL_URL, DLE_LOADTEST_API_KEY, DLE_LOADTEST_DOMAIN_ID, DLE_LOADTEST_LINK_HOST
 # The thresholds inside resolve.js decide. For a plain tag a miss fails the release; for a
 # pre-release tag it is reported and the release stays a pre-release. Only a plain tag whose run
@@ -291,7 +296,8 @@ jobs:
   gates:
     name: Release gates (compose smoke, ZAP, k6)
     needs: [version, images]
-    runs-on: ubuntu-latest
+    # A larger machine for the k6 spike (see the header); the standard runner otherwise.
+    runs-on: ${{ vars.DLE_LOADTEST_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 60
     permissions:
       contents: read

@@ -135,7 +135,10 @@ const correctOutcome = new Rate('dle_correct_outcome');
 // ---------------------------------------------------------------------------------------------
 
 export const options = {
-  discardResponseBodies: false,
+  // No check reads a body (status and Location only), so k6 receives each body off the wire, which
+  // http_req_duration still times, and drops it instead of copying it into the VU. At the spike that
+  // copy is generator CPU taken from the machine under test.
+  discardResponseBodies: true,
 
   scenarios: {
     steady: {
