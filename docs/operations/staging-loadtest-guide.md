@@ -18,9 +18,9 @@ One of the strict release gates is the **k6 resolve profile** (§D.5):
   - **Cache efficiency:** Edge hit rate \(\ge 95\%\) over lookups of links that exist
   - **Data integrity:** Metric `dle_click_events_dropped_total` \(= 0\)
 
-By default the gate needs no staging: it runs on the release runner against the compose stack started from the released images. `tests/load/compose.loadtest.yml` recreates the edge for the run (resolve limiter off, 404 budget lifted), and `tests/load/run-on-compose.sh` registers `link.dle.test` with the stack's throw-away bootstrap owner key — a domain is active on registration while `Dle:Control:RequireDomainOwnershipVerification` is off, its default — seeds it and runs k6 straight against the edge. The `Load test` workflow does the same before a tag, from images built on the commit. A persistent staging instance takes its place when the four secrets below are set.
+By default the gate needs no staging: the release's `loadtest` job, in parallel with the smoke and ZAP gates, starts the compose stack from the released images with `tests/load/compose.loadtest.yml` (resolve limiter off, 404 budget lifted, the machine's CPUs), and `tests/load/run-on-compose.sh` registers `link.dle.test` with the stack's throw-away bootstrap owner key — a domain is active on registration while `Dle:Control:RequireDomainOwnershipVerification` is off, its default — seeds it and runs k6 straight against the edge. The `Load test` workflow does the same before a tag, from images built on the commit. A persistent staging instance takes its place when the four secrets below are set.
 
-A standard GitHub runner (4 vCPU) holds the steady scenario with room to spare (p95 4.5 ms against 25 ms) but cannot generate the 12 000 req/s spike next to the stack: k6 drops iterations and the spike tail misses 200 ms. A GA tag therefore needs a larger machine for the gates job. Set the repository variable `DLE_LOADTEST_RUNNER` to the `runs-on` label of a larger GitHub-hosted runner (GitHub Team or Enterprise) or of a dedicated self-hosted runner (Linux, Docker, passwordless sudo, at least 16 vCPU; require approval for fork pull requests from outside collaborators). Try it first with the `Load test` workflow run by hand, whose `runner` input defaults to the same variable.
+A standard GitHub runner (4 vCPU) holds the steady scenario with room to spare (p95 4.5 ms against 25 ms) but cannot generate the 12 000 req/s spike next to the stack: k6 drops iterations and the spike tail misses 200 ms. A GA tag therefore needs a larger machine for the release's `loadtest` job, the only job that runs there. Set the repository variable `DLE_LOADTEST_RUNNER` to the `runs-on` label of a larger GitHub-hosted runner (GitHub Team or Enterprise) or of a dedicated self-hosted runner (Linux x64 with Docker, curl and jq, at least 16 vCPU, `link.dle.test` pointing at 127.0.0.1 in `/etc/hosts`; require approval for fork pull request workflows from outside collaborators). Try it first with the `Load test` workflow run by hand, whose `runner` input defaults to the same variable. Delete the variable before the machine goes away: a set variable sends every later tag's `loadtest` job to that label, and with no runner left the job never starts and nothing is released.
 
 > [!IMPORTANT]
 > The k6 thresholds decide either way. A plain tag whose run misses them fails the release; a pre-release tag reports the miss and stays a **`pre-release`**. Only a plain tag whose run passed becomes a full **General Availability (GA)** release and moves `:MAJOR.MINOR` and `:latest`.
@@ -68,8 +68,8 @@ The staging environment should reflect the production architecture described in 
 ```mermaid
 flowchart TD
     A["Tag Pushed (v*.*.*)"] --> B["Build & Sign Images"]
-    B --> C["Compose Smoke Tests & ZAP Baseline"]
-    C --> D{"Staging Secrets Present?"}
+    B --> C["gates: Trivy, Compose Smoke Tests & ZAP Baseline"]
+    B --> D{"loadtest: Staging Secrets Present?"}
     D -- No --> E["Runner: tests/load/run-on-compose.sh (seed.js, then k6)"]
     D -- Yes --> F["Staging: Node 22 tests/load/seed.js, then k6 tests/load/resolve.js"]
     E --> H{"k6 thresholds passed?"}

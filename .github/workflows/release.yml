@@ -5,25 +5,28 @@
 #            ├─ sbom (reusable: SBOM ×3 + CBOM, schema-validated)
 #            ├─ images  [edge, control]  buildx linux/amd64+arm64 → ghcr.io as :VERSION only,
 #            │                           provenance + SBOM attestations, cosign keyless signature
-#            ├─ helm    after gates: lint → package → push oci://ghcr.io/<owner>/charts → cosign sign
+#            ├─ helm    after gates + loadtest: lint → package → push oci://ghcr.io/<owner>/charts → cosign sign
 #            ├─ gates   compose stack from the pushed images: Trivy (hard) → smoke (/healthz,
-#            │          /readyz, edge stays up with postgres stopped) → ZAP baseline (hard) → k6
+#            │          /readyz, edge stays up with postgres stopped) → ZAP baseline (hard)
+#            ├─ loadtest k6 resolve profile on its own machine (DLE_LOADTEST_RUNNER, see below)
 #            ├─ promote plain tags whose k6 gate passed: :MAJOR.MINOR and :latest → the gated digest
 #            └─ release cosign sign-blob SBOM/CBOM → GitHub release with SBOM, CBOM, chart, digests
 #
-# k6 gate: tests/load/resolve.js, with a corpus seeded by tests/load/seed.js. By default it runs right
-# here, against the compose stack from the released images: tests/load/run-on-compose.sh recreates
-# the edge with tests/load/compose.loadtest.yml (resolve limiter off, 404 budget lifted, the
-# runner's CPUs), registers link.dle.test with the throw-away bootstrap owner key (a domain is
-# active at once while Dle:Control:RequireDomainOwnershipVerification is off, its default), points
-# it at 127.0.0.1 and runs the profile straight against the edge. Stack and generator share the
-# runner, and the release notes say so. A standard runner (4 vCPU) holds the steady scenario but
-# cannot generate the 12 000/s spike next to the stack, so a GA tag needs a larger machine: set the
-# repository variable DLE_LOADTEST_RUNNER to the runs-on label of a larger GitHub-hosted runner or of
-# a dedicated self-hosted one (Linux, Docker, passwordless sudo; with fork pull requests from
-# outside collaborators requiring approval, since a public repository's workflows choose their
-# runner). A persistent staging instance takes the stack's place when all four repository secrets
-# are set:
+# k6 gate (the loadtest job): tests/load/resolve.js, with a corpus seeded by tests/load/seed.js. By
+# default the job starts the compose stack from the released images with
+# tests/load/compose.loadtest.yml (resolve limiter off, 404 budget lifted, the machine's CPUs), and
+# tests/load/run-on-compose.sh registers link.dle.test with the throw-away bootstrap owner key (a
+# domain is active at once while Dle:Control:RequireDomainOwnershipVerification is off, its
+# default), points it at 127.0.0.1 and runs the profile straight against the edge. Stack and
+# generator share the machine, and the release notes say so. A standard runner (4 vCPU) holds the
+# steady scenario but cannot generate the 12 000/s spike next to the stack, so a GA tag needs a
+# larger machine: set the repository variable DLE_LOADTEST_RUNNER to the runs-on label of a larger
+# GitHub-hosted runner or of a dedicated self-hosted one (Linux x64 with Docker, curl and jq, and
+# 127.0.0.1 link.dle.test in /etc/hosts or passwordless sudo; on a public repository with fork pull
+# request workflows from outside collaborators requiring approval, since a workflow chooses its own
+# runner). Only this job runs there. Delete the variable before the machine goes away, or every
+# later tag waits for a runner that no longer exists. A persistent staging instance takes the
+# stack's place when all four repository secrets are set:
 #   DLE_LOADTEST_CONTROL_URL, DLE_LOADTEST_API_KEY, DLE_LOADTEST_DOMAIN_ID, DLE_LOADTEST_LINK_HOST
 # The thresholds inside resolve.js decide. For a plain tag a miss fails the release; for a
 # pre-release tag it is reported and the release stays a pre-release. Only a plain tag whose run
@@ -226,10 +229,10 @@ jobs:
   # ---------------------------------------------------------------------------------------------
   helm:
     name: Helm chart
-    # After the k6 gate: like the GitHub release, the chart is stable only for a plain tag whose
-    # load test passed. A failed gates job publishes no chart; a pre-release tag whose k6 run missed
-    # still publishes one, marked prerelease.
-    needs: [version, ci, gates]
+    # After the gates and the k6 gate: like the GitHub release, the chart is stable only for a plain
+    # tag whose load test passed. A failed job publishes no chart; a pre-release tag whose k6 run
+    # missed still publishes one, marked prerelease.
+    needs: [version, ci, gates, loadtest]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -240,7 +243,7 @@ jobs:
       CHART_DIR: deploy/helm/dle
       CHART_OCI: oci://ghcr.io/${{ needs.version.outputs.owner }}/charts
       VERSION: ${{ needs.version.outputs.version }}
-      PRERELEASE: ${{ needs.version.outputs.prerelease == 'true' || needs.gates.outputs.loadtest != 'ran' }}
+      PRERELEASE: ${{ needs.version.outputs.prerelease == 'true' || needs.loadtest.outputs.loadtest != 'ran' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -294,18 +297,13 @@ jobs:
 
   # ---------------------------------------------------------------------------------------------
   gates:
-    name: Release gates (compose smoke, ZAP, k6)
+    name: Release gates (compose smoke, ZAP)
     needs: [version, images]
-    # A larger machine for the k6 spike (see the header); the standard runner otherwise.
-    runs-on: ${{ vars.DLE_LOADTEST_RUNNER || 'ubuntu-latest' }}
-    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: read
-    outputs:
-      # ran = the thresholds held; failed = they did not, which only a pre-release tag gets past.
-      loadtest: ${{ steps.k6.outcome == 'success' && 'ran' || 'failed' }}
-      loadtest_target: ${{ steps.k6.outputs.target }}
     env:
       COMPOSE_FILES: -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml
       DLE_VERSION: ${{ needs.version.outputs.version }}
@@ -323,8 +321,6 @@ jobs:
       VALKEY_PASSWORD: placeholder-overridden-before-the-stack-starts
       DLE_MASTER_SECRET: placeholder-overridden-before-the-stack-starts-32chars
       DLE_EDGE_SECRET: placeholder-overridden-before-the-stack-starts-edge-32
-      # `secrets` is not available in `if:`; it is in `env:`.
-      HAS_LOADTEST_TARGET: ${{ secrets.DLE_LOADTEST_CONTROL_URL != '' && secrets.DLE_LOADTEST_API_KEY != '' && secrets.DLE_LOADTEST_DOMAIN_ID != '' && secrets.DLE_LOADTEST_LINK_HOST != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -339,18 +335,14 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Throw-away secrets for this stack
-        # The first four are required by the compose file (:? interpolation); the owner key is what
-        # the k6 gate seeds the stack with (dle_ + 8 + _ + 43 characters, hex being a subset of the
-        # accepted alphabet). Random, masked, never reused.
+        # All four are required by the compose file (:? interpolation). Random, masked, never reused.
         run: |
           pg="$(openssl rand -hex 24)"; vk="$(openssl rand -hex 24)"; ms="$(openssl rand -base64 48 | tr -d '\n')"; es="$(openssl rand -base64 48 | tr -d '\n')"
-          key="dle_$(openssl rand -hex 4)_$(openssl rand -hex 22 | cut -c1-43)"
-          echo "::add-mask::$pg"; echo "::add-mask::$vk"; echo "::add-mask::$ms"; echo "::add-mask::$es"; echo "::add-mask::$key"
+          echo "::add-mask::$pg"; echo "::add-mask::$vk"; echo "::add-mask::$ms"; echo "::add-mask::$es"
           echo "POSTGRES_PASSWORD=$pg" >> "$GITHUB_ENV"
           echo "VALKEY_PASSWORD=$vk" >> "$GITHUB_ENV"
           echo "DLE_MASTER_SECRET=$ms" >> "$GITHUB_ENV"
           echo "DLE_EDGE_SECRET=$es" >> "$GITHUB_ENV"
-          echo "DLE_BOOTSTRAP_INITIAL_API_KEY=$key" >> "$GITHUB_ENV"
 
       - name: Start the stack from the released images
         run: |
@@ -407,6 +399,85 @@ jobs:
           fail_action: true
           artifact_name: zap-baseline-edge-release
 
+      - name: Stack logs (on failure)
+        if: ${{ failure() }}
+        run: docker compose $COMPOSE_FILES logs --no-color --tail 300
+
+      - name: Tear down
+        if: ${{ always() }}
+        run: docker compose $COMPOSE_FILES down --volumes --remove-orphans
+
+  # ---------------------------------------------------------------------------------------------
+  loadtest:
+    name: k6 resolve profile
+    needs: [version, images]
+    # A larger machine for the 12 000/s spike (see the header); the standard runner otherwise.
+    runs-on: ${{ vars.DLE_LOADTEST_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      # ran = the thresholds held; failed = they did not, which only a pre-release tag gets past.
+      loadtest: ${{ steps.k6.outcome == 'success' && 'ran' || 'failed' }}
+      loadtest_target: ${{ steps.k6.outputs.target }}
+    env:
+      COMPOSE_FILES: -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml -f tests/load/compose.loadtest.yml
+      DLE_VERSION: ${{ needs.version.outputs.version }}
+      DLE_EDGE_IMAGE: ghcr.io/${{ needs.version.outputs.owner }}/dle-edge:${{ needs.version.outputs.version }}
+      DLE_CONTROL_IMAGE: ghcr.io/${{ needs.version.outputs.owner }}/dle-control:${{ needs.version.outputs.version }}
+      DLE_DOMAIN: localhost
+      DLE_TLS: internal
+      DLE_HTTP_PORT: "8088"
+      DLE_HTTPS_PORT: "8443"
+      # Placeholders, as in the gates job, so that "Stack logs" and "Tear down" can interpolate the
+      # compose file even when the job fails before the throw-away-secrets step.
+      POSTGRES_PASSWORD: placeholder-overridden-before-the-stack-starts
+      VALKEY_PASSWORD: placeholder-overridden-before-the-stack-starts
+      DLE_MASTER_SECRET: placeholder-overridden-before-the-stack-starts-32chars
+      DLE_EDGE_SECRET: placeholder-overridden-before-the-stack-starts-edge-32
+      # `secrets` is not available in `if:`; it is in `env:`.
+      HAS_LOADTEST_TARGET: ${{ secrets.DLE_LOADTEST_CONTROL_URL != '' && secrets.DLE_LOADTEST_API_KEY != '' && secrets.DLE_LOADTEST_DOMAIN_ID != '' && secrets.DLE_LOADTEST_LINK_HOST != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Login to GHCR (the packages may be private on first publish)
+        if: ${{ env.HAS_LOADTEST_TARGET != 'true' }}
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Throw-away secrets for this stack
+        # Four the compose file requires, and the owner key the stack is seeded with (dle_ + 8 + _ +
+        # 43 characters, hex being a subset of the accepted alphabet). Random, masked, never reused.
+        if: ${{ env.HAS_LOADTEST_TARGET != 'true' }}
+        run: |
+          pg="$(openssl rand -hex 24)"; vk="$(openssl rand -hex 24)"; ms="$(openssl rand -base64 48 | tr -d '\n')"; es="$(openssl rand -base64 48 | tr -d '\n')"
+          key="dle_$(openssl rand -hex 4)_$(openssl rand -hex 22 | cut -c1-43)"
+          echo "::add-mask::$pg"; echo "::add-mask::$vk"; echo "::add-mask::$ms"; echo "::add-mask::$es"; echo "::add-mask::$key"
+          echo "POSTGRES_PASSWORD=$pg" >> "$GITHUB_ENV"
+          echo "VALKEY_PASSWORD=$vk" >> "$GITHUB_ENV"
+          echo "DLE_MASTER_SECRET=$ms" >> "$GITHUB_ENV"
+          echo "DLE_EDGE_SECRET=$es" >> "$GITHUB_ENV"
+          echo "DLE_BOOTSTRAP_INITIAL_API_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Start the stack from the released images
+        if: ${{ env.HAS_LOADTEST_TARGET != 'true' }}
+        run: |
+          export DLE_LOADTEST_EDGE_CPUS="$(nproc)"
+          echo "DLE_LOADTEST_EDGE_CPUS=$DLE_LOADTEST_EDGE_CPUS" >> "$GITHUB_ENV"
+          # A self-hosted machine may still hold the stack of an interrupted run.
+          docker compose $COMPOSE_FILES down --volumes --remove-orphans || true
+          docker compose $COMPOSE_FILES pull --quiet
+          docker compose $COMPOSE_FILES up -d --no-build --wait --wait-timeout 300
+          curl -fsS http://127.0.0.1:8080/healthz && echo " edge healthy"
+          curl -fsS http://127.0.0.1:8081/readyz  && echo " control ready"
+
       - name: Set up k6
         uses: grafana/setup-k6-action@c47136d33d365efbeb9ae7266908b5dcf98cdece # v1.3.0
 
@@ -426,18 +497,16 @@ jobs:
           DLE_DOMAIN_ID: ${{ secrets.DLE_LOADTEST_DOMAIN_ID }}
           DLE_LINK_HOST: ${{ secrets.DLE_LOADTEST_LINK_HOST }}
         run: |
-          mkdir -p k6-out
+          rm -rf k6-out && mkdir -p k6-out
           if [ "$HAS_LOADTEST_TARGET" = "true" ]; then
             echo "target=staging" >> "$GITHUB_OUTPUT"
-            # Seed the corpus (idempotent: Idempotency-Key per link, prefix k6load), then run.
+            # Seed the corpus (prefix k6load; links from an earlier run are kept), then run.
             node tests/load/seed.js --total 10000 --hot 100
             (cd k6-out && k6 run -e BASE_URL="https://${DLE_LINK_HOST}" --summary-export k6-summary.json ../tests/load/resolve.js)
             { echo "### k6 load profile"; echo; echo "Ran against the staging target https://${DLE_LINK_HOST}; thresholds in tests/load/resolve.js held."; } >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           echo "target=runner" >> "$GITHUB_OUTPUT"
-          export DLE_LOADTEST_EDGE_CPUS="$(nproc)"
-          docker compose $COMPOSE_FILES -f tests/load/compose.loadtest.yml up -d --no-build --no-deps --wait --wait-timeout 120 dle-edge
           status=0
           DLE_API_KEY="$DLE_BOOTSTRAP_INITIAL_API_KEY" DLE_CONTROL_URL="" DLE_DOMAIN_ID="" DLE_LINK_HOST="" \
             bash tests/load/run-on-compose.sh k6-out || status=$?
@@ -454,11 +523,11 @@ jobs:
           retention-days: 90
 
       - name: Stack logs (on failure)
-        if: ${{ failure() }}
+        if: ${{ failure() && env.HAS_LOADTEST_TARGET != 'true' }}
         run: docker compose $COMPOSE_FILES logs --no-color --tail 300
 
       - name: Tear down
-        if: ${{ always() }}
+        if: ${{ always() && env.HAS_LOADTEST_TARGET != 'true' }}
         run: docker compose $COMPOSE_FILES down --volumes --remove-orphans
 
   # ---------------------------------------------------------------------------------------------
@@ -467,8 +536,8 @@ jobs:
     # Only a plain tag whose k6 gate passed moves the tags that follow a release line (see the
     # header). The index is re-tagged by digest, so the signature and attestations made in `images`
     # still apply.
-    needs: [version, images, gates]
-    if: ${{ needs.version.outputs.prerelease == 'false' && needs.gates.outputs.loadtest == 'ran' }}
+    needs: [version, images, gates, loadtest]
+    if: ${{ needs.version.outputs.prerelease == 'false' && needs.loadtest.outputs.loadtest == 'ran' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -508,7 +577,7 @@ jobs:
   # ---------------------------------------------------------------------------------------------
   release:
     name: GitHub release
-    needs: [version, ci, sbom, images, helm, gates, promote]
+    needs: [version, ci, sbom, images, helm, gates, loadtest, promote]
     # promote is skipped for a pre-release tag (and only a pre-release tag gets past a failed k6
     # gate); neither must skip the release. A failure anywhere
     # (a job skipped because its own need failed leaves that failure in the list) still blocks it.
@@ -559,8 +628,8 @@ jobs:
 
       - name: Release notes header
         env:
-          LOADTEST: ${{ needs.gates.outputs.loadtest }}
-          LOADTEST_TARGET: ${{ needs.gates.outputs.loadtest_target }}
+          LOADTEST: ${{ needs.loadtest.outputs.loadtest }}
+          LOADTEST_TARGET: ${{ needs.loadtest.outputs.loadtest_target }}
           REPO: ${{ github.repository }}
         run: |
           {
@@ -589,13 +658,13 @@ jobs:
             echo "- CI (build, format, unit, contract, security, integration suites, coverage gate): passed"
             echo "- Trivy (CRITICAL/HIGH with a fix available) against the released images (linux/amd64): passed; SLSA provenance and per-image SBOM attached to each index"
             echo "- Compose smoke and OWASP ZAP baseline against the released images: passed"
-            if [ "$LOADTEST_TARGET" = "staging" ]; then where="against the staging target"; else where="on the release runner, against the compose stack from the released images"; fi
+            if [ "$LOADTEST_TARGET" = "staging" ]; then where="against the staging target"; else where="on the release machine, against the compose stack from the released images"; fi
             if [ "$LOADTEST" = "ran" ]; then
               echo "- k6 resolve load profile: passed $where (thresholds in tests/load/resolve.js)"
             elif [ -f assets/k6/k6-summary.json ]; then
               echo "- k6 resolve load profile: **FAILED** $where — reported rather than blocking because this is a pre-release tag"
             else
-              echo "- k6 resolve load profile: **did not complete** $where (stopped before k6; see the gates job log) — this is a pre-release tag"
+              echo "- k6 resolve load profile: **did not complete** $where (stopped before k6; see the loadtest job log) — this is a pre-release tag"
             fi
             if [ -f assets/k6/report.md ]; then echo; sed 's/^/  /' assets/k6/report.md; fi
             echo
@@ -609,7 +678,7 @@ jobs:
           name: DLE ${{ needs.version.outputs.version }}
           body_path: notes.md
           generate_release_notes: true
-          prerelease: ${{ needs.version.outputs.prerelease == 'true' || needs.gates.outputs.loadtest != 'ran' }}
+          prerelease: ${{ needs.version.outputs.prerelease == 'true' || needs.loadtest.outputs.loadtest != 'ran' }}
           fail_on_unmatched_files: true
           files: |
             assets/sbom/*.cdx.json

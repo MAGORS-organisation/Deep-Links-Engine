@@ -1,25 +1,21 @@
 # Load test — the k6 resolve profile against a compose stack built from this commit.
 #
-# release.yml runs the same profile as its k6 gate, against the released images. This workflow runs
-# it before a tag: both images are built here from the checked-out commit, the stack starts on this
-# runner from deploy/docker-compose.yml, the override and tests/load/compose.loadtest.yml, and
-# tests/load/run-on-compose.sh seeds it and runs tests/load/resolve.js straight against the edge.
-# The thresholds inside resolve.js decide, exactly as in the release.
+# release.yml runs the same profile as its k6 gate (the loadtest job), against the released images.
+# This workflow is the rehearsal before a tag, run by hand on the machine the release will use: both
+# images are built here from the checked-out commit, the stack starts from deploy/docker-compose.yml,
+# the override and tests/load/compose.loadtest.yml, and tests/load/run-on-compose.sh seeds it and
+# runs tests/load/resolve.js straight against the edge. The thresholds inside resolve.js decide,
+# exactly as in the release.
 #
-# A standard runner (4 vCPU) holds the steady scenario but cannot generate the 12 000/s spike next to
-# the stack. A run by hand takes the machine release.yml would use: the runner input, else the
-# repository variable DLE_LOADTEST_RUNNER. Pull requests always use the standard runner, so no pull
-# request reaches a self-hosted machine through this file.
+# The machine is the runner input, else the repository variable DLE_LOADTEST_RUNNER, else a standard
+# runner (4 vCPU), which holds the steady scenario but cannot generate the 12 000/s spike next to the
+# stack. There is no pull-request trigger for that reason.
 #
 # Read-only: no registry login, no push.
 
 name: Load test
 
 on:
-  pull_request:
-    paths:
-      - "tests/load/**"
-      - ".github/workflows/loadtest.yml"
   workflow_dispatch:
     inputs:
       runner:
@@ -32,12 +28,12 @@ permissions:
 
 concurrency:
   group: loadtest-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false
 
 jobs:
   k6:
     name: k6 resolve profile (compose stack on the runner)
-    runs-on: ${{ github.event_name == 'workflow_dispatch' && (inputs.runner || vars.DLE_LOADTEST_RUNNER) || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.runner || vars.DLE_LOADTEST_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 60
     env:
       COMPOSE_FILES: -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml -f tests/load/compose.loadtest.yml
@@ -102,6 +98,8 @@ jobs:
         run: |
           export DLE_LOADTEST_EDGE_CPUS="$(nproc)"
           echo "DLE_LOADTEST_EDGE_CPUS=$DLE_LOADTEST_EDGE_CPUS" >> "$GITHUB_ENV"
+          # A self-hosted machine may still hold the stack of an interrupted run.
+          docker compose $COMPOSE_FILES down --volumes --remove-orphans || true
           docker compose $COMPOSE_FILES up -d --no-build --wait --wait-timeout 300
           curl -fsS http://127.0.0.1:8080/healthz && echo " edge healthy"
           curl -fsS http://127.0.0.1:8081/readyz  && echo " control ready"
@@ -116,6 +114,7 @@ jobs:
 
       - name: k6 — resolve load profile
         run: |
+          rm -rf k6-out
           status=0
           DLE_API_KEY="$DLE_BOOTSTRAP_INITIAL_API_KEY" bash tests/load/run-on-compose.sh k6-out || status=$?
           { echo "### k6 load profile"; echo; cat k6-out/report.md 2>/dev/null || echo "No report: the run stopped before k6."; } >> "$GITHUB_STEP_SUMMARY"
