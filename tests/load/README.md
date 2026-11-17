@@ -1,15 +1,14 @@
 # Load profile — resolve path
 
-The §D.5 profile, as k6 scripts. **Nothing in this directory has been run.** k6 is not installed on
-the machine these files were written on, and the profile needs a deployed edge with PostgreSQL and
-Valkey behind it — a load test against a substituted store measures the substitute. The files are
-committed so that the profile is reviewable, versioned and reproducible, not because a number in this
-repository has been produced by them.
+The §D.5 profile, as k6 scripts. It needs a deployed edge with PostgreSQL and Valkey behind it — a
+load test against a substituted store measures the substitute. The release k6 gate and the `Load
+test` workflow run it against the compose stack on a GitHub runner (`run-on-compose.sh`, below).
 
 | File | What it is |
 |---|---|
 | `resolve.js` | The §D.5 profile: two scenarios, the traffic mix, the thresholds. |
-| `seed.js` | Creates the link corpus the profile needs and writes `corpus.json`. Node 24. |
+| `seed.js` | Creates the link corpus the profile needs and writes `corpus.json`. Node 22 or later. |
+| `compose.loadtest.yml`, `run-on-compose.sh` | The same run on one machine: compose overlay and the script that seeds and runs it. |
 | `corpus.json` | Produced by `seed.js`. Not committed: it names one deployment's links. |
 
 ## Status: execution requirements
@@ -23,7 +22,7 @@ The profile in `resolve.js` has been verified with `k6 inspect`.
 ## Running it
 
 ```bash
-# 1. Seed. Needs a control-plane API key and a verified domain.
+# 1. Seed. Needs a control-plane API key and an active link domain.
 node seed.js \
   --control https://control.example.com \
   --api-key  dle_ab12cd34_.................. \
@@ -35,8 +34,18 @@ node seed.js \
 k6 run -e BASE_URL=https://link.example.com resolve.js
 ```
 
-`seed.js` sends an `Idempotency-Key` per link, so re-running it against a partially seeded instance
-finishes the job instead of producing ten thousand conflicts. Every link it creates is prefixed
+On one Linux machine with Docker, k6, Node 22 and jq, without a staging instance or DNS (this is
+what the k6 gate in `release.yml` and the `Load test` workflow do):
+
+```bash
+docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml \
+  -f tests/load/compose.loadtest.yml up -d --build --wait
+DLE_API_KEY=<the DLE_BOOTSTRAP_INITIAL_API_KEY the stack started with> bash tests/load/run-on-compose.sh
+```
+
+Re-running `seed.js` against a partially seeded instance finishes the job: links an earlier run
+created come back as slug-taken and stay in the corpus, and any other failed row stops the seeding
+instead of leaving a link in the corpus that does not exist. Every link it creates is prefixed
 `k6load`, which is also how they are found and deleted afterwards.
 
 ## The profile
@@ -87,7 +96,7 @@ produced: a redirect or an interstitial for a browser, an Open Graph document fo
 
 | Criterion | Where | Source |
 |---|---|---|
-| Cache hit rate ≥ 95 % | `dle_cache_hit_ratio{level="l1"}` + `{level="l2"}` on the edge | §D.5 |
+| Cache hit rate ≥ 95 % over existing links | `dle_resolve_duration_count` on the edge: `cache="l1"` share of lookups that found a link (`dle_cache_hit_ratio` also counts the 5 % misses, so it tops out near 95 %) | §D.5 |
 | `dle_click_events_dropped_total` = 0 | edge, must not have moved during the run | §D.5 |
 | No 5xx in the edge log | edge | §D.6: "žiadny 500" |
 

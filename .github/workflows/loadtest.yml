@@ -1,0 +1,129 @@
+# Load test — the k6 resolve profile against a compose stack built from this commit.
+#
+# release.yml runs the same profile as its k6 gate, against the released images. This workflow runs
+# it before a tag: both images are built here from the checked-out commit, the stack starts on this
+# runner from deploy/docker-compose.yml, the override and tests/load/compose.loadtest.yml, and
+# tests/load/run-on-compose.sh seeds it and runs tests/load/resolve.js straight against the edge.
+# The thresholds inside resolve.js decide, exactly as in the release.
+#
+# Read-only: no registry login, no push.
+
+name: Load test
+
+on:
+  pull_request:
+    paths:
+      - "tests/load/**"
+      - ".github/workflows/loadtest.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: loadtest-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  k6:
+    name: k6 resolve profile (compose stack on the runner)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      COMPOSE_FILES: -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml -f tests/load/compose.loadtest.yml
+      DLE_EDGE_IMAGE: dle-edge:loadtest
+      DLE_CONTROL_IMAGE: dle-control:loadtest
+      DLE_DOMAIN: localhost
+      DLE_TLS: internal
+      DLE_HTTP_PORT: "8088"
+      DLE_HTTPS_PORT: "8443"
+      # Placeholders so that "Stack logs" and "Tear down" can interpolate the compose file even when
+      # the job fails before the throw-away-secrets step, which overrides all four for the real stack.
+      POSTGRES_PASSWORD: placeholder-overridden-before-the-stack-starts
+      VALKEY_PASSWORD: placeholder-overridden-before-the-stack-starts
+      DLE_MASTER_SECRET: placeholder-overridden-before-the-stack-starts-32chars
+      DLE_EDGE_SECRET: placeholder-overridden-before-the-stack-starts-edge-32
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # The cache scopes are the ones the other workflows write; this one only reads them.
+      - name: Build dle-edge
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.edge
+          load: true
+          push: false
+          platforms: linux/amd64
+          tags: dle-edge:loadtest
+          cache-from: type=gha,scope=dle-edge
+
+      - name: Build dle-control
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: deploy/docker/Dockerfile.control
+          load: true
+          push: false
+          platforms: linux/amd64
+          tags: dle-control:loadtest
+          cache-from: type=gha,scope=dle-control
+
+      - name: Throw-away secrets for this stack
+        # The same five as the release gate: four the compose file requires, and the owner key the
+        # stack is seeded with (dle_ + 8 + _ + 43 characters). Random, masked, never reused.
+        run: |
+          pg="$(openssl rand -hex 24)"; vk="$(openssl rand -hex 24)"; ms="$(openssl rand -base64 48 | tr -d '\n')"; es="$(openssl rand -base64 48 | tr -d '\n')"
+          key="dle_$(openssl rand -hex 4)_$(openssl rand -hex 22 | cut -c1-43)"
+          echo "::add-mask::$pg"; echo "::add-mask::$vk"; echo "::add-mask::$ms"; echo "::add-mask::$es"; echo "::add-mask::$key"
+          echo "POSTGRES_PASSWORD=$pg" >> "$GITHUB_ENV"
+          echo "VALKEY_PASSWORD=$vk" >> "$GITHUB_ENV"
+          echo "DLE_MASTER_SECRET=$ms" >> "$GITHUB_ENV"
+          echo "DLE_EDGE_SECRET=$es" >> "$GITHUB_ENV"
+          echo "DLE_BOOTSTRAP_INITIAL_API_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Start the stack
+        run: |
+          export DLE_LOADTEST_EDGE_CPUS="$(nproc)"
+          echo "DLE_LOADTEST_EDGE_CPUS=$DLE_LOADTEST_EDGE_CPUS" >> "$GITHUB_ENV"
+          docker compose $COMPOSE_FILES up -d --no-build --wait --wait-timeout 300
+          curl -fsS http://127.0.0.1:8080/healthz && echo " edge healthy"
+          curl -fsS http://127.0.0.1:8081/readyz  && echo " control ready"
+
+      - name: Set up k6
+        uses: grafana/setup-k6-action@c47136d33d365efbeb9ae7266908b5dcf98cdece # v1.3.0
+
+      - name: Set up Node 22 (seeder)
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      - name: k6 — resolve load profile
+        run: |
+          status=0
+          DLE_API_KEY="$DLE_BOOTSTRAP_INITIAL_API_KEY" bash tests/load/run-on-compose.sh k6-out || status=$?
+          { echo "### k6 load profile"; echo; cat k6-out/report.md 2>/dev/null || echo "No report: the run stopped before k6."; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
+      - name: Upload k6 summary
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: k6-summary
+          path: k6-out/
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Stack logs (on failure)
+        if: ${{ failure() }}
+        run: docker compose $COMPOSE_FILES logs --no-color --tail 300
+
+      - name: Tear down
+        if: ${{ always() }}
+        run: docker compose $COMPOSE_FILES down --volumes --remove-orphans

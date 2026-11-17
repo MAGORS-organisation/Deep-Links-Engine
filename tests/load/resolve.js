@@ -17,16 +17,18 @@
 //
 // Run it against a seeded instance. Seed first: seed.js creates the links through the control plane
 // and writes corpus.json next to this file. It needs the control-plane URL, an API key with the
-// links:write scope, the id of a verified link domain and that domain's host, as environment
+// links:write scope, the id of an active link domain and that domain's host, as environment
 // variables or as the matching --control, --api-key, --domain-id and --host flags:
 //
 //   DLE_CONTROL_URL=https://control.example.com DLE_API_KEY=dle_<prefix>_<secret> \
 //   DLE_DOMAIN_ID=<domain id> DLE_LINK_HOST=link.example.com node seed.js
 //   k6 run -e BASE_URL=https://link.example.com resolve.js
 //
-// The profile needs a deployed edge with PostgreSQL and Valkey behind it; release.yml runs it against
-// staging as the k6 gate. The numbers only mean something when corpus.json was seeded against the
-// instance under test and the edge does not throttle the generator. On a test or staging instance:
+// The profile needs a deployed edge with PostgreSQL and Valkey behind it. release.yml runs it as the
+// k6 gate, against a staging instance when one is configured and otherwise against the compose stack
+// on its own runner (run-on-compose.sh with compose.loadtest.yml, which do all of the below). The
+// numbers only mean something when corpus.json was seeded against the instance under test and the
+// edge does not throttle the generator. On a test or staging instance:
 //
 //   - set Dle:RateLimits:Edge:Enabled to false, which removes the resolve and QR limiters only;
 //   - raise Dle:RateLimits:Edge:NotFound (TokensPerPeriod and Burst, per replenishment period)
@@ -301,7 +303,7 @@ export function handleSummary(data) {
   const reminder = [
     '',
     'Acceptance criteria k6 cannot decide on its own:',
-    '  cache hit rate >= 95 %       dle_cache_hit_ratio{level="l1"} + {level="l2"} on the edge',
+    '  cache hit rate >= 95 %       cache="l1" share of dle_resolve_duration_count on the edge, links that exist',
     '  dropped click events = 0     dle_click_events_dropped_total must not have moved during the run',
     '  p99 <= 200 ms while scaling  the spike scenario',
     '',

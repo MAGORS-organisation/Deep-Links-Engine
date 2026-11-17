@@ -22,8 +22,9 @@
 // widely enough to actually miss the cache sometimes. A corpus of a few hundred would sit entirely
 // in L1 and the run would report a cache hit rate of 100 % that means nothing.
 //
-// It needs a deployed control plane, an API key with the links:write scope and a verified link
-// domain (its id and its host); release.yml runs it before the k6 gate. Seeding goes
+// It needs a deployed control plane, an API key with the links:write scope and an active link
+// domain (its id and its host; a domain is active on registration unless the instance requires
+// ownership verification); release.yml runs it before the k6 gate. Seeding goes
 // through the bulk endpoint by default (--bulk false creates the links one at a time, retrying on
 // 429), and every slug starts with the --prefix (default k6load), so the links can be found and
 // deleted afterwards.
@@ -137,6 +138,11 @@ async function createLink(index) {
   throw new Error(`Creating ${body.slug} failed: rate limited after 5 attempts.`);
 }
 
+// The bulk endpoint replays a repeated Idempotency-Key with its stored summary, which has no rows to
+// build a corpus from. Each run therefore gets its own keys; links an earlier run created come back
+// as slug-taken rows, which name a usable slug.
+const RUN = Date.now().toString(36);
+
 /** Seeds links via bulk NDJSON endpoint (POST /api/v1/links/bulk). */
 async function seedBulk() {
   const slugs = [];
@@ -160,7 +166,7 @@ async function seedBulk() {
       headers: {
         Authorization: `Bearer ${API_KEY}`,
         'Content-Type': 'application/x-ndjson',
-        'Idempotency-Key': `${PREFIX}-bulk-${start}`,
+        'Idempotency-Key': `${PREFIX}-bulk-${RUN}-${start}`,
       },
       body: ndjson,
     });
@@ -181,10 +187,16 @@ async function seedBulk() {
         continue; // skip non-json line
       }
 
-      // A row that failed because the link exists from an earlier run still names a usable slug.
       const slug = requested.get(String(res?.ref));
       if (slug === undefined) {
         continue;
+      }
+
+      // A row that failed because the link exists from an earlier run still names a usable slug. Any
+      // other failure (an unsafe or unresolvable target, a validation error) means the link does not
+      // exist, and a corpus naming it would turn its share of the traffic into 404s.
+      if (!res.ok && !(typeof res.error === 'string' && res.error.endsWith('/slug-taken'))) {
+        throw new Error(`Bulk row ${slug} was not created: ${String(res.error)} ${String(res.detail ?? '')}`.slice(0, 400));
       }
 
       if (res.ok && typeof res.short_url === 'string' && !res.short_url.endsWith(`/${slug}`)) {
@@ -231,6 +243,10 @@ async function seedIndividual() {
 process.stderr.write(`Seeding ${TOTAL} links (${HOT} hot) on ${HOST} via ${CONTROL}\n`);
 
 const slugs = USE_BULK ? await seedBulk() : await seedIndividual();
+
+if (slugs.length !== TOTAL || slugs.some((slug) => typeof slug !== 'string')) {
+  fail(`seeding produced ${slugs.length} usable slugs, not ${TOTAL}; corpus.json was not written.`);
+}
 
 const corpus = {
   host: HOST,

@@ -1,0 +1,32 @@
+# =============================================================================
+# Load-test overlay for the k6 resolve profile (resolve.js). It goes on top of
+# deploy/docker-compose.yml and deploy/docker-compose.override.yml, which publish the edge on
+# 127.0.0.1:8080 and the control plane on 127.0.0.1:8081:
+#
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml \
+#     -f tests/load/compose.loadtest.yml up -d --no-build --wait
+#
+# NEVER IN PRODUCTION. The whole generator is one client address, so this switches off the edge's
+# per-client resolve limiter and lifts the 404 budget: the profile's miss stream alone (5 % of up to
+# 12 000 requests a second) would drain the default budget at once and shadow ban the generator.
+# Everything else stays as it ships, and the edge runs as Production rather than the override's
+# Development, whose debug logging would be measured instead of the resolve path.
+# =============================================================================
+
+services:
+  dle-edge:
+    deploy:
+      resources:
+        limits:
+          # The compose default (0.75 CPU, 384 MB) sizes a small two-replica deployment; the load
+          # test runs one replica and lets it use the machine.
+          cpus: "${DLE_LOADTEST_EDGE_CPUS:-2}"
+          memory: 1G
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Dle__RateLimits__Edge__Enabled: "false"
+      Dle__RateLimits__Edge__NotFound__TokensPerPeriod: "100000"
+      Dle__RateLimits__Edge__NotFound__ReplenishmentPeriodSeconds: "1"
+      Dle__RateLimits__Edge__NotFound__Burst: "100000"
+      # Read once after the run for the cache hit rate and dropped click events (see the script).
+      Dle__Telemetry__ExposePrometheusMetrics: "true"
