@@ -8,9 +8,11 @@
 #
 # NEVER IN PRODUCTION. The whole generator is one client address, so this switches off the edge's
 # per-client resolve limiter and lifts the 404 budget: the profile's miss stream alone (5 % of up to
-# 12 000 requests a second) would drain the default budget at once and shadow ban the generator.
-# Everything else stays as it ships, and the edge runs as Production rather than the override's
-# Development, whose debug logging would be measured instead of the resolve path.
+# 12 000 requests a second) would drain the default budget at once and shadow ban the generator. It
+# also keeps reverse-DNS crawler verification off, because the profile's crawler user agents come
+# from the generator's address, not a crawler's. The edge runs as Production rather than the
+# override's Development, whose debug logging would be measured instead of the resolve path.
+# run-on-compose.sh lists these overrides in its report.
 # =============================================================================
 
 services:
@@ -28,5 +30,9 @@ services:
       Dle__RateLimits__Edge__NotFound__TokensPerPeriod: "100000"
       Dle__RateLimits__Edge__NotFound__ReplenishmentPeriodSeconds: "1"
       Dle__RateLimits__Edge__NotFound__Burst: "100000"
+      # Also set by docker-compose.override.yml; stated here so that the run does not depend on it.
+      # With it on, every crawler request from the generator would fail verification and be
+      # redirected instead of answered with an Open Graph document.
+      Dle__Edge__BotDetection__ReverseDnsVerify: "false"
       # Read once after the run for the cache hit rate and dropped click events (see the script).
       Dle__Telemetry__ExposePrometheusMetrics: "true"

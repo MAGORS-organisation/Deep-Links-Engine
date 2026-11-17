@@ -98,6 +98,13 @@ if [ -n "$metrics" ]; then
 fi
 
 cpu=$(awk -F': ' '/^model name/ { print $2; exit }' /proc/cpuinfo 2>/dev/null || true)
+# dropped_iterations are arrivals k6 could not start on time: a generator that fell behind sends
+# fewer requests than the profile asks for, which flatters the latency, so the report says how many.
+requests=n/a skipped=n/a
+if [ -f "$out/k6-summary.json" ]; then
+  requests=$(jq -r '.metrics.http_reqs.count // "n/a"' "$out/k6-summary.json")
+  skipped=$(jq -r '.metrics.dropped_iterations.count // 0' "$out/k6-summary.json")
+fi
 {
   if [ "$k6_status" -eq 0 ]; then
     echo "k6 resolve profile **passed** (thresholds in tests/load/resolve.js)."
@@ -106,7 +113,8 @@ cpu=$(awk -F': ' '/^model name/ { print $2; exit }' /proc/cpuinfo 2>/dev/null ||
   fi
   echo
   echo "- Target: compose stack and k6 on one machine, $(nproc) vCPU${cpu:+ ($cpu)}, one edge replica, straight to the edge without the reverse proxy"
-  echo "- Edge overrides (tests/load/compose.loadtest.yml): resolve limiter off, 404 budget 100 000/s, Production environment, CPU limit ${DLE_LOADTEST_EDGE_CPUS:-2}, /metrics exposed"
+  echo "- Edge overrides (tests/load/compose.loadtest.yml): resolve limiter off, 404 budget 100 000/s, reverse-DNS crawler verification off, Production environment, CPU limit ${DLE_LOADTEST_EDGE_CPUS:-2}, /metrics exposed"
+  echo "- Requests sent: $requests; arrivals k6 could not start on time (generator, not the edge): $skipped"
   echo "- Cache hit rate over existing links (L1 + L2, target ≥ 95 %): $hit_rate"
   echo "- Dropped click events (target 0): $dropped"
 } >"$out/report.md"
