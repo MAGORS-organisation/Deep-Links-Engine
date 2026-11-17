@@ -71,6 +71,8 @@ jobs:
 
       - name: Set up Helm
         uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
+        with:
+          version: v4.3.2
 
       - name: Install kubeconform (pinned, checksum verified)
         run: |
@@ -241,6 +243,8 @@ jobs:
 
       - name: Set up Helm
         uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
+        with:
+          version: v4.3.2
 
       - name: Install kind (pinned, checksum verified)
         run: |
