@@ -187,6 +187,15 @@ export const options = {
   // handshake per request would measure the handshake rather than the resolve path. Redirects are
   // not followed: 302 is the answer under test, and following it would measure somebody else's site.
   noVUConnectionReuse: false,
+
+  // k6's default tag set without url. Every miss asks for a slug no other request uses, so the URL
+  // as a tag opens a new time series per request: over a million in one run, which costs the
+  // generator memory and CPU that the machine under test then lacks. Requests are named instead
+  // (see resolve below); nothing here or in the thresholds groups by URL.
+  systemTags: [
+    'proto', 'subproto', 'status', 'method', 'name', 'group', 'check', 'error', 'error_code',
+    'tls_version', 'scenario', 'service', 'expected_response',
+  ],
 };
 
 // ---------------------------------------------------------------------------------------------
@@ -235,7 +244,8 @@ export function resolve() {
   const response = http.get(`${BASE_URL}/${slug}${query}`, {
     headers,
     redirects: 0,
-    tags: { kind, crawler: isCrawler ? 'yes' : 'no' },
+    // One name for every request (k6 would otherwise name each by its URL); kind tells them apart.
+    tags: { name: `${BASE_URL}/{slug}`, kind, crawler: isCrawler ? 'yes' : 'no' },
   });
 
   record(response, kind, isCrawler);
