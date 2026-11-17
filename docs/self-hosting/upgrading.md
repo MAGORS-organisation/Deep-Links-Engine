@@ -29,8 +29,8 @@ degradation path the specification requires ([§D.6](../zadanie.md)).
 
 No images are published to GHCR yet, so `docker compose pull` has nothing to fetch: compose builds
 both images locally from the `build:` sections of `docker-compose.yml`. Upgrading means updating the
-checkout and rebuilding. Always name the file — a plain `docker compose` in `deploy/` also loads
-`docker-compose.override.yml`, the development profile.
+checkout and rebuilding. The commands name the file for clarity; a plain `docker compose` in `deploy/` reads the same file
+alone, and the development profile `docker-compose.dev.yml` is loaded only when named.
 
 ```bash
 git pull                                             # or check out the version you are upgrading to

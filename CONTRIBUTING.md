@@ -28,8 +28,8 @@ from.
 | Helm chart | Helm 3 |
 
 Everything in the .NET solution is also driven from `deploy/aspire` for local development; see
-that directory. The compose stack is `deploy/docker-compose.yml` (+ `docker-compose.override.yml`
-for local ports and plain HTTP).
+that directory. The compose stack is `deploy/docker-compose.yml` (+ `docker-compose.dev.yml`,
+named explicitly, for local ports and plain HTTP).
 
 ## Building
 

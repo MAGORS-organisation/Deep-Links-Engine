@@ -61,8 +61,8 @@ On an empty database the control plane provisions a tenant with the owner API ke
 `DLE_BOOTSTRAP_INITIAL_API_KEY` in `.env`; the key is never printed or logged. Sign in to the admin
 console at `https://<your domain>/admin/` with it, create a named owner key, and revoke the bootstrap one.
 
-Name the compose file explicitly: a plain `docker compose up` also loads `docker-compose.override.yml`,
-the development profile (Caddy's internal CA, published ports, plain HTTP). No images are published yet,
+The development profile (Caddy's internal CA, published ports, plain HTTP) is `docker-compose.dev.yml`
+and is loaded only when named, so a plain `docker compose up` stays the production stack. No images are published yet,
 so `--build` builds them from source. The first-30-minutes walkthrough is
 [docs/self-hosting/quickstart.md](docs/self-hosting/quickstart.md).
 

@@ -8,11 +8,11 @@ import react from '@vitejs/plugin-react';
  *
  * During development the API is proxied so that the browser talks to one origin and the
  * credential never has to cross a CORS boundary. Set VITE_DLE_CONTROL_ORIGIN in .env.local
- * when the control plane is not on http://localhost:8080.
+ * when the control plane is not on http://localhost:8081 (the port deploy/docker-compose.dev.yml publishes).
  */
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', 'VITE_');
-  const controlOrigin = env.VITE_DLE_CONTROL_ORIGIN ?? 'http://localhost:8080';
+  const controlOrigin = env.VITE_DLE_CONTROL_ORIGIN ?? 'http://localhost:8081';
 
   return {
     base: '/admin/',

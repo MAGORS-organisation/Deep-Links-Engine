@@ -135,7 +135,7 @@ if (-not (Test-Path $EnvFile)) {
 # 4. Service launch / instructions
 Write-Host "[4/4] Environment Ready!" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Endpoints for Local Development (using docker-compose.override.yml):" -ForegroundColor White
+Write-Host "Endpoints for Local Development (docker-compose.yml + docker-compose.dev.yml):" -ForegroundColor White
 Write-Host "  * Edge (Data Plane, Redirects, QR): http://localhost:8080" -ForegroundColor Gray
 Write-Host "  * Control API & OpenAPI (Scalar):   http://localhost:8081/scalar/v1" -ForegroundColor Gray
 Write-Host "  * Administration SPA:               http://localhost:8081/admin/" -ForegroundColor Gray
@@ -173,18 +173,18 @@ if ($Build -or $Up) {
     try {
         if ($Build) {
             Write-Host "Building images and launching compose stack..." -ForegroundColor Cyan
-            docker compose up -d --build
+            docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
         } else {
             Write-Host "Starting compose stack..." -ForegroundColor Cyan
-            docker compose up -d
+            docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
         }
-        Write-Host "Stack started! Check status with: docker compose ps -a" -ForegroundColor Green
+        Write-Host "Stack started! Check status with: cd deploy; docker compose -f docker-compose.yml -f docker-compose.dev.yml ps -a" -ForegroundColor Green
     } finally {
         Pop-Location
     }
 } else {
     Write-Host "To start the local stack now, run:" -ForegroundColor White
-    Write-Host "  cd deploy; docker compose up -d --build" -ForegroundColor Cyan
+    Write-Host "  cd deploy; docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build" -ForegroundColor Cyan
     Write-Host "or with this script:" -ForegroundColor White
     Write-Host "  .\setup-dev.ps1 -Build" -ForegroundColor Cyan
 }

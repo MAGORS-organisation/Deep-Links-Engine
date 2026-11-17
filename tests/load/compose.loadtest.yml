@@ -1,9 +1,9 @@
 # =============================================================================
 # Load-test overlay for the k6 resolve profile (resolve.js). It goes on top of
-# deploy/docker-compose.yml and deploy/docker-compose.override.yml, which publish the edge on
+# deploy/docker-compose.yml and deploy/docker-compose.dev.yml, which publish the edge on
 # 127.0.0.1:8080 and the control plane on 127.0.0.1:8081:
 #
-#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml \
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml \
 #     -f tests/load/compose.loadtest.yml up -d --no-build --wait
 #
 # NEVER IN PRODUCTION. The whole generator is one client address, so this switches off the edge's
@@ -11,7 +11,7 @@
 # 12 000 requests a second) would drain the default budget at once and shadow ban the generator. It
 # also keeps reverse-DNS crawler verification off, because the profile's crawler user agents come
 # from the generator's address, not a crawler's. The edge runs as Production rather than the
-# override's Development, whose debug logging would be measured instead of the resolve path.
+# dev file's Development, whose debug logging would be measured instead of the resolve path.
 # run-on-compose.sh lists these overrides in its report.
 # =============================================================================
 
@@ -30,7 +30,7 @@ services:
       Dle__RateLimits__Edge__NotFound__TokensPerPeriod: "100000"
       Dle__RateLimits__Edge__NotFound__ReplenishmentPeriodSeconds: "1"
       Dle__RateLimits__Edge__NotFound__Burst: "100000"
-      # Also set by docker-compose.override.yml; stated here so that the run does not depend on it.
+      # Also set by docker-compose.dev.yml; stated here so that the run does not depend on it.
       # With it on, every crawler request from the generator would fail verification and be
       # redirected instead of answered with an Open Graph document.
       Dle__Edge__BotDetection__ReverseDnsVerify: "false"

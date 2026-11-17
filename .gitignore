@@ -220,6 +220,8 @@ data/geoip/
 ## Containers, infrastructure and tooling scratch
 ## ---------------------------------------------------------------------------
 .aspire/
+# docker compose merges a docker-compose.override.yml on its own; never commit one (the development
+# profile is deploy/docker-compose.dev.yml, loaded only by name).
 docker-compose.override.yml
 .terraform/
 *.tfstate
@@ -291,5 +293,3 @@ sdk/ios/.swiftpm/
 sdk/ios/**/xcuserdata/
 sdk/ios/**/*.xcuserstate
 
-# The compose override under deploy/ is a committed development profile referenced by CI (security.yml), not a local scratch file.
-!deploy/docker-compose.override.yml

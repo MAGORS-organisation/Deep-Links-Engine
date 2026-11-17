@@ -6,7 +6,7 @@
 #   licences               nuget-license (NuGet) + license-checker (npm) against an allow-list — HARD
 #   trivy-fs               lock files + secrets (HARD, CRITICAL/HIGH, fixed only) + misconfig (report)
 #   trivy-image            both Dockerfiles built (load: true) and scanned — HARD, CRITICAL/HIGH, fixed only
-#   zap-baseline           compose stack up (edge :8080 through the dev override) → OWASP ZAP baseline
+#   zap-baseline           compose stack up (edge :8080 through docker-compose.dev.yml) → OWASP ZAP baseline
 #
 # Reusable: nightly.yml calls it with sca-only=true (dependency feeds only, no image builds, no ZAP).
 # =============================================================================
@@ -304,10 +304,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      # deploy/docker-compose.yml alone publishes only Caddy (80/443). The dev override publishes
+      # deploy/docker-compose.yml alone publishes only Caddy (80/443). docker-compose.dev.yml publishes
       # edge on 127.0.0.1:8080 and control on 127.0.0.1:8081 over plain HTTP, which is what a
       # baseline scan of the edge needs. Caddy moves to 8088/8443 so nothing on the runner collides.
-      COMPOSE_FILES: -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml
+      COMPOSE_FILES: -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml
       DLE_DOMAIN: localhost
       DLE_TLS: internal
       DLE_HTTP_PORT: "8088"
