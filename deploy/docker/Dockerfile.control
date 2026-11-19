@@ -77,8 +77,15 @@ RUN dotnet restore src/Dle.Control/Dle.Control.csproj -a "$TARGETARCH" \
  && dotnet tool restore
 
 COPY src/ src/
+# The release passes the tag (1.0.0-rc.1) so the binaries report the version the image is labelled
+# with. A source build passes nothing and keeps VersionPrefix from Directory.Build.props. Declared
+# after the restore so that a new version does not invalidate the package layer. Every later RUN
+# also sees VERSION as an environment variable, which MSBuild reads as $(Version), so the migration
+# bundle below is built with the same version without passing it again.
+ARG VERSION
 RUN dotnet publish src/Dle.Control/Dle.Control.csproj \
       -c "$BUILD_CONFIGURATION" -a "$TARGETARCH" --no-restore --self-contained false \
+      ${VERSION:+"-p:Version=$VERSION"} \
       -o /app/publish
 
 # Migration bundle for the target platform. The bundle command builds Dle.Persistence itself

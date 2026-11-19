@@ -259,8 +259,10 @@ jobs:
           load: true
           push: false
           tags: dle-${{ matrix.image }}:scan
+          # No VERSION: it reaches the build stage (dotnet publish), and a value here would give the
+          # publish layer a key that the ZAP, Helm and load-test builds of the same commit, which
+          # share this cache scope, never match.
           build-args: |
-            VERSION=0.0.0-${{ github.sha }}
             VCS_REF=${{ github.sha }}
           cache-from: type=gha,scope=dle-${{ matrix.image }}
           cache-to: type=gha,mode=max,scope=dle-${{ matrix.image }}

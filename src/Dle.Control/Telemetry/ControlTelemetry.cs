@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Reflection;
 
 namespace Dle.Control.Telemetry;
 
@@ -99,11 +100,31 @@ public sealed class ControlMetrics : IDisposable
 }
 
 /// <summary>
-/// The assembly version, reported as the service version and the instrument version.
+/// The product version, reported as the service version and the instrument version.
 /// </summary>
+/// <remarks>
+/// The release build passes the tag as <c>-p:Version</c>, which reaches only the informational
+/// version: the numeric assembly version cannot carry a pre-release label and would report
+/// <c>v1.0.0-rc.1</c> as <c>1.0.0.0</c>.
+/// </remarks>
 internal static class AssemblyVersion
 {
-    /// <summary>The version, or <c>0.0.0</c> when the assembly carries none.</summary>
-    internal static string Value { get; } =
-        typeof(AssemblyVersion).Assembly.GetName().Version?.ToString() ?? "0.0.0";
+    /// <summary>Informational version of the control assembly, without build metadata.</summary>
+    internal static string Value { get; } = Read(typeof(AssemblyVersion).Assembly);
+
+    /// <summary>Reads the product version of an assembly.</summary>
+    /// <param name="assembly">The assembly to read.</param>
+    /// <returns>
+    /// The informational version without its <c>+build</c> suffix (the commit a local build appends),
+    /// else the three-part assembly version, else <c>0.0.0</c>.
+    /// </returns>
+    internal static string Read(Assembly assembly)
+    {
+        string? informational = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        int metadata = informational?.IndexOf('+', StringComparison.Ordinal) ?? -1;
+        string? version = metadata >= 0 ? informational![..metadata] : informational;
+        return string.IsNullOrWhiteSpace(version)
+            ? assembly.GetName().Version?.ToString(3) ?? "0.0.0"
+            : version;
+    }
 }
