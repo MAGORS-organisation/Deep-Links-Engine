@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Dle.Edge.Telemetry;
 
@@ -64,15 +65,32 @@ public static class EdgeActivitySource
 }
 
 /// <summary>
-/// The assembly version, used as the activity source version.
+/// The product version, used as the activity source version and the service version.
 /// </summary>
 /// <remarks>
 /// Read once from the assembly rather than hard coded, so a released build reports the version it
-/// actually is.
+/// actually is. The release build passes the tag as <c>-p:Version</c>, which reaches only the
+/// informational version: the numeric assembly version cannot carry a pre-release label and would
+/// report <c>v1.0.0-rc.1</c> as <c>1.0.0.0</c>.
 /// </remarks>
 internal static class ThisAssembly
 {
-    /// <summary>Informational version of the edge assembly.</summary>
-    internal static string Version { get; } =
-        typeof(ThisAssembly).Assembly.GetName().Version?.ToString() ?? "0.0.0";
+    /// <summary>Informational version of the edge assembly, without build metadata.</summary>
+    internal static string Version { get; } = Read(typeof(ThisAssembly).Assembly);
+
+    /// <summary>Reads the product version of an assembly.</summary>
+    /// <param name="assembly">The assembly to read.</param>
+    /// <returns>
+    /// The informational version without its <c>+build</c> suffix (the commit a local build appends),
+    /// else the three-part assembly version, else <c>0.0.0</c>.
+    /// </returns>
+    internal static string Read(Assembly assembly)
+    {
+        string? informational = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        int metadata = informational?.IndexOf('+', StringComparison.Ordinal) ?? -1;
+        string? version = metadata >= 0 ? informational![..metadata] : informational;
+        return string.IsNullOrWhiteSpace(version)
+            ? assembly.GetName().Version?.ToString(3) ?? "0.0.0"
+            : version;
+    }
 }

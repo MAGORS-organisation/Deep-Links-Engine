@@ -86,7 +86,9 @@ jobs:
       # deploy/docker-compose.yml and deploy/.env.example pin the image tag a plain `docker compose
       # pull` gets, and they are bumped by hand. The gates below override DLE_VERSION, so without
       # this check a release could ship a compose file that still pulls the previous version. The
-      # pin is the release core: v1.0.0-rc.1 and v1.0.0 both expect 1.0.0.
+      # pin is the release core: v1.0.0-rc.1 and v1.0.0 both expect 1.0.0. VersionPrefix is checked
+      # with them: the images get the tag through -p:Version, but a build from the tagged source
+      # (compose without a pulled image, a fork) reports VersionPrefix.
       - name: Compose pins this release
         env:
           VERSION: ${{ steps.v.outputs.version }}
@@ -108,6 +110,10 @@ jobs:
           fi
           if ! grep -qx "DLE_VERSION=$core" deploy/.env.example; then
             echo "::error file=deploy/.env.example::DLE_VERSION must be $core"; missing=1
+          fi
+          # [.] rather than \. : bash 5.2+ applies quote removal to the replacement, which eats the backslash.
+          if ! grep -qE "^[[:space:]]*<VersionPrefix>${core//./[.]}</VersionPrefix>[[:space:]]*$" Directory.Build.props; then
+            echo "::error file=Directory.Build.props::VersionPrefix must be $core"; missing=1
           fi
           exit "$missing"
 
